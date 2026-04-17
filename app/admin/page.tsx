@@ -255,6 +255,38 @@ const SAMPLE_LEADS: Lead[] = [
   },
 ]
 
+/* ── Sample Routes Data ─────────────────────────────── */
+
+const SAMPLE_ROUTES: RoutePricing[] = [
+  {
+    id: 'r1',
+    hotel_slug: 'bocean-resort',
+    pickup: 'The Hotel',
+    destination: 'Miami International Airport (MIA)',
+    suv_price: 155,
+    minivan_price: 200,
+    sprinter_price: 280,
+  },
+  {
+    id: 'r2',
+    hotel_slug: 'ritz-carlton-miami',
+    pickup: 'The Hotel',
+    destination: 'Fort Lauderdale Airport (FLL)',
+    suv_price: 180,
+    minivan_price: 220,
+    sprinter_price: 310,
+  },
+  {
+    id: 'r3',
+    hotel_slug: 'bocean-resort',
+    pickup: 'The Hotel',
+    destination: 'Port Everglades (Cruise Terminal)',
+    suv_price: 120,
+    minivan_price: 160,
+    sprinter_price: 250,
+  },
+]
+
 /* ── Sidebar Icon Components ────────────────────────── */
 
 function IconDashboard() {
@@ -426,11 +458,12 @@ export default function AdminPage() {
     }
 
     setBookings([...bk, ...SAMPLE_BOOKINGS])
-    setRoutePrices(rt)
+    const mergedRoutes = [...rt, ...SAMPLE_ROUTES]
+    setRoutePrices(mergedRoutes)
     setLeads([...ld, ...SAMPLE_LEADS])
     setEditRoutePrices(
       Object.fromEntries(
-        rt.map((r) => [
+        mergedRoutes.map((r) => [
           r.id,
           { suv: r.suv_price, minivan: r.minivan_price, sprinter: r.sprinter_price },
         ])
