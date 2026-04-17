@@ -41,6 +41,8 @@ interface Lead {
   pickup: string
   destination: string
   vehicle_type: string
+  status?: string
+  notes?: string
   created_at: string
 }
 
@@ -374,7 +376,7 @@ export default function AdminPage() {
   const [leads, setLeads] = useState<Lead[]>(SAMPLE_LEADS)
   const [addingLead, setAddingLead] = useState(false)
   const [newLead, setNewLead] = useState({
-    hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv'
+    hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv', status: 'new', notes: ''
   })
 
   const [routePrices, setRoutePrices] = useState<RoutePricing[]>([])
@@ -556,9 +558,19 @@ export default function AdminPage() {
       body: JSON.stringify(newLead)
     })
     const data = await fetchLeads(password)
-    setLeads([...data, ...SAMPLE_LEADS])
+    setLeads([...data])
     setAddingLead(false)
-    setNewLead({ hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv' })
+    setNewLead({ hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv', status: 'new', notes: '' })
+  }
+
+  async function updateLead(id: string, updates: Partial<Lead>) {
+    // Optimistic UI update
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)))
+    await fetch('/api/leads', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
+      body: JSON.stringify({ id, ...updates })
+    }).catch((e) => console.error('Failed to update lead', e))
   }
 
   /* ── QR ── */
@@ -1258,7 +1270,7 @@ export default function AdminPage() {
                   <table className="w-full text-sm text-left">
                     <thead>
                       <tr style={{ color: '#888' }}>
-                        {['Customer', 'Route', 'Vehicle', 'Hotel', 'Intent Date'].map((h) => (
+                        {['Customer', 'Route', 'Details', 'Pipeline', 'Date'].map((h) => (
                           <th key={h} className="py-2 pr-4 text-xs uppercase tracking-widest font-medium">{h}</th>
                         ))}
                       </tr>
@@ -1271,9 +1283,37 @@ export default function AdminPage() {
                             <p className="text-xs text-[#888]">{l.customer_email || 'No email'}</p>
                             {l.customer_phone && <p className="text-xs text-[#B8960C]">{l.customer_phone}</p>}
                           </td>
-                          <td className="py-4 pr-4 text-xs text-white">{l.pickup} → {l.destination}</td>
-                          <td className="py-4 pr-4"><span className="text-xs uppercase font-bold tracking-widest" style={{ color: '#D4AF37' }}>{l.vehicle_type}</span></td>
-                          <td className="py-4 pr-4 text-xs uppercase text-[#888]">{l.hotel_slug}</td>
+                          <td className="py-4 pr-4 text-xs text-white break-words max-w-[150px]">{l.pickup} <br/><span className="text-[#888]">to</span><br/> {l.destination}</td>
+                          <td className="py-4 pr-4">
+                            <span className="text-xs uppercase font-bold tracking-widest block mb-1" style={{ color: '#D4AF37' }}>{l.vehicle_type}</span>
+                            <span className="text-xs uppercase text-[#888]">{l.hotel_slug}</span>
+                          </td>
+                          <td className="py-4 pr-4">
+                            <div className="flex flex-col gap-2">
+                              <select 
+                                value={l.status || 'new'} 
+                                onChange={(e) => updateLead(l.id, { status: e.target.value })}
+                                className="w-full text-xs rounded-lg border border-[#1e1e1e] p-1.5 outline-none font-bold tracking-wider uppercase disabled:opacity-50"
+                                style={{ 
+                                  backgroundColor: l.status === 'converted' ? '#163316' : l.status === 'lost' ? '#331616' : '#0a0a0a',
+                                  color: l.status === 'converted' ? '#4CAF50' : l.status === 'lost' ? '#F44336' : '#FFFFFF' 
+                                }}
+                              >
+                                <option value="new">New</option>
+                                <option value="contacted">Contacted</option>
+                                <option value="quoted">Quoted</option>
+                                <option value="converted">Converted</option>
+                                <option value="lost">Lost</option>
+                              </select>
+                              <input 
+                                type="text"
+                                defaultValue={l.notes || ''}
+                                placeholder="Add notes..."
+                                onBlur={(e) => updateLead(l.id, { notes: e.target.value })}
+                                className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-1.5 text-[#888] outline-none focus:border-[#B8960C] focus:text-white"
+                              />
+                            </div>
+                          </td>
                           <td className="py-4 text-xs" style={{ color: '#888' }}>{new Date(l.created_at).toLocaleDateString()}</td>
                         </tr>
                       ))}
@@ -1294,16 +1334,17 @@ export default function AdminPage() {
                           </div>
                         </td>
                         <td className="py-4 pr-4">
-                          <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]">
+                          <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C] mb-2">
                             <option value="sedan_suv">Sedan & SUV</option>
                             <option value="suburban">Suburban</option>
                             <option value="sprinter">Sprinter</option>
                             <option value="minibus">Mini Bus</option>
                             <option value="coachbus">Coach Bus</option>
                           </select>
+                          <input type="text" placeholder="Hotel Slug" value={newLead.hotelSlug} onChange={(e) => setNewLead({ ...newLead, hotelSlug: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-[#666] outline-none" />
                         </td>
                         <td className="py-4 pr-4">
-                          <input type="text" placeholder="Hotel Slug" value={newLead.hotelSlug} onChange={(e) => setNewLead({ ...newLead, hotelSlug: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-[#666] outline-none" />
+                           <p className="text-xs text-[#666] italic mb-1">Status and notes edit available after adding.</p>
                         </td>
                         <td className="py-4 text-right">
                           <button

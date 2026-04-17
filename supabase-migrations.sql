@@ -94,6 +94,8 @@ create table if not exists leads (
   pickup text,
   destination text,
   vehicle_type text,
+  status text default 'new',
+  notes text,
   created_at timestamptz default now()
 );
 

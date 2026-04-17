@@ -30,6 +30,30 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PUT(req: NextRequest) {
+  const authHeader = req.headers.get('authorization')
+  if (!authHeader?.startsWith('Bearer ') || authHeader.split('Bearer ')[1] !== process.env.ADMIN_PASSWORD) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const { id, status, notes } = await req.json()
+    if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
+
+    const { error } = await supabase
+      .from('leads')
+      .update({ status, notes })
+      .eq('id', id)
+
+    if (error) throw error
+
+    return NextResponse.json({ success: true })
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: errorMsg }, { status: 500 })
+  }
+}
+
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (!authHeader?.startsWith('Bearer ') || authHeader.split('Bearer ')[1] !== process.env.ADMIN_PASSWORD) {
