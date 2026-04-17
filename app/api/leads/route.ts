@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
     console.error('[leads] error:', errorMsg)
     return NextResponse.json({ error: 'Failed to log lead' }, { status: 500 })
   }
+}
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
