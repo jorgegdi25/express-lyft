@@ -37,12 +37,17 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const { id, status, notes } = await req.json()
+    const body = await req.json()
+    const { id, status, notes } = body
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
+
+    const updates: any = {}
+    if (status !== undefined) updates.status = status
+    if (notes !== undefined) updates.notes = notes
 
     const { error } = await supabase
       .from('leads')
-      .update({ status, notes })
+      .update(updates)
       .eq('id', id)
 
     if (error) throw error
