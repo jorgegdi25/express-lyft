@@ -476,10 +476,10 @@ export default function AdminPage() {
       // Data loading failed, continue with sample data
     }
 
-    setBookings([...bk, ...SAMPLE_BOOKINGS])
-    const mergedRoutes = [...rt, ...SAMPLE_ROUTES]
+    setBookings(bk)
+    const mergedRoutes = [...rt, ...SAMPLE_ROUTES] // Fallback for routes is okay to avoid empty dashboard breaking
     setRoutePrices(mergedRoutes)
-    setLeads([...ld, ...SAMPLE_LEADS])
+    setLeads(ld)
     setEditRoutePrices(
       Object.fromEntries(
         mergedRoutes.map((r) => [
