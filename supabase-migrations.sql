@@ -37,9 +37,11 @@ create table if not exists route_pricing (
   hotel_slug text references hotels(slug) on delete cascade,
   pickup text not null,
   destination text not null,
-  suv_price integer not null,
-  minivan_price integer not null,
+  sedan_suv_price integer not null,
+  suburban_price integer not null,
   sprinter_price integer not null,
+  minibus_price integer not null,
+  coachbus_price integer not null,
   updated_at timestamptz default now()
 );
 
@@ -57,10 +59,10 @@ insert into pricing (vehicle_type, price_usd) values
 on conflict do nothing;
 
 -- Seed route pricing for Bocean Resort
-insert into route_pricing (hotel_slug, pickup, destination, suv_price, minivan_price, sprinter_price) values
-  ('bocean-resort', 'The Hotel', 'Miami International Airport (MIA)', 120, 180, 260),
-  ('bocean-resort', 'The Hotel', 'Fort Lauderdale Airport (FLL)', 155, 210, 290),
-  ('bocean-resort', 'The Hotel', 'Port of Miami (Cruise Terminal)', 130, 190, 270)
+insert into route_pricing (hotel_slug, pickup, destination, sedan_suv_price, suburban_price, sprinter_price, minibus_price, coachbus_price) values
+  ('bocean-resort', 'The Hotel', 'Miami International Airport (MIA)', 120, 150, 260, 450, 800),
+  ('bocean-resort', 'The Hotel', 'Fort Lauderdale Airport (FLL)', 155, 180, 290, 500, 850),
+  ('bocean-resort', 'The Hotel', 'Port of Miami (Cruise Terminal)', 130, 160, 270, 480, 820)
 on conflict do nothing;
 
 -- Row Level Security (optional but recommended)

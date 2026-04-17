@@ -2,15 +2,17 @@
 
 interface VehicleDisplayProps {
   passengers: number
-  prices: { suv: number; minivan: number; sprinter: number }
+  prices: { sedan_suv: number; suburban: number; sprinter: number; minibus: number; coachbus: number }
 }
 
-type VehicleType = 'suv' | 'minivan' | 'sprinter'
+type VehicleType = 'sedan_suv' | 'suburban' | 'sprinter' | 'minibus' | 'coachbus'
 
 function getVehicle(passengers: number): { type: VehicleType; label: string; capacity: string } {
-  if (passengers <= 4) return { type: 'suv', label: 'Luxury SUV', capacity: 'Up to 4 passengers' }
-  if (passengers <= 6) return { type: 'minivan', label: 'Minivan', capacity: 'Up to 6 passengers' }
-  return { type: 'sprinter', label: 'Sprinter Van', capacity: 'Up to 14 passengers' }
+  if (passengers <= 4) return { type: 'sedan_suv', label: 'Sedan & SUV', capacity: 'Up to 4 passengers' }
+  if (passengers <= 6) return { type: 'suburban', label: 'Chevy Suburban', capacity: 'Up to 6 passengers' }
+  if (passengers <= 14) return { type: 'sprinter', label: 'Mercedes-Benz Sprinter', capacity: 'Up to 14 passengers' }
+  if (passengers <= 31) return { type: 'minibus', label: '31 Passenger Mini Bus', capacity: 'Up to 31 passengers' }
+  return { type: 'coachbus', label: '55 Passenger Bus', capacity: 'Up to 55 passengers' }
 }
 
 export default function VehicleDisplay({ passengers, prices }: VehicleDisplayProps) {

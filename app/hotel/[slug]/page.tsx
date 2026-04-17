@@ -25,12 +25,12 @@ async function getHotelData(slug: string) {
         slug: 'demo',
         name: isDemo ? 'The Grand Palace, Miami' : 'Express Lyft Demo'
       },
-      prices: { suv: 120, minivan: 180, sprinter: 260 },
+      prices: { sedan_suv: 120, suburban: 150, sprinter: 260, minibus: 450, coachbus: 800 },
       routePrices: []
     }
   }
 
-  const prices = { suv: 120, minivan: 180, sprinter: 260 }
+  const prices = { sedan_suv: 120, suburban: 150, sprinter: 260, minibus: 450, coachbus: 800 }
   if (pricingRes.data) {
     for (const row of pricingRes.data) {
       prices[row.vehicle_type as keyof typeof prices] = row.price_usd
@@ -101,7 +101,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
       )}
 
       {/* Hero */}
-      <HeroSection hotelName={hotel.name} vehicleType="suv" basePrice={prices.suv} />
+      <HeroSection hotelName={hotel.name} vehicleType="sedan_suv" basePrice={prices.sedan_suv} />
 
       {/* Booking + Vehicle */}
       <BookingForm 
@@ -179,8 +179,8 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
           <div className="grid grid-cols-2 gap-6">
             {[
               { stat: '4', label: 'Destinations' },
-              { stat: '14', label: 'Max Passengers' },
-              { stat: '3', label: 'Vehicle Classes' },
+              { stat: '55', label: 'Max Passengers' },
+              { stat: '5', label: 'Vehicle Classes' },
               { stat: '7', label: 'Days a Week' },
             ].map((s) => (
               <div

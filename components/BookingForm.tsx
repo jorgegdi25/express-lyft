@@ -7,15 +7,17 @@ interface RoutePrice {
   id: string
   pickup: string
   destination: string
-  suv_price: number
-  minivan_price: number
+  sedan_suv_price: number
+  suburban_price: number
   sprinter_price: number
+  minibus_price: number
+  coachbus_price: number
 }
 
 interface BookingFormProps {
   hotelSlug: string
   hotelName: string
-  prices: { suv: number; minivan: number; sprinter: number }
+  prices: { sedan_suv: number; suburban: number; sprinter: number; minibus: number; coachbus: number }
   routePrices: RoutePrice[]
 }
 
@@ -43,10 +45,14 @@ function generateTimeSlots() {
 
 const TIME_SLOTS = generateTimeSlots()
 
-function getVehicleType(passengers: number): 'suv' | 'minivan' | 'sprinter' {
-  if (passengers <= 4) return 'suv'
-  if (passengers <= 6) return 'minivan'
-  return 'sprinter'
+type VehicleType = 'sedan_suv' | 'suburban' | 'sprinter' | 'minibus' | 'coachbus'
+
+function getVehicleType(passengers: number): VehicleType {
+  if (passengers <= 4) return 'sedan_suv'
+  if (passengers <= 6) return 'suburban'
+  if (passengers <= 14) return 'sprinter'
+  if (passengers <= 31) return 'minibus'
+  return 'coachbus'
 }
 
 const todayStr = new Date().toISOString().split('T')[0]
@@ -79,9 +85,11 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
     if (route) {
       return {
-        suv: route.suv_price,
-        minivan: route.minivan_price,
-        sprinter: route.sprinter_price
+        sedan_suv: route.sedan_suv_price,
+        suburban: route.suburban_price,
+        sprinter: route.sprinter_price,
+        minibus: route.minibus_price,
+        coachbus: route.coachbus_price
       }
     }
 
@@ -350,7 +358,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                   </span>
                   <button
                     type="button"
-                    onClick={() => setPassengers((p) => Math.min(14, p + 1))}
+                    onClick={() => setPassengers((p) => Math.min(55, p + 1))}
                     className="w-10 h-10 rounded-lg text-xl font-bold flex items-center justify-center transition-colors"
                     style={{ background: '#111111', border: '1px solid #2a2a2a', color: '#FFFFFF' }}
                   >

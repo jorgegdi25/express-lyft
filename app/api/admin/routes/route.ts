@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { hotel_slug, pickup, destination, suv_price, minivan_price, sprinter_price } = body
+  const { hotel_slug, pickup, destination, sedan_suv_price, suburban_price, sprinter_price, minibus_price, coachbus_price } = body
 
   if (!hotel_slug || !pickup || !destination) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
@@ -47,9 +47,11 @@ export async function POST(req: NextRequest) {
       hotel_slug,
       pickup,
       destination,
-      suv_price,
-      minivan_price,
-      sprinter_price
+      sedan_suv_price,
+      suburban_price,
+      sprinter_price,
+      minibus_price,
+      coachbus_price
     }])
     .select()
 
@@ -64,16 +66,18 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { id, suv_price, minivan_price, sprinter_price } = body
+  const { id, sedan_suv_price, suburban_price, sprinter_price, minibus_price, coachbus_price } = body
 
   if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
 
   const { error } = await supabaseAdmin
     .from('route_pricing')
     .update({
-      suv_price,
-      minivan_price,
+      sedan_suv_price,
+      suburban_price,
       sprinter_price,
+      minibus_price,
+      coachbus_price,
       updated_at: new Date().toISOString()
     })
     .eq('id', id)

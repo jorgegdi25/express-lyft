@@ -30,9 +30,11 @@ export async function POST(req: NextRequest) {
     const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
     const vehicleLabels: Record<string, string> = {
-      suv: 'Luxury SUV',
-      minivan: 'Minivan',
-      sprinter: 'Sprinter Van',
+      sedan_suv: 'Sedan & SUV',
+      suburban: 'Chevy Suburban',
+      sprinter: 'Mercedes-Benz Sprinter',
+      minibus: '31 Passenger Mini Bus',
+      coachbus: '55 Passenger Bus'
     }
 
     const session = await stripe.checkout.sessions.create({

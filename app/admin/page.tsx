@@ -25,9 +25,11 @@ interface RoutePricing {
   hotel_slug: string
   pickup: string
   destination: string
-  suv_price: number
-  minivan_price: number
+  sedan_suv_price: number
+  suburban_price: number
   sprinter_price: number
+  minibus_price: number
+  coachbus_price: number
 }
 
 interface Lead {
@@ -55,9 +57,11 @@ interface Client {
 }
 
 const VEHICLE_LABELS: Record<string, string> = {
-  suv: 'Luxury SUV',
-  minivan: 'Minivan',
-  sprinter: 'Sprinter Van',
+  sedan_suv: 'Sedan & SUV',
+  suburban: 'Chevy Suburban',
+  sprinter: 'Mercedes-Benz Sprinter',
+  minibus: '31 Passenger Mini Bus',
+  coachbus: '55 Passenger Bus',
 }
 
 type TabKey = 'dashboard' | 'clients' | 'routes' | 'bookings' | 'leads' | 'qr'
@@ -263,27 +267,33 @@ const SAMPLE_ROUTES: RoutePricing[] = [
     hotel_slug: 'bocean-resort',
     pickup: 'The Hotel',
     destination: 'Miami International Airport (MIA)',
-    suv_price: 155,
-    minivan_price: 200,
+    sedan_suv_price: 155,
+    suburban_price: 200,
     sprinter_price: 280,
+    minibus_price: 450,
+    coachbus_price: 800,
   },
   {
     id: 'r2',
     hotel_slug: 'ritz-carlton-miami',
     pickup: 'The Hotel',
     destination: 'Fort Lauderdale Airport (FLL)',
-    suv_price: 180,
-    minivan_price: 220,
+    sedan_suv_price: 180,
+    suburban_price: 220,
     sprinter_price: 310,
+    minibus_price: 500,
+    coachbus_price: 850,
   },
   {
     id: 'r3',
     hotel_slug: 'bocean-resort',
     pickup: 'The Hotel',
     destination: 'Port Everglades (Cruise Terminal)',
-    suv_price: 120,
-    minivan_price: 160,
+    sedan_suv_price: 120,
+    suburban_price: 160,
     sprinter_price: 250,
+    minibus_price: 480,
+    coachbus_price: 820,
   },
 ]
 
@@ -363,16 +373,18 @@ export default function AdminPage() {
   const [leads, setLeads] = useState<Lead[]>(SAMPLE_LEADS)
 
   const [routePrices, setRoutePrices] = useState<RoutePricing[]>([])
-  const [editRoutePrices, setEditRoutePrices] = useState<Record<string, { suv: number; minivan: number; sprinter: number }>>({})
+  const [editRoutePrices, setEditRoutePrices] = useState<Record<string, { sedan_suv: number; suburban: number; sprinter: number; minibus: number; coachbus: number }>>({})
   const [savingRoute, setSavingRoute] = useState<string | null>(null)
   const [addingRoute, setAddingRoute] = useState(false)
   const [newRoute, setNewRoute] = useState({
     hotel_slug: 'bocean-resort',
     pickup: 'The Hotel',
     destination: 'Port Everglades (Cruise Terminal)',
-    suv_price: 150,
-    minivan_price: 200,
+    sedan_suv_price: 150,
+    suburban_price: 200,
     sprinter_price: 280,
+    minibus_price: 450,
+    coachbus_price: 800,
   })
 
   // Client CRUD state
@@ -465,7 +477,7 @@ export default function AdminPage() {
       Object.fromEntries(
         mergedRoutes.map((r) => [
           r.id,
-          { suv: r.suv_price, minivan: r.minivan_price, sprinter: r.sprinter_price },
+          { sedan_suv: r.sedan_suv_price, suburban: r.suburban_price, sprinter: r.sprinter_price, minibus: r.minibus_price, coachbus: r.coachbus_price },
         ])
       )
     )
@@ -490,7 +502,7 @@ export default function AdminPage() {
       Object.fromEntries(
         data.map((r) => [
           r.id,
-          { suv: r.suv_price, minivan: r.minivan_price, sprinter: r.sprinter_price },
+          { sedan_suv: r.sedan_suv_price, suburban: r.suburban_price, sprinter: r.sprinter_price, minibus: r.minibus_price, coachbus: r.coachbus_price },
         ])
       )
     )
@@ -513,7 +525,7 @@ export default function AdminPage() {
       Object.fromEntries(
         data.map((r) => [
           r.id,
-          { suv: r.suv_price, minivan: r.minivan_price, sprinter: r.sprinter_price },
+          { sedan_suv: r.sedan_suv_price, suburban: r.suburban_price, sprinter: r.sprinter_price, minibus: r.minibus_price, coachbus: r.coachbus_price },
         ])
       )
     )
@@ -997,9 +1009,11 @@ export default function AdminPage() {
                   <thead>
                     <tr style={{ color: '#888' }}>
                       <th className="py-2 pr-4 text-xs uppercase tracking-widest">Route</th>
-                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">SUV</th>
-                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Minivan</th>
+                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Sedan/SUV</th>
+                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Suburban</th>
                       <th className="py-2 pr-4 text-xs uppercase tracking-widest">Sprinter</th>
+                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Mini Bus</th>
+                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Coach Bus</th>
                       <th className="py-2 text-xs uppercase tracking-widest text-right">Actions</th>
                     </tr>
                   </thead>
@@ -1015,14 +1029,14 @@ export default function AdminPage() {
                             <span className="text-[#888]">$</span>
                             <input
                               type="number"
-                              value={editRoutePrices[rp.id]?.suv ?? rp.suv_price}
+                              value={editRoutePrices[rp.id]?.sedan_suv ?? rp.sedan_suv_price}
                               onChange={(e) =>
                                 setEditRoutePrices((prev) => ({
                                   ...prev,
-                                  [rp.id]: { ...prev[rp.id], suv: parseInt(e.target.value) || 0 },
+                                  [rp.id]: { ...prev[rp.id], sedan_suv: parseInt(e.target.value) || 0 },
                                 }))
                               }
-                              className="w-20 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
+                              className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
                             />
                           </div>
                         </td>
@@ -1031,14 +1045,14 @@ export default function AdminPage() {
                             <span className="text-[#888]">$</span>
                             <input
                               type="number"
-                              value={editRoutePrices[rp.id]?.minivan ?? rp.minivan_price}
+                              value={editRoutePrices[rp.id]?.suburban ?? rp.suburban_price}
                               onChange={(e) =>
                                 setEditRoutePrices((prev) => ({
                                   ...prev,
-                                  [rp.id]: { ...prev[rp.id], minivan: parseInt(e.target.value) || 0 },
+                                  [rp.id]: { ...prev[rp.id], suburban: parseInt(e.target.value) || 0 },
                                 }))
                               }
-                              className="w-20 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
+                              className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
                             />
                           </div>
                         </td>
@@ -1054,7 +1068,39 @@ export default function AdminPage() {
                                   [rp.id]: { ...prev[rp.id], sprinter: parseInt(e.target.value) || 0 },
                                 }))
                               }
-                              className="w-20 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
+                              className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
+                            />
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[#888]">$</span>
+                            <input
+                              type="number"
+                              value={editRoutePrices[rp.id]?.minibus ?? rp.minibus_price}
+                              onChange={(e) =>
+                                setEditRoutePrices((prev) => ({
+                                  ...prev,
+                                  [rp.id]: { ...prev[rp.id], minibus: parseInt(e.target.value) || 0 },
+                                }))
+                              }
+                              className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
+                            />
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[#888]">$</span>
+                            <input
+                              type="number"
+                              value={editRoutePrices[rp.id]?.coachbus ?? rp.coachbus_price}
+                              onChange={(e) =>
+                                setEditRoutePrices((prev) => ({
+                                  ...prev,
+                                  [rp.id]: { ...prev[rp.id], coachbus: parseInt(e.target.value) || 0 },
+                                }))
+                              }
+                              className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
                             />
                           </div>
                         </td>
@@ -1067,9 +1113,11 @@ export default function AdminPage() {
                                 onClick={() =>
                                   saveRoute({
                                     ...rp,
-                                    suv_price: editRoutePrices[rp.id]?.suv ?? rp.suv_price,
-                                    minivan_price: editRoutePrices[rp.id]?.minivan ?? rp.minivan_price,
+                                    sedan_suv_price: editRoutePrices[rp.id]?.sedan_suv ?? rp.sedan_suv_price,
+                                    suburban_price: editRoutePrices[rp.id]?.suburban ?? rp.suburban_price,
                                     sprinter_price: editRoutePrices[rp.id]?.sprinter ?? rp.sprinter_price,
+                                    minibus_price: editRoutePrices[rp.id]?.minibus ?? rp.minibus_price,
+                                    coachbus_price: editRoutePrices[rp.id]?.coachbus ?? rp.coachbus_price,
                                   })
                                 }
                                 className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
@@ -1091,7 +1139,7 @@ export default function AdminPage() {
 
                     {routePrices.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="py-4 text-center text-[#888] text-xs italic">
+                        <td colSpan={7} className="py-4 text-center text-[#888] text-xs italic">
                           No routes configured yet.
                         </td>
                       </tr>
@@ -1106,9 +1154,11 @@ export default function AdminPage() {
                           <input type="text" placeholder="Hotel Slug" value={newRoute.hotel_slug} onChange={(e) => setNewRoute({ ...newRoute, hotel_slug: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-1.5 text-[#666] outline-none" />
                         </div>
                       </td>
-                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.suv_price || ''} onChange={(e) => setNewRoute({ ...newRoute, suv_price: parseInt(e.target.value) || 0 })} className="w-20 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
-                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.minivan_price || ''} onChange={(e) => setNewRoute({ ...newRoute, minivan_price: parseInt(e.target.value) || 0 })} className="w-20 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
-                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.sprinter_price || ''} onChange={(e) => setNewRoute({ ...newRoute, sprinter_price: parseInt(e.target.value) || 0 })} className="w-20 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
+                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.sedan_suv_price || ''} onChange={(e) => setNewRoute({ ...newRoute, sedan_suv_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
+                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.suburban_price || ''} onChange={(e) => setNewRoute({ ...newRoute, suburban_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
+                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.sprinter_price || ''} onChange={(e) => setNewRoute({ ...newRoute, sprinter_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
+                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.minibus_price || ''} onChange={(e) => setNewRoute({ ...newRoute, minibus_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
+                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.coachbus_price || ''} onChange={(e) => setNewRoute({ ...newRoute, coachbus_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
                       <td className="py-4 text-right">
                         <button
                           onClick={addRoute}

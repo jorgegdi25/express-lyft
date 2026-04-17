@@ -2,14 +2,16 @@
 
 interface HeroSectionProps {
   hotelName: string
-  vehicleType: 'suv' | 'minivan' | 'sprinter'
+  vehicleType: 'sedan_suv' | 'suburban' | 'sprinter' | 'minibus' | 'coachbus'
   basePrice: number
 }
 
-const vehicleLabels = {
-  suv: 'Luxury SUV',
-  minivan: 'Minivan',
-  sprinter: 'Sprinter Van',
+const vehicleLabels: Record<string, string> = {
+  sedan_suv: 'Sedan & SUV',
+  suburban: 'Chevy Suburban',
+  sprinter: 'Mercedes-Benz Sprinter',
+  minibus: '31 Passenger Mini Bus',
+  coachbus: '55 Passenger Bus'
 }
 
 export default function HeroSection({ hotelName, vehicleType, basePrice }: HeroSectionProps) {
