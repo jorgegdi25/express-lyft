@@ -131,6 +131,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
           hotelSlug,
           customerName,
           customerEmail,
+          customerPhone,
           pickup,
           destination,
           vehicleType

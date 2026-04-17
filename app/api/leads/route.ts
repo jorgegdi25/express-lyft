@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { hotelSlug, customerName, customerEmail, pickup, destination, vehicleType } = body
+    const { hotelSlug, customerName, customerEmail, customerPhone, pickup, destination, vehicleType } = body
 
     if (!hotelSlug) return NextResponse.json({ error: 'Missing hotelSlug' }, { status: 400 })
 
@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
       hotel_slug: hotelSlug,
       customer_name: customerName,
       customer_email: customerEmail,
+      customer_phone: customerPhone,
       pickup,
       destination,
       vehicle_type: vehicleType

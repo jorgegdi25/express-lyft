@@ -37,6 +37,7 @@ interface Lead {
   hotel_slug: string
   customer_name: string
   customer_email: string
+  customer_phone?: string
   pickup: string
   destination: string
   vehicle_type: string
@@ -371,6 +372,10 @@ export default function AdminPage() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
 
   const [leads, setLeads] = useState<Lead[]>(SAMPLE_LEADS)
+  const [addingLead, setAddingLead] = useState(false)
+  const [newLead, setNewLead] = useState({
+    hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv'
+  })
 
   const [routePrices, setRoutePrices] = useState<RoutePricing[]>([])
   const [editRoutePrices, setEditRoutePrices] = useState<Record<string, { sedan_suv: number; suburban: number; sprinter: number; minibus: number; coachbus: number }>>({})
@@ -541,6 +546,19 @@ export default function AdminPage() {
     })
     const data = await fetchRoutes(password)
     setRoutePrices(data)
+  }
+
+  async function addLead() {
+    setAddingLead(true)
+    await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newLead)
+    })
+    const data = await fetchLeads(password)
+    setLeads([...data, ...SAMPLE_LEADS])
+    setAddingLead(false)
+    setNewLead({ hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv' })
   }
 
   /* ── QR ── */
@@ -1251,6 +1269,7 @@ export default function AdminPage() {
                           <td className="py-4 pr-4">
                             <p className="text-white font-bold">{l.customer_name || 'Anonymous'}</p>
                             <p className="text-xs text-[#888]">{l.customer_email || 'No email'}</p>
+                            {l.customer_phone && <p className="text-xs text-[#B8960C]">{l.customer_phone}</p>}
                           </td>
                           <td className="py-4 pr-4 text-xs text-white">{l.pickup} → {l.destination}</td>
                           <td className="py-4 pr-4"><span className="text-xs uppercase font-bold tracking-widest" style={{ color: '#D4AF37' }}>{l.vehicle_type}</span></td>
@@ -1258,6 +1277,45 @@ export default function AdminPage() {
                           <td className="py-4 text-xs" style={{ color: '#888' }}>{new Date(l.created_at).toLocaleDateString()}</td>
                         </tr>
                       ))}
+                      
+                      {/* Add New Lead */}
+                      <tr style={{ borderTop: '1px solid #1a1a1a' }}>
+                        <td className="py-4 pr-4">
+                          <div className="flex flex-col gap-2">
+                            <input type="text" placeholder="Name" value={newLead.customerName} onChange={(e) => setNewLead({ ...newLead, customerName: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                            <input type="email" placeholder="Email" value={newLead.customerEmail} onChange={(e) => setNewLead({ ...newLead, customerEmail: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                            <input type="tel" placeholder="Phone" value={newLead.customerPhone} onChange={(e) => setNewLead({ ...newLead, customerPhone: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <div className="flex flex-col gap-2">
+                            <input type="text" placeholder="Pickup (e.g. B Ocean Resort)" value={newLead.pickup} onChange={(e) => setNewLead({ ...newLead, pickup: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                            <input type="text" placeholder="Destination" value={newLead.destination} onChange={(e) => setNewLead({ ...newLead, destination: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]">
+                            <option value="sedan_suv">Sedan & SUV</option>
+                            <option value="suburban">Suburban</option>
+                            <option value="sprinter">Sprinter</option>
+                            <option value="minibus">Mini Bus</option>
+                            <option value="coachbus">Coach Bus</option>
+                          </select>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <input type="text" placeholder="Hotel Slug" value={newLead.hotelSlug} onChange={(e) => setNewLead({ ...newLead, hotelSlug: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-[#666] outline-none" />
+                        </td>
+                        <td className="py-4 text-right">
+                          <button
+                            onClick={addLead}
+                            disabled={addingLead || !newLead.customerName || !newLead.pickup}
+                            className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-40"
+                            style={{ border: '2px dashed #B8960C', color: '#B8960C' }}
+                          >
+                            {addingLead ? 'Wait…' : '+ Add'}
+                          </button>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>

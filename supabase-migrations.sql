@@ -90,6 +90,7 @@ create table if not exists leads (
   hotel_slug text not null,
   customer_name text,
   customer_email text,
+  customer_phone text,
   pickup text,
   destination text,
   vehicle_type text,
