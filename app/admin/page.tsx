@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import QRCode from 'qrcode'
 
 /* ── Interfaces ─────────────────────────────────────── */
@@ -1135,7 +1135,7 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div>
               <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Leads</h1>
-              <p className="text-sm" style={{ color: '#888' }}>Users who initiated a booking but haven't completed payment</p>
+              <p className="text-sm" style={{ color: '#888' }}>Users who initiated a booking but haven&apos;t completed payment</p>
             </div>
 
             <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
