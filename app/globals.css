@@ -3,25 +3,32 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --gold: #B8960C;
+  --gold-light: #EF9F27;
+  --black: #111111;
+  --card-bg: #1a1a1a;
+  --border: #2a2a2a;
+  --muted: #555555;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  background: #111111;
+  color: #FFFFFF;
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* Native date/time input styling on dark backgrounds */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+select option {
+  background: #111111;
+  color: #FFFFFF;
 }
