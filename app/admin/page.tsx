@@ -5,12 +5,6 @@ import QRCode from 'qrcode'
 
 /* ── Interfaces ─────────────────────────────────────── */
 
-interface PriceRow {
-  id: string
-  vehicle_type: string
-  price_usd: number
-  updated_at: string
-}
 
 interface Booking {
   id: string
@@ -367,13 +361,7 @@ export default function AdminPage() {
 
   /* ── API Fetchers ── */
 
-  async function fetchPrices(pw: string) {
-    const res = await fetch('/api/admin/prices', {
-      headers: { authorization: `Bearer ${pw}` },
-    })
-    if (!res.ok) return null
-    return res.json() as Promise<PriceRow[]>
-  }
+
 
   async function fetchBookings(pw: string) {
     const res = await fetch('/api/admin/bookings', {
