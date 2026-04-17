@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest) {
     const { id, status, notes } = body
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
 
-    const updates: any = {}
+    const updates: { status?: string; notes?: string } = {}
     if (status !== undefined) updates.status = status
     if (notes !== undefined) updates.notes = notes
 
