@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 async function isAuthorized(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (!authHeader?.startsWith('Bearer ')) return false
