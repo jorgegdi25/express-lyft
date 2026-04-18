@@ -415,24 +415,27 @@ export default function AdminPage() {
 
 
   async function fetchBookings(pw: string) {
-    const res = await fetch('/api/admin/bookings', {
+    const res = await fetch(`/api/admin/bookings?t=${Date.now()}`, {
       headers: { authorization: `Bearer ${pw}` },
+      cache: 'no-store'
     })
     if (!res.ok) return []
     return res.json() as Promise<Booking[]>
   }
 
   async function fetchRoutes(pw: string) {
-    const res = await fetch('/api/admin/routes', {
+    const res = await fetch(`/api/admin/routes?t=${Date.now()}`, {
       headers: { authorization: `Bearer ${pw}` },
+      cache: 'no-store'
     })
     if (!res.ok) return []
     return res.json() as Promise<RoutePricing[]>
   }
 
   async function fetchLeads(pw: string) {
-    const res = await fetch('/api/admin/leads', {
+    const res = await fetch(`/api/admin/leads?t=${Date.now()}`, {
       headers: { authorization: `Bearer ${pw}` },
+      cache: 'no-store'
     })
     if (!res.ok) return []
     return res.json() as Promise<Lead[]>
@@ -552,13 +555,32 @@ export default function AdminPage() {
 
   async function addLead() {
     setAddingLead(true)
+    
+    // Add optimistic lead to unblock UI instantly
+    const tempId = `temp_${Date.now()}`
+    const tempLead: Lead = {
+      id: tempId,
+      hotel_slug: newLead.hotelSlug,
+      customer_name: newLead.customerName,
+      customer_email: newLead.customerEmail,
+      customer_phone: newLead.customerPhone,
+      pickup: newLead.pickup,
+      destination: newLead.destination,
+      vehicle_type: newLead.vehicleType,
+      status: 'new',
+      notes: '',
+      created_at: new Date().toISOString()
+    }
+    setLeads((prev) => [tempLead, ...prev])
+
     await fetch('/api/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newLead)
     })
+    
     const data = await fetchLeads(password)
-    setLeads([...data])
+    setLeads(data)
     setAddingLead(false)
     setNewLead({ hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv', status: 'new', notes: '' })
   }
