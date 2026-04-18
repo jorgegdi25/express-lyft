@@ -361,11 +361,22 @@ export default function AdminPage() {
   async function updateLead(id: string, updates: Partial<Lead>) {
     // Optimistic UI update
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)))
-    await fetch('/api/leads', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
-      body: JSON.stringify({ id, ...updates })
-    }).catch((e) => console.error('Failed to update lead', e))
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
+        body: JSON.stringify({ id, ...updates })
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        alert(`Error updating lead: ${result.error || 'Unknown error'}`)
+        // Revert UI optimistic update by refreshing from server
+        fetchLeads(password).then(setLeads)
+      }
+    } catch (e) {
+      alert(`Network error updating lead: ${e}`)
+      fetchLeads(password).then(setLeads)
+    }
   }
 
   /* ── QR ── */
@@ -1103,6 +1114,11 @@ export default function AdminPage() {
                               defaultValue={l.notes || ''}
                               placeholder="Add notes..."
                               onBlur={(e) => updateLead(l.id, { notes: e.target.value })}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.currentTarget.blur();
+                                }
+                              }}
                               className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-1.5 text-[#888] outline-none focus:border-[#B8960C] focus:text-white"
                             />
                           </div>
