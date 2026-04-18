@@ -23,13 +23,8 @@ interface BookingFormProps {
 
 type TripType = 'one-way' | 'round-trip'
 
-const LOCATIONS = [
-  'The Hotel',
-  'Miami International Airport (MIA)',
-  'Fort Lauderdale Airport (FLL)',
-  'Port of Miami (Cruise Terminal)',
-  'Port Everglades — Fort Lauderdale',
-]
+// LOCATIONS will be dynamically generated from routePrices
+
 
 function generateTimeSlots() {
   const slots: string[] = []
@@ -58,9 +53,15 @@ function getVehicleType(passengers: number): VehicleType {
 const todayStr = new Date().toISOString().split('T')[0]
 
 export default function BookingForm({ hotelSlug, hotelName, prices, routePrices }: BookingFormProps) {
+  // Derive LOCATIONS dynamically from the routes saved in the DB
+  const dynamicLocations = Array.from(
+    new Set(routePrices.flatMap((r) => [r.pickup, r.destination]))
+  )
+  const LOCATIONS = dynamicLocations.length > 0 ? dynamicLocations : ['The Hotel', 'Airport / Destination']
+
   const [tripType, setTripType] = useState<TripType>('one-way')
-  const [pickup, setPickup] = useState<string>(`The Hotel`)
-  const [destination, setDestination] = useState<string>('Miami International Airport (MIA)')
+  const [pickup, setPickup] = useState<string>(LOCATIONS[0])
+  const [destination, setDestination] = useState<string>(LOCATIONS[1] || LOCATIONS[0])
   const [date, setDate] = useState<string>('')
   const [time, setTime] = useState<string>('')
   const [returnDate, setReturnDate] = useState<string>('')
