@@ -1283,106 +1283,99 @@ export default function AdminPage() {
             </div>
 
             <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-              {leads.length === 0 ? (
-                <p className="text-sm italic" style={{ color: '#888' }}>
-                  No leads captured yet. Data will appear when users start the booking process.
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead>
-                      <tr style={{ color: '#888' }}>
-                        {['Customer', 'Route', 'Details', 'Pipeline', 'Date'].map((h) => (
-                          <th key={h} className="py-2 pr-4 text-xs uppercase tracking-widest font-medium">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {leads.map((l) => (
-                        <tr key={l.id} style={{ borderTop: '1px solid #1a1a1a' }}>
-                          <td className="py-4 pr-4">
-                            <p className="text-white font-bold">{l.customer_name || 'Anonymous'}</p>
-                            <p className="text-xs text-[#888]">{l.customer_email || 'No email'}</p>
-                            {l.customer_phone && <p className="text-xs text-[#B8960C]">{l.customer_phone}</p>}
-                          </td>
-                          <td className="py-4 pr-4 text-xs text-white break-words max-w-[150px]">{l.pickup} <br/><span className="text-[#888]">to</span><br/> {l.destination}</td>
-                          <td className="py-4 pr-4">
-                            <span className="text-xs uppercase font-bold tracking-widest block mb-1" style={{ color: '#D4AF37' }}>{l.vehicle_type}</span>
-                            <span className="text-xs uppercase text-[#888]">{l.hotel_slug}</span>
-                          </td>
-                          <td className="py-4 pr-4">
-                            <div className="flex flex-col gap-2">
-                              <select 
-                                value={l.status || 'new'} 
-                                onChange={(e) => updateLead(l.id, { status: e.target.value })}
-                                className="w-full text-xs rounded-lg border border-[#1e1e1e] p-1.5 outline-none font-bold tracking-wider uppercase disabled:opacity-50"
-                                style={{ 
-                                  backgroundColor: l.status === 'converted' ? '#163316' : l.status === 'lost' ? '#331616' : '#0a0a0a',
-                                  color: l.status === 'converted' ? '#4CAF50' : l.status === 'lost' ? '#F44336' : '#FFFFFF' 
-                                }}
-                              >
-                                <option value="new">New</option>
-                                <option value="contacted">Contacted</option>
-                                <option value="quoted">Quoted</option>
-                                <option value="converted">Converted</option>
-                                <option value="lost">Lost</option>
-                              </select>
-                              <input 
-                                type="text"
-                                defaultValue={l.notes || ''}
-                                placeholder="Add notes..."
-                                onBlur={(e) => updateLead(l.id, { notes: e.target.value })}
-                                className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-1.5 text-[#888] outline-none focus:border-[#B8960C] focus:text-white"
-                              />
-                            </div>
-                          </td>
-                          <td className="py-4 text-xs" style={{ color: '#888' }}>{new Date(l.created_at).toLocaleDateString()}</td>
-                        </tr>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead>
+                    <tr style={{ color: '#888' }}>
+                      {['Customer', 'Route', 'Details', 'Pipeline', 'Date'].map((h) => (
+                        <th key={h} className="py-2 pr-4 text-xs uppercase tracking-widest font-medium">{h}</th>
                       ))}
-                      
-                      {/* Add New Lead */}
-                      <tr style={{ borderTop: '1px solid #1a1a1a' }}>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.length === 0 && (
+                      <tr><td colSpan={5} className="py-6 text-center text-sm italic" style={{ color: '#888' }}>No leads yet. Use the form below to add one manually.</td></tr>
+                    )}
+                    {leads.map((l) => (
+                      <tr key={l.id} style={{ borderTop: '1px solid #1a1a1a' }}>
+                        <td className="py-4 pr-4">
+                          <p className="text-white font-bold">{l.customer_name || 'Anonymous'}</p>
+                          <p className="text-xs text-[#888]">{l.customer_email || 'No email'}</p>
+                          {l.customer_phone && <p className="text-xs text-[#B8960C]">{l.customer_phone}</p>}
+                        </td>
+                        <td className="py-4 pr-4 text-xs text-white break-words max-w-[150px]">{l.pickup} <br/><span className="text-[#888]">to</span><br/> {l.destination}</td>
+                        <td className="py-4 pr-4">
+                          <span className="text-xs uppercase font-bold tracking-widest block mb-1" style={{ color: '#D4AF37' }}>{l.vehicle_type}</span>
+                          <span className="text-xs uppercase text-[#888]">{l.hotel_slug}</span>
+                        </td>
                         <td className="py-4 pr-4">
                           <div className="flex flex-col gap-2">
-                            <input type="text" placeholder="Name" value={newLead.customerName} onChange={(e) => setNewLead({ ...newLead, customerName: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                            <input type="email" placeholder="Email" value={newLead.customerEmail} onChange={(e) => setNewLead({ ...newLead, customerEmail: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                            <input type="tel" placeholder="Phone" value={newLead.customerPhone} onChange={(e) => setNewLead({ ...newLead, customerPhone: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                            <select 
+                              value={l.status || 'new'} 
+                              onChange={(e) => updateLead(l.id, { status: e.target.value })}
+                              className="w-full text-xs rounded-lg border border-[#1e1e1e] p-1.5 outline-none font-bold tracking-wider uppercase disabled:opacity-50"
+                              style={{ 
+                                backgroundColor: l.status === 'converted' ? '#163316' : l.status === 'lost' ? '#331616' : '#0a0a0a',
+                                color: l.status === 'converted' ? '#4CAF50' : l.status === 'lost' ? '#F44336' : '#FFFFFF' 
+                              }}
+                            >
+                              <option value="new">New</option>
+                              <option value="contacted">Contacted</option>
+                              <option value="quoted">Quoted</option>
+                              <option value="converted">Converted</option>
+                              <option value="lost">Lost</option>
+                            </select>
+                            <input 
+                              type="text"
+                              defaultValue={l.notes || ''}
+                              placeholder="Add notes..."
+                              onBlur={(e) => updateLead(l.id, { notes: e.target.value })}
+                              className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-1.5 text-[#888] outline-none focus:border-[#B8960C] focus:text-white"
+                            />
                           </div>
                         </td>
-                        <td className="py-4 pr-4">
-                          <div className="flex flex-col gap-2">
-                            <input type="text" placeholder="Pickup (e.g. B Ocean Resort)" value={newLead.pickup} onChange={(e) => setNewLead({ ...newLead, pickup: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                            <input type="text" placeholder="Destination" value={newLead.destination} onChange={(e) => setNewLead({ ...newLead, destination: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                          </div>
-                        </td>
-                        <td className="py-4 pr-4">
-                          <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C] mb-2">
-                            <option value="sedan_suv">Sedan & SUV</option>
-                            <option value="suburban">Suburban</option>
-                            <option value="sprinter">Sprinter</option>
-                            <option value="minibus">Mini Bus</option>
-                            <option value="coachbus">Coach Bus</option>
-                          </select>
-                          <input type="text" placeholder="Hotel Slug" value={newLead.hotelSlug} onChange={(e) => setNewLead({ ...newLead, hotelSlug: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-[#666] outline-none" />
-                        </td>
-                        <td className="py-4 pr-4">
-                           <p className="text-xs text-[#666] italic mb-1">Status and notes edit available after adding.</p>
-                        </td>
-                        <td className="py-4 text-right">
-                          <button
-                            onClick={addLead}
-                            disabled={addingLead || !newLead.customerName || !newLead.pickup}
-                            className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-40"
-                            style={{ border: '2px dashed #B8960C', color: '#B8960C' }}
-                          >
-                            {addingLead ? 'Wait…' : '+ Add'}
-                          </button>
-                        </td>
+                        <td className="py-4 text-xs" style={{ color: '#888' }}>{new Date(l.created_at).toLocaleDateString()}</td>
                       </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                    ))}
+                    
+                    {/* ── ADD NEW LEAD ROW (always visible) ── */}
+                    <tr style={{ borderTop: '2px dashed #B8960C' }}>
+                      <td className="py-4 pr-4">
+                        <div className="flex flex-col gap-2">
+                          <input type="text" placeholder="Name *" value={newLead.customerName} onChange={(e) => setNewLead({ ...newLead, customerName: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                          <input type="email" placeholder="Email" value={newLead.customerEmail} onChange={(e) => setNewLead({ ...newLead, customerEmail: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                          <input type="tel" placeholder="Phone" value={newLead.customerPhone} onChange={(e) => setNewLead({ ...newLead, customerPhone: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                        </div>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <div className="flex flex-col gap-2">
+                          <input type="text" placeholder="Pickup *" value={newLead.pickup} onChange={(e) => setNewLead({ ...newLead, pickup: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                          <input type="text" placeholder="Destination" value={newLead.destination} onChange={(e) => setNewLead({ ...newLead, destination: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                        </div>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]">
+                          <option value="sedan_suv">Sedan & SUV</option>
+                          <option value="suburban">Suburban</option>
+                          <option value="sprinter">Sprinter</option>
+                          <option value="minibus">Mini Bus</option>
+                          <option value="coachbus">Coach Bus</option>
+                        </select>
+                      </td>
+                      <td colSpan={2} className="py-4 text-right">
+                        <button
+                          onClick={addLead}
+                          disabled={addingLead || !newLead.customerName || !newLead.pickup}
+                          className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
+                          style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                        >
+                          {addingLead ? 'Saving…' : '+ Add Lead'}
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </section>
           </div>
         )}
