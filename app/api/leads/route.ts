@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,21 +38,26 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json()
+    console.log('[leads PUT] Request body:', body)
     const { id, status, notes } = body
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
 
     const updates: { status?: string; notes?: string } = {}
     if (status !== undefined) updates.status = status
     if (notes !== undefined) updates.notes = notes
+    console.log('[leads PUT] Updates object:', updates)
 
-    const { error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('leads')
       .update(updates)
       .eq('id', id)
+      .select()
+
+    console.log('[leads PUT] DB Response:', { data, error })
 
     if (error) throw error
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, updated: data })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Unknown error'
     return NextResponse.json({ error: errorMsg }, { status: 500 })
@@ -66,7 +71,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('leads')
       .select('*')
       .order('created_at', { ascending: false })

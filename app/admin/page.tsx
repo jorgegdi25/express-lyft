@@ -293,26 +293,36 @@ export default function AdminPage() {
 
   async function addRoute() {
     setAddingRoute(true)
-    await fetch('/api/admin/routes', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        authorization: `Bearer ${password}`,
-      },
-      body: JSON.stringify(newRoute),
-    })
-    const data = await fetchRoutes(password)
-    setRoutePrices(data)
-    setEditRoutePrices(
-      Object.fromEntries(
-        data.map((r) => [
-          r.id,
-          { sedan_suv: r.sedan_suv_price, suburban: r.suburban_price, sprinter: r.sprinter_price, minibus: r.minibus_price, coachbus: r.coachbus_price },
-        ])
+    try {
+      const res = await fetch('/api/admin/routes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: `Bearer ${password}`,
+        },
+        body: JSON.stringify(newRoute),
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        alert(`Error adding route: ${result.error || 'Unknown error'}`)
+        setAddingRoute(false)
+        return
+      }
+      const data = await fetchRoutes(password)
+      setRoutePrices(data)
+      setEditRoutePrices(
+        Object.fromEntries(
+          data.map((r) => [
+            r.id,
+            { sedan_suv: r.sedan_suv_price, suburban: r.suburban_price, sprinter: r.sprinter_price, minibus: r.minibus_price, coachbus: r.coachbus_price },
+          ])
+        )
       )
-    )
+      setNewRoute((prev) => ({ ...prev, pickup: '', destination: '' }))
+    } catch (err) {
+      alert(`Network error adding route: ${err}`)
+    }
     setAddingRoute(false)
-    setNewRoute((prev) => ({ ...prev, pickup: '', destination: '' }))
   }
 
   async function deleteRoute(id: string) {
@@ -327,34 +337,25 @@ export default function AdminPage() {
 
   async function addLead() {
     setAddingLead(true)
-    
-    // Add optimistic lead to unblock UI instantly
-    const tempId = `temp_${Date.now()}`
-    const tempLead: Lead = {
-      id: tempId,
-      hotel_slug: newLead.hotelSlug,
-      customer_name: newLead.customerName,
-      customer_email: newLead.customerEmail,
-      customer_phone: newLead.customerPhone,
-      pickup: newLead.pickup,
-      destination: newLead.destination,
-      vehicle_type: newLead.vehicleType,
-      status: 'new',
-      notes: '',
-      created_at: new Date().toISOString()
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newLead)
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        alert(`Error adding lead: ${result.error || 'Unknown error'}`)
+        setAddingLead(false)
+        return
+      }
+      const data = await fetchLeads(password)
+      setLeads(data)
+      setNewLead({ hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv', status: 'new', notes: '' })
+    } catch (err) {
+      alert(`Network error adding lead: ${err}`)
     }
-    setLeads((prev) => [tempLead, ...prev])
-
-    await fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newLead)
-    })
-    
-    const data = await fetchLeads(password)
-    setLeads(data)
     setAddingLead(false)
-    setNewLead({ hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv', status: 'new', notes: '' })
   }
 
   async function updateLead(id: string, updates: Partial<Lead>) {
