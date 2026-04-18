@@ -69,236 +69,9 @@ const VEHICLE_LABELS: Record<string, string> = {
 
 type TabKey = 'dashboard' | 'clients' | 'routes' | 'bookings' | 'leads' | 'qr'
 
-/* ── Sample Client Data ─────────────────────────────── */
 
-const SAMPLE_CLIENTS: Client[] = [
-  {
-    id: 'c1',
-    name: 'James Whitmore',
-    email: 'james.whitmore@gmail.com',
-    phone: '+1 (954) 555-0123',
-    hotel: 'B Ocean Resort',
-    totalTrips: 12,
-    totalSpent: 2340,
-    status: 'vip',
-    lastTrip: '2026-04-15',
-    notes: 'Prefers SUV. Always tips well. Requests water bottles.',
-  },
-  {
-    id: 'c2',
-    name: 'María García',
-    email: 'maria.garcia@outlook.com',
-    phone: '+1 (305) 555-0456',
-    hotel: 'Ritz-Carlton Miami',
-    totalTrips: 5,
-    totalSpent: 980,
-    status: 'active',
-    lastTrip: '2026-04-12',
-    notes: 'Bilingual (ES/EN). Frequent cruise passenger.',
-  },
-  {
-    id: 'c3',
-    name: 'Robert Chen',
-    email: 'r.chen@icloud.com',
-    phone: '+1 (786) 555-0789',
-    hotel: 'B Ocean Resort',
-    totalTrips: 3,
-    totalSpent: 540,
-    status: 'active',
-    lastTrip: '2026-03-28',
-    notes: 'Group traveler, usually 6+ passengers. Needs Sprinter.',
-  },
-  {
-    id: 'c4',
-    name: 'Linda Thompson',
-    email: 'linda.t@yahoo.com',
-    phone: '+1 (954) 555-0321',
-    hotel: 'B Ocean Resort',
-    totalTrips: 8,
-    totalSpent: 1760,
-    status: 'vip',
-    lastTrip: '2026-04-10',
-    notes: 'Corporate client. Needs receipts for every trip.',
-  },
-  {
-    id: 'c5',
-    name: 'David Park',
-    email: 'd.park@gmail.com',
-    phone: '+1 (305) 555-0654',
-    hotel: 'B Ocean Resort',
-    totalTrips: 1,
-    totalSpent: 180,
-    status: 'inactive',
-    lastTrip: '2026-02-14',
-    notes: 'One-time visitor. Arrived late, may need follow-up.',
-  },
-]
 
-/* ── Sample Bookings Data ───────────────────────────── */
 
-const SAMPLE_BOOKINGS: Booking[] = [
-  {
-    id: 'b1',
-    hotel_slug: 'bocean-resort',
-    vehicle_type: 'suv',
-    amount_usd: 195,
-    status: 'paid',
-    date: '2026-04-15',
-    created_at: '2026-04-14T18:30:00Z',
-    pickup: 'B Ocean Resort',
-    destination: 'Miami International Airport',
-    customer_name: 'James Whitmore',
-    customer_email: 'james.whitmore@gmail.com',
-  },
-  {
-    id: 'b2',
-    hotel_slug: 'bocean-resort',
-    vehicle_type: 'minivan',
-    amount_usd: 220,
-    status: 'paid',
-    date: '2026-04-14',
-    created_at: '2026-04-13T09:15:00Z',
-    pickup: 'B Ocean Resort',
-    destination: 'Port Everglades (Cruise Terminal)',
-    customer_name: 'María García',
-    customer_email: 'maria.garcia@outlook.com',
-  },
-  {
-    id: 'b3',
-    hotel_slug: 'bocean-resort',
-    vehicle_type: 'sprinter',
-    amount_usd: 340,
-    status: 'paid',
-    date: '2026-04-12',
-    created_at: '2026-04-11T14:00:00Z',
-    pickup: 'B Ocean Resort',
-    destination: 'Fort Lauderdale Airport (FLL)',
-    customer_name: 'Robert Chen',
-    customer_email: 'r.chen@icloud.com',
-  },
-  {
-    id: 'b4',
-    hotel_slug: 'bocean-resort',
-    vehicle_type: 'suv',
-    amount_usd: 175,
-    status: 'paid',
-    date: '2026-04-10',
-    created_at: '2026-04-09T20:45:00Z',
-    pickup: 'B Ocean Resort',
-    destination: 'Miami International Airport',
-    customer_name: 'Linda Thompson',
-    customer_email: 'linda.t@yahoo.com',
-  },
-  {
-    id: 'b5',
-    hotel_slug: 'bocean-resort',
-    vehicle_type: 'suv',
-    amount_usd: 195,
-    status: 'paid',
-    date: '2026-04-08',
-    created_at: '2026-04-07T11:30:00Z',
-    pickup: 'B Ocean Resort',
-    destination: 'Port Everglades (Cruise Terminal)',
-    customer_name: 'James Whitmore',
-    customer_email: 'james.whitmore@gmail.com',
-  },
-  {
-    id: 'b6',
-    hotel_slug: 'bocean-resort',
-    vehicle_type: 'suv',
-    amount_usd: 180,
-    status: 'pending',
-    date: '2026-04-16',
-    created_at: '2026-04-16T08:00:00Z',
-    pickup: 'B Ocean Resort',
-    destination: 'Fort Lauderdale Airport (FLL)',
-    customer_name: 'Sarah Williams',
-    customer_email: 'sarah.w@gmail.com',
-  },
-]
-
-/* ── Sample Leads Data ──────────────────────────────── */
-
-const SAMPLE_LEADS: Lead[] = [
-  {
-    id: 'l1',
-    hotel_slug: 'bocean-resort',
-    customer_name: 'Michael Brown',
-    customer_email: 'mbrown@hotmail.com',
-    pickup: 'B Ocean Resort',
-    destination: 'Miami International Airport',
-    vehicle_type: 'suv',
-    created_at: '2026-04-16T14:22:00Z',
-  },
-  {
-    id: 'l2',
-    hotel_slug: 'bocean-resort',
-    customer_name: 'Jennifer Lee',
-    customer_email: 'jlee@gmail.com',
-    pickup: 'B Ocean Resort',
-    destination: 'Port Everglades (Cruise Terminal)',
-    vehicle_type: 'minivan',
-    created_at: '2026-04-15T10:05:00Z',
-  },
-  {
-    id: 'l3',
-    hotel_slug: 'bocean-resort',
-    customer_name: 'Carlos Rodríguez',
-    customer_email: 'carlos.r@yahoo.com',
-    pickup: 'B Ocean Resort',
-    destination: 'Fort Lauderdale Airport (FLL)',
-    vehicle_type: 'sprinter',
-    created_at: '2026-04-14T16:40:00Z',
-  },
-  {
-    id: 'l4',
-    hotel_slug: 'bocean-resort',
-    customer_name: '',
-    customer_email: 'anon.user@temp.com',
-    pickup: 'B Ocean Resort',
-    destination: 'Miami International Airport',
-    vehicle_type: 'suv',
-    created_at: '2026-04-13T08:15:00Z',
-  },
-]
-
-/* ── Sample Routes Data ─────────────────────────────── */
-
-const SAMPLE_ROUTES: RoutePricing[] = [
-  {
-    id: 'r1',
-    hotel_slug: 'bocean-resort',
-    pickup: 'The Hotel',
-    destination: 'Miami International Airport (MIA)',
-    sedan_suv_price: 155,
-    suburban_price: 200,
-    sprinter_price: 280,
-    minibus_price: 450,
-    coachbus_price: 800,
-  },
-  {
-    id: 'r2',
-    hotel_slug: 'bocean-resort',
-    pickup: 'The Hotel',
-    destination: 'Fort Lauderdale Airport (FLL)',
-    sedan_suv_price: 180,
-    suburban_price: 220,
-    sprinter_price: 310,
-    minibus_price: 500,
-    coachbus_price: 850,
-  },
-  {
-    id: 'r3',
-    hotel_slug: 'bocean-resort',
-    pickup: 'The Hotel',
-    destination: 'Port Everglades (Cruise Terminal)',
-    sedan_suv_price: 120,
-    suburban_price: 160,
-    sprinter_price: 250,
-    minibus_price: 480,
-    coachbus_price: 820,
-  },
-]
 
 /* ── Sidebar Icon Components ────────────────────────── */
 
@@ -367,13 +140,13 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState('')
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
 
-  const [bookings, setBookings] = useState<Booking[]>(SAMPLE_BOOKINGS)
+  const [bookings, setBookings] = useState<Booking[]>([])
   const [loadingBookings, setLoadingBookings] = useState(false)
 
   const [qrSlug, setQrSlug] = useState('')
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
 
-  const [leads, setLeads] = useState<Lead[]>(SAMPLE_LEADS)
+  const [leads, setLeads] = useState<Lead[]>([])
   const [addingLead, setAddingLead] = useState(false)
   const [newLead, setNewLead] = useState({
     hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv', status: 'new', notes: ''
@@ -395,7 +168,7 @@ export default function AdminPage() {
   })
 
   // Client CRUD state
-  const [clients, setClients] = useState<Client[]>(SAMPLE_CLIENTS)
+  const [clients, setClients] = useState<Client[]>([])
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [showClientForm, setShowClientForm] = useState(false)
   const [clientForm, setClientForm] = useState<Omit<Client, 'id'>>({
@@ -480,12 +253,11 @@ export default function AdminPage() {
     }
 
     setBookings(bk)
-    const mergedRoutes = [...rt, ...SAMPLE_ROUTES] // Fallback for routes is okay to avoid empty dashboard breaking
-    setRoutePrices(mergedRoutes)
+    setRoutePrices(rt)
     setLeads(ld)
     setEditRoutePrices(
       Object.fromEntries(
-        mergedRoutes.map((r) => [
+        rt.map((r) => [
           r.id,
           { sedan_suv: r.sedan_suv_price, suburban: r.suburban_price, sprinter: r.sprinter_price, minibus: r.minibus_price, coachbus: r.coachbus_price },
         ])
