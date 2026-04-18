@@ -1349,8 +1349,21 @@ export default function AdminPage() {
                       </td>
                       <td className="py-4 pr-4">
                         <div className="flex flex-col gap-2">
-                          <input type="text" placeholder="Pickup *" value={newLead.pickup} onChange={(e) => setNewLead({ ...newLead, pickup: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                          <input type="text" placeholder="Destination" value={newLead.destination} onChange={(e) => setNewLead({ ...newLead, destination: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                          <select
+                            value={`${newLead.pickup}|||${newLead.destination}`}
+                            onChange={(e) => {
+                              const [p, d] = e.target.value.split('|||')
+                              setNewLead({ ...newLead, pickup: p || '', destination: d || '' })
+                            }}
+                            className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]"
+                          >
+                            <option value="|||">— Select Route —</option>
+                            {routePrices.map((r) => (
+                              <option key={r.id} value={`${r.pickup}|||${r.destination}`}>
+                                {r.pickup} → {r.destination}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </td>
                       <td className="py-4 pr-4">
@@ -1365,7 +1378,7 @@ export default function AdminPage() {
                       <td colSpan={2} className="py-4 text-right">
                         <button
                           onClick={addLead}
-                          disabled={addingLead || !newLead.customerName || !newLead.pickup}
+                          disabled={addingLead || !newLead.customerName || !newLead.pickup || !newLead.destination}
                           className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
                           style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
                         >
