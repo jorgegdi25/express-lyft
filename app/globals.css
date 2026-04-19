@@ -1,14 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   --gold: #B8960C;
-  --gold-light: #EF9F27;
+  --gold-light: #D4AF37;
+  --gold-accent: #EF9F27;
   --black: #111111;
   --card-bg: #1a1a1a;
   --border: #2a2a2a;
-  --muted: #555555;
+  --muted: #999999;
+  --muted-dark: #666666;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 * {
@@ -18,8 +26,10 @@
 body {
   background: #111111;
   color: #FFFFFF;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Native date/time input styling on dark backgrounds */
@@ -31,4 +41,33 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 select option {
   background: #111111;
   color: #FFFFFF;
+}
+
+/* Smooth scroll offset for sticky header */
+[id] {
+  scroll-margin-top: 88px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111111;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B8960C;
+}
+
+/* Scroll indicator animation */
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(8px); opacity: 1; }
+}
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
 }

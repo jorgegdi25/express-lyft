@@ -27,7 +27,7 @@ export default function VehicleDisplay({ passengers, prices }: VehicleDisplayPro
         boxShadow: '0 20px 50px rgba(0,0,0,0.4)'
       }}
     >
-      <p className="text-[10px] font-bold uppercase tracking-[4px]" style={{ color: '#555555' }}>
+      <p className="text-[10px] font-bold uppercase tracking-[4px]" style={{ color: '#666666' }}>
         Vehicle Selection
       </p>
 
@@ -45,10 +45,10 @@ export default function VehicleDisplay({ passengers, prices }: VehicleDisplayPro
       </div>
 
       <div className="flex flex-col gap-1">
-        <p className="text-2xl font-bold" style={{ color: '#B8960C', fontFamily: 'Georgia, serif' }}>
+        <p className="text-2xl font-bold" style={{ color: '#B8960C', fontFamily: "'Playfair Display', Georgia, serif" }}>
           {vehicle.label}
         </p>
-        <p className="text-sm italic" style={{ color: '#555555' }}>
+        <p className="text-sm italic" style={{ color: '#666666' }}>
           or similar
         </p>
         <p className="text-sm" style={{ color: '#FFFFFF' }}>
@@ -60,7 +60,7 @@ export default function VehicleDisplay({ passengers, prices }: VehicleDisplayPro
         className="mt-auto pt-4 flex items-center justify-between"
         style={{ borderTop: '1px solid #2a2a2a' }}
       >
-        <p className="text-sm uppercase tracking-widest" style={{ color: '#555555' }}>
+        <p className="text-sm uppercase tracking-widest" style={{ color: '#999999' }}>
           Base Rate
         </p>
         <p className="text-2xl font-bold" style={{ color: '#EF9F27' }}>

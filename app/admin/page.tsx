@@ -44,6 +44,13 @@ interface Lead {
   status?: string
   notes?: string
   created_at: string
+  passengers?: number
+  date?: string
+  time?: string
+  return_date?: string
+  return_time?: string
+  amount_usd?: number
+  trip_type?: string
 }
 
 interface Client {
@@ -148,6 +155,7 @@ export default function AdminPage() {
 
   const [leads, setLeads] = useState<Lead[]>([])
   const [addingLead, setAddingLead] = useState(false)
+  const [editingLead, setEditingLead] = useState<Lead | null>(null)
   const [newLead, setNewLead] = useState({
     hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv', status: 'new', notes: ''
   })
@@ -184,6 +192,19 @@ export default function AdminPage() {
   })
 
   /* ── API Fetchers ── */
+  
+  function formatDateUS(dateStr: string | undefined | null) {
+    if (!dateStr) return '—'
+    if (dateStr.includes('T')) { // ISO Timestamp
+      const d = new Date(dateStr)
+      return `${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(d.getUTCDate()).padStart(2, '0')}/${d.getUTCFullYear()}`
+    }
+    if (dateStr.includes('-')) { // YYYY-MM-DD
+      const parts = dateStr.split('-')
+      if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`
+    }
+    return dateStr
+  }
 
 
 
@@ -376,6 +397,20 @@ export default function AdminPage() {
     } catch (e) {
       alert(`Network error updating lead: ${e}`)
       fetchLeads(password).then(setLeads)
+    }
+  }
+
+  async function deleteLead(id: string) {
+    if (!confirm('Are you sure you want to delete this lead?')) return
+    try {
+      const res = await fetch(`/api/leads?id=${id}`, {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${password}` },
+      })
+      if (!res.ok) throw new Error('Failed to delete lead')
+      setLeads((prev) => prev.filter((l) => l.id !== id))
+    } catch (err) {
+      alert(`Error deleting lead: ${err}`)
     }
   }
 
@@ -665,7 +700,7 @@ export default function AdminPage() {
                     <tbody>
                       {bookings.slice(0, 5).map((b) => (
                         <tr key={b.id} style={{ borderTop: '1px solid #1a1a1a' }}>
-                          <td className="py-3 pr-4 text-white">{b.date}</td>
+                          <td className="py-3 pr-4 text-white">{formatDateUS(b.date)}</td>
                           <td className="py-3 pr-4 text-white text-xs">{b.customer_name || 'Guest'}</td>
                           <td className="py-3 pr-4 text-xs" style={{ color: '#999' }}>{b.pickup} → {b.destination}</td>
                           <td className="py-3 pr-4" style={{ color: '#D4AF37' }}>${b.amount_usd}</td>
@@ -1039,7 +1074,7 @@ export default function AdminPage() {
                     <tbody>
                       {bookings.map((b) => (
                         <tr key={b.id} style={{ borderTop: '1px solid #1a1a1a' }}>
-                          <td className="py-3 pr-4 text-white">{b.date}</td>
+                          <td className="py-3 pr-4 text-white">{formatDateUS(b.date)}</td>
                           <td className="py-3 pr-4">
                             <p className="text-white text-xs font-bold">{b.customer_name || 'Guest'}</p>
                             <p className="text-xs text-[#888]">{b.customer_email || b.hotel_slug}</p>
@@ -1066,33 +1101,125 @@ export default function AdminPage() {
               <p className="text-sm" style={{ color: '#888' }}>Users who initiated a booking but haven&apos;t completed payment</p>
             </div>
 
+            {/* Edit Lead Modal */}
+            {editingLead && (
+              <div className="rounded-xl p-6 mb-8" style={{ background: '#111', border: '1px solid #B8960C' }}>
+                <div className="flex items-center justify-between mb-6">
+                  <p className="text-xs font-bold uppercase tracking-[3px]" style={{ color: '#D4AF37' }}>
+                    Edit Lead: {editingLead.customer_name}
+                  </p>
+                  <button onClick={() => setEditingLead(null)} className="text-xs text-[#aaa] hover:text-red-400 transition-colors">
+                    Cancel
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Name</label>
+                    <input type="text" value={editingLead.customer_name || ''} onChange={(e) => setEditingLead({...editingLead, customer_name: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Email</label>
+                    <input type="email" value={editingLead.customer_email || ''} onChange={(e) => setEditingLead({...editingLead, customer_email: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Phone</label>
+                    <input type="tel" value={editingLead.customer_phone || ''} onChange={(e) => setEditingLead({...editingLead, customer_phone: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Pickup</label>
+                    <input type="text" value={editingLead.pickup || ''} onChange={(e) => setEditingLead({...editingLead, pickup: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Destination</label>
+                    <input type="text" value={editingLead.destination || ''} onChange={(e) => setEditingLead({...editingLead, destination: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={async () => {
+                      await updateLead(editingLead.id, {
+                        customerName: editingLead.customer_name,
+                        customerEmail: editingLead.customer_email,
+                        customerPhone: editingLead.customer_phone,
+                        pickup: editingLead.pickup,
+                        destination: editingLead.destination
+                      })
+                      setEditingLead(null)
+                    }}
+                    className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
+                    style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                  >
+                    Save Changes
+                  </button>
+                  <button onClick={() => setEditingLead(null)} className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest border border-[#1e1e1e]">
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
+
             <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead>
                     <tr style={{ color: '#888' }}>
-                      {['Customer', 'Route', 'Details', 'Pipeline', 'Date'].map((h) => (
+                      {['Customer', 'Trip / Route', 'Itinerary', 'Pax & Vehicle', 'Value', 'Pipeline'].map((h) => (
                         <th key={h} className="py-2 pr-4 text-xs uppercase tracking-widest font-medium">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {leads.length === 0 && (
-                      <tr><td colSpan={5} className="py-6 text-center text-sm italic" style={{ color: '#888' }}>No leads yet. Use the form below to add one manually.</td></tr>
+                      <tr><td colSpan={6} className="py-6 text-center text-sm italic" style={{ color: '#888' }}>No leads yet. Use the form below to add one manually.</td></tr>
                     )}
                     {leads.map((l) => (
-                      <tr key={l.id} style={{ borderTop: '1px solid #1a1a1a' }}>
+                      <tr key={l.id} style={{ borderTop: '1px solid #1a1a1a' }} className="hover:bg-[#1a1a1a40] transition-colors">
                         <td className="py-4 pr-4">
                           <p className="text-white font-bold">{l.customer_name || 'Anonymous'}</p>
                           <p className="text-xs text-[#888]">{l.customer_email || 'No email'}</p>
-                          {l.customer_phone && <p className="text-xs text-[#B8960C]">{l.customer_phone}</p>}
-                        </td>
-                        <td className="py-4 pr-4 text-xs text-white break-words max-w-[150px]">{l.pickup} <br/><span className="text-[#888]">to</span><br/> {l.destination}</td>
-                        <td className="py-4 pr-4">
-                          <span className="text-xs uppercase font-bold tracking-widest block mb-1" style={{ color: '#D4AF37' }}>{l.vehicle_type}</span>
-                          <span className="text-xs uppercase text-[#888]">{l.hotel_slug}</span>
+                          {l.customer_phone && <p className="text-xs text-[#B8960C] font-mono">{l.customer_phone}</p>}
                         </td>
                         <td className="py-4 pr-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded" style={{ background: l.trip_type === 'round-trip' ? '#B8960C20' : '#88820', color: l.trip_type === 'round-trip' ? '#B8960C' : '#888', width: 'fit-content' }}>
+                              {l.trip_type === 'round-trip' ? 'Round Trip' : 'One Way'}
+                            </span>
+                            <p className="text-xs text-white leading-relaxed">{l.pickup} <br/><span className="text-[#555] font-bold">→</span> {l.destination}</p>
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white font-bold">{formatDateUS(l.date)}</span>
+                              <span className="text-[10px] text-[#888]">{l.time || '—'}</span>
+                            </div>
+                            {l.trip_type === 'round-trip' && l.return_date && (
+                              <div className="flex items-center gap-2 pt-1 border-t border-[#1a1a1a]">
+                                <span className="text-[#888] font-bold text-xs">{formatDateUS(l.return_date)}</span>
+                                <span className="text-[10px] text-[#555]">{l.return_time}</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-white">{l.passengers || 1} PAX</span>
+                            </div>
+                            <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: '#D4AF37' }}>
+                              {VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                           <p className="text-lg font-bold" style={{ color: '#4ade80' }}>
+                             ${l.amount_usd || '—'}
+                           </p>
+                           <span className="text-[9px] uppercase tracking-widest text-[#555]">Estimated Total</span>
+                        </td>
+                        <td className="py-4">
                           <div className="flex flex-col gap-2">
                             <select 
                               value={l.status || 'new'} 
@@ -1112,18 +1239,29 @@ export default function AdminPage() {
                             <input 
                               type="text"
                               defaultValue={l.notes || ''}
-                              placeholder="Add notes..."
+                              placeholder="Notes..."
                               onBlur={(e) => updateLead(l.id, { notes: e.target.value })}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.currentTarget.blur();
-                                }
-                              }}
-                              className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-1.5 text-[#888] outline-none focus:border-[#B8960C] focus:text-white"
+                              onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                              className="w-full text-[10px] rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-1.5 text-[#888] outline-none focus:border-[#B8960C] focus:text-white"
                             />
+                            <div className="flex items-center justify-between mt-1">
+                              <button 
+                                onClick={() => setEditingLead(l)}
+                                className="text-[10px] uppercase font-bold tracking-widest text-[#B8960C] hover:text-[#D4AF37] flex items-center gap-1"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                Edit
+                              </button>
+                              <button 
+                                onClick={() => deleteLead(l.id)}
+                                className="text-[10px] uppercase font-bold tracking-widest text-red-500 hover:text-red-400 flex items-center gap-1"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                Delete
+                              </button>
+                            </div>
                           </div>
                         </td>
-                        <td className="py-4 text-xs" style={{ color: '#888' }}>{new Date(l.created_at).toLocaleDateString()}</td>
                       </tr>
                     ))}
                     

@@ -57,7 +57,9 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
   const dynamicLocations = Array.from(
     new Set(routePrices.flatMap((r) => [r.pickup, r.destination]))
   )
-  const LOCATIONS = dynamicLocations.length > 0 ? dynamicLocations : ['The Hotel', 'Airport / Destination']
+  const LOCATIONS = dynamicLocations.length > 0 
+    ? dynamicLocations 
+    : [`The Hotel — ${hotelName}`, 'Miami International Airport (MIA)', 'Port of Miami', 'Other Destination']
 
   const [tripType, setTripType] = useState<TripType>('one-way')
   const [pickup, setPickup] = useState<string>(LOCATIONS[0])
@@ -70,6 +72,18 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
   const [customerName, setCustomerName] = useState<string>('')
   const [customerEmail, setCustomerEmail] = useState<string>('')
   const [customerPhone, setCustomerPhone] = useState<string>('')
+
+  // Helper to format MM/DD/YYYY while typing
+  const handleDateChange = (val: string, setter: (v: string) => void) => {
+    const digits = val.replace(/\D/g, '').slice(0, 8)
+    let formatted = digits
+    if (digits.length > 4) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+    } else if (digits.length > 2) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`
+    }
+    setter(formatted)
+  }
   const [customerCountry, setCustomerCountry] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -86,11 +100,11 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
     if (route) {
       return {
-        sedan_suv: route.sedan_suv_price,
-        suburban: route.suburban_price,
-        sprinter: route.sprinter_price,
-        minibus: route.minibus_price,
-        coachbus: route.coachbus_price
+        sedan_suv: route.sedan_suv_price || prices.sedan_suv,
+        suburban: route.suburban_price || prices.suburban,
+        sprinter: route.sprinter_price || prices.sprinter,
+        minibus: route.minibus_price || prices.minibus,
+        coachbus: route.coachbus_price || prices.coachbus
       }
     }
 
@@ -123,59 +137,53 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
     setLoading(true)
 
-    // Log the lead for tracking/analytics
-    try {
-      fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          hotelSlug,
-          customerName,
-          customerEmail,
-          customerPhone,
-          pickup,
-          destination,
-          vehicleType
-        }),
-      }).catch(e => console.error('[leads] logging failed:', e))
-    } catch (e) {
-      console.error('[leads] logging error:', e)
+    // Convert MM/DD/YYYY to YYYY-MM-DD for the database
+    const usToISO = (usDate: string) => {
+      const parts = usDate.split('/')
+      if (parts.length !== 3) return usDate
+      return `${parts[2]}-${parts[0]}-${parts[1]}`
     }
 
+    // Log the lead for tracking/analytics and act as the primary booking mechanism
     try {
-      const res = await fetch('/api/checkout', {
+      const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           hotelSlug,
-          pickup,
-          destination,
-          date,
-          time,
-          returnDate: tripType === 'round-trip' ? returnDate : undefined,
-          returnTime: tripType === 'round-trip' ? returnTime : undefined,
-          passengers,
-          vehicleType,
-          amount: total * 100, // cents
           customerName,
           customerEmail,
           customerPhone,
-          customerCountry
+          pickup,
+          destination,
+          vehicleType,
+          // Sending additional fields for the robust leads system
+          date: usToISO(date),
+          time,
+          passengers,
+          estimatedTotal: total,
+          tripType,
+          returnDate: tripType === 'round-trip' ? usToISO(returnDate) : undefined,
+          returnTime: tripType === 'round-trip' ? returnTime : undefined
         }),
       })
 
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Checkout failed')
-      window.location.href = data.url
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      if (!res.ok) {
+        throw new Error('Failed to submit reservation.')
+      }
+      
+      // Redirect to success state without Stripe
+      window.location.href = `/hotel/${hotelSlug}?success=true`
+    } catch (e) {
+      console.error('[leads] logging error:', e)
+      setError('Something went wrong submitting your request. Please try again or call us.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <section className="w-full py-12">
+    <section id="booking-form" className="w-full py-12">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Booking Form */}
@@ -189,7 +197,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
           >
             <p
               className="text-[10px] font-bold uppercase tracking-[4px] mb-8"
-              style={{ color: '#555555' }}
+              style={{ color: '#999999' }}
             >
               Reservation Details
             </p>
@@ -205,7 +213,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                     className="flex-1 py-3 text-sm font-bold uppercase tracking-widest transition-colors"
                     style={{
                       background: tripType === type ? '#B8960C' : 'transparent',
-                      color: tripType === type ? '#111111' : '#555555',
+                      color: tripType === type ? '#111111' : '#999999',
                     }}
                   >
                     {type === 'one-way' ? 'One Way' : 'Round Trip'}
@@ -215,7 +223,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
               {/* Pickup */}
               <div className="flex flex-col gap-1">
-                <label className="text-xs uppercase tracking-widest" style={{ color: '#555555' }}>
+                <label className="text-xs uppercase tracking-widest" style={{ color: '#999999' }}>
                   Pickup Location
                 </label>
                 <select
@@ -226,7 +234,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                 >
                   {availablePickups.map((loc) => (
                     <option key={loc} value={loc}>
-                      {loc.replace('The Hotel', `The Hotel — ${hotelName}`)}
+                      {loc.includes('The Hotel') ? loc : loc.replace('The Hotel', `The Hotel — ${hotelName}`)}
                     </option>
                   ))}
                 </select>
@@ -234,7 +242,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
               {/* Destination */}
               <div className="flex flex-col gap-1">
-                <label className="text-xs uppercase tracking-widest" style={{ color: '#555555' }}>
+                <label className="text-xs uppercase tracking-widest" style={{ color: '#999999' }}>
                   Destination
                 </label>
                 <select
@@ -245,30 +253,31 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                 >
                   {availableDestinations.map((loc) => (
                     <option key={loc} value={loc}>
-                      {loc.replace('The Hotel', `The Hotel — ${hotelName}`)}
+                      {loc.includes('The Hotel') ? loc : loc.replace('The Hotel', `The Hotel — ${hotelName}`)}
                     </option>
                   ))}
                 </select>
               </div>
 
               {/* Date + Time */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs uppercase tracking-widest" style={{ color: '#555555' }}>
-                    Date
+                  <label className="text-xs uppercase tracking-widest" style={{ color: '#999999' }}>
+                    Date (MM/DD/YYYY)
                   </label>
                   <input
-                    type="date"
-                    min={todayStr}
+                    type="text"
+                    placeholder="MM/DD/YYYY"
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    onChange={(e) => handleDateChange(e.target.value, setDate)}
                     required
+                    maxLength={10}
                     className="w-full rounded-lg px-4 py-3 text-sm outline-none"
                     style={{ background: '#111111', border: '1px solid #2a2a2a', color: '#FFFFFF' }}
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs uppercase tracking-widest" style={{ color: '#555555' }}>
+                  <label className="text-xs uppercase tracking-widest" style={{ color: '#999999' }}>
                     Time
                   </label>
                   <select
@@ -290,20 +299,21 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
               {/* Round Trip fields */}
               {tripType === 'round-trip' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
                     <label
                       className="text-xs uppercase tracking-widest"
-                      style={{ color: '#555555' }}
+                      style={{ color: '#999999' }}
                     >
-                      Return Date
+                      Return Date (MM/DD/YYYY)
                     </label>
                     <input
-                      type="date"
-                      min={date || todayStr}
+                      type="text"
+                      placeholder="MM/DD/YYYY"
                       value={returnDate}
-                      onChange={(e) => setReturnDate(e.target.value)}
+                      onChange={(e) => handleDateChange(e.target.value, setReturnDate)}
                       required
+                      maxLength={10}
                       className="w-full rounded-lg px-4 py-3 text-sm outline-none"
                       style={{
                         background: '#111111',
@@ -315,7 +325,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                   <div className="flex flex-col gap-1">
                     <label
                       className="text-xs uppercase tracking-widest"
-                      style={{ color: '#555555' }}
+                      style={{ color: '#999999' }}
                     >
                       Return Time
                     </label>
@@ -343,7 +353,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
               {/* Passengers counter */}
               <div className="flex flex-col gap-1">
-                <label className="text-xs uppercase tracking-widest" style={{ color: '#555555' }}>
+                <label className="text-xs uppercase tracking-widest" style={{ color: '#999999' }}>
                   Passengers
                 </label>
                 <div className="flex items-center gap-4">
@@ -371,7 +381,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
               {/* Passenger Details */}
               <div className="flex flex-col gap-4 mt-2 mb-2 p-4 rounded-lg" style={{ background: '#111111', border: '1px solid #2a2a2a' }}>
-                <p className="text-xs uppercase tracking-widest" style={{ color: '#555555' }}>Passenger Details</p>
+                <p className="text-xs uppercase tracking-widest" style={{ color: '#999999' }}>Passenger Details</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
                     type="text"
@@ -379,7 +389,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     required
-                    className="w-full rounded-lg px-4 py-3 text-sm outline-none placeholder-[#555555]"
+                    className="w-full rounded-lg px-4 py-3 text-sm outline-none placeholder-[#999999]"
                     style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#FFFFFF' }}
                   />
                   <input
@@ -388,7 +398,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     required
-                    className="w-full rounded-lg px-4 py-3 text-sm outline-none placeholder-[#555555]"
+                    className="w-full rounded-lg px-4 py-3 text-sm outline-none placeholder-[#999999]"
                     style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#FFFFFF' }}
                   />
                   <input
@@ -396,7 +406,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                     placeholder="Phone Number (Optional)"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full rounded-lg px-4 py-3 text-sm outline-none placeholder-[#555555]"
+                    className="w-full rounded-lg px-4 py-3 text-sm outline-none placeholder-[#999999]"
                     style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#FFFFFF' }}
                   />
                   <input
@@ -404,7 +414,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                     placeholder="Country (Optional)"
                     value={customerCountry}
                     onChange={(e) => setCustomerCountry(e.target.value)}
-                    className="w-full rounded-lg px-4 py-3 text-sm outline-none placeholder-[#555555]"
+                    className="w-full rounded-lg px-4 py-3 text-sm outline-none placeholder-[#999999]"
                     style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#FFFFFF' }}
                   />
                 </div>
@@ -414,13 +424,13 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                 className="flex items-center justify-between px-4 py-3 rounded-lg"
                 style={{ background: '#111111', border: '1px solid #2a2a2a' }}
               >
-                <span className="text-sm uppercase tracking-widest" style={{ color: '#555555' }}>
+                <span className="text-sm uppercase tracking-widest" style={{ color: '#999999' }}>
                   Estimated Total
                 </span>
                 <span className="text-2xl font-bold" style={{ color: '#EF9F27' }}>
                   ${total}
                   {tripType === 'round-trip' && (
-                    <span className="text-xs ml-1" style={{ color: '#555555' }}>
+                    <span className="text-xs ml-1" style={{ color: '#999999' }}>
                       (round trip)
                     </span>
                   )}
@@ -434,14 +444,19 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 rounded-lg text-sm font-bold uppercase tracking-[3px] transition-opacity"
+                className="w-full py-4 rounded-xl text-sm font-bold uppercase tracking-[3px] transition-all hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-3 disabled:cursor-not-allowed"
                 style={{
-                  background: '#B8960C',
-                  color: '#111111',
-                  opacity: loading ? 0.7 : 1,
+                  background: loading ? '#8a7209' : 'linear-gradient(135deg, #B8960C, #D4AF37)',
+                  color: '#0a0a0a',
+                  opacity: loading ? 0.85 : 1,
                 }}
               >
-                {loading ? 'Redirecting...' : 'Pay Now →'}
+                {loading && (
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                  </svg>
+                )}
+                {loading ? 'Processing...' : 'Request Reservation →'}
               </button>
             </form>
           </div>
