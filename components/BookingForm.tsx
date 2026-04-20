@@ -199,6 +199,15 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
               Reservation Details
             </h3>
 
+            <style dangerouslySetInnerHTML={{__html: `
+                input[type="date"]::-webkit-calendar-picker-indicator {
+                  cursor: pointer;
+                  filter: invert(0.8);
+                  transform: scale(1.8);
+                  padding-left: 10px;
+                }
+              `}} />
+
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               {/* Trip Type Toggle */}
               <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #333333' }}>
@@ -229,7 +238,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                 <select
                   value={pickup}
                   onChange={(e) => setPickup(e.target.value)}
-                  className={INPUT_CLASS}
+                  className={`${INPUT_CLASS} min-h-[60px] text-lg sm:text-base`}
                   style={INPUT_STYLE}
                 >
                   {availablePickups.map((loc) => (
@@ -248,7 +257,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                 <select
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  className={INPUT_CLASS}
+                  className={`${INPUT_CLASS} min-h-[60px] text-lg sm:text-base`}
                   style={INPUT_STYLE}
                 >
                   {availableDestinations.map((loc) => (
@@ -260,7 +269,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
               </div>
 
               {/* Date + Time */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className={LABEL_CLASS} style={LABEL_COLOR}>
                     Date
@@ -271,7 +280,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS} min-h-[60px] text-lg px-5 py-4`}
                     style={INPUT_STYLE}
                   />
                 </div>
@@ -283,7 +292,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                     value={time}
                     onChange={(e) => setTime(e.target.value)}
                     required
-                    className={INPUT_CLASS}
+                    className={`${INPUT_CLASS} min-h-[60px] text-lg px-5 py-4`}
                     style={INPUT_STYLE}
                   >
                     <option value="">Select time</option>
@@ -298,7 +307,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
               {/* Round Trip fields */}
               {tripType === 'round-trip' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
                     <label className={LABEL_CLASS} style={LABEL_COLOR}>
                       Return Date
@@ -309,7 +318,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                       value={returnDate}
                       onChange={(e) => setReturnDate(e.target.value)}
                       required
-                      className={INPUT_CLASS}
+                      className={`${INPUT_CLASS} min-h-[60px] text-lg px-5 py-4`}
                       style={INPUT_STYLE}
                     />
                   </div>
@@ -321,7 +330,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                       value={returnTime}
                       onChange={(e) => setReturnTime(e.target.value)}
                       required
-                      className={INPUT_CLASS}
+                      className={`${INPUT_CLASS} min-h-[60px] text-lg px-5 py-4`}
                       style={INPUT_STYLE}
                     >
                       <option value="">Select time</option>
