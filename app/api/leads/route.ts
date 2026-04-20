@@ -66,10 +66,11 @@ export async function PUT(req: NextRequest) {
     const { 
       id, status, notes, 
       customerName, customerEmail, customerPhone,
-      pickup, destination, vehicleType,
+      customer_name, customer_email, customer_phone,
+      pickup, destination, vehicleType, vehicle_type,
       passengers, date, time, 
-      returnDate, returnTime,
-      amountUsd, tripType
+      returnDate, returnTime, return_date, return_time,
+      amountUsd, amount_usd, tripType, trip_type
     } = body
 
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
@@ -77,17 +78,17 @@ export async function PUT(req: NextRequest) {
     const updates: Record<string, string | number> = {}
     if (status !== undefined) updates.status = status
     if (notes !== undefined) updates.notes = notes
-    if (customerName !== undefined) updates.customer_name = customerName
-    if (customerEmail !== undefined) updates.customer_email = customerEmail
-    if (customerPhone !== undefined) updates.customer_phone = customerPhone
+    if (customerName !== undefined || customer_name !== undefined) updates.customer_name = customerName || customer_name
+    if (customerEmail !== undefined || customer_email !== undefined) updates.customer_email = customerEmail || customer_email
+    if (customerPhone !== undefined || customer_phone !== undefined) updates.customer_phone = customerPhone || customer_phone
     if (pickup !== undefined) updates.pickup = pickup
     if (destination !== undefined) updates.destination = destination
-    if (vehicleType !== undefined) updates.vehicle_type = vehicleType
+    if (vehicleType !== undefined || vehicle_type !== undefined) updates.vehicle_type = vehicleType || vehicle_type
     if (passengers !== undefined) updates.passengers = passengers
     if (date !== undefined) updates.date = date
     if (time !== undefined) updates.time = time
-    if (returnDate !== undefined) updates.return_date = returnDate
-    if (returnTime !== undefined) updates.return_time = returnTime
+    if (returnDate !== undefined || return_date !== undefined) updates.return_date = returnDate || return_date
+    if (returnTime !== undefined || return_time !== undefined) updates.return_time = returnTime || return_time
     if (amountUsd !== undefined) updates.amount_usd = amountUsd
     if (tripType !== undefined) updates.trip_type = tripType
 

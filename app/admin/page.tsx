@@ -1140,9 +1140,9 @@ export default function AdminPage() {
                   <button
                     onClick={async () => {
                       await updateLead(editingLead.id, {
-                        customerName: editingLead.customer_name,
-                        customerEmail: editingLead.customer_email,
-                        customerPhone: editingLead.customer_phone,
+                        customer_name: editingLead.customer_name,
+                        customer_email: editingLead.customer_email,
+                        customer_phone: editingLead.customer_phone,
                         pickup: editingLead.pickup,
                         destination: editingLead.destination
                       })
@@ -1349,7 +1349,7 @@ export default function AdminPage() {
               {qrDataUrl && (
                 <div className="mt-8 flex flex-col items-start gap-4">
                   <div className="p-4 bg-white rounded-xl">
-                    <img src={qrDataUrl} alt="QR Code" className="w-48 h-48" />
+                    <Image src={qrDataUrl} alt="QR Code" width={192} height={192} className="w-48 h-48" />
                   </div>
                   <a
                     href={qrDataUrl}
