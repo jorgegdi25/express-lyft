@@ -84,17 +84,6 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
   const [customerEmail, setCustomerEmail] = useState<string>('')
   const [customerPhone, setCustomerPhone] = useState<string>('')
 
-  // Helper to format MM/DD/YYYY while typing
-  const handleDateChange = (val: string, setter: (v: string) => void) => {
-    const digits = val.replace(/\D/g, '').slice(0, 8)
-    let formatted = digits
-    if (digits.length > 4) {
-      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
-    } else if (digits.length > 2) {
-      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`
-    }
-    setter(formatted)
-  }
   const [customerCountry, setCustomerCountry] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -151,13 +140,6 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
     setLoading(true)
 
-    // Convert MM/DD/YYYY to YYYY-MM-DD for the database
-    const usToISO = (usDate: string) => {
-      const parts = usDate.split('/')
-      if (parts.length !== 3) return usDate
-      return `${parts[2]}-${parts[0]}-${parts[1]}`
-    }
-
     // Log the lead for tracking/analytics and act as the primary booking mechanism
     try {
       const res = await fetch('/api/leads', {
@@ -172,12 +154,12 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
           destination,
           vehicleType,
           // Sending additional fields for the robust leads system
-          date: usToISO(date),
+          date,
           time,
           passengers,
           estimatedTotal: total,
           tripType,
-          returnDate: tripType === 'round-trip' ? usToISO(returnDate) : undefined,
+          returnDate: tripType === 'round-trip' ? returnDate : undefined,
           returnTime: tripType === 'round-trip' ? returnTime : undefined
         }),
       })
@@ -277,15 +259,13 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs uppercase tracking-widest" style={{ color: '#999999' }}>
-                    Date (MM/DD/YYYY)
+                    Date
                   </label>
                   <input
-                    type="text"
-                    placeholder="MM/DD/YYYY"
+                    type="date"
                     value={date}
-                    onChange={(e) => handleDateChange(e.target.value, setDate)}
+                    onChange={(e) => setDate(e.target.value)}
                     required
-                    maxLength={10}
                     className="w-full rounded-lg px-4 py-3 text-sm outline-none"
                     style={{ background: '#111111', border: '1px solid #2a2a2a', color: '#FFFFFF' }}
                   />
@@ -319,15 +299,13 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                       className="text-xs uppercase tracking-widest"
                       style={{ color: '#999999' }}
                     >
-                      Return Date (MM/DD/YYYY)
+                      Return Date
                     </label>
                     <input
-                      type="text"
-                      placeholder="MM/DD/YYYY"
+                      type="date"
                       value={returnDate}
-                      onChange={(e) => handleDateChange(e.target.value, setReturnDate)}
+                      onChange={(e) => setReturnDate(e.target.value)}
                       required
-                      maxLength={10}
                       className="w-full rounded-lg px-4 py-3 text-sm outline-none"
                       style={{
                         background: '#111111',
