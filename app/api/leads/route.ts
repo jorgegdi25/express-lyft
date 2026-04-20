@@ -70,7 +70,7 @@ export async function PUT(req: NextRequest) {
       pickup, destination, vehicleType, vehicle_type,
       passengers, date, time, 
       returnDate, returnTime, return_date, return_time,
-      amountUsd, amount_usd, tripType, trip_type
+      amountUsd, tripType
     } = body
 
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
