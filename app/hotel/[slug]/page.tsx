@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import HeroSection from '@/components/HeroSection'
 import BookingForm from '@/components/BookingForm'
 
+export const dynamic = 'force-dynamic'
+
 interface PageProps {
   params: { slug: string }
   searchParams: { success?: string }
