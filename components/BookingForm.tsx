@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import VehicleDisplay from './VehicleDisplay'
 
 interface RoutePrice {
@@ -57,20 +57,21 @@ const INPUT_STYLE = { background: '#0e0e0e', border: '1px solid #333333', color:
 const todayStr = new Date().toISOString().split('T')[0]
 
 export default function BookingForm({ hotelSlug, hotelName, prices, routePrices }: BookingFormProps) {
-  const normalizedRoutes = routePrices.map((r) => ({
+  const normalizedRoutes = useMemo(() => routePrices.map((r) => ({
     ...r,
     pickup: r.pickup.trim(),
     destination: r.destination.trim(),
-  }))
+  })), [routePrices])
 
-  const dynamicLocations = Array.from(
+  const dynamicLocations = useMemo(() => Array.from(
     new Set(normalizedRoutes.flatMap((r) => [r.pickup, r.destination]))
-  ).filter(Boolean)
+  ).filter(Boolean), [normalizedRoutes])
 
-  const LOCATIONS =
+  const LOCATIONS = useMemo(() => 
     dynamicLocations.length > 0
       ? dynamicLocations
       : ['The Hotel', 'Miami International Airport (MIA)', 'Port of Miami', 'Other Destination']
+  , [dynamicLocations])
 
   const [tripType, setTripType] = useState<TripType>('one-way')
   const [pickup, setPickup] = useState<string>(
@@ -116,6 +117,30 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
   const availableDestinations = LOCATIONS.filter((l) => l !== pickup)
   const availablePickups = LOCATIONS.filter((l) => l !== destination)
+
+  // Auto-correct invalid states if the user selects the same location for both
+  useEffect(() => {
+    // Determine the available destinations for the CURRENT pickup
+    const currentAvailableDests = LOCATIONS.filter((l) => l !== pickup)
+    if (!currentAvailableDests.includes(destination)) {
+      setDestination(currentAvailableDests[0] || '')
+    }
+  }, [pickup, destination, LOCATIONS])
+
+  useEffect(() => {
+    const currentAvailablePickups = LOCATIONS.filter((l) => l !== destination)
+    if (!currentAvailablePickups.includes(pickup)) {
+      setPickup(currentAvailablePickups[0] || '')
+    }
+  }, [destination, pickup, LOCATIONS])
+
+  // Automatically swap or snap to 'The Hotel' for better UX
+  useEffect(() => {
+    if (pickup !== 'The Hotel' && destination !== 'The Hotel') {
+      // If they choose an airport for pickup, naturally snap destination to The Hotel
+      setDestination('The Hotel')
+    }
+  }, [pickup])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
