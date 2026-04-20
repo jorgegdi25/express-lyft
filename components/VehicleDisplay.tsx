@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 
 interface VehicleDisplayProps {
   passengers: number
@@ -32,16 +33,14 @@ export default function VehicleDisplay({ passengers, prices }: VehicleDisplayPro
       </p>
 
       <div className="relative w-full rounded-lg bg-[#111111]" style={{ aspectRatio: '16/9' }}>
-        <img
-          src={`/vehicles/${vehicle.type}.png`}
-          alt={vehicle.label}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement
-            target.src =
-              'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&q=80'
-          }}
-        />
+        <div className="relative w-full h-full">
+          <Image
+            src={`/vehicles/${vehicle.type}.png`}
+            alt={vehicle.label}
+            fill
+            className="object-cover"
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-1">

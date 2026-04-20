@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import HeroSection from '@/components/HeroSection'
@@ -63,7 +64,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
         style={{ borderBottom: '1px solid #222222' }}
       >
         <div className="flex items-center">
-          <img src="/logo.webp" alt="Express Lyft" className="h-8 md:h-12 w-auto object-contain" />
+          <Image src="/logo.webp" alt="Express Lyft" width={180} height={48} className="h-8 md:h-12 w-auto object-contain" />
         </div>
 
         <div className="flex items-center gap-3 md:gap-8">
@@ -237,7 +238,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
       >
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <img src="/logo.webp" alt="Express Lyft" className="h-8 w-auto object-contain" />
+            <Image src="/logo.webp" alt="Express Lyft" width={120} height={32} className="h-8 w-auto object-contain" />
             <p className="text-xs" style={{ color: '#999999' }}>
               Luxury transportation for Miami&apos;s most discerning guests.
             </p>

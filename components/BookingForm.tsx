@@ -50,20 +50,31 @@ function getVehicleType(passengers: number): VehicleType {
   return 'coachbus'
 }
 
-const todayStr = new Date().toISOString().split('T')[0]
 
 export default function BookingForm({ hotelSlug, hotelName, prices, routePrices }: BookingFormProps) {
+  // Normalize routePrices to prevent issues with trailing spaces or casing
+  const normalizedRoutes = routePrices.map(r => ({
+    ...r,
+    pickup: r.pickup.trim(),
+    destination: r.destination.trim()
+  }))
+
   // Derive LOCATIONS dynamically from the routes saved in the DB
   const dynamicLocations = Array.from(
-    new Set(routePrices.flatMap((r) => [r.pickup, r.destination]))
-  )
+    new Set(normalizedRoutes.flatMap((r) => [r.pickup, r.destination]))
+  ).filter(Boolean)
+
   const LOCATIONS = dynamicLocations.length > 0 
     ? dynamicLocations 
-    : [`The Hotel — ${hotelName}`, 'Miami International Airport (MIA)', 'Port of Miami', 'Other Destination']
+    : ['The Hotel', 'Miami International Airport (MIA)', 'Port of Miami', 'Other Destination']
 
   const [tripType, setTripType] = useState<TripType>('one-way')
-  const [pickup, setPickup] = useState<string>(LOCATIONS[0])
-  const [destination, setDestination] = useState<string>(LOCATIONS[1] || LOCATIONS[0])
+  const [pickup, setPickup] = useState<string>(LOCATIONS.includes('The Hotel') ? 'The Hotel' : LOCATIONS[0])
+  const [destination, setDestination] = useState<string>(
+    LOCATIONS.length > 1 
+      ? (LOCATIONS[0] === (LOCATIONS.includes('The Hotel') ? 'The Hotel' : LOCATIONS[0]) ? LOCATIONS[1] : LOCATIONS[0])
+      : LOCATIONS[0]
+  )
   const [date, setDate] = useState<string>('')
   const [time, setTime] = useState<string>('')
   const [returnDate, setReturnDate] = useState<string>('')
@@ -92,10 +103,13 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
 
   // Compute prices for all vehicle types for the selected route
   const getRoutePrices = () => {
-    const route = routePrices.find(
+    const p = pickup.trim()
+    const d = destination.trim()
+
+    const route = normalizedRoutes.find(
       (r) => 
-        (r.pickup === pickup && r.destination === destination) ||
-        (r.pickup === destination && r.destination === pickup)
+        (r.pickup === p && r.destination === d) ||
+        (r.pickup === d && r.destination === p)
     )
 
     if (route) {
@@ -234,7 +248,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                 >
                   {availablePickups.map((loc) => (
                     <option key={loc} value={loc}>
-                      {loc.includes('The Hotel') ? loc : loc.replace('The Hotel', `The Hotel — ${hotelName}`)}
+                      {loc === 'The Hotel' ? `The Hotel — ${hotelName}` : loc}
                     </option>
                   ))}
                 </select>
@@ -253,7 +267,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                 >
                   {availableDestinations.map((loc) => (
                     <option key={loc} value={loc}>
-                      {loc.includes('The Hotel') ? loc : loc.replace('The Hotel', `The Hotel — ${hotelName}`)}
+                      {loc === 'The Hotel' ? `The Hotel — ${hotelName}` : loc}
                     </option>
                   ))}
                 </select>

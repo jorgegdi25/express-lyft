@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 
 interface HeroSectionProps {
   hotelName: string
@@ -70,16 +71,14 @@ export default function HeroSection({ hotelName, vehicleType, basePrice }: HeroS
         {/* Right column — vehicle image + badge */}
         <div className="relative flex items-center justify-center">
           <div className="relative w-full rounded-xl bg-[#1a1a1a] overflow-hidden" style={{ aspectRatio: '16/9' }}>
-            <img
-              src={`/vehicles/${vehicleType}.png`}
-              alt={vehicleLabels[vehicleType]}
-              className="w-full h-full object-cover shadow-2xl"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement
-                target.src =
-                  'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&q=80'
-              }}
-            />
+            <div className="relative w-full h-full">
+              <Image
+                src={`/vehicles/${vehicleType}.png`}
+                alt={vehicleLabels[vehicleType]}
+                fill
+                className="object-cover shadow-2xl"
+              />
+            </div>
             {/* Badge */}
             <div
               className="absolute bottom-3 left-3 md:bottom-4 md:left-4 px-3 md:px-4 py-2 rounded-lg"
