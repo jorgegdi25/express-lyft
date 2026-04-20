@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 import HeroSection from '@/components/HeroSection'
 import BookingForm from '@/components/BookingForm'
 
@@ -15,9 +15,9 @@ async function getHotelData(slug: string) {
   const isDemoSlug = slug === 'demo'
   
   const [hotelRes, pricingRes, routePricingRes] = await Promise.all([
-    supabase.from('hotels').select('slug, name').eq('slug', slug).eq('active', true).maybeSingle(),
-    supabase.from('pricing').select('vehicle_type, price_usd'),
-    supabase.from('route_pricing').select('*').eq('hotel_slug', slug)
+    supabaseAdmin.from('hotels').select('slug, name').eq('slug', slug).eq('active', true).maybeSingle(),
+    supabaseAdmin.from('pricing').select('vehicle_type, price_usd'),
+    supabaseAdmin.from('route_pricing').select('*').eq('hotel_slug', slug)
   ])
 
   // Default prices
