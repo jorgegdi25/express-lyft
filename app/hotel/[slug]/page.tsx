@@ -31,7 +31,7 @@ async function getHotelData(slug: string) {
   let hotel = hotelRes.data
   if (!hotel) {
     if (slug === 'demo') {
-      hotel = { slug: 'demo', name: 'The Grand Palace, Miami' }
+      hotel = { slug: 'demo', name: 'B Ocean Resort' }
     } else {
       return null
     }

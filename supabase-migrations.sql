@@ -48,7 +48,7 @@ create table if not exists route_pricing (
 -- Seed hotels
 insert into hotels (slug, name) values
   ('ritz-carlton-miami', 'The Ritz-Carlton, Miami'),
-  ('bocean-resort', 'Bocean Resort')
+  ('bocean-resort', 'B Ocean Resort')
 on conflict (slug) do update set name = excluded.name;
 
 -- Seed pricing
@@ -58,7 +58,7 @@ insert into pricing (vehicle_type, price_usd) values
   ('sprinter', 260)
 on conflict do nothing;
 
--- Seed route pricing for Bocean Resort
+-- Seed route pricing for B Ocean Resort
 insert into route_pricing (hotel_slug, pickup, destination, sedan_suv_price, suburban_price, sprinter_price, minibus_price, coachbus_price) values
   ('bocean-resort', 'The Hotel', 'Miami International Airport (MIA)', 120, 150, 260, 450, 800),
   ('bocean-resort', 'The Hotel', 'Fort Lauderdale Airport (FLL)', 155, 180, 290, 500, 850),
