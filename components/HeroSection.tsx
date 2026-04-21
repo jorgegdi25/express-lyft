@@ -21,7 +21,7 @@ export default function HeroSection({ vehicleType, basePrice }: HeroSectionProps
       <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center w-full">
 
         {/* ── Left column ─────────────────────────────────────── */}
-        <div className="flex flex-col gap-5 md:gap-7">
+        <div className="flex flex-col gap-5 md:gap-7 items-center md:items-start text-center md:text-left">
 
           {/* Overline tag */}
           <span
@@ -45,7 +45,7 @@ export default function HeroSection({ vehicleType, basePrice }: HeroSectionProps
           </p>
 
           {/* CTA row */}
-          <div className="flex flex-wrap items-center gap-4 md:gap-6 mt-2">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6 mt-2">
             <a
               href="#booking-form"
               className="px-7 py-4 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 shadow-xl shadow-[#B8960C30]"
@@ -54,7 +54,7 @@ export default function HeroSection({ vehicleType, basePrice }: HeroSectionProps
               Start Reservation
             </a>
 
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col items-center md:items-end gap-0.5">
               <span className="text-xs uppercase tracking-[2px]" style={{ color: '#888888' }}>
                 Or call us directly
               </span>
