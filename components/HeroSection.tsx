@@ -25,10 +25,10 @@ export default function HeroSection({ hotelName, vehicleType, basePrice }: HeroS
 
           {/* Overline tag */}
           <span
-            className="text-xs font-bold tracking-[3px]"
+            className="text-xs font-bold tracking-[3px] uppercase"
             style={{ color: '#D4AF37' }}
           >
-            WELCOME, {hotelName} GUESTS
+            Welcome, {hotelName} Guests
           </span>
 
           {/* H1 */}
