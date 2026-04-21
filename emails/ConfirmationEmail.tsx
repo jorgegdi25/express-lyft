@@ -16,7 +16,7 @@ import React from 'react';
 interface ConfirmationEmailProps {
   customerName: string;
   bookingId: string;
-  hotelName: string;
+
   pickup: string;
   destination: string;
   date: string;
@@ -28,7 +28,7 @@ interface ConfirmationEmailProps {
 export const ConfirmationEmail = ({
   customerName,
   bookingId,
-  hotelName,
+
   pickup,
   destination,
   date,
@@ -54,9 +54,7 @@ export const ConfirmationEmail = ({
           <Text style={detailItem}>
             <strong>Confirmation:</strong> {bookingId.slice(0, 8).toUpperCase()}
           </Text>
-          <Text style={detailItem}>
-            <strong>Hotel:</strong> {hotelName}
-          </Text>
+
           <Text style={detailItem}>
             <strong>From:</strong> {pickup}
           </Text>

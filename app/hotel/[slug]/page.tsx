@@ -180,12 +180,11 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <HeroSection hotelName={hotel.name} vehicleType="sedan_suv" basePrice={prices.sedan_suv} />
+      <HeroSection vehicleType="sedan_suv" basePrice={prices.sedan_suv} />
 
       {/* ── Booking form ─────────────────────────────────────────── */}
       <BookingForm
         hotelSlug={params.slug}
-        hotelName={hotel.name}
         prices={prices}
         routePrices={data.routePrices}
       />

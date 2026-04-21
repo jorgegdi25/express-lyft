@@ -16,7 +16,7 @@ interface RoutePrice {
 
 interface BookingFormProps {
   hotelSlug: string
-  hotelName: string
+
   prices: { sedan_suv: number; suburban: number; sprinter: number; minibus: number; coachbus: number }
   routePrices: RoutePrice[]
 }
@@ -56,7 +56,7 @@ const INPUT_STYLE = { background: '#0e0e0e', border: '1px solid #333333', color:
 
 const todayStr = new Date().toISOString().split('T')[0]
 
-export default function BookingForm({ hotelSlug, hotelName, prices, routePrices }: BookingFormProps) {
+export default function BookingForm({ hotelSlug, prices, routePrices }: BookingFormProps) {
   const normalizedRoutes = useMemo(() => routePrices.map((r) => ({
     ...r,
     pickup: r.pickup.trim(),
@@ -268,7 +268,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                 >
                   {availablePickups.map((loc) => (
                     <option key={loc} value={loc}>
-                      {loc === 'The Hotel' ? `The Hotel — ${hotelName}` : loc}
+                      {loc === 'The Hotel' ? `The Hotel` : loc}
                     </option>
                   ))}
                 </select>
@@ -287,7 +287,7 @@ export default function BookingForm({ hotelSlug, hotelName, prices, routePrices 
                 >
                   {availableDestinations.map((loc) => (
                     <option key={loc} value={loc}>
-                      {loc === 'The Hotel' ? `The Hotel — ${hotelName}` : loc}
+                      {loc === 'The Hotel' ? `The Hotel` : loc}
                     </option>
                   ))}
                 </select>

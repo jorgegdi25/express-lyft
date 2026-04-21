@@ -56,14 +56,7 @@ export async function POST(req: NextRequest) {
       console.error('[webhook] supabase error:', bookingErr.message)
     }
 
-    // 2. Fetch Hotel Name for the email
-    const { data: hotel } = await supabaseAdmin
-      .from('hotels')
-      .select('name')
-      .eq('slug', meta.hotelSlug)
-      .single()
 
-    const hotelName = hotel?.name || 'Express Lyft Partner'
 
     // 3. Send Confirmation Email
     if (resend && meta.customerEmail && booking) {
@@ -72,7 +65,7 @@ export async function POST(req: NextRequest) {
           ConfirmationEmail({
             customerName: meta.customerName || 'Valued Guest',
             bookingId: booking.id,
-            hotelName: hotelName,
+
             pickup: meta.pickup,
             destination: meta.destination,
             date: meta.date,
@@ -85,7 +78,7 @@ export async function POST(req: NextRequest) {
         await resend.emails.send({
           from: 'Express Lyft <bookings@expresslyft.com>', // Note: Needs domain verification in Resend dashboard
           to: meta.customerEmail,
-          subject: `Booking Confirmed: ${hotelName} — Express Lyft`,
+          subject: `Booking Confirmed — Express Lyft`,
           html: emailHtml,
         })
         console.log('[webhook] confirmation email sent to:', meta.customerEmail)

@@ -749,7 +749,7 @@ export default function AdminPage() {
                     { label: 'Full Name', key: 'name' as const, type: 'text', placeholder: 'John Smith' },
                     { label: 'Email', key: 'email' as const, type: 'email', placeholder: 'john@example.com' },
                     { label: 'Phone', key: 'phone' as const, type: 'tel', placeholder: '+1 (555) 000-0000' },
-                    { label: 'Hotel', key: 'hotel' as const, type: 'text', placeholder: 'B Ocean Resort' },
+                    { label: 'Hotel', key: 'hotel' as const, type: 'text', placeholder: 'Partner Hotel' },
                   ].map(({ label, key, type, placeholder }) => (
                     <div key={key} className="flex flex-col gap-1.5">
                       <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>{label}</label>
@@ -1333,7 +1333,7 @@ export default function AdminPage() {
               <div className="flex items-center gap-4 flex-wrap">
                 <input
                   type="text"
-                  placeholder="hotel-slug (e.g. ritz-carlton-miami)"
+                  placeholder="hotel-slug (e.g. partner-slug)"
                   value={qrSlug}
                   onChange={(e) => setQrSlug(e.target.value)}
                   className="flex-1 min-w-[220px] rounded-xl px-4 py-3.5 text-sm outline-none transition-colors focus:border-[#B8960C]"

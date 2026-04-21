@@ -2,7 +2,7 @@
 import Image from 'next/image'
 
 interface HeroSectionProps {
-  hotelName: string
+
   vehicleType: 'sedan_suv' | 'suburban' | 'sprinter' | 'minibus' | 'coachbus'
   basePrice: number
 }
@@ -15,7 +15,7 @@ const vehicleLabels: Record<string, string> = {
   coachbus: '55 Passenger Bus',
 }
 
-export default function HeroSection({ hotelName, vehicleType, basePrice }: HeroSectionProps) {
+export default function HeroSection({ vehicleType, basePrice }: HeroSectionProps) {
   return (
     <section className="relative w-full min-h-[70vh] md:min-h-[calc(100vh-80px)] flex items-center py-16 md:py-0">
       <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center w-full">
@@ -28,7 +28,7 @@ export default function HeroSection({ hotelName, vehicleType, basePrice }: HeroS
             className="text-xs font-bold tracking-[3px] uppercase"
             style={{ color: '#D4AF37' }}
           >
-            Welcome, {hotelName} Guests
+            WELCOME GUESTS
           </span>
 
           {/* H1 */}
