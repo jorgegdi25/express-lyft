@@ -25,10 +25,10 @@ export default function HeroSection({ hotelName, vehicleType, basePrice }: HeroS
 
           {/* Overline tag */}
           <span
-            className="text-xs font-bold tracking-[3px] uppercase"
+            className="text-xs font-bold tracking-[3px]"
             style={{ color: '#D4AF37' }}
           >
-            Welcome, {hotelName} Guests
+            WELCOME, {hotelName} GUESTS
           </span>
 
           {/* H1 */}
@@ -41,7 +41,7 @@ export default function HeroSection({ hotelName, vehicleType, basePrice }: HeroS
 
           {/* Subtext */}
           <p className="text-base md:text-lg leading-relaxed" style={{ color: '#AAAAAA' }}>
-            Book your private transfer directly from the hotel. Fill in the form below or call our concierge line for immediate assistance.
+            Book your private transfer directly from the hotel.
           </p>
 
           {/* CTA row */}
