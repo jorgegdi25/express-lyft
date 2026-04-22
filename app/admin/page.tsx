@@ -694,73 +694,171 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div>
               <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Dashboard</h1>
-              <p className="text-sm" style={{ color: '#888' }}>Overview of your transportation business</p>
+              <p className="text-sm" style={{ color: '#888' }}>Command center - Overview of your transportation business</p>
             </div>
+
+            {/* LEAD ALERT BANNER */}
+            {leads.filter(l => l.status === 'new').length > 0 && (
+              <section
+                onClick={() => setActiveTab('leads')}
+                className="rounded-xl p-5 flex items-center gap-5 cursor-pointer hover:brightness-110 transition-all"
+                style={{ background: 'linear-gradient(135deg, #B8960C15, #D4AF3720)', border: '2px solid #B8960C' }}
+              >
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#B8960C' }}>
+                  <span className="text-2xl font-black text-black">{leads.filter(l => l.status === 'new').length}</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg font-bold text-white">
+                    You have {leads.filter(l => l.status === 'new').length} new lead{leads.filter(l => l.status === 'new').length > 1 ? 's' : ''} waiting!
+                  </p>
+                  <p className="text-sm text-[#999]">Click here to manage and follow up with your leads</p>
+                </div>
+                <span className="text-sm font-bold text-[#B8960C] uppercase tracking-wider">Go to Leads &rarr;</span>
+              </section>
+            )}
 
             {/* Stats Grid */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
-                { label: 'Total Revenue', value: `$${bookings.reduce((s, b) => s + (b.amount_usd || 0), 0).toLocaleString()}`, sub: 'All time', color: '#4ade80' },
-                { label: 'Bookings', value: bookings.length, sub: 'Completed trips', color: '#60a5fa' },
-                { label: 'Active Clients', value: clients.filter(c => c.status !== 'inactive').length, sub: `${clients.filter(c => c.status === 'vip').length} VIP`, color: '#D4AF37' },
-                { label: 'Leads', value: leads.length, sub: 'Potential bookings', color: '#c084fc' },
+                { label: 'Total Revenue', value: `$${bookings.reduce((s, b) => s + (b.amount_usd || 0), 0).toLocaleString()}`, sub: 'All time', color: '#4ade80', icon: '$' },
+                { label: 'Bookings', value: bookings.length, sub: 'Completed trips', color: '#60a5fa', icon: 'B' },
+                { label: 'Active Leads', value: leads.length, sub: `${leads.filter(l => l.status === 'new').length} new`, color: '#c084fc', icon: 'L' },
+                { label: 'Pipeline Value', value: `$${leads.reduce((s, l) => s + (l.amount_usd || 0), 0).toLocaleString()}`, sub: 'Estimated revenue', color: '#D4AF37', icon: 'P' },
               ].map((s) => (
                 <div
                   key={s.label}
-                  className="rounded-xl p-5 flex flex-col gap-3 group"
+                  className="rounded-xl p-6 flex flex-col gap-3"
                   style={{ background: '#111', border: '1px solid #1a1a1a' }}
                 >
-                  <p className="text-xs uppercase tracking-[2px]" style={{ color: '#888' }}>
+                  <p className="text-sm uppercase tracking-wider font-semibold" style={{ color: '#888' }}>
                     {s.label}
                   </p>
                   <p className="text-3xl font-bold" style={{ color: s.color }}>
                     {s.value}
                   </p>
-                  <p className="text-xs uppercase tracking-widest" style={{ color: '#999' }}>
+                  <p className="text-xs uppercase tracking-wider" style={{ color: '#666' }}>
                     {s.sub}
                   </p>
                 </div>
               ))}
             </section>
 
+            {/* Pipeline Summary */}
+            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <p className="text-sm font-bold uppercase tracking-wider mb-5" style={{ color: '#888' }}>Lead Pipeline</p>
+              <div className="grid grid-cols-5 gap-3">
+                {[
+                  { status: 'new', label: 'New', color: '#c084fc', bg: '#c084fc15' },
+                  { status: 'contacted', label: 'Contacted', color: '#60a5fa', bg: '#60a5fa15' },
+                  { status: 'quoted', label: 'Quoted', color: '#D4AF37', bg: '#D4AF3715' },
+                  { status: 'converted', label: 'Converted', color: '#4ade80', bg: '#4ade8015' },
+                  { status: 'lost', label: 'Lost', color: '#f87171', bg: '#f8717115' },
+                ].map((p) => {
+                  const count = leads.filter(l => l.status === p.status).length;
+                  return (
+                    <div key={p.status} className="rounded-xl p-4 text-center" style={{ background: p.bg, border: `1px solid ${p.color}30` }}>
+                      <p className="text-2xl font-bold" style={{ color: p.color }}>{count}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider mt-1" style={{ color: p.color }}>{p.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* RECENT LEADS - latest 5 */}
+            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <div className="flex items-center justify-between mb-5">
+                <p className="text-sm font-bold uppercase tracking-wider" style={{ color: '#888' }}>Recent Leads</p>
+                <button
+                  onClick={() => setActiveTab('leads')}
+                  className="text-sm font-bold transition-colors hover:text-[#D4AF37] px-4 py-2 rounded-lg border border-[#333] hover:border-[#B8960C]"
+                  style={{ color: '#999' }}
+                >
+                  View All Leads &rarr;
+                </button>
+              </div>
+              {leads.length === 0 ? (
+                <p className="text-base italic py-8 text-center" style={{ color: '#666' }}>
+                  No leads yet. New booking requests will appear here automatically.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {leads.slice(0, 5).map((l) => (
+                    <div
+                      key={l.id}
+                      className="rounded-xl p-5 flex items-center gap-5 hover:bg-[#1a1a1a] transition-colors cursor-pointer"
+                      style={{ background: '#0a0a0a', border: l.status === 'new' ? '1px solid #B8960C50' : '1px solid #1a1a1a' }}
+                      onClick={() => { setActiveTab('leads'); setEditingLead(l); }}
+                    >
+                      {/* Status dot */}
+                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{
+                        background: l.status === 'new' ? '#c084fc' : l.status === 'contacted' ? '#60a5fa' : l.status === 'quoted' ? '#D4AF37' : l.status === 'converted' ? '#4ade80' : '#f87171'
+                      }} />
+                      {/* Customer info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-1">
+                          <p className="text-base font-bold text-white truncate">{l.customer_name || 'Anonymous'}</p>
+                          {l.status === 'new' && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider bg-[#c084fc20] text-[#c084fc] px-2 py-0.5 rounded-full border border-[#c084fc30]">NEW</span>
+                          )}
+                          {l.customer_country && (
+                            <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-0.5 rounded border border-blue-800/30 font-bold">{l.customer_country}</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-[#888] truncate">{l.pickup} &rarr; {l.destination}</p>
+                      </div>
+                      {/* Trip details */}
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-lg font-bold" style={{ color: '#4ade80' }}>{l.amount_usd ? `$${l.amount_usd}` : '--'}</p>
+                        <p className="text-xs text-[#666]">{l.date ? formatDateUS(l.date) : 'No date'}</p>
+                      </div>
+                      {/* Status badge */}
+                      <div className="flex-shrink-0">
+                        <span className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg" style={{
+                          background: l.status === 'converted' ? '#16331630' : l.status === 'lost' ? '#33161630' : '#1a1a1a',
+                          color: l.status === 'converted' ? '#4ade80' : l.status === 'lost' ? '#f87171' : '#999'
+                        }}>{l.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
             {/* Recent Bookings Preview */}
             <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
               <div className="flex items-center justify-between mb-5">
-                <p className="text-xs font-bold uppercase tracking-[3px]" style={{ color: '#888' }}>
-                  Latest Bookings
-                </p>
+                <p className="text-sm font-bold uppercase tracking-wider" style={{ color: '#888' }}>Latest Bookings</p>
                 <button
                   onClick={() => setActiveTab('bookings')}
-                  className="text-xs uppercase tracking-widest font-bold transition-colors hover:text-[#D4AF37]"
+                  className="text-sm font-bold transition-colors hover:text-[#D4AF37] px-4 py-2 rounded-lg border border-[#333] hover:border-[#B8960C]"
                   style={{ color: '#999' }}
                 >
-                  View All →
+                  View All &rarr;
                 </button>
               </div>
               {bookings.length === 0 ? (
-                <p className="text-sm italic" style={{ color: '#999' }}>
+                <p className="text-base italic py-4" style={{ color: '#666' }}>
                   No bookings yet. They will appear here after the first completed payment.
                 </p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-base">
                     <thead>
                       <tr style={{ color: '#888' }}>
                         {['Date', 'Passenger', 'Route', 'Amount', 'Status'].map((h) => (
-                          <th key={h} className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">
-                            {h}
-                          </th>
+                          <th key={h} className="text-left py-3 pr-6 text-sm uppercase tracking-wider font-semibold">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {bookings.slice(0, 5).map((b) => (
                         <tr key={b.id} style={{ borderTop: '1px solid #1a1a1a' }}>
-                          <td className="py-3 pr-4 text-white">{formatDateUS(b.date)}</td>
-                          <td className="py-3 pr-4 text-white text-xs">{b.customer_name || 'Guest'}</td>
-                          <td className="py-3 pr-4 text-xs" style={{ color: '#999' }}>{b.pickup} → {b.destination}</td>
-                          <td className="py-3 pr-4" style={{ color: '#D4AF37' }}>${b.amount_usd}</td>
-                          <td className="py-3"><StatusBadge status={b.status} /></td>
+                          <td className="py-4 pr-6 text-white">{formatDateUS(b.date)}</td>
+                          <td className="py-4 pr-6 text-white">{b.customer_name || 'Guest'}</td>
+                          <td className="py-4 pr-6 text-sm" style={{ color: '#999' }}>{b.pickup} &rarr; {b.destination}</td>
+                          <td className="py-4 pr-6 font-bold" style={{ color: '#D4AF37' }}>${b.amount_usd}</td>
+                          <td className="py-4"><StatusBadge status={b.status} /></td>
                         </tr>
                       ))}
                     </tbody>
