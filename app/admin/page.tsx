@@ -39,6 +39,7 @@ interface Lead {
   customer_name: string
   customer_email: string
   customer_phone?: string
+  customer_country?: string
   pickup: string
   destination: string
   vehicle_type: string
@@ -242,7 +243,7 @@ export default function AdminPage() {
   }
 
   async function fetchLeads(pw: string) {
-    const res = await fetch(`/api/admin/leads?t=${Date.now()}`, {
+    const res = await fetch(`/api/leads?t=${Date.now()}`, {
       headers: { authorization: `Bearer ${pw}` },
       cache: 'no-store'
     })
