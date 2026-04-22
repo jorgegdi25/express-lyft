@@ -75,7 +75,7 @@ export const ConfirmationEmail = ({
 
         <Section style={footer}>
           <Text style={footerText}>
-            Need to make changes? Call your concierge directly at <Link href="tel:3053679944" style={link}>305-367-9944</Link>.
+            Need to make changes? Call us directly at <Link href="tel:3057994420" style={link}>305-799-4420</Link>.
           </Text>
           <Hr style={hr} />
           <Text style={copyright}>

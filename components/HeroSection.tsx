@@ -59,11 +59,11 @@ export default function HeroSection({ vehicleType, basePrice }: HeroSectionProps
                 Or call us directly
               </span>
               <a
-                href="tel:3053679944"
+                href="tel:3057994420"
                 className="text-xl md:text-2xl font-bold tracking-wide hover:text-[#B8960C] transition-colors"
                 style={{ color: '#FFFFFF' }}
               >
-                305-367-9944
+                305-799-4420
               </a>
             </div>
           </div>

@@ -170,9 +170,9 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
               Your reservation request has been received!
             </p>
             <p className="text-sm" style={{ color: '#AAAAAA' }}>
-              Our concierge team will review your request and contact you shortly. Need immediate help?{' '}
-              <a href="tel:3053679944" className="font-semibold underline" style={{ color: '#EF9F27' }}>
-                Call 305-367-9944
+              Our team will review your request and contact you shortly. Need immediate help?{' '}
+              <a href="tel:3057994420" className="font-semibold underline" style={{ color: '#EF9F27' }}>
+                Call 305-799-4420
               </a>
             </p>
           </div>
