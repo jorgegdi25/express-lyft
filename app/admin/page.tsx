@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 import QRCode from 'qrcode'
 
-/* ── Interfaces ─────────────────────────────────────── */
+/* -- Interfaces --------------------------------------- */
 
 
 interface Booking {
@@ -82,7 +82,7 @@ type TabKey = 'dashboard' | 'clients' | 'routes' | 'bookings' | 'leads' | 'qr'
 
 
 
-/* ── Sidebar Icon Components ────────────────────────── */
+/* -- Sidebar Icon Components -------------------------- */
 
 function IconDashboard() {
   return (
@@ -141,7 +141,7 @@ function IconQR() {
   )
 }
 
-/* ── Main Admin Page ────────────────────────────────── */
+/* -- Main Admin Page ---------------------------------- */
 
 export default function AdminPage() {
   const [password, setPassword] = useState('')
@@ -207,7 +207,7 @@ export default function AdminPage() {
     notes: '',
   })
 
-  /* ── API Fetchers ── */
+  /* -- API Fetchers -- */
   
   function formatDateUS(dateStr: string | undefined | null) {
     if (!dateStr) return '—'
@@ -251,7 +251,7 @@ export default function AdminPage() {
     return res.json() as Promise<Lead[]>
   }
 
-  /* ── Auth ── */
+  /* -- Auth -- */
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -303,7 +303,7 @@ export default function AdminPage() {
     setLoadingBookings(false)
   }
 
-  /* ── Route CRUD ── */
+  /* -- Route CRUD -- */
 
   async function saveRoute(route: RoutePricing) {
     setSavingRoute(route.id)
@@ -459,9 +459,9 @@ export default function AdminPage() {
     }
   }
 
-  /* ── QR ── */
+  /* -- QR -- */
 
-  /* ── WhatsApp ── */
+  /* -- WhatsApp -- */
   const openWhatsApp = (phone: string | null, message: string) => {
     if (!phone) return;
     let cleanPhone = phone.replace(/\D/g, '');
@@ -483,7 +483,7 @@ export default function AdminPage() {
     setQrDataUrl(dataUrl)
   }
 
-  /* ── Client CRUD (local state for demo) ── */
+  /* -- Client CRUD (local state for demo) -- */
 
   function handleSaveClient() {
     if (editingClient) {
@@ -538,7 +538,7 @@ export default function AdminPage() {
     })
   }
 
-  /* ── Status Badge ── */
+  /* -- Status Badge -- */
 
   function StatusBadge({ status }: { status: string }) {
     const colors: Record<string, { bg: string; text: string; border: string }> = {
@@ -559,7 +559,7 @@ export default function AdminPage() {
     )
   }
 
-  /* ── Sidebar Items ── */
+  /* -- Sidebar Items -- */
 
   const sidebarItems: { key: TabKey; label: string; icon: React.ReactNode }[] = [
     { key: 'dashboard', label: 'Dashboard', icon: <IconDashboard /> },
@@ -570,9 +570,9 @@ export default function AdminPage() {
     { key: 'qr',        label: 'QR Codes',   icon: <IconQR /> },
   ]
 
-  /* ═══════════════════════════════════════════════════ */
+  /* =================================================== */
   /*  LOGIN SCREEN                                       */
-  /* ═══════════════════════════════════════════════════ */
+  /* =================================================== */
 
   if (!authed) {
     return (
@@ -617,14 +617,14 @@ export default function AdminPage() {
     )
   }
 
-  /* ═══════════════════════════════════════════════════ */
+  /* =================================================== */
   /*  MAIN DASHBOARD LAYOUT                              */
-  /* ═══════════════════════════════════════════════════ */
+  /* =================================================== */
 
   return (
     <div className="flex min-h-screen" style={{ background: '#0a0a0a', color: '#FFFFFF' }}>
 
-      {/* ── Sidebar ── */}
+      {/* -- Sidebar -- */}
       <aside
         className="w-[240px] min-h-screen flex flex-col py-6 px-4 fixed left-0 top-0"
         style={{ background: '#0f0f0f', borderRight: '1px solid #1a1a1a' }}
@@ -686,10 +686,10 @@ export default function AdminPage() {
         </div>
       </aside>
 
-      {/* ── Main Content ── */}
+      {/* -- Main Content -- */}
       <main className="flex-1 ml-[240px] p-8 max-w-6xl">
 
-        {/* ─────── DASHBOARD TAB ─────── */}
+        {/* ------- DASHBOARD TAB ------- */}
         {activeTab === 'dashboard' && (
           <div className="flex flex-col gap-8">
             <div>
@@ -771,7 +771,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ─────── CLIENTS TAB ─────── */}
+        {/* ------- CLIENTS TAB ------- */}
         {activeTab === 'clients' && (
           <div className="flex flex-col gap-8">
             <div className="flex items-center justify-between">
@@ -933,7 +933,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ─────── ROUTES TAB ─────── */}
+        {/* ------- ROUTES TAB ------- */}
         {activeTab === 'routes' && (
           <div className="flex flex-col gap-8">
             <div>
@@ -1115,7 +1115,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ─────── BOOKINGS TAB ─────── */}
+        {/* ------- BOOKINGS TAB ------- */}
         {activeTab === 'bookings' && (
           <div className="flex flex-col gap-8">
             <div>
@@ -1171,7 +1171,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ─────── LEADS TAB ─────── */}
+        {/* ------- LEADS TAB ------- */}
         {activeTab === 'leads' && (
           <div className="flex flex-col gap-8">
             <div>
@@ -1185,7 +1185,7 @@ export default function AdminPage() {
                 <div className="w-full max-w-2xl rounded-2xl p-8" style={{ background: '#151515', border: '2px solid #B8960C' }}>
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-bold text-white">Editing: {editingLead.customer_name}</h2>
-                    <button onClick={() => setEditingLead(null)} className="text-sm text-[#aaa] hover:text-red-400 px-3 py-1 rounded-lg border border-[#333] hover:border-red-400 transition-all">✕ Close</button>
+                    <button onClick={() => setEditingLead(null)} className="text-sm text-[#aaa] hover:text-red-400 px-3 py-1 rounded-lg border border-[#333] hover:border-red-400 transition-all">x Close</button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div className="flex flex-col gap-2">
@@ -1384,13 +1384,12 @@ export default function AdminPage() {
                       </tr>
                     ))}
                     
-                    </tr>
                   </tbody>
                 </table>
               </div>
             </section>
 
-            {/* ── ADD NEW LEAD FORM ── */}
+            {/* -- ADD NEW LEAD FORM -- */}
             <section className="rounded-xl p-8" style={{ background: '#111', border: '2px dashed #B8960C' }}>
               <h3 className="text-lg font-bold text-white mb-6">+ Add New Lead</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
@@ -1463,7 +1462,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ─────── QR CODES TAB ─────── */}
+        {/* ------- QR CODES TAB ------- */}
         {activeTab === 'qr' && (
           <div className="flex flex-col gap-8">
             <div>
