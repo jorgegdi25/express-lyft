@@ -158,7 +158,21 @@ export default function AdminPage() {
   const [addingLead, setAddingLead] = useState(false)
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
   const [newLead, setNewLead] = useState({
-    hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv', status: 'new', notes: ''
+    hotelSlug: 'bocean-resort', 
+    customerName: '', 
+    customerEmail: '', 
+    customerPhone: '', 
+    customerCountry: '',
+    pickup: '', 
+    destination: '', 
+    vehicleType: 'sedan_suv', 
+    status: 'new', 
+    notes: '',
+    passengers: 1,
+    date: '',
+    time: '',
+    amountUsd: 0,
+    tripType: 'one-way' as 'one-way' | 'round-trip'
   })
 
   const [routePrices, setRoutePrices] = useState<RoutePricing[]>([])
@@ -373,7 +387,23 @@ export default function AdminPage() {
       }
       const data = await fetchLeads(password)
       setLeads(data)
-      setNewLead({ hotelSlug: 'bocean-resort', customerName: '', customerEmail: '', customerPhone: '', pickup: '', destination: '', vehicleType: 'sedan_suv', status: 'new', notes: '' })
+      setNewLead({ 
+        hotelSlug: 'bocean-resort', 
+        customerName: '', 
+        customerEmail: '', 
+        customerPhone: '', 
+        customerCountry: '',
+        pickup: '', 
+        destination: '', 
+        vehicleType: 'sedan_suv', 
+        status: 'new', 
+        notes: '',
+        passengers: 1,
+        date: '',
+        time: '',
+        amountUsd: 0,
+        tripType: 'one-way'
+      })
     } catch (err) {
       alert(`Network error adding lead: ${err}`)
     }
@@ -384,10 +414,23 @@ export default function AdminPage() {
     // Optimistic UI update
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)))
     try {
+      // Map camelCase to snake_case if necessary for the API
+      const payload = { 
+        id, 
+        ...updates,
+        amountUsd: updates.amount_usd,
+        tripType: updates.trip_type,
+        customerName: updates.customer_name,
+        customerEmail: updates.customer_email,
+        customerPhone: updates.customer_phone,
+        vehicleType: updates.vehicle_type,
+        returnDate: updates.return_date,
+        returnTime: updates.return_time
+      }
       const res = await fetch('/api/leads', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
-        body: JSON.stringify({ id, ...updates })
+        body: JSON.stringify(payload)
       })
       const result = await res.json()
       if (!res.ok) {
@@ -1159,15 +1202,30 @@ export default function AdminPage() {
                     <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Phone</label>
                     <input type="tel" value={editingLead.customer_phone || ''} onChange={(e) => setEditingLead({...editingLead, customer_phone: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
                   </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Passengers</label>
+                    <input type="number" value={editingLead.passengers || 1} onChange={(e) => setEditingLead({...editingLead, passengers: parseInt(e.target.value)})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Amount ($)</label>
+                    <input type="number" value={editingLead.amount_usd || 0} onChange={(e) => setEditingLead({...editingLead, amount_usd: parseInt(e.target.value)})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Trip Type</label>
+                    <select value={editingLead.trip_type || 'one-way'} onChange={(e) => setEditingLead({...editingLead, trip_type: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]">
+                      <option value="one-way">One Way</option>
+                      <option value="round-trip">Round Trip</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Pickup</label>
-                    <input type="text" value={editingLead.pickup || ''} onChange={(e) => setEditingLead({...editingLead, pickup: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Date</label>
+                    <input type="date" value={editingLead.date || ''} onChange={(e) => setEditingLead({...editingLead, date: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Destination</label>
-                    <input type="text" value={editingLead.destination || ''} onChange={(e) => setEditingLead({...editingLead, destination: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Time</label>
+                    <input type="text" placeholder="e.g. 10:00 AM" value={editingLead.time || ''} onChange={(e) => setEditingLead({...editingLead, time: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -1178,7 +1236,12 @@ export default function AdminPage() {
                         customer_email: editingLead.customer_email,
                         customer_phone: editingLead.customer_phone,
                         pickup: editingLead.pickup,
-                        destination: editingLead.destination
+                        destination: editingLead.destination,
+                        passengers: editingLead.passengers,
+                        amount_usd: editingLead.amount_usd,
+                        trip_type: editingLead.trip_type,
+                        date: editingLead.date,
+                        time: editingLead.time
                       })
                       setEditingLead(null)
                     }}
@@ -1211,7 +1274,14 @@ export default function AdminPage() {
                     {leads.map((l) => (
                       <tr key={l.id} style={{ borderTop: '1px solid #1a1a1a' }} className="hover:bg-[#1a1a1a40] transition-colors">
                         <td className="py-4 pr-4">
-                          <p className="text-white font-bold">{l.customer_name || 'Anonymous'}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-white font-bold">{l.customer_name || 'Anonymous'}</p>
+                            {l.customer_country && (
+                              <span className="text-[10px] bg-blue-900/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-800/30 font-bold uppercase tracking-widest">
+                                {l.customer_country}
+                              </span>
+                            )}
+                          </div>
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="text-xs text-[#888]">{l.customer_email || 'No email'}</p>
                             {l.customer_phone && (
@@ -1314,7 +1384,10 @@ export default function AdminPage() {
                     <tr style={{ borderTop: '2px dashed #B8960C' }}>
                       <td className="py-4 pr-4">
                         <div className="flex flex-col gap-2">
-                          <input type="text" placeholder="Name *" value={newLead.customerName} onChange={(e) => setNewLead({ ...newLead, customerName: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                          <div className="flex gap-2">
+                            <input type="text" placeholder="Name *" value={newLead.customerName} onChange={(e) => setNewLead({ ...newLead, customerName: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                            <input type="text" placeholder="Country" value={newLead.customerCountry} onChange={(e) => setNewLead({ ...newLead, customerCountry: e.target.value })} className="w-32 text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                          </div>
                           <input type="email" placeholder="Email" value={newLead.customerEmail} onChange={(e) => setNewLead({ ...newLead, customerEmail: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
                           <input type="tel" placeholder="Phone" value={newLead.customerPhone} onChange={(e) => setNewLead({ ...newLead, customerPhone: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
                         </div>
@@ -1336,25 +1409,44 @@ export default function AdminPage() {
                               </option>
                             ))}
                           </select>
+                          <select value={newLead.tripType} onChange={(e) => setNewLead({ ...newLead, tripType: e.target.value as any })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]">
+                            <option value="one-way">One Way</option>
+                            <option value="round-trip">Round Trip</option>
+                          </select>
                         </div>
                       </td>
                       <td className="py-4 pr-4">
-                        <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]">
-                          <option value="sedan_suv">Sedan & SUV</option>
-                          <option value="suburban">Suburban</option>
-                          <option value="sprinter">Sprinter</option>
-                          <option value="minibus">Mini Bus</option>
-                          <option value="coachbus">Coach Bus</option>
-                        </select>
+                        <div className="flex flex-col gap-2">
+                          <input type="date" value={newLead.date} onChange={(e) => setNewLead({ ...newLead, date: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                          <input type="text" placeholder="Time (e.g. 11:00 AM)" value={newLead.time} onChange={(e) => setNewLead({ ...newLead, time: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                        </div>
                       </td>
-                      <td colSpan={2} className="py-4 text-right">
+                      <td className="py-4 pr-4">
+                        <div className="flex flex-col gap-2">
+                          <input type="number" placeholder="Pax" value={newLead.passengers} onChange={(e) => setNewLead({ ...newLead, passengers: parseInt(e.target.value) || 1 })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                          <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]">
+                            <option value="sedan_suv">Sedan & SUV</option>
+                            <option value="suburban">Suburban</option>
+                            <option value="sprinter">Sprinter</option>
+                            <option value="minibus">Mini Bus</option>
+                            <option value="coachbus">Coach Bus</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[#888]">$</span>
+                          <input type="number" placeholder="0" value={newLead.amountUsd} onChange={(e) => setNewLead({ ...newLead, amountUsd: parseInt(e.target.value) || 0 })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
+                        </div>
+                      </td>
+                      <td className="py-4 text-right">
                         <button
                           onClick={addLead}
                           disabled={addingLead || !newLead.customerName || !newLead.pickup || !newLead.destination}
                           className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
                           style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
                         >
-                          {addingLead ? 'Saving…' : '+ Add Lead'}
+                          {addingLead ? 'Saving…' : '+ Add'}
                         </button>
                       </td>
                     </tr>
