@@ -4,13 +4,15 @@ import { supabase, supabaseAdmin } from '@/lib/supabase'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  let body
   try {
-    const body = await req.json()
+    body = await req.json()
     const { 
       hotelSlug, 
       customerName, 
       customerEmail, 
       customerPhone, 
+      customerCountry,
       pickup, 
       destination, 
       vehicleType,
@@ -25,11 +27,12 @@ export async function POST(req: NextRequest) {
 
     if (!hotelSlug) return NextResponse.json({ error: 'Missing hotelSlug' }, { status: 400 })
 
-    const { error } = await supabase.from('leads').insert({
+    const { error } = await supabaseAdmin.from('leads').insert({
       hotel_slug: hotelSlug,
       customer_name: customerName,
       customer_email: customerEmail,
       customer_phone: customerPhone,
+      customer_country: customerCountry,
       pickup,
       destination,
       vehicle_type: vehicleType,
@@ -50,7 +53,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Unknown error'
-    console.error('[leads] POST error:', errorMsg, 'Body:', await req.json().catch(() => 'no-body'))
+    console.error('[leads] POST error:', errorMsg, 'Body:', body || 'no-body-read')
     return NextResponse.json({ error: 'Failed to log lead: ' + errorMsg }, { status: 500 })
   }
 }

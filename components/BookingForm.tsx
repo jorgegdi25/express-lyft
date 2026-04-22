@@ -170,6 +170,7 @@ export default function BookingForm({ hotelSlug, prices, routePrices }: BookingF
           customerName,
           customerEmail,
           customerPhone,
+          customerCountry,
           pickup,
           destination,
           vehicleType,
@@ -183,12 +184,15 @@ export default function BookingForm({ hotelSlug, prices, routePrices }: BookingF
         }),
       })
 
-      if (!res.ok) throw new Error('Failed to submit reservation.')
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to submit reservation.')
+      }
 
       window.location.href = `/hotel/${hotelSlug}?success=true`
-    } catch (e) {
+    } catch (e: any) {
       console.error('[leads] logging error:', e)
-      setError('Something went wrong. Please try again or call us directly.')
+      setError(e.message || 'Something went wrong. Please try again or call us directly.')
     } finally {
       setLoading(false)
     }
