@@ -417,6 +417,17 @@ export default function AdminPage() {
 
   /* ── QR ── */
 
+  /* ── WhatsApp ── */
+  const openWhatsApp = (phone: string | null, message: string) => {
+    if (!phone) return;
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length === 10) {
+      cleanPhone = '1' + cleanPhone;
+    }
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   async function generateQR() {
     if (!qrSlug) return
     const url = `https://expresslift.com/hotel/${qrSlug}`
@@ -827,8 +838,19 @@ export default function AdminPage() {
                       <tr key={c.id} style={{ borderTop: '1px solid #1a1a1a' }}>
                         <td className="py-4 pr-4">
                           <p className="text-white font-bold">{c.name}</p>
-                          <p className="text-xs text-[#aaa]">{c.email}</p>
-                          <p className="text-xs text-[#999]">{c.phone}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-xs text-[#aaa]">{c.email}</p>
+                            {c.phone && (
+                              <button
+                                onClick={() => openWhatsApp(c.phone, `Hi ${c.name}, this is Express Lyft. How can we help you today?`)}
+                                className="text-[10px] bg-green-900/30 text-green-400 px-1.5 py-0.5 rounded border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-1"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-7.6 8.38 8.38 0 0 1 3.8.9L22 2l-2.5 5.5Z"/></svg>
+                                WhatsApp
+                              </button>
+                            )}
+                          </div>
+                          {c.phone && <p className="text-[10px] text-[#555] font-mono">{c.phone}</p>}
                         </td>
                         <td className="py-4 pr-4">
                           <p className="text-xs text-white">{c.hotel}</p>
@@ -1078,7 +1100,18 @@ export default function AdminPage() {
                           <td className="py-3 pr-4 text-white">{formatDateUS(b.date)}</td>
                           <td className="py-3 pr-4">
                             <p className="text-white text-xs font-bold">{b.customer_name || 'Guest'}</p>
-                            <p className="text-xs text-[#888]">{b.customer_email || b.hotel_slug}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-[#888]">{b.customer_email || b.hotel_slug}</p>
+                              {b.customer_phone && (
+                                <button
+                                  onClick={() => openWhatsApp(b.customer_phone, `Hi ${b.customer_name || 'Guest'}, this is Express Lyft. Your booking for ${formatDateUS(b.date)} at ${b.time} from ${b.pickup} to ${b.destination} is confirmed. We'll see you soon!`)}
+                                  className="text-[10px] bg-green-900/30 text-green-400 px-1.5 py-0.5 rounded border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-1"
+                                >
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-7.6 8.38 8.38 0 0 1 3.8.9L22 2l-2.5 5.5Z"/></svg>
+                                  WhatsApp
+                                </button>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 pr-4 text-xs" style={{ color: '#999' }}>{b.pickup} → {b.destination}</td>
                           <td className="py-3 pr-4 text-white">{VEHICLE_LABELS[b.vehicle_type] ?? b.vehicle_type}</td>
@@ -1179,8 +1212,19 @@ export default function AdminPage() {
                       <tr key={l.id} style={{ borderTop: '1px solid #1a1a1a' }} className="hover:bg-[#1a1a1a40] transition-colors">
                         <td className="py-4 pr-4">
                           <p className="text-white font-bold">{l.customer_name || 'Anonymous'}</p>
-                          <p className="text-xs text-[#888]">{l.customer_email || 'No email'}</p>
-                          {l.customer_phone && <p className="text-xs text-[#B8960C] font-mono">{l.customer_phone}</p>}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-xs text-[#888]">{l.customer_email || 'No email'}</p>
+                            {l.customer_phone && (
+                              <button
+                                onClick={() => openWhatsApp(l.customer_phone, `Hi ${l.customer_name || 'Guest'}, this is Express Lyft. I saw you were looking for a transfer from ${l.pickup} to ${l.destination}. Would you like to complete your reservation?`)}
+                                className="text-[10px] bg-green-900/30 text-green-400 px-1.5 py-0.5 rounded border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-1"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-7.6 8.38 8.38 0 0 1 3.8.9L22 2l-2.5 5.5Z"/></svg>
+                                WhatsApp
+                              </button>
+                            )}
+                          </div>
+                          {l.customer_phone && <p className="text-[10px] text-[#555] font-mono">{l.customer_phone}</p>}
                         </td>
                         <td className="py-4 pr-4">
                           <div className="flex flex-col gap-1">
