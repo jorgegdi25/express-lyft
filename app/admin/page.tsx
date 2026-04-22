@@ -1179,92 +1179,96 @@ export default function AdminPage() {
               <p className="text-sm" style={{ color: '#888' }}>Users who initiated a booking but haven&apos;t completed payment</p>
             </div>
 
-            {/* Edit Lead Modal */}
+            {/* Edit Lead Modal — Full-screen overlay */}
             {editingLead && (
-              <div className="rounded-xl p-6 mb-8" style={{ background: '#111', border: '1px solid #B8960C' }}>
-                <div className="flex items-center justify-between mb-6">
-                  <p className="text-xs font-bold uppercase tracking-[3px]" style={{ color: '#D4AF37' }}>
-                    Edit Lead: {editingLead.customer_name}
-                  </p>
-                  <button onClick={() => setEditingLead(null)} className="text-xs text-[#aaa] hover:text-red-400 transition-colors">
-                    Cancel
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Name</label>
-                    <input type="text" value={editingLead.customer_name || ''} onChange={(e) => setEditingLead({...editingLead, customer_name: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
+                <div className="w-full max-w-2xl rounded-2xl p-8" style={{ background: '#151515', border: '2px solid #B8960C' }}>
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-xl font-bold text-white">Editing: {editingLead.customer_name}</h2>
+                    <button onClick={() => setEditingLead(null)} className="text-sm text-[#aaa] hover:text-red-400 px-3 py-1 rounded-lg border border-[#333] hover:border-red-400 transition-all">✕ Close</button>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Email</label>
-                    <input type="email" value={editingLead.customer_email || ''} onChange={(e) => setEditingLead({...editingLead, customer_email: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Full Name</label>
+                      <input type="text" value={editingLead.customer_name || ''} onChange={(e) => setEditingLead({...editingLead, customer_name: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Email</label>
+                      <input type="email" value={editingLead.customer_email || ''} onChange={(e) => setEditingLead({...editingLead, customer_email: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Phone</label>
+                      <input type="tel" value={editingLead.customer_phone || ''} onChange={(e) => setEditingLead({...editingLead, customer_phone: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Passengers</label>
+                      <input type="number" value={editingLead.passengers || 1} onChange={(e) => setEditingLead({...editingLead, passengers: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Trip Type</label>
+                      <select value={editingLead.trip_type || 'one-way'} onChange={(e) => setEditingLead({...editingLead, trip_type: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors">
+                        <option value="one-way">One Way</option>
+                        <option value="round-trip">Round Trip</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Amount (USD)</label>
+                      <input type="number" value={editingLead.amount_usd || 0} onChange={(e) => setEditingLead({...editingLead, amount_usd: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Date</label>
+                      <input type="date" value={editingLead.date || ''} onChange={(e) => setEditingLead({...editingLead, date: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Time</label>
+                      <input type="text" placeholder="e.g. 10:00 AM" value={editingLead.time || ''} onChange={(e) => setEditingLead({...editingLead, time: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Pickup</label>
+                      <input type="text" value={editingLead.pickup || ''} onChange={(e) => setEditingLead({...editingLead, pickup: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Destination</label>
+                      <input type="text" value={editingLead.destination || ''} onChange={(e) => setEditingLead({...editingLead, destination: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Phone</label>
-                    <input type="tel" value={editingLead.customer_phone || ''} onChange={(e) => setEditingLead({...editingLead, customer_phone: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
+                  <div className="flex gap-4 pt-4 border-t border-[#2a2a2a]">
+                    <button
+                      onClick={async () => {
+                        await updateLead(editingLead.id, {
+                          customer_name: editingLead.customer_name,
+                          customer_email: editingLead.customer_email,
+                          customer_phone: editingLead.customer_phone,
+                          pickup: editingLead.pickup,
+                          destination: editingLead.destination,
+                          passengers: editingLead.passengers,
+                          amount_usd: editingLead.amount_usd,
+                          trip_type: editingLead.trip_type,
+                          date: editingLead.date,
+                          time: editingLead.time
+                        })
+                        setEditingLead(null)
+                      }}
+                      className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110"
+                      style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                    >
+                      Save Changes
+                    </button>
+                    <button onClick={() => setEditingLead(null)} className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] transition-all">
+                      Cancel
+                    </button>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Passengers</label>
-                    <input type="number" value={editingLead.passengers || 1} onChange={(e) => setEditingLead({...editingLead, passengers: parseInt(e.target.value)})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Amount ($)</label>
-                    <input type="number" value={editingLead.amount_usd || 0} onChange={(e) => setEditingLead({...editingLead, amount_usd: parseInt(e.target.value)})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Trip Type</label>
-                    <select value={editingLead.trip_type || 'one-way'} onChange={(e) => setEditingLead({...editingLead, trip_type: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]">
-                      <option value="one-way">One Way</option>
-                      <option value="round-trip">Round Trip</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Date</label>
-                    <input type="date" value={editingLead.date || ''} onChange={(e) => setEditingLead({...editingLead, date: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Time</label>
-                    <input type="text" placeholder="e.g. 10:00 AM" value={editingLead.time || ''} onChange={(e) => setEditingLead({...editingLead, time: e.target.value})} className="rounded-lg px-4 py-3 text-sm outline-none bg-[#0a0a0a] border border-[#1e1e1e]" />
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={async () => {
-                      await updateLead(editingLead.id, {
-                        customer_name: editingLead.customer_name,
-                        customer_email: editingLead.customer_email,
-                        customer_phone: editingLead.customer_phone,
-                        pickup: editingLead.pickup,
-                        destination: editingLead.destination,
-                        passengers: editingLead.passengers,
-                        amount_usd: editingLead.amount_usd,
-                        trip_type: editingLead.trip_type,
-                        date: editingLead.date,
-                        time: editingLead.time
-                      })
-                      setEditingLead(null)
-                    }}
-                    className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
-                    style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
-                  >
-                    Save Changes
-                  </button>
-                  <button onClick={() => setEditingLead(null)} className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest border border-[#1e1e1e]">
-                    Dismiss
-                  </button>
                 </div>
               </div>
             )}
 
             <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
+                <table className="w-full text-base text-left">
                   <thead>
                     <tr style={{ color: '#888' }}>
                       {['Customer', 'Trip / Route', 'Itinerary', 'Pax & Vehicle', 'Value', 'Pipeline'].map((h) => (
-                        <th key={h} className="py-2 pr-4 text-xs uppercase tracking-widest font-medium">{h}</th>
+                        <th key={h} className="py-3 pr-6 text-sm uppercase tracking-widest font-semibold">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -1274,73 +1278,69 @@ export default function AdminPage() {
                     )}
                     {leads.map((l) => (
                       <tr key={l.id} style={{ borderTop: '1px solid #1a1a1a' }} className="hover:bg-[#1a1a1a40] transition-colors">
-                        <td className="py-4 pr-4">
-                          <div className="flex items-center gap-2">
-                            <p className="text-white font-bold">{l.customer_name || 'Anonymous'}</p>
+                        <td className="py-5 pr-6">
+                          <div className="flex items-center gap-3 mb-1">
+                            <p className="text-white font-bold text-base">{l.customer_name || 'Anonymous'}</p>
                             {l.customer_country && (
-                              <span className="text-[10px] bg-blue-900/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-800/30 font-bold uppercase tracking-widest">
+                              <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-1 rounded-lg border border-blue-800/30 font-bold">
                                 {l.customer_country}
                               </span>
                             )}
                           </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-xs text-[#888]">{l.customer_email || 'No email'}</p>
-                            {l.customer_phone && (
-                              <button
-                                onClick={() => openWhatsApp(l.customer_phone, `Hi ${l.customer_name || 'Guest'}, this is Express Lyft. I saw you were looking for a transfer from ${l.pickup} to ${l.destination}. Would you like to complete your reservation?`)}
-                                className="text-[10px] bg-green-900/30 text-green-400 px-1.5 py-0.5 rounded border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-1"
-                              >
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-7.6 8.38 8.38 0 0 1 3.8.9L22 2l-2.5 5.5Z"/></svg>
-                                WhatsApp
-                              </button>
-                            )}
-                          </div>
-                          {l.customer_phone && <p className="text-[10px] text-[#555] font-mono">{l.customer_phone}</p>}
+                          <p className="text-sm text-[#999] mb-1">{l.customer_email || 'No email'}</p>
+                          {l.customer_phone && <p className="text-sm text-[#666] font-mono mb-2">{l.customer_phone}</p>}
+                          {l.customer_phone && (
+                            <button
+                              onClick={() => openWhatsApp(l.customer_phone, `Hi ${l.customer_name || 'Guest'}, this is Express Lyft. I saw you were looking for a transfer from ${l.pickup} to ${l.destination}. Would you like to complete your reservation?`)}
+                              className="text-xs bg-green-900/30 text-green-400 px-3 py-1.5 rounded-lg border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-2 font-semibold"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-7.6 8.38 8.38 0 0 1 3.8.9L22 2l-2.5 5.5Z"/></svg>
+                              WhatsApp
+                            </button>
+                          )}
                         </td>
-                        <td className="py-4 pr-4">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded" style={{ background: l.trip_type === 'round-trip' ? '#B8960C20' : '#88820', color: l.trip_type === 'round-trip' ? '#B8960C' : '#888', width: 'fit-content' }}>
+                        <td className="py-5 pr-6">
+                          <div className="flex flex-col gap-2">
+                            <span className="text-xs uppercase font-bold tracking-wider px-3 py-1 rounded-lg" style={{ background: l.trip_type === 'round-trip' ? '#B8960C20' : '#33333340', color: l.trip_type === 'round-trip' ? '#B8960C' : '#888', width: 'fit-content' }}>
                               {l.trip_type === 'round-trip' ? 'Round Trip' : 'One Way'}
                             </span>
-                            <p className="text-xs text-white leading-relaxed">{l.pickup} <br/><span className="text-[#555] font-bold">→</span> {l.destination}</p>
+                            <p className="text-sm text-white leading-relaxed">{l.pickup} <br/><span className="text-[#666] font-bold">→</span> {l.destination}</p>
                           </div>
                         </td>
-                        <td className="py-4 pr-4">
-                          <div className="flex flex-col gap-1.5">
-                            <div className="flex items-center gap-2">
-                              <span className="text-white font-bold">{formatDateUS(l.date)}</span>
-                              <span className="text-[10px] text-[#888]">{l.time || '—'}</span>
+                        <td className="py-5 pr-6">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-3">
+                              <span className="text-white font-bold text-base">{formatDateUS(l.date)}</span>
+                              <span className="text-sm text-[#999]">{l.time || '—'}</span>
                             </div>
                             {l.trip_type === 'round-trip' && l.return_date && (
-                              <div className="flex items-center gap-2 pt-1 border-t border-[#1a1a1a]">
-                                <span className="text-[#888] font-bold text-xs">{formatDateUS(l.return_date)}</span>
-                                <span className="text-[10px] text-[#555]">{l.return_time}</span>
+                              <div className="flex items-center gap-3 pt-2 border-t border-[#1a1a1a]">
+                                <span className="text-[#999] font-bold text-sm">{formatDateUS(l.return_date)}</span>
+                                <span className="text-sm text-[#666]">{l.return_time}</span>
                               </div>
                             )}
                           </div>
                         </td>
-                        <td className="py-4 pr-4">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-white">{l.passengers || 1} PAX</span>
-                            </div>
-                            <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: '#D4AF37' }}>
+                        <td className="py-5 pr-6">
+                          <div className="flex flex-col gap-2">
+                            <span className="text-base font-bold text-white">{l.passengers || 1} PAX</span>
+                            <span className="text-xs uppercase font-bold tracking-wider" style={{ color: '#D4AF37' }}>
                               {VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}
                             </span>
                           </div>
                         </td>
-                        <td className="py-4 pr-4">
-                           <p className="text-lg font-bold" style={{ color: '#4ade80' }}>
+                        <td className="py-5 pr-6">
+                           <p className="text-xl font-bold" style={{ color: '#4ade80' }}>
                              ${l.amount_usd || '—'}
                            </p>
-                           <span className="text-[9px] uppercase tracking-widest text-[#555]">Estimated Total</span>
+                           <span className="text-xs uppercase tracking-wider text-[#666]">Estimated Total</span>
                         </td>
-                        <td className="py-4">
-                          <div className="flex flex-col gap-2">
+                        <td className="py-5">
+                          <div className="flex flex-col gap-3">
                             <select 
                               value={l.status || 'new'} 
                               onChange={(e) => updateLead(l.id, { status: e.target.value })}
-                              className="w-full text-xs rounded-lg border border-[#1e1e1e] p-1.5 outline-none font-bold tracking-wider uppercase disabled:opacity-50"
+                              className="w-full text-sm rounded-xl border border-[#2a2a2a] px-3 py-2.5 outline-none font-bold tracking-wider uppercase"
                               style={{ 
                                 backgroundColor: l.status === 'converted' ? '#163316' : l.status === 'lost' ? '#331616' : '#0a0a0a',
                                 color: l.status === 'converted' ? '#4CAF50' : l.status === 'lost' ? '#F44336' : '#FFFFFF' 
@@ -1355,24 +1355,24 @@ export default function AdminPage() {
                             <input 
                               type="text"
                               defaultValue={l.notes || ''}
-                              placeholder="Notes..."
+                              placeholder="Add notes..."
                               onBlur={(e) => updateLead(l.id, { notes: e.target.value })}
                               onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-                              className="w-full text-[10px] rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-1.5 text-[#888] outline-none focus:border-[#B8960C] focus:text-white"
+                              className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2.5 text-[#999] outline-none focus:border-[#B8960C] focus:text-white transition-colors"
                             />
-                            <div className="flex items-center justify-between mt-1">
+                            <div className="flex items-center gap-4 mt-1">
                               <button 
                                 onClick={() => setEditingLead(l)}
-                                className="text-[10px] uppercase font-bold tracking-widest text-[#B8960C] hover:text-[#D4AF37] flex items-center gap-1"
+                                className="text-xs uppercase font-bold tracking-widest text-[#B8960C] hover:text-[#D4AF37] flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#B8960C10] transition-all"
                               >
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 Edit
                               </button>
                               <button 
                                 onClick={() => deleteLead(l.id)}
-                                className="text-[10px] uppercase font-bold tracking-widest text-red-500 hover:text-red-400 flex items-center gap-1"
+                                className="text-xs uppercase font-bold tracking-widest text-red-500 hover:text-red-400 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 transition-all"
                               >
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                 Delete
                               </button>
                             </div>
@@ -1381,79 +1381,81 @@ export default function AdminPage() {
                       </tr>
                     ))}
                     
-                    {/* ── ADD NEW LEAD ROW (always visible) ── */}
-                    <tr style={{ borderTop: '2px dashed #B8960C' }}>
-                      <td className="py-4 pr-4">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex gap-2">
-                            <input type="text" placeholder="Name *" value={newLead.customerName} onChange={(e) => setNewLead({ ...newLead, customerName: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                            <input type="text" placeholder="Country" value={newLead.customerCountry} onChange={(e) => setNewLead({ ...newLead, customerCountry: e.target.value })} className="w-32 text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                          </div>
-                          <input type="email" placeholder="Email" value={newLead.customerEmail} onChange={(e) => setNewLead({ ...newLead, customerEmail: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                          <input type="tel" placeholder="Phone" value={newLead.customerPhone} onChange={(e) => setNewLead({ ...newLead, customerPhone: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                        </div>
-                      </td>
-                      <td className="py-4 pr-4">
-                        <div className="flex flex-col gap-2">
-                          <select
-                            value={`${newLead.pickup}|||${newLead.destination}`}
-                            onChange={(e) => {
-                              const [p, d] = e.target.value.split('|||')
-                              setNewLead({ ...newLead, pickup: p || '', destination: d || '' })
-                            }}
-                            className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]"
-                          >
-                            <option value="|||">— Select Route —</option>
-                            {routePrices.map((r) => (
-                              <option key={r.id} value={`${r.pickup}|||${r.destination}`}>
-                                {r.pickup} → {r.destination}
-                              </option>
-                            ))}
-                          </select>
-                          <select value={newLead.tripType} onChange={(e) => setNewLead({ ...newLead, tripType: e.target.value as any })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]">
-                            <option value="one-way">One Way</option>
-                            <option value="round-trip">Round Trip</option>
-                          </select>
-                        </div>
-                      </td>
-                      <td className="py-4 pr-4">
-                        <div className="flex flex-col gap-2">
-                          <input type="date" value={newLead.date} onChange={(e) => setNewLead({ ...newLead, date: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                          <input type="text" placeholder="Time (e.g. 11:00 AM)" value={newLead.time} onChange={(e) => setNewLead({ ...newLead, time: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                        </div>
-                      </td>
-                      <td className="py-4 pr-4">
-                        <div className="flex flex-col gap-2">
-                          <input type="number" placeholder="Pax" value={newLead.passengers} onChange={(e) => setNewLead({ ...newLead, passengers: parseInt(e.target.value) || 1 })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                          <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]">
-                            <option value="sedan_suv">Sedan & SUV</option>
-                            <option value="suburban">Suburban</option>
-                            <option value="sprinter">Sprinter</option>
-                            <option value="minibus">Mini Bus</option>
-                            <option value="coachbus">Coach Bus</option>
-                          </select>
-                        </div>
-                      </td>
-                      <td className="py-4 pr-4">
-                        <div className="flex items-center gap-1">
-                          <span className="text-[#888]">$</span>
-                          <input type="number" placeholder="0" value={newLead.amountUsd} onChange={(e) => setNewLead({ ...newLead, amountUsd: parseInt(e.target.value) || 0 })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                        </div>
-                      </td>
-                      <td className="py-4 text-right">
-                        <button
-                          onClick={addLead}
-                          disabled={addingLead || !newLead.customerName || !newLead.pickup || !newLead.destination}
-                          className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
-                          style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
-                        >
-                          {addingLead ? 'Saving…' : '+ Add'}
-                        </button>
-                      </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
+            </section>
+
+            {/* ── ADD NEW LEAD FORM ── */}
+            <section className="rounded-xl p-8" style={{ background: '#111', border: '2px dashed #B8960C' }}>
+              <h3 className="text-lg font-bold text-white mb-6">+ Add New Lead</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-[#aaa]">Name *</label>
+                  <input type="text" placeholder="Full name" value={newLead.customerName} onChange={(e) => setNewLead({ ...newLead, customerName: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-[#aaa]">Email</label>
+                  <input type="email" placeholder="email@example.com" value={newLead.customerEmail} onChange={(e) => setNewLead({ ...newLead, customerEmail: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-[#aaa]">Phone</label>
+                  <input type="tel" placeholder="+1 (555) 123-4567" value={newLead.customerPhone} onChange={(e) => setNewLead({ ...newLead, customerPhone: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-[#aaa]">Country</label>
+                  <input type="text" placeholder="e.g. Colombia" value={newLead.customerCountry} onChange={(e) => setNewLead({ ...newLead, customerCountry: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-[#aaa]">Route *</label>
+                  <select value={`${newLead.pickup}|||${newLead.destination}`} onChange={(e) => { const [p, d] = e.target.value.split('|||'); setNewLead({ ...newLead, pickup: p || '', destination: d || '' }); }} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                    <option value="|||">— Select Route —</option>
+                    {routePrices.map((r) => (<option key={r.id} value={`${r.pickup}|||${r.destination}`}>{r.pickup} → {r.destination}</option>))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-[#aaa]">Trip Type</label>
+                  <select value={newLead.tripType} onChange={(e) => setNewLead({ ...newLead, tripType: e.target.value as any })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                    <option value="one-way">One Way</option>
+                    <option value="round-trip">Round Trip</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-[#aaa]">Date</label>
+                  <input type="date" value={newLead.date} onChange={(e) => setNewLead({ ...newLead, date: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-[#aaa]">Time</label>
+                  <input type="text" placeholder="e.g. 11:00 AM" value={newLead.time} onChange={(e) => setNewLead({ ...newLead, time: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-[#aaa]">Passengers</label>
+                  <input type="number" placeholder="1" value={newLead.passengers} onChange={(e) => setNewLead({ ...newLead, passengers: parseInt(e.target.value) || 1 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-[#aaa]">Vehicle</label>
+                  <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                    <option value="sedan_suv">Sedan & SUV</option>
+                    <option value="suburban">Suburban</option>
+                    <option value="sprinter">Sprinter</option>
+                    <option value="minibus">Mini Bus</option>
+                    <option value="coachbus">Coach Bus</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-[#aaa]">Estimated Total ($)</label>
+                  <input type="number" placeholder="0" value={newLead.amountUsd} onChange={(e) => setNewLead({ ...newLead, amountUsd: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                </div>
+              </div>
+              <button
+                onClick={addLead}
+                disabled={addingLead || !newLead.customerName || !newLead.pickup || !newLead.destination}
+                className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
+                style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+              >
+                {addingLead ? 'Saving…' : '+ Add Lead'}
+              </button>
             </section>
           </div>
         )}
