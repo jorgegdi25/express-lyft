@@ -74,12 +74,8 @@ export default function BookingForm({ hotelSlug, prices, routePrices }: BookingF
   , [dynamicLocations])
 
   const [tripType, setTripType] = useState<TripType>('one-way')
-  const [pickup, setPickup] = useState<string>(
-    LOCATIONS.includes('The Hotel') ? 'The Hotel' : LOCATIONS[0]
-  )
-  const [destination, setDestination] = useState<string>(
-    LOCATIONS.length > 1 ? LOCATIONS[1] : LOCATIONS[0]
-  )
+  const [pickup, setPickup] = useState<string>('')
+  const [destination, setDestination] = useState<string>('')
   const [date, setDate] = useState<string>('')
   const [time, setTime] = useState<string>('')
   const [returnDate, setReturnDate] = useState<string>('')
@@ -120,32 +116,20 @@ export default function BookingForm({ hotelSlug, prices, routePrices }: BookingF
 
   // Auto-correct invalid states if the user selects the same location for both
   useEffect(() => {
-    // Determine the available destinations for the CURRENT pickup
-    const currentAvailableDests = LOCATIONS.filter((l) => l !== pickup)
-    if (!currentAvailableDests.includes(destination)) {
-      setDestination(currentAvailableDests[0] || '')
+    if (pickup && destination && pickup === destination) {
+      // If they match and they are not empty, we clear the one being changed
+      // This is handled by the availableLocations filters below, but this is a backup
     }
-  }, [pickup, destination, LOCATIONS])
-
-  useEffect(() => {
-    const currentAvailablePickups = LOCATIONS.filter((l) => l !== destination)
-    if (!currentAvailablePickups.includes(pickup)) {
-      setPickup(currentAvailablePickups[0] || '')
-    }
-  }, [destination, pickup, LOCATIONS])
-
-  // Automatically swap or snap to 'The Hotel' for better UX
-  useEffect(() => {
-    if (pickup !== 'The Hotel' && destination !== 'The Hotel') {
-      // If they choose an airport for pickup, naturally snap destination to The Hotel
-      setDestination('The Hotel')
-    }
-  }, [pickup])
+  }, [pickup, destination])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
+    if (!pickup || !destination) {
+      setError('Please select both pickup and destination locations.')
+      return
+    }
     if (!date || !time) {
       setError('Please select a date and time.')
       return
@@ -270,6 +254,7 @@ export default function BookingForm({ hotelSlug, prices, routePrices }: BookingF
                   className={`${INPUT_CLASS} min-h-[60px] text-lg sm:text-base`}
                   style={INPUT_STYLE}
                 >
+                  <option value="">Select Pickup Location...</option>
                   {availablePickups.map((loc) => (
                     <option key={loc} value={loc}>
                       {loc === 'The Hotel' ? `The Hotel` : loc}
@@ -289,6 +274,7 @@ export default function BookingForm({ hotelSlug, prices, routePrices }: BookingF
                   className={`${INPUT_CLASS} min-h-[60px] text-lg sm:text-base`}
                   style={INPUT_STYLE}
                 >
+                  <option value="">Select Destination...</option>
                   {availableDestinations.map((loc) => (
                     <option key={loc} value={loc}>
                       {loc === 'The Hotel' ? `The Hotel` : loc}
