@@ -2563,7 +2563,7 @@ export default function AdminPage() {
                           <div key={lead.id} className="p-4 rounded-lg flex items-center justify-between" style={{ background: '#1a1a1a' }}>
                             <div className="flex items-center gap-4">
                               <div className="w-16 h-16 bg-[#0a0a0a] rounded flex flex-col items-center justify-center border border-[#333]">
-                                <span className="text-xs text-[#888] uppercase">{formatDate(lead.date || '')}</span>
+                                <span className="text-xs text-[#888] uppercase">{formatDateUS(lead.date || '')}</span>
                                 <span className="text-sm font-bold text-white">{lead.time}</span>
                               </div>
                               <div>
