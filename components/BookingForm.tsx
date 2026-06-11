@@ -135,7 +135,11 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
       setError('Please select a return date and time.')
       return
     }
-    setStep(2)
+    if (isPromo) {
+      setStep(3)
+    } else {
+      setStep(2)
+    }
     // Scroll smoothly to form header
     const element = document.getElementById('booking-form')
     if (element) {
@@ -153,7 +157,10 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
   const handlePrevStep = () => {
     setError(null)
-    setStep((prev) => Math.max(1, prev - 1))
+    setStep((prev) => {
+      if (isPromo && prev === 3) return 1
+      return Math.max(1, prev - 1)
+    })
     const element = document.getElementById('booking-form')
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' })
@@ -369,17 +376,27 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
             <form onSubmit={handleSubmit} className="flex flex-col gap-8">
               {/* Progress indicator */}
               <div className="flex items-center justify-center gap-2 mb-6 max-w-md mx-auto select-none w-full">
-                {[1, 2, 3].map((s) => {
+                {(isPromo ? [1, 3] : [1, 2, 3]).map((s, index) => {
+                  const visualStepNum = index + 1
                   const isCompleted = s < step
                   const isActive = s === step
-                  const labels = ['Trip Details', 'Select Vehicle', 'Checkout']
+                  const labels = {
+                    1: 'Trip Details',
+                    2: 'Select Vehicle',
+                    3: 'Checkout'
+                  }
                   return (
                     <React.Fragment key={s}>
                       <div className="flex flex-col items-center gap-1.5 flex-1 relative">
                         <button
                           type="button"
                           disabled={s > step}
-                          onClick={() => s < step && handlePrevStep()}
+                          onClick={() => {
+                            if (s < step) {
+                              setError(null)
+                              setStep(s)
+                            }
+                          }}
                           className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all duration-300 ${s < step ? 'cursor-pointer' : 'cursor-default'}`}
                           style={{
                             background: isActive 
@@ -389,16 +406,16 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                             color: isActive ? '#0a0a0a' : (isCompleted ? '#D4AF37' : '#888888'),
                           }}
                         >
-                          {isCompleted ? '✓' : s}
+                          {isCompleted ? '✓' : visualStepNum}
                         </button>
                         <span
                           className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider transition-colors duration-300"
                           style={{ color: isActive ? '#D4AF37' : '#666666' }}
                         >
-                          {labels[s - 1]}
+                          {labels[s as keyof typeof labels]}
                         </span>
                       </div>
-                      {s < 3 && (
+                      {visualStepNum < (isPromo ? 2 : 3) && (
                         <div
                           className="h-[2px] flex-1 -mt-5 transition-all duration-500"
                           style={{
@@ -611,7 +628,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     className="w-full py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
                     style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
                   >
-                    Choose Your Vehicle →
+                    {isPromo ? 'Enter Contact Info →' : 'Choose Your Vehicle →'}
                   </button>
                 </div>
               )}
@@ -657,7 +674,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   }}
                 >
                   <h3 className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
-                    3. Contact & Checkout
+                    {isPromo ? '2. Contact Info' : '3. Contact & Checkout'}
                   </h3>
 
                   {/* Passenger Details */}
