@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
 
     if (isPromo) {
       finalAmount = 0
-      leadStatus = 'paid'
+      leadStatus = 'pending_assignment'
       isDeposit = false
     } else if (!isAdmin) {
       const calculatedAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '')

@@ -94,7 +94,7 @@ const VEHICLE_LABELS: Record<string, string> = {
   coachbus: '55 Passenger Bus',
 }
 
-type TabKey = 'dashboard' | 'clients' | 'routes' | 'bookings' | 'leads' | 'qr' | 'revenue' | 'drivers' | 'dispatch'
+type TabKey = 'dashboard' | 'clients' | 'routes' | 'bookings' | 'leads' | 'qr' | 'revenue' | 'drivers' | 'dispatch' | 'assign'
 
 
 
@@ -109,6 +109,16 @@ function IconDashboard() {
       <rect x="14" y="3" width="7" height="7" rx="1" />
       <rect x="3" y="14" width="7" height="7" rx="1" />
       <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  )
+}
+function IconAssign() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="8.5" cy="7" r="4" />
+      <line x1="20" y1="8" x2="20" y2="14" />
+      <line x1="23" y1="11" x2="17" y2="11" />
     </svg>
   )
 }
@@ -994,6 +1004,7 @@ export default function AdminPage() {
     { key: 'drivers',   label: 'Drivers', icon: <IconDrivers /> },
     { key: 'dispatch',  label: 'Dispatch Calendar', icon: <IconDispatch /> },
     { key: 'qr',        label: 'QR Codes',   icon: <IconQR /> },
+    { key: 'assign',    label: 'Available to Talk?', icon: <IconAssign />, getBadge: () => leads.filter(l => l.status === 'pending_assignment').length },
   ]
 
   /* =================================================== */
@@ -2595,6 +2606,72 @@ export default function AdminPage() {
                  <div className="p-10 text-center rounded-2xl" style={{ border: '1px dashed #333' }}>
                  <p className="text-[#888]">No active trips to dispatch.</p>
                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ------- ASSIGN DRIVERS TAB ------- */}
+        {activeTab === 'assign' && (
+          <div className="flex flex-col gap-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Available to Talk?</h1>
+                <p className="text-sm" style={{ color: '#888' }}>Assign drivers to promotional and pending trips</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-6">
+              {leads.filter(l => l.status === 'pending_assignment').length === 0 ? (
+                <div className="p-10 text-center rounded-2xl" style={{ border: '1px dashed #333' }}>
+                  <p className="text-[#888]">No pending assignments. All trips are dispatched.</p>
+                </div>
+              ) : (
+                leads.filter(l => l.status === 'pending_assignment').map(lead => {
+                  const message = `Hello, are you available for a trip?\n\n*Route:* ${lead.pickup} to ${lead.destination}\n*Date:* ${lead.date}\n*Time:* ${lead.time}\n*Passengers:* ${lead.passengers}\n*Vehicle:* ${VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}`;
+                  const waLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+                  return (
+                    <div key={lead.id} className="p-6 rounded-xl flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold bg-[#B8960C]/20 text-[#D4AF37] px-2 py-1 rounded border border-[#B8960C]/30 uppercase tracking-wider">NEEDS DRIVER</span>
+                          <p className="text-white font-bold text-lg">{lead.customer_name}</p>
+                        </div>
+                        <p className="text-[#aaa] text-sm"><span className="font-semibold text-[#ccc]">{formatDateUS(lead.date || '')} at {lead.time}</span></p>
+                        <p className="text-[#888] text-sm">{lead.pickup} <span className="mx-1">→</span> {lead.destination}</p>
+                        <p className="text-[#888] text-sm">{lead.passengers} passengers • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}</p>
+                      </div>
+
+                      <div className="flex flex-col gap-3 w-full sm:w-auto">
+                        <a href={waLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all bg-[#128C7E] hover:bg-[#075E54] text-white">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                          Ask Drivers
+                        </a>
+                        
+                        <div className="flex items-center gap-2">
+                          <select 
+                            className="bg-[#0a0a0a] border border-[#333] text-white text-sm rounded-lg px-3 py-2.5 flex-1 outline-none focus:border-[#B8960C]"
+                            onChange={(e) => {
+                              const driverId = e.target.value;
+                              if (driverId) {
+                                if (confirm('Are you sure you want to assign this driver? The trip will be moved to Confirmed Trips.')) {
+                                  updateLead(lead.id, { assigned_driver_id: driverId, status: 'paid' });
+                                }
+                                e.target.value = ""; // Reset
+                              }
+                            }}
+                          >
+                            <option value="">Assign Driver...</option>
+                            {drivers.map(d => (
+                              <option key={d.id} value={d.id}>{d.name} ({VEHICLE_LABELS[d.vehicle_type] || d.vehicle_type})</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
               )}
             </div>
           </div>
