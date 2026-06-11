@@ -70,7 +70,7 @@ interface Lead {
   amount_paid?: number
   amount_remaining?: number
   trip_type?: string
-  assigned_driver_id?: string
+  assigned_driver_id?: string | null
 }
 
 interface Client {
@@ -753,7 +753,7 @@ export default function AdminPage() {
   /* -- QR -- */
 
   /* -- WhatsApp -- */
-  const openWhatsApp = (phone: string | null, message: string) => {
+  const openWhatsApp = (phone: string | null | undefined, message: string) => {
     if (!phone) return;
     let cleanPhone = phone.replace(/\D/g, '');
     if (cleanPhone.length === 10) {
