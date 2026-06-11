@@ -285,7 +285,7 @@ export async function PUT(req: NextRequest) {
       pickup, destination, vehicleType, vehicle_type,
       passengers, date, time, 
       returnDate, returnTime, return_date, return_time,
-      amountUsd, tripType
+      amountUsd, tripType, assigned_driver_id
     } = body
 
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
@@ -306,6 +306,7 @@ export async function PUT(req: NextRequest) {
     if (returnTime !== undefined || return_time !== undefined) updates.return_time = returnTime || return_time
     if (amountUsd !== undefined) updates.amount_usd = amountUsd
     if (tripType !== undefined) updates.trip_type = tripType
+    if (assigned_driver_id !== undefined) updates.assigned_driver_id = assigned_driver_id
 
     const { data, error } = await supabaseAdmin
       .from('leads')

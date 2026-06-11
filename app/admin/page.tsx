@@ -23,6 +23,16 @@ interface Booking {
   time?: string
   passengers?: number
   trip_type?: string
+  assigned_driver_id?: string
+}
+
+interface Driver {
+  id: string
+  name: string
+  phone: string
+  vehicle_type: string
+  license_plate: string
+  status: string
 }
 
 
@@ -60,6 +70,7 @@ interface Lead {
   amount_paid?: number
   amount_remaining?: number
   trip_type?: string
+  assigned_driver_id?: string
 }
 
 interface Client {
@@ -83,7 +94,7 @@ const VEHICLE_LABELS: Record<string, string> = {
   coachbus: '55 Passenger Bus',
 }
 
-type TabKey = 'dashboard' | 'clients' | 'routes' | 'bookings' | 'leads' | 'qr' | 'revenue'
+type TabKey = 'dashboard' | 'clients' | 'routes' | 'bookings' | 'leads' | 'qr' | 'revenue' | 'drivers' | 'dispatch'
 
 
 
@@ -155,6 +166,28 @@ function IconRevenue() {
     </svg>
   )
 }
+function IconDrivers() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <circle cx="12" cy="13" r="2" />
+      <path d="M8 21v-2a4 4 0 0 1 8 0v2" />
+    </svg>
+  )
+}
+function IconDispatch() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+      <line x1="8" y1="14" x2="16" y2="14" />
+      <line x1="8" y1="18" x2="12" y2="18" />
+    </svg>
+  )
+}
 
 /* -- Main Admin Page ---------------------------------- */
 
@@ -167,9 +200,22 @@ export default function AdminPage() {
 
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loadingBookings, setLoadingBookings] = useState(false)
+  const [drivers, setDrivers] = useState<Driver[]>([])
+  const [loadingDrivers, setLoadingDrivers] = useState(false)
 
   const [qrSlug, setQrSlug] = useState('')
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+
+  const [showDriverForm, setShowDriverForm] = useState(false)
+  const [editingDriver, setEditingDriver] = useState<Driver | null>(null)
+  const [savingDriver, setSavingDriver] = useState(false)
+  const [newDriver, setNewDriver] = useState({
+    name: '',
+    phone: '',
+    vehicle_type: 'sedan_suv',
+    license_plate: '',
+    status: 'available'
+  })
 
   const [metrics, setMetrics] = useState<any>(null)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -381,6 +427,15 @@ export default function AdminPage() {
     return res.json() as Promise<Client[]>
   }
 
+  async function fetchDrivers(pw: string) {
+    const res = await fetch(`/api/admin/drivers?t=${Date.now()}`, {
+      headers: { authorization: `Bearer ${pw}` },
+      cache: 'no-store'
+    })
+    if (!res.ok) return []
+    return res.json() as Promise<Driver[]>
+  }
+
   /* -- Auth -- */
 
   useEffect(() => {
@@ -425,16 +480,23 @@ export default function AdminPage() {
     let cl: Client[] = []
 
     try {
-      const [bkRes, rtRes, ldRes, clRes] = await Promise.all([
+      const [bData, rData, lData, cData, dData] = await Promise.all([
         fetchBookings(pw),
         fetchRoutes(pw),
         fetchLeads(pw),
-        fetchClients(pw)
+        fetchClients(pw),
+        fetchDrivers(pw)
       ])
-      bk = bkRes
-      rt = rtRes
-      ld = ldRes
-      cl = clRes
+      
+      setBookings(bData)
+      setRoutePrices(rData)
+      setLeads(lData)
+      setClients(cData)
+      setDrivers(dData)
+      bk = bData
+      rt = rData
+      ld = lData
+      cl = cData
     } catch {
       // Data loading failed, continue with sample data
     }
@@ -815,6 +877,88 @@ export default function AdminPage() {
     })
   }
 
+  /* -- Driver CRUD -- */
+
+  async function handleSaveDriver() {
+    setSavingDriver(true)
+    try {
+      if (editingDriver) {
+        const res = await fetch('/api/admin/drivers', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${password}`
+          },
+          body: JSON.stringify({ ...newDriver, id: editingDriver.id })
+        })
+        if (res.ok) {
+          const { driver } = await res.json()
+          setDrivers(prev => prev.map(d => d.id === driver.id ? driver : d))
+        }
+      } else {
+        const res = await fetch('/api/admin/drivers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${password}`
+          },
+          body: JSON.stringify(newDriver)
+        })
+        if (res.ok) {
+          const { driver } = await res.json()
+          setDrivers(prev => [...prev, driver])
+        }
+      }
+      resetDriverForm()
+    } catch (err) {
+      console.error('Error saving driver:', err)
+    } finally {
+      setSavingDriver(false)
+    }
+  }
+
+  function handleEditDriver(driver: Driver) {
+    setEditingDriver(driver)
+    setNewDriver({
+      name: driver.name,
+      phone: driver.phone,
+      vehicle_type: driver.vehicle_type,
+      license_plate: driver.license_plate,
+      status: driver.status
+    })
+    setShowDriverForm(true)
+  }
+
+  async function handleDeleteDriver(id: string) {
+    if (!confirm('Are you sure you want to remove this driver?')) return
+    setSavingDriver(true)
+    try {
+      const res = await fetch(`/api/admin/drivers?id=${id}`, {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${password}` }
+      })
+      if (res.ok) {
+        setDrivers(prev => prev.filter(d => d.id !== id))
+      }
+    } catch (err) {
+      console.error('Error deleting driver:', err)
+    } finally {
+      setSavingDriver(false)
+    }
+  }
+
+  function resetDriverForm() {
+    setShowDriverForm(false)
+    setEditingDriver(null)
+    setNewDriver({
+      name: '',
+      phone: '',
+      vehicle_type: 'sedan_suv',
+      license_plate: '',
+      status: 'available'
+    })
+  }
+
   /* -- Status Badge -- */
 
   function StatusBadge({ status }: { status: string }) {
@@ -847,6 +991,8 @@ export default function AdminPage() {
     { key: 'routes',    label: 'Routes & Prices',     icon: <IconRoutes /> },
     { key: 'bookings',  label: 'Confirmed Trips',   icon: <IconBookings /> },
     { key: 'leads',     label: 'Sales Pipeline', icon: <IconLeads />, getBadge: () => leads.length },
+    { key: 'drivers',   label: 'Drivers', icon: <IconDrivers /> },
+    { key: 'dispatch',  label: 'Dispatch Calendar', icon: <IconDispatch /> },
     { key: 'qr',        label: 'QR Codes',   icon: <IconQR /> },
   ]
 
@@ -2034,7 +2180,43 @@ export default function AdminPage() {
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-current opacity-70">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
+                        </div>
                       </div>
+
+                      {/* Driver Assignment */}
+                      <div className="relative inline-block w-full mt-2">
+                        <select 
+                          value={l.assigned_driver_id || ''} 
+                          onChange={(e) => updateLead(l.id, { assigned_driver_id: e.target.value || null })}
+                          className="appearance-none pr-8 pl-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer border hover:brightness-110 transition-all text-right w-full"
+                          style={{ 
+                            backgroundColor: l.assigned_driver_id ? '#B8960C15' : '#1a1a1a',
+                            color: l.assigned_driver_id ? '#D4AF37' : '#888',
+                            borderColor: l.assigned_driver_id ? '#B8960C40' : '#333'
+                          }}
+                        >
+                          <option value="" style={{color: '#888', background: '#111'}}>Unassigned</option>
+                          {drivers.map(d => (
+                            <option key={d.id} value={d.id} style={{color: '#fff', background: '#111'}}>{d.name}</option>
+                          ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-current opacity-70">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                      </div>
+                      
+                      {l.assigned_driver_id && drivers.find(d => d.id === l.assigned_driver_id)?.phone && (
+                        <div className="w-full flex justify-end mt-1">
+                          <button onClick={() => {
+                            const driver = drivers.find(d => d.id === l.assigned_driver_id);
+                            if(driver) {
+                              openWhatsApp(driver.phone, `Hi ${driver.name}, you have a new trip assigned:\n\nPassenger: ${l.customer_name}\nDate: ${formatDateUS(l.date)}\nTime: ${l.time}\nPickup: ${l.pickup}\nDropoff: ${l.destination}\nVehicle: ${VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}`);
+                            }
+                          }} className="text-[10px] bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-1 font-semibold">
+                            Notify Driver
+                          </button>
+                        </div>
+                      )}
 
                       {/* Notes toggle inline */}
                       <div className="flex flex-col items-end w-full">
@@ -2178,6 +2360,244 @@ export default function AdminPage() {
                 </table>
               </div>
             </section>
+          </div>
+        )}
+
+        {/* ------- DRIVERS TAB ------- */}
+        {activeTab === 'drivers' && (
+          <div className="flex flex-col gap-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Drivers</h1>
+                <p className="text-sm" style={{ color: '#888' }}>Manage your fleet and personnel</p>
+              </div>
+              <button
+                onClick={() => setShowDriverForm(true)}
+                className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
+                style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+              >
+                + New Driver
+              </button>
+            </div>
+
+            {showDriverForm && (
+              <section className="p-6 rounded-2xl relative" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                <button
+                  onClick={resetDriverForm}
+                  className="absolute top-6 right-6 text-[#888] hover:text-white transition-colors"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+                <h2 className="text-lg font-bold mb-6 text-white">{editingDriver ? 'Edit Driver' : 'New Driver'}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#888] mb-2 font-bold">Driver Name</label>
+                    <input
+                      type="text"
+                      value={newDriver.name}
+                      onChange={e => setNewDriver(p => ({ ...p, name: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[#B8960C]"
+                      style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: 'white' }}
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#888] mb-2 font-bold">Phone Number</label>
+                    <input
+                      type="text"
+                      value={newDriver.phone}
+                      onChange={e => setNewDriver(p => ({ ...p, phone: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[#B8960C]"
+                      style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: 'white' }}
+                      placeholder="1234567890"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#888] mb-2 font-bold">Vehicle Type</label>
+                    <select
+                      value={newDriver.vehicle_type}
+                      onChange={e => setNewDriver(p => ({ ...p, vehicle_type: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[#B8960C]"
+                      style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: 'white' }}
+                    >
+                      {Object.entries(VEHICLE_LABELS).map(([val, label]) => (
+                        <option key={val} value={val}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#888] mb-2 font-bold">License Plate</label>
+                    <input
+                      type="text"
+                      value={newDriver.license_plate}
+                      onChange={e => setNewDriver(p => ({ ...p, license_plate: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[#B8960C]"
+                      style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: 'white' }}
+                      placeholder="ABC-123"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#888] mb-2 font-bold">Status</label>
+                    <select
+                      value={newDriver.status}
+                      onChange={e => setNewDriver(p => ({ ...p, status: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[#B8960C]"
+                      style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: 'white' }}
+                    >
+                      <option value="available">Available</option>
+                      <option value="on_trip">On Trip</option>
+                      <option value="off_duty">Off Duty</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSaveDriver}
+                    disabled={savingDriver || !newDriver.name || !newDriver.phone}
+                    className="px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 hover:brightness-110"
+                    style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                  >
+                    {savingDriver ? 'Saving...' : 'Save Driver'}
+                  </button>
+                </div>
+              </section>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {drivers.length === 0 && !loadingDrivers && (
+                <div className="col-span-full p-10 text-center rounded-2xl" style={{ border: '1px dashed #333' }}>
+                  <p className="text-[#888] mb-4">No drivers registered yet.</p>
+                </div>
+              )}
+              {drivers.map(driver => (
+                <div key={driver.id} className="rounded-2xl p-6 relative group" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                  <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleEditDriver(driver)} className="p-2 bg-[#222] text-[#888] hover:text-white rounded-lg transition-colors">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                      </svg>
+                    </button>
+                    <button onClick={() => handleDeleteDriver(driver.id)} className="p-2 bg-[#222] text-[#888] hover:text-red-400 rounded-lg transition-colors">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#222] border border-[#333]">
+                      <IconDrivers />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-white text-lg">{driver.name}</h3>
+                      <p className="text-xs text-[#888]">{driver.phone}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mt-6">
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-[#666] tracking-wider mb-1">Vehicle</p>
+                      <p className="text-sm text-[#ddd]">{VEHICLE_LABELS[driver.vehicle_type] || driver.vehicle_type}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-[#666] tracking-wider mb-1">Plate</p>
+                      <p className="text-sm text-[#ddd] uppercase">{driver.license_plate}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-[#666] tracking-wider mb-1">Status</p>
+                      <span className="text-xs px-2 py-1 rounded border capitalize" style={{
+                        borderColor: driver.status === 'available' ? '#166534' : driver.status === 'on_trip' ? '#854d0e' : '#3f3f46',
+                        color: driver.status === 'available' ? '#4ade80' : driver.status === 'on_trip' ? '#facc15' : '#a1a1aa',
+                        background: driver.status === 'available' ? '#052e16' : driver.status === 'on_trip' ? '#422006' : '#18181b'
+                      }}>
+                        {driver.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ------- DISPATCH CALENDAR TAB ------- */}
+        {activeTab === 'dispatch' && (
+          <div className="flex flex-col gap-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Dispatch Calendar</h1>
+                <p className="text-sm" style={{ color: '#888' }}>View assigned trips and detect conflicts</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-6">
+              {['Today', 'Tomorrow', 'Upcoming'].map(dayGroup => {
+                const todayStr = new Date().toLocaleDateString('en-CA')
+                const tomorrowDate = new Date()
+                tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+                const tomorrowStr = tomorrowDate.toLocaleDateString('en-CA')
+                
+                let groupLeads = leads.filter(l => l.status === 'deposit_paid' || l.status === 'paid' || l.status === 'new')
+                if (dayGroup === 'Today') {
+                  groupLeads = groupLeads.filter(l => l.date === todayStr)
+                } else if (dayGroup === 'Tomorrow') {
+                  groupLeads = groupLeads.filter(l => l.date === tomorrowStr)
+                } else {
+                  groupLeads = groupLeads.filter(l => l.date !== todayStr && l.date !== tomorrowStr)
+                }
+                
+                // Sort by time
+                groupLeads.sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+
+                if (groupLeads.length === 0) return null
+
+                return (
+                  <section key={dayGroup} className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                    <h3 className="text-sm font-bold uppercase tracking-wider mb-5 text-[#888]">{dayGroup}</h3>
+                    <div className="flex flex-col gap-3">
+                      {groupLeads.map(lead => {
+                        const driver = drivers.find(d => d.id === lead.assigned_driver_id)
+                        return (
+                          <div key={lead.id} className="p-4 rounded-lg flex items-center justify-between" style={{ background: '#1a1a1a' }}>
+                            <div className="flex items-center gap-4">
+                              <div className="w-16 h-16 bg-[#0a0a0a] rounded flex flex-col items-center justify-center border border-[#333]">
+                                <span className="text-xs text-[#888] uppercase">{formatDate(lead.date || '')}</span>
+                                <span className="text-sm font-bold text-white">{lead.time}</span>
+                              </div>
+                              <div>
+                                <p className="text-white font-bold">{lead.pickup} <span className="text-[#666] font-normal mx-1">→</span> {lead.destination}</p>
+                                <p className="text-xs text-[#888] mt-1">{lead.customer_name} • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              {driver ? (
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#B8960C] bg-[#B8960C]/10 text-[#D4AF37] text-xs font-bold">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                                  {driver.name}
+                                </div>
+                              ) : (
+                                <span className="inline-block px-3 py-1 rounded-full border border-[#333] bg-[#222] text-[#888] text-xs font-bold">
+                                  UNASSIGNED
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </section>
+                )
+              })}
+              
+              {leads.filter(l => l.status === 'deposit_paid' || l.status === 'paid' || l.status === 'new').length === 0 && (
+                 <div className="p-10 text-center rounded-2xl" style={{ border: '1px dashed #333' }}>
+                 <p className="text-[#888]">No active trips to dispatch.</p>
+               </div>
+              )}
+            </div>
           </div>
         )}
 
