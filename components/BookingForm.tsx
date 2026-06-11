@@ -19,6 +19,7 @@ interface BookingFormProps {
 
   prices: { sedan_suv: number; suburban: number; sprinter: number; minibus: number; coachbus: number }
   routePrices: RoutePrice[]
+  isPromo?: boolean
 }
 
 type TripType = 'one-way' | 'round-trip'
@@ -56,7 +57,7 @@ const INPUT_STYLE = { background: '#0e0e0e', border: '1px solid #333333', color:
 
 const todayStr = new Date().toISOString().split('T')[0]
 
-export default function BookingForm({ hotelSlug, prices: serverPrices, routePrices: serverRoutePrices }: BookingFormProps) {
+export default function BookingForm({ hotelSlug, prices: serverPrices, routePrices: serverRoutePrices, isPromo }: BookingFormProps) {
   // Live data fetched client-side to bypass Next.js server cache
   const [livePrices, setLivePrices] = useState(serverPrices)
   const [liveRoutePrices, setLiveRoutePrices] = useState(serverRoutePrices)
@@ -277,6 +278,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           returnDate: tripType === 'round-trip' ? returnDate : undefined,
           returnTime: tripType === 'round-trip' ? returnTime : undefined,
           paymentMode,
+          isPromo,
         }),
       })
 
@@ -706,110 +708,114 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   </div>
 
                   {/* Estimated Total */}
-                  <div
-                    className="rounded-xl px-5 py-4 flex items-center justify-between"
-                    style={{
-                      background: 'rgba(184,150,12,0.08)',
-                      border: '1px solid rgba(184,150,12,0.3)',
-                    }}
-                  >
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#B8960C' }}>
-                        Estimated Total
-                      </p>
-                      {tripType === 'round-trip' && (
-                        <p className="text-xs" style={{ color: '#888888' }}>Round trip included</p>
-                      )}
-                    </div>
-                    <span className="text-4xl font-bold" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
-                      ${total}
-                    </span>
-                  </div>
-
-                  {/* Payment Mode Selector */}
-                  <div>
-                    <label className={LABEL_CLASS} style={LABEL_COLOR}>
-                      How would you like to pay?
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* Pay Full */}
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMode('full')}
-                        className="rounded-xl p-4 flex flex-col gap-2 text-left transition-all duration-200"
+                  {!isPromo && (
+                    <>
+                      <div
+                        className="rounded-xl px-5 py-4 flex items-center justify-between"
                         style={{
-                          background: paymentMode === 'full' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
-                          border: paymentMode === 'full' ? '2px solid #B8960C' : '1px solid #333333',
+                          background: 'rgba(184,150,12,0.08)',
+                          border: '1px solid rgba(184,150,12,0.3)',
                         }}
                       >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-5 h-5 rounded-full flex items-center justify-center"
-                            style={{
-                              border: paymentMode === 'full' ? '2px solid #B8960C' : '2px solid #555',
-                            }}
-                          >
-                            {paymentMode === 'full' && (
-                              <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#D4AF37' }} />
-                            )}
-                          </div>
-                          <span className="text-sm font-bold uppercase tracking-wider" style={{ color: '#FFFFFF' }}>
-                            Pay Full Amount
-                          </span>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#B8960C' }}>
+                            Estimated Total
+                          </p>
+                          {tripType === 'round-trip' && (
+                            <p className="text-xs" style={{ color: '#888888' }}>Round trip included</p>
+                          )}
                         </div>
-                        <span className="text-2xl font-bold ml-7" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
+                        <span className="text-4xl font-bold" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
                           ${total}
                         </span>
-                      </button>
+                      </div>
 
-                      {/* Pay Deposit */}
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMode('deposit')}
-                        className="rounded-xl p-4 flex flex-col gap-2 text-left transition-all duration-200"
-                        style={{
-                          background: paymentMode === 'deposit' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
-                          border: paymentMode === 'deposit' ? '2px solid #B8960C' : '1px solid #333333',
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-5 h-5 rounded-full flex items-center justify-center"
+                      {/* Payment Mode Selector */}
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          How would you like to pay?
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Pay Full */}
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMode('full')}
+                            className="rounded-xl p-4 flex flex-col gap-2 text-left transition-all duration-200"
                             style={{
-                              border: paymentMode === 'deposit' ? '2px solid #B8960C' : '2px solid #555',
+                              background: paymentMode === 'full' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
+                              border: paymentMode === 'full' ? '2px solid #B8960C' : '1px solid #333333',
                             }}
                           >
-                            {paymentMode === 'deposit' && (
-                              <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#D4AF37' }} />
-                            )}
-                          </div>
-                          <span className="text-sm font-bold uppercase tracking-wider" style={{ color: '#FFFFFF' }}>
-                            Reserve with Deposit
-                          </span>
-                        </div>
-                        <div className="ml-7">
-                          <span className="text-2xl font-bold" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
-                            ${depositAmount}
-                          </span>
-                          <span className="text-xs ml-2 font-semibold" style={{ color: '#888888' }}>(20%)</span>
-                        </div>
-                      </button>
-                    </div>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-5 h-5 rounded-full flex items-center justify-center"
+                                style={{
+                                  border: paymentMode === 'full' ? '2px solid #B8960C' : '2px solid #555',
+                                }}
+                              >
+                                {paymentMode === 'full' && (
+                                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#D4AF37' }} />
+                                )}
+                              </div>
+                              <span className="text-sm font-bold uppercase tracking-wider" style={{ color: '#FFFFFF' }}>
+                                Pay Full Amount
+                              </span>
+                            </div>
+                            <span className="text-2xl font-bold ml-7" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
+                              ${total}
+                            </span>
+                          </button>
 
-                    {paymentMode === 'deposit' && (
-                      <div
-                        className="mt-3 rounded-lg px-4 py-3 flex items-start gap-2"
-                        style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)' }}
-                      >
-                        <svg className="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                        </svg>
-                        <p className="text-xs leading-relaxed" style={{ color: '#BBBBBB' }}>
-                          Remaining <strong style={{ color: '#EF9F27' }}>${total - depositAmount}</strong> is due before your trip — payable by card or cash to your driver.
-                        </p>
+                          {/* Pay Deposit */}
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMode('deposit')}
+                            className="rounded-xl p-4 flex flex-col gap-2 text-left transition-all duration-200"
+                            style={{
+                              background: paymentMode === 'deposit' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
+                              border: paymentMode === 'deposit' ? '2px solid #B8960C' : '1px solid #333333',
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-5 h-5 rounded-full flex items-center justify-center"
+                                style={{
+                                  border: paymentMode === 'deposit' ? '2px solid #B8960C' : '2px solid #555',
+                                }}
+                              >
+                                {paymentMode === 'deposit' && (
+                                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#D4AF37' }} />
+                                )}
+                              </div>
+                              <span className="text-sm font-bold uppercase tracking-wider" style={{ color: '#FFFFFF' }}>
+                                Reserve with Deposit
+                              </span>
+                            </div>
+                            <div className="ml-7">
+                              <span className="text-2xl font-bold" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
+                                ${depositAmount}
+                              </span>
+                              <span className="text-xs ml-2 font-semibold" style={{ color: '#888888' }}>(20%)</span>
+                            </div>
+                          </button>
+                        </div>
+
+                        {paymentMode === 'deposit' && (
+                          <div
+                            className="mt-3 rounded-lg px-4 py-3 flex items-start gap-2"
+                            style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)' }}
+                          >
+                            <svg className="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                            <p className="text-xs leading-relaxed" style={{ color: '#BBBBBB' }}>
+                              Remaining <strong style={{ color: '#EF9F27' }}>${total - depositAmount}</strong> is due before your trip — payable by card or cash to your driver.
+                            </p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </>
+                  )}
 
                   {/* Terms and Privacy Checkbox */}
                   <div className="flex items-start gap-3 mt-2">
@@ -860,24 +866,28 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       )}
                       {loading
                         ? 'Processing…'
-                        : paymentMode === 'deposit'
-                          ? `Pay $${depositAmount} Deposit →`
-                          : 'Proceed to Payment →'
+                        : isPromo 
+                          ? 'Confirm Reservation →'
+                          : paymentMode === 'deposit'
+                            ? `Pay $${depositAmount} Deposit →`
+                            : 'Proceed to Payment →'
                       }
                     </button>
                   </div>
                   
                   {/* Secure Payment Badge */}
-                  <div className="flex flex-col items-center justify-center gap-1.5 mt-3 select-none">
-                    <div className="flex items-center gap-1.5 text-[#888888]">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-                      <span className="text-xs font-semibold tracking-wider uppercase">100% Secure Checkout</span>
+                  {!isPromo && (
+                    <div className="flex flex-col items-center justify-center gap-1.5 mt-3 select-none">
+                      <div className="flex items-center gap-1.5 text-[#888888]">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                        <span className="text-xs font-semibold tracking-wider uppercase">100% Secure Checkout</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 opacity-60">
+                        <span className="text-[10px] uppercase font-bold text-[#666666] tracking-widest">Powered by</span>
+                        <span className="text-[#635BFF] font-bold" style={{ fontSize: '1.1rem', letterSpacing: '-0.02em', fontFamily: 'system-ui, -apple-system, sans-serif' }}>stripe</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 opacity-60">
-                      <span className="text-[10px] uppercase font-bold text-[#666666] tracking-widest">Powered by</span>
-                      <span className="text-[#635BFF] font-bold" style={{ fontSize: '1.1rem', letterSpacing: '-0.02em', fontFamily: 'system-ui, -apple-system, sans-serif' }}>stripe</span>
-                    </div>
-                  </div>
+                  )}
 
                 </div>
               )}

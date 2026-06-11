@@ -155,7 +155,8 @@ export async function POST(req: NextRequest) {
       amountUsd,
       tripType,
       status,
-      paymentMode
+      paymentMode,
+      isPromo
     } = body
 
     if (!hotelSlug) return NextResponse.json({ error: 'Missing hotelSlug' }, { status: 400 })
@@ -168,9 +169,15 @@ export async function POST(req: NextRequest) {
     // Determine target price
     const inputTotal = estimatedTotal !== undefined ? estimatedTotal : amountUsd
     let finalAmount = inputTotal
+    
+    let leadStatus = isAdmin ? (status || 'new') : 'pending_payment'
+    let isDeposit = paymentMode === 'deposit' && !isAdmin
 
-    // If it's a customer reservation, validate the price server-side
-    if (!isAdmin) {
+    if (isPromo) {
+      finalAmount = 0
+      leadStatus = 'paid'
+      isDeposit = false
+    } else if (!isAdmin) {
       const calculatedAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '')
       if (calculatedAmount > 0 && Math.abs(calculatedAmount - inputTotal) > 0.01) {
         console.warn(`[leads] Price mismatch: input=${inputTotal}, calculated=${calculatedAmount}. Using calculated price.`)
@@ -178,10 +185,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const leadStatus = isAdmin ? (status || 'new') : 'pending_payment'
-
     // Calculate deposit amounts
-    const isDeposit = paymentMode === 'deposit' && !isAdmin
     const depositAmount = isDeposit ? Math.ceil(finalAmount * 0.20) : finalAmount
     const amountRemaining = isDeposit ? finalAmount - depositAmount : 0
 
@@ -217,10 +221,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, lead: data })
     }
 
-    // Create Stripe Checkout Session
     const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const successUrl = `${origin}/hotel/${hotelSlug}/success`
-    const cancelUrl = `${origin}/hotel/${hotelSlug}`
+    const successUrl = isPromo ? `${origin}/promo/${hotelSlug}/success` : `${origin}/hotel/${hotelSlug}/success`
+    const cancelUrl = isPromo ? `${origin}/promo/${hotelSlug}` : `${origin}/hotel/${hotelSlug}`
+
+    if (isPromo) {
+      return NextResponse.json({ success: true, url: successUrl })
+    }
 
     const chargeAmount = isDeposit ? depositAmount : finalAmount
     const productName = isDeposit
