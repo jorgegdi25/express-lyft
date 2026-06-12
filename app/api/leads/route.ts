@@ -179,7 +179,10 @@ export async function POST(req: NextRequest) {
     let leadStatus = isAdmin ? (status || 'new') : 'pending_payment'
     let isDeposit = paymentMode === 'deposit' && !isAdmin
 
-    if (isPromo) {
+    if (paymentMode === 'quote') {
+      leadStatus = 'quote_requested'
+      isDeposit = false
+    } else if (isPromo) {
       finalAmount = 0
       leadStatus = 'pending_assignment'
       isDeposit = false
@@ -243,7 +246,14 @@ export async function POST(req: NextRequest) {
     const successUrl = isPromo ? `${origin}/promo/${hotelSlug}/success` : `${origin}/hotel/${hotelSlug}/success`
     const cancelUrl = isPromo ? `${origin}/promo/${hotelSlug}` : `${origin}/hotel/${hotelSlug}`
 
-    if (isPromo) {
+    if (isPromo || paymentMode === 'quote') {
+      // Returning no url will trigger setIsSuccess(true) inline or we can redirect to successUrl
+      // But since we want them to see the inline success message, returning no URL works.
+      // Wait, isPromo returns successUrl. Let's just return successUrl so it matches existing flow if needed,
+      // or no URL so it shows inline. Let's return no URL for quote.
+      if (paymentMode === 'quote') {
+        return NextResponse.json({ success: true })
+      }
       return NextResponse.json({ success: true, url: successUrl })
     }
 

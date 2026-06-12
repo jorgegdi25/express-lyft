@@ -384,7 +384,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           meetGreetFee,
           carSeatsRequested,
           luggageCount,
-          paymentMode,
+          paymentMode: vehicleType === 'coachbus' ? 'quote' : paymentMode,
           isPromo,
         }),
       })
@@ -1000,7 +1000,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   </div>
 
                   {/* Estimated Total */}
-                  {!isPromo && (
+                  {!isPromo && vehicleType !== 'coachbus' && (
                     <>
                       <div
                         className="rounded-xl px-5 py-4 flex items-center justify-between"
@@ -1109,6 +1109,28 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     </>
                   )}
 
+                  {vehicleType === 'coachbus' && (
+                    <div
+                      className="rounded-xl px-5 py-6 flex flex-col items-center justify-center text-center mb-4 mt-2"
+                      style={{
+                        background: 'rgba(184,150,12,0.08)',
+                        border: '1px solid rgba(184,150,12,0.3)',
+                      }}
+                    >
+                      <h4 className="text-lg font-bold mb-2" style={{ color: '#D4AF37' }}>Coach Bus Custom Pricing</h4>
+                      <p className="text-sm leading-relaxed max-w-md mx-auto" style={{ color: '#BBBBBB' }}>
+                        Due to the custom nature of Coach Bus reservations, pricing and availability must be confirmed manually. Please submit your request below or call us directly.
+                      </p>
+                      <a
+                        href="tel:+18889737896"
+                        className="mt-4 px-6 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:bg-[#333]"
+                        style={{ background: '#111', border: '1px solid #555', color: '#fff' }}
+                      >
+                        Call Us: +1 (888) 973-7896
+                      </a>
+                    </div>
+                  )}
+
                   {/* Terms and Privacy Checkbox */}
                   <div className="flex items-start gap-3 mt-2">
                     <input
@@ -1158,17 +1180,19 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       )}
                       {loading
                         ? 'Processing…'
-                        : isPromo 
-                          ? 'Confirm Reservation →'
-                          : paymentMode === 'deposit'
-                            ? `Pay $${depositAmount} Deposit →`
-                            : 'Proceed to Payment →'
+                        : vehicleType === 'coachbus'
+                          ? 'Submit Request →'
+                          : isPromo 
+                            ? 'Confirm Reservation →'
+                            : paymentMode === 'deposit'
+                              ? `Pay $${depositAmount} Deposit →`
+                              : 'Proceed to Payment →'
                       }
                     </button>
                   </div>
                   
                   {/* Secure Payment Badge */}
-                  {!isPromo && (
+                  {!isPromo && vehicleType !== 'coachbus' && (
                     <div className="flex flex-col items-center justify-center gap-1.5 mt-3 select-none">
                       <div className="flex items-center gap-1.5 text-[#888888]">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
