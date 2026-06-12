@@ -104,7 +104,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
             >
               <span>{v.shortLabel}</span>
               <span style={{ fontSize: '0.7rem', color: isSelected ? '#EF9F27' : (isDisabled ? '#333333' : '#666666') }}>
-                {v.type === 'coachbus' ? 'Quote' : `$${prices[v.type]}`}
+                {v.type === 'coachbus' || v.type === 'minibus' ? 'Quote' : `$${prices[v.type]}`}
               </span>
             </button>
           )
@@ -112,7 +112,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
       </div>
 
       {/* Price row */}
-      {vehicle.type !== 'coachbus' ? (
+      {vehicle.type !== 'coachbus' && vehicle.type !== 'minibus' ? (
         <div
           className="mt-auto rounded-xl px-5 py-4 flex items-center justify-between"
           style={{

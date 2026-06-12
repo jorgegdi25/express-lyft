@@ -384,7 +384,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           meetGreetFee,
           carSeatsRequested,
           luggageCount,
-          paymentMode: vehicleType === 'coachbus' ? 'quote' : paymentMode,
+          paymentMode: vehicleType === 'coachbus' || vehicleType === 'minibus' ? 'quote' : paymentMode,
           isPromo,
         }),
       })
@@ -1000,7 +1000,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   </div>
 
                   {/* Estimated Total */}
-                  {!isPromo && vehicleType !== 'coachbus' && (
+                  {!isPromo && vehicleType !== 'coachbus' && vehicleType !== 'minibus' && (
                     <>
                       <div
                         className="rounded-xl px-5 py-4 flex items-center justify-between"
@@ -1109,7 +1109,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     </>
                   )}
 
-                  {vehicleType === 'coachbus' && (
+                  {(vehicleType === 'coachbus' || vehicleType === 'minibus') && (
                     <div
                       className="rounded-xl px-5 py-6 flex flex-col items-center justify-center text-center mb-4 mt-2"
                       style={{
@@ -1117,9 +1117,9 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         border: '1px solid rgba(184,150,12,0.3)',
                       }}
                     >
-                      <h4 className="text-lg font-bold mb-2" style={{ color: '#D4AF37' }}>Coach Bus Custom Pricing</h4>
+                      <h4 className="text-lg font-bold mb-2" style={{ color: '#D4AF37' }}>Custom Pricing Required</h4>
                       <p className="text-sm leading-relaxed max-w-md mx-auto" style={{ color: '#BBBBBB' }}>
-                        Due to the custom nature of Coach Bus reservations, pricing and availability must be confirmed manually. Please submit your request below or call us directly.
+                        Due to the custom nature of large group reservations, pricing and availability must be confirmed manually. Please submit your request below or call us directly.
                       </p>
                       <a
                         href="tel:+18889737896"
@@ -1180,7 +1180,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       )}
                       {loading
                         ? 'Processing…'
-                        : vehicleType === 'coachbus'
+                        : (vehicleType === 'coachbus' || vehicleType === 'minibus')
                           ? 'Submit Request →'
                           : isPromo 
                             ? 'Confirm Reservation →'
@@ -1192,7 +1192,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   </div>
                   
                   {/* Secure Payment Badge */}
-                  {!isPromo && vehicleType !== 'coachbus' && (
+                  {!isPromo && vehicleType !== 'coachbus' && vehicleType !== 'minibus' && (
                     <div className="flex flex-col items-center justify-center gap-1.5 mt-3 select-none">
                       <div className="flex items-center gap-1.5 text-[#888888]">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>

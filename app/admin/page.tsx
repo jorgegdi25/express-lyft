@@ -1588,7 +1588,6 @@ export default function AdminPage() {
                       <th className="py-2 pr-4 text-xs uppercase tracking-widest">Sedan/SUV</th>
                       <th className="py-2 pr-4 text-xs uppercase tracking-widest">Suburban</th>
                       <th className="py-2 pr-4 text-xs uppercase tracking-widest">Sprinter</th>
-                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Mini Bus</th>
                       <th className="py-2 text-xs uppercase tracking-widest text-right">Actions</th>
                     </tr>
                   </thead>
@@ -1655,22 +1654,6 @@ export default function AdminPage() {
                             />
                           </div>
                         </td>
-                        <td className="py-4 pr-4">
-                          <div className="flex items-center gap-1">
-                            <span className="text-[#888]">$</span>
-                            <input
-                              type="number"
-                              value={editRouteData[rp.id]?.minibus ?? rp.minibus_price}
-                              onChange={(e) =>
-                                setEditRouteData((prev) => ({
-                                  ...prev,
-                                  [rp.id]: { ...prev[rp.id], minibus: parseInt(e.target.value) || 0 },
-                                }))
-                              }
-                              className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
-                            />
-                          </div>
-                        </td>
                         <td className="py-4 text-right">
                           {savingRoute === rp.id ? (
                             <span className="text-[#B8960C] uppercase tracking-widest text-xs font-bold">Saving…</span>
@@ -1709,7 +1692,7 @@ export default function AdminPage() {
 
                     {routePrices.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="py-4 text-center text-[#888] text-xs italic">
+                        <td colSpan={5} className="py-4 text-center text-[#888] text-xs italic">
                           No routes configured yet.
                         </td>
                       </tr>
@@ -1736,7 +1719,6 @@ export default function AdminPage() {
                       <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.sedan_suv_price || ''} onChange={(e) => setNewRoute({ ...newRoute, sedan_suv_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
                       <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.suburban_price || ''} onChange={(e) => setNewRoute({ ...newRoute, suburban_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
                       <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.sprinter_price || ''} onChange={(e) => setNewRoute({ ...newRoute, sprinter_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
-                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.minibus_price || ''} onChange={(e) => setNewRoute({ ...newRoute, minibus_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
                       <td className="py-4 text-right">
                         <button
                           onClick={addRoute}
@@ -2226,9 +2208,9 @@ export default function AdminPage() {
                   <div className="flex items-center justify-between mt-1">
                     <div className="flex flex-col gap-0.5 w-1/3">
                       <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold">
-                        {l.vehicle_type === 'coachbus' ? 'Custom Quote' : 'Est. Total'}
+                        {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? 'Custom Quote' : 'Est. Total'}
                       </span>
-                      {l.vehicle_type === 'coachbus' ? (
+                      {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? (
                         <p className="text-sm font-bold mt-1" style={{ color: '#EF9F27' }}>Pending</p>
                       ) : (
                         <p className="text-xl font-bold" style={{ color: '#4ade80' }}>${l.amount_usd || 0}</p>
