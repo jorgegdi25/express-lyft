@@ -156,7 +156,13 @@ export async function POST(req: NextRequest) {
       tripType,
       status,
       paymentMode,
-      isPromo
+      isPromo,
+      airline,
+      flightNumber,
+      meetingType,
+      meetGreetFee,
+      carSeatsRequested,
+      luggageCount
     } = body
 
     if (!hotelSlug) return NextResponse.json({ error: 'Missing hotelSlug' }, { status: 400 })
@@ -209,6 +215,12 @@ export async function POST(req: NextRequest) {
       payment_type: isDeposit ? 'deposit' : 'full',
       amount_paid: 0,
       amount_remaining: isDeposit ? finalAmount : 0,
+      airline,
+      flight_number: flightNumber,
+      meeting_type: meetingType || 'curbside',
+      meet_greet_fee: meetGreetFee || 0,
+      car_seats_requested: carSeatsRequested || 0,
+      luggage_count: luggageCount || 0
     }).select().single()
 
     if (error) {
@@ -292,7 +304,13 @@ export async function PUT(req: NextRequest) {
       pickup, destination, vehicleType, vehicle_type,
       passengers, date, time, 
       returnDate, returnTime, return_date, return_time,
-      amountUsd, tripType, assigned_driver_id
+      amountUsd, tripType, assigned_driver_id,
+      airline, flightNumber, flight_number,
+      meetingType, meeting_type, meetGreetFee, meet_greet_fee,
+      carSeatsRequested, car_seats_requested,
+      luggageCount, luggage_count,
+      waitTimeMinutes, wait_time_minutes,
+      waitTimeFee, wait_time_fee
     } = body
 
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
@@ -314,6 +332,14 @@ export async function PUT(req: NextRequest) {
     if (amountUsd !== undefined) updates.amount_usd = amountUsd
     if (tripType !== undefined) updates.trip_type = tripType
     if (assigned_driver_id !== undefined) updates.assigned_driver_id = assigned_driver_id
+    if (airline !== undefined) updates.airline = airline
+    if (flightNumber !== undefined || flight_number !== undefined) updates.flight_number = flightNumber || flight_number
+    if (meetingType !== undefined || meeting_type !== undefined) updates.meeting_type = meetingType || meeting_type
+    if (meetGreetFee !== undefined || meet_greet_fee !== undefined) updates.meet_greet_fee = meetGreetFee || meet_greet_fee
+    if (carSeatsRequested !== undefined || car_seats_requested !== undefined) updates.car_seats_requested = carSeatsRequested || car_seats_requested
+    if (luggageCount !== undefined || luggage_count !== undefined) updates.luggage_count = luggageCount || luggage_count
+    if (waitTimeMinutes !== undefined || wait_time_minutes !== undefined) updates.wait_time_minutes = waitTimeMinutes || wait_time_minutes
+    if (waitTimeFee !== undefined || wait_time_fee !== undefined) updates.wait_time_fee = waitTimeFee || wait_time_fee
 
     const { data, error } = await supabaseAdmin
       .from('leads')

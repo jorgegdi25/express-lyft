@@ -114,6 +114,11 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   const [customerEmail, setCustomerEmail] = useState<string>('')
   const [customerPhone, setCustomerPhone] = useState<string>('')
   const [customerCountry, setCustomerCountry] = useState<string>('')
+  const [airline, setAirline] = useState<string>('')
+  const [flightNumber, setFlightNumber] = useState<string>('')
+  const [meetingType, setMeetingType] = useState<'curbside' | 'meet_greet'>('curbside')
+  const [carSeatsRequested, setCarSeatsRequested] = useState<number>(0)
+  const [luggageCount, setLuggageCount] = useState<number>(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -135,6 +140,41 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
       setError('Please select a return date and time.')
       return
     }
+
+    const isAirportPickup = pickup.toLowerCase().includes('airport') || pickup.toLowerCase().includes('mia') || pickup.toLowerCase().includes('fll')
+    if (isAirportPickup && (!airline.trim() || !flightNumber.trim())) {
+      setError('Airline and Flight Number are required for airport pickups.')
+      return
+    }
+
+    // 2-hour validation for same-day
+    const now = new Date()
+    const selectedDate = new Date(`${date}T00:00:00`)
+    if (
+      selectedDate.getFullYear() === now.getFullYear() &&
+      selectedDate.getMonth() === now.getMonth() &&
+      selectedDate.getDate() === now.getDate()
+    ) {
+      // It's today. Check if the time is at least 2 hours from now
+      const match = time.match(/(\d+):(\d+) (AM|PM)/)
+      if (match) {
+        let hours = parseInt(match[1])
+        const minutes = parseInt(match[2])
+        const ampm = match[3]
+        if (ampm === 'PM' && hours < 12) hours += 12
+        if (ampm === 'AM' && hours === 12) hours = 0
+
+        const selectedDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes)
+        const diffMs = selectedDateTime.getTime() - now.getTime()
+        const diffHours = diffMs / (1000 * 60 * 60)
+        
+        if (diffHours < 2) {
+          setError('For same-day bookings, the pickup time must be at least 2 hours in advance. Please call us for urgent requests.')
+          return
+        }
+      }
+    }
+
     if (isPromo) {
       setStep(3)
     } else {
@@ -148,6 +188,13 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   }
 
   const handleNextStep2 = () => {
+    setError(null)
+    const maxLuggage = (vehicleType === 'sedan_suv' || vehicleType === 'suburban') ? 4 : 20
+    if (luggageCount > maxLuggage) {
+      setError(`The selected vehicle allows a maximum of ${maxLuggage} bags. Please reduce your luggage or choose a larger vehicle.`)
+      return
+    }
+
     setStep(3)
     const element = document.getElementById('booking-form')
     if (element) {
@@ -226,7 +273,9 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   }
 
   const currentPrices = getRoutePrices()
-  const total = tripType === 'round-trip' ? currentPrices[vehicleType] * 2 : currentPrices[vehicleType]
+  let basePrice = currentPrices[vehicleType]
+  const meetGreetFee = meetingType === 'meet_greet' ? 25 : 0
+  const total = (tripType === 'round-trip' ? basePrice * 2 : basePrice) + meetGreetFee
   const depositAmount = Math.ceil(total * 0.20)
   const chargeAmount = paymentMode === 'deposit' ? depositAmount : total
 
@@ -262,6 +311,14 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
       return
     }
 
+    // Final luggage check just in case
+    const maxLuggage = (vehicleType === 'sedan_suv' || vehicleType === 'suburban') ? 4 : 20
+    if (luggageCount > maxLuggage) {
+      setError(`The selected vehicle allows a maximum of ${maxLuggage} bags.`)
+      setStep(2)
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -284,6 +341,12 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           tripType,
           returnDate: tripType === 'round-trip' ? returnDate : undefined,
           returnTime: tripType === 'round-trip' ? returnTime : undefined,
+          airline,
+          flightNumber,
+          meetingType,
+          meetGreetFee,
+          carSeatsRequested,
+          luggageCount,
           paymentMode,
           isPromo,
         }),
@@ -578,6 +641,73 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     </div>
                   )}
 
+                  {/* Airport specific fields */}
+                  {(pickup.toLowerCase().includes('airport') || pickup.toLowerCase().includes('mia') || pickup.toLowerCase().includes('fll')) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 border border-[#333] p-5 rounded-xl bg-[#0a0a0a]">
+                      <div className="sm:col-span-2 mb-2">
+                        <p className="text-sm font-bold text-[#D4AF37] mb-1">Flight Information Needed</p>
+                        <p className="text-xs text-[#888]">We track your flight to adjust for any delays (up to 30 mins free waiting time).</p>
+                      </div>
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Airline *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. American Airlines"
+                          value={airline}
+                          onChange={(e) => setAirline(e.target.value)}
+                          className={INPUT_CLASS}
+                          style={INPUT_STYLE}
+                        />
+                      </div>
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Flight Number *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. AA1234"
+                          value={flightNumber}
+                          onChange={(e) => setFlightNumber(e.target.value)}
+                          className={INPUT_CLASS}
+                          style={INPUT_STYLE}
+                        />
+                      </div>
+                      <div className="sm:col-span-2 mt-2">
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Meeting Type
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setMeetingType('curbside')}
+                            className="rounded-xl p-4 flex flex-col gap-1 text-left transition-all duration-200"
+                            style={{
+                              background: meetingType === 'curbside' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
+                              border: meetingType === 'curbside' ? '2px solid #B8960C' : '1px solid #333333',
+                            }}
+                          >
+                            <span className="text-sm font-bold text-white">Curbside Pickup</span>
+                            <span className="text-xs text-[#888]">Meet driver outside at arrivals</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setMeetingType('meet_greet')}
+                            className="rounded-xl p-4 flex flex-col gap-1 text-left transition-all duration-200"
+                            style={{
+                              background: meetingType === 'meet_greet' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
+                              border: meetingType === 'meet_greet' ? '2px solid #B8960C' : '1px solid #333333',
+                            }}
+                          >
+                            <span className="text-sm font-bold text-white">VIP Meet & Greet (+$25)</span>
+                            <span className="text-xs text-[#888]">Driver meets you inside with a sign</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Passengers counter */}
                   <div>
                     <label className={LABEL_CLASS} style={LABEL_COLOR}>
@@ -614,6 +744,80 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         +
                       </button>
                     </div>
+                  </div>
+
+                  {/* Luggage counter */}
+                  <div>
+                    <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                      Number of Luggage Pieces
+                    </label>
+                    <div
+                      className="flex items-center justify-between rounded-xl px-4 py-3"
+                      style={{ background: '#0e0e0e', border: '1px solid #333333' }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setLuggageCount((p) => Math.max(0, p - 1))}
+                        className="w-11 h-11 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
+                        style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                      >
+                        −
+                      </button>
+                      <div className="text-center">
+                        <span className="text-3xl font-bold" style={{ color: '#FFFFFF' }}>
+                          {luggageCount}
+                        </span>
+                        <p className="text-xs mt-0.5" style={{ color: '#888888' }}>
+                          bag{luggageCount !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setLuggageCount((p) => Math.min(50, p + 1))}
+                        className="w-11 h-11 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
+                        style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <p className="text-xs text-[#888] mt-2">Sedan & Suburban max: 4 bags. Other vehicles max: 20 bags.</p>
+                  </div>
+
+                  {/* Car seats counter */}
+                  <div>
+                    <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                      Child Car Seats Needed
+                    </label>
+                    <div
+                      className="flex items-center justify-between rounded-xl px-4 py-3"
+                      style={{ background: '#0e0e0e', border: '1px solid #333333' }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setCarSeatsRequested((p) => Math.max(0, p - 1))}
+                        className="w-11 h-11 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
+                        style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                      >
+                        −
+                      </button>
+                      <div className="text-center">
+                        <span className="text-3xl font-bold" style={{ color: '#FFFFFF' }}>
+                          {carSeatsRequested}
+                        </span>
+                        <p className="text-xs mt-0.5" style={{ color: '#888888' }}>
+                          seat{carSeatsRequested !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCarSeatsRequested((p) => Math.min(4, p + 1))}
+                        className="w-11 h-11 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
+                        style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <p className="text-xs text-[#888] mt-2">Complimentary car seats available upon request.</p>
                   </div>
 
                   {error && (

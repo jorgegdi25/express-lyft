@@ -132,6 +132,10 @@ export async function POST(req: NextRequest) {
               amount: isDeposit && chargeAmount ? chargeAmount.toString() : (leadData.amount_usd?.toString() || 'TBD'),
               paymentType: isDeposit ? 'deposit' : 'full',
               amountRemaining: isDeposit && totalAmount && chargeAmount ? (totalAmount - chargeAmount).toString() : undefined,
+              airline: leadData.airline,
+              flightNumber: leadData.flight_number,
+              meetingType: leadData.meeting_type,
+              carSeatsRequested: leadData.car_seats_requested,
             }),
           })
           console.log(`Confirmation email sent for lead ${leadId} (${isDeposit ? 'deposit' : 'full'})`)

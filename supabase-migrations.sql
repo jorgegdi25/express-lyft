@@ -30,7 +30,13 @@ create table if not exists bookings (
   customer_phone text,
   customer_country text,
   status text default 'pending',
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  airline text,
+  flight_number text,
+  meeting_type text default 'curbside',
+  meet_greet_fee integer default 0,
+  car_seats_requested integer default 0,
+  luggage_count integer default 0
 );
 
 create table if not exists route_pricing (
@@ -109,7 +115,15 @@ create table if not exists leads (
   trip_type text,
   status text default 'new',
   notes text,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  airline text,
+  flight_number text,
+  meeting_type text default 'curbside',
+  meet_greet_fee integer default 0,
+  car_seats_requested integer default 0,
+  luggage_count integer default 0,
+  wait_time_minutes integer default 0,
+  wait_time_fee integer default 0
 );
 
 -- Allow public insert on leads (for tracking)

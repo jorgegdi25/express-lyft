@@ -25,6 +25,10 @@ interface ConfirmationEmailProps {
   amount: string;
   paymentType?: 'full' | 'deposit';
   amountRemaining?: string;
+  airline?: string | null;
+  flightNumber?: string | null;
+  meetingType?: string | null;
+  carSeatsRequested?: number | null;
 }
 
 export const ConfirmationEmail = ({
@@ -39,6 +43,10 @@ export const ConfirmationEmail = ({
   amount,
   paymentType = 'full',
   amountRemaining,
+  airline,
+  flightNumber,
+  meetingType,
+  carSeatsRequested,
 }: ConfirmationEmailProps) => (
   <Html>
     <Head />
@@ -72,6 +80,21 @@ export const ConfirmationEmail = ({
           <Text style={detailItem}>
             <strong>Scheduled:</strong> {date} at {time}
           </Text>
+          {airline && flightNumber && (
+            <Text style={detailItem}>
+              <strong>Flight Info:</strong> {airline} - {flightNumber}
+            </Text>
+          )}
+          {meetingType && (
+            <Text style={detailItem}>
+              <strong>Meeting Type:</strong> {meetingType === 'meet_greet' ? 'VIP Meet & Greet (Driver inside with sign)' : 'Curbside Pickup (Outside at arrivals)'}
+            </Text>
+          )}
+          {carSeatsRequested ? (
+            <Text style={detailItem}>
+              <strong>Car Seats Requested:</strong> {carSeatsRequested}
+            </Text>
+          ) : null}
           <Text style={detailItem}>
             <strong>Vehicle:</strong> {vehicleType}
           </Text>

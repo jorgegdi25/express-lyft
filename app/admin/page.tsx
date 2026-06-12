@@ -24,6 +24,12 @@ interface Booking {
   passengers?: number
   trip_type?: string
   assigned_driver_id?: string
+  airline?: string
+  flight_number?: string
+  meeting_type?: string
+  meet_greet_fee?: number
+  car_seats_requested?: number
+  luggage_count?: number
 }
 
 interface Driver {
@@ -71,6 +77,14 @@ interface Lead {
   amount_remaining?: number
   trip_type?: string
   assigned_driver_id?: string | null
+  airline?: string
+  flight_number?: string
+  meeting_type?: string
+  meet_greet_fee?: number
+  car_seats_requested?: number
+  luggage_count?: number
+  wait_time_minutes?: number
+  wait_time_fee?: number
 }
 
 interface Client {
@@ -2033,6 +2047,45 @@ export default function AdminPage() {
                       <label className="text-sm font-semibold text-[#aaa]">Destination</label>
                       <input type="text" value={editingLead.destination || ''} onChange={(e) => setEditingLead({...editingLead, destination: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
                     </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Airline</label>
+                      <input type="text" value={editingLead.airline || ''} onChange={(e) => setEditingLead({...editingLead, airline: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Flight Number</label>
+                      <input type="text" value={editingLead.flight_number || ''} onChange={(e) => setEditingLead({...editingLead, flight_number: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Meeting Type</label>
+                      <select value={editingLead.meeting_type || 'curbside'} onChange={(e) => setEditingLead({...editingLead, meeting_type: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors">
+                        <option value="curbside">Curbside</option>
+                        <option value="meet_greet">Meet & Greet (+$25)</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Meet & Greet Fee</label>
+                      <input type="number" value={editingLead.meet_greet_fee || 0} onChange={(e) => setEditingLead({...editingLead, meet_greet_fee: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Luggage Count</label>
+                      <input type="number" value={editingLead.luggage_count || 0} onChange={(e) => setEditingLead({...editingLead, luggage_count: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Car Seats</label>
+                      <input type="number" value={editingLead.car_seats_requested || 0} onChange={(e) => setEditingLead({...editingLead, car_seats_requested: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Wait Time (Mins)</label>
+                      <input type="number" value={editingLead.wait_time_minutes || 0} onChange={(e) => {
+                        const mins = parseInt(e.target.value) || 0
+                        const fee = mins > 30 ? Math.ceil((mins - 30) / 60) * 20 : 0
+                        setEditingLead({...editingLead, wait_time_minutes: mins, wait_time_fee: fee})
+                      }} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-semibold text-[#aaa]">Wait Time Fee ($)</label>
+                      <input type="number" value={editingLead.wait_time_fee || 0} onChange={(e) => setEditingLead({...editingLead, wait_time_fee: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                    </div>
                   </div>
                   <div className="flex gap-4 pt-4 border-t border-[#2a2a2a]">
                     <button
@@ -2047,7 +2100,15 @@ export default function AdminPage() {
                           amount_usd: editingLead.amount_usd,
                           trip_type: editingLead.trip_type,
                           date: editingLead.date,
-                          time: editingLead.time
+                          time: editingLead.time,
+                          airline: editingLead.airline,
+                          flight_number: editingLead.flight_number,
+                          meeting_type: editingLead.meeting_type,
+                          meet_greet_fee: editingLead.meet_greet_fee,
+                          car_seats_requested: editingLead.car_seats_requested,
+                          luggage_count: editingLead.luggage_count,
+                          wait_time_minutes: editingLead.wait_time_minutes,
+                          wait_time_fee: editingLead.wait_time_fee
                         })
                         setEditingLead(null)
                       }}
