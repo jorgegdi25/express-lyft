@@ -1589,7 +1589,6 @@ export default function AdminPage() {
                       <th className="py-2 pr-4 text-xs uppercase tracking-widest">Suburban</th>
                       <th className="py-2 pr-4 text-xs uppercase tracking-widest">Sprinter</th>
                       <th className="py-2 pr-4 text-xs uppercase tracking-widest">Mini Bus</th>
-                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Coach Bus</th>
                       <th className="py-2 text-xs uppercase tracking-widest text-right">Actions</th>
                     </tr>
                   </thead>
@@ -1672,22 +1671,6 @@ export default function AdminPage() {
                             />
                           </div>
                         </td>
-                        <td className="py-4 pr-4">
-                          <div className="flex items-center gap-1">
-                            <span className="text-[#888]">$</span>
-                            <input
-                              type="number"
-                              value={editRouteData[rp.id]?.coachbus ?? rp.coachbus_price}
-                              onChange={(e) =>
-                                setEditRouteData((prev) => ({
-                                  ...prev,
-                                  [rp.id]: { ...prev[rp.id], coachbus: parseInt(e.target.value) || 0 },
-                                }))
-                              }
-                              className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
-                            />
-                          </div>
-                        </td>
                         <td className="py-4 text-right">
                           {savingRoute === rp.id ? (
                             <span className="text-[#B8960C] uppercase tracking-widest text-xs font-bold">Saving…</span>
@@ -1726,7 +1709,7 @@ export default function AdminPage() {
 
                     {routePrices.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-4 text-center text-[#888] text-xs italic">
+                        <td colSpan={6} className="py-4 text-center text-[#888] text-xs italic">
                           No routes configured yet.
                         </td>
                       </tr>
@@ -1754,7 +1737,6 @@ export default function AdminPage() {
                       <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.suburban_price || ''} onChange={(e) => setNewRoute({ ...newRoute, suburban_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
                       <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.sprinter_price || ''} onChange={(e) => setNewRoute({ ...newRoute, sprinter_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
                       <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.minibus_price || ''} onChange={(e) => setNewRoute({ ...newRoute, minibus_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
-                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.coachbus_price || ''} onChange={(e) => setNewRoute({ ...newRoute, coachbus_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
                       <td className="py-4 text-right">
                         <button
                           onClick={addRoute}
