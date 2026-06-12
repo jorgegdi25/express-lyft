@@ -355,8 +355,8 @@ export async function PUT(req: NextRequest) {
 
     if (error) throw error
     return NextResponse.json({ success: true, updated: data })
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+  } catch (err: any) {
+    const errorMsg = err?.message || (typeof err === 'string' ? err : 'Unknown error')
     return NextResponse.json({ error: errorMsg }, { status: 500 })
   }
 }
