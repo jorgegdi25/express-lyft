@@ -306,7 +306,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                     </h2>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
                     {/* Premium Ride */}
                     <div className="rounded-2xl p-8 flex flex-col items-center justify-between text-center transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C08]" style={{ background: '#161616', border: '1px solid #252525' }}>
                       <div>
@@ -347,11 +347,11 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                       </a>
                     </div>
 
-                    {/* Premium Bus/Shuttle */}
+                    {/* Premium Sprinter */}
                     <div className="rounded-2xl p-8 flex flex-col items-center justify-between text-center transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C08]" style={{ background: '#161616', border: '1px solid #252525' }}>
                       <div>
-                        <h3 className="text-xl font-bold text-white mb-2">Premium Bus/Shuttle</h3>
-                        <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Sprinter & Minibus</p>
+                        <h3 className="text-xl font-bold text-white mb-2">Premium Sprinter</h3>
+                        <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Mercedes Sprinter</p>
                       </div>
                       <div className="my-6">
                         <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
@@ -364,6 +364,26 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                         style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
                       >
                         Book Now
+                      </a>
+                    </div>
+
+                    {/* Group Transfers */}
+                    <div className="rounded-2xl p-8 flex flex-col items-center justify-between text-center transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C08]" style={{ background: '#161616', border: '1px solid #252525' }}>
+                      <div>
+                        <h3 className="text-xl font-bold text-white mb-2">Group Transfers</h3>
+                        <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Minibus & Coach Bus</p>
+                      </div>
+                      <div className="my-6">
+                        <span className="text-xs uppercase tracking-wider text-[#888888]">Rate</span>
+                        <p className="text-3xl font-bold mt-1 leading-tight" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>Custom<br/>Quote</p>
+                      </div>
+                      <a
+                        href="#booking-form"
+                        data-vehicle-select="coachbus"
+                        className="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 text-center"
+                        style={{ background: 'transparent', border: '1px solid #B8960C', color: '#B8960C' }}
+                      >
+                        Request Quote
                       </a>
                     </div>
                   </div>
