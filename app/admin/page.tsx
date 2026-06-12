@@ -108,7 +108,7 @@ const VEHICLE_LABELS: Record<string, string> = {
   coachbus: '55 Passenger Bus',
 }
 
-type TabKey = 'dashboard' | 'clients' | 'routes' | 'bookings' | 'leads' | 'qr' | 'revenue' | 'drivers' | 'dispatch' | 'assign'
+type TabKey = 'dashboard' | 'clients' | 'routes' | 'bookings' | 'leads' | 'quotes' | 'qr' | 'revenue' | 'drivers' | 'dispatch' | 'assign'
 
 
 
@@ -167,6 +167,17 @@ function IconLeads() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+  )
+}
+function IconQuotes() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <polyline points="10 9 9 9 8 9" />
     </svg>
   )
 }
@@ -1014,7 +1025,8 @@ export default function AdminPage() {
     { key: 'clients',   label: 'Hotel Partners',   icon: <IconClients /> },
     { key: 'routes',    label: 'Routes & Prices',     icon: <IconRoutes /> },
     { key: 'bookings',  label: 'Confirmed Trips',   icon: <IconBookings /> },
-    { key: 'leads',     label: 'Sales Pipeline', icon: <IconLeads />, getBadge: () => leads.length },
+    { key: 'leads',     label: 'Sales Pipeline', icon: <IconLeads />, getBadge: () => leads.filter(l => l.status !== 'quote_requested').length },
+    { key: 'quotes',    label: 'Coach Bus Quotes', icon: <IconQuotes />, getBadge: () => leads.filter(l => l.status === 'quote_requested').length },
     { key: 'drivers',   label: 'Drivers', icon: <IconDrivers /> },
     { key: 'dispatch',  label: 'Dispatch Calendar', icon: <IconDispatch /> },
     { key: 'qr',        label: 'QR Codes',   icon: <IconQR /> },
@@ -1092,7 +1104,11 @@ export default function AdminPage() {
   const bookingsTotalPages = Math.ceil(filteredBookings.length / bookingsPerPage)
 
   // Filter & paginate leads
-  const filteredLeads = leads
+  const baseLeads = activeTab === 'quotes' 
+    ? leads.filter((l) => l.status === 'quote_requested') 
+    : leads.filter((l) => l.status !== 'quote_requested')
+
+  const filteredLeads = baseLeads
     .filter((l) => {
       const term = leadsSearch.toLowerCase()
       const matchesSearch = (
@@ -1863,13 +1879,19 @@ export default function AdminPage() {
         )}
 
 
-        {/* ------- LEADS TAB ------- */}
-        {activeTab === 'leads' && (
+        {/* ------- LEADS & QUOTES TAB ------- */}
+        {(activeTab === 'leads' || activeTab === 'quotes') && (
           <div className="flex flex-col gap-8">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Sales Pipeline</h1>
-                <p className="text-sm" style={{ color: '#888' }}>Pending reservations, abandoned carts, and leads. {filteredLeads.length} found ({leads.length} total)</p>
+                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>
+                  {activeTab === 'quotes' ? 'Coach Bus Quotes' : 'Sales Pipeline'}
+                </h1>
+                <p className="text-sm" style={{ color: '#888' }}>
+                  {activeTab === 'quotes' 
+                    ? `Manage large group requests and manual quotes. ${filteredLeads.length} found.` 
+                    : `Pending reservations, abandoned carts, and leads. ${filteredLeads.length} found (${leads.length} total)`}
+                </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
