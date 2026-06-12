@@ -1915,7 +1915,7 @@ export default function AdminPage() {
             {/* Add Lead Modal */}
             {showAddLeadModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.85)' }}>
-                <div className="w-full max-w-4xl rounded-2xl p-8 my-auto" style={{ background: '#151515', border: '1px solid #B8960C' }}>
+                <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl p-8 my-auto" style={{ background: '#151515', border: '1px solid #B8960C' }}>
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-bold text-white uppercase tracking-widest">+ Add New Reservation</h2>
                     <button onClick={() => setShowAddLeadModal(false)} className="text-sm text-[#aaa] hover:text-red-400 px-3 py-1 rounded-lg border border-[#333] hover:border-red-400 transition-all">x Close</button>
@@ -1998,7 +1998,7 @@ export default function AdminPage() {
             {/* Edit Lead Modal */}
             {editingLead && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
-                <div className="w-full max-w-2xl rounded-2xl p-8" style={{ background: '#151515', border: '2px solid #B8960C' }}>
+                <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-8" style={{ background: '#151515', border: '2px solid #B8960C' }}>
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-bold text-white">Editing: {editingLead.customer_name}</h2>
                     <button onClick={() => setEditingLead(null)} className="text-sm text-[#aaa] hover:text-red-400 px-3 py-1 rounded-lg border border-[#333] hover:border-red-400 transition-all">x Close</button>
