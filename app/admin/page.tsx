@@ -2225,8 +2225,14 @@ export default function AdminPage() {
                   {/* Payment & Status */}
                   <div className="flex items-center justify-between mt-1">
                     <div className="flex flex-col gap-0.5 w-1/3">
-                      <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold">Est. Total</span>
-                      <p className="text-xl font-bold" style={{ color: '#4ade80' }}>${l.amount_usd || 0}</p>
+                      <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold">
+                        {l.vehicle_type === 'coachbus' ? 'Custom Quote' : 'Est. Total'}
+                      </span>
+                      {l.vehicle_type === 'coachbus' ? (
+                        <p className="text-sm font-bold mt-1" style={{ color: '#EF9F27' }}>Pending</p>
+                      ) : (
+                        <p className="text-xl font-bold" style={{ color: '#4ade80' }}>${l.amount_usd || 0}</p>
+                      )}
                       {l.status === 'deposit_paid' && (
                         <div className="w-full bg-[#2a2a2a] rounded-full h-1 mt-1" title="20% Deposit Paid">
                           <div className="bg-[#FBBF24] h-1 rounded-full" style={{ width: '20%' }}></div>
@@ -2241,12 +2247,13 @@ export default function AdminPage() {
                           onChange={(e) => updateLead(l.id, { status: e.target.value })}
                           className="appearance-none pr-8 pl-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer border hover:brightness-110 transition-all text-right w-full"
                           style={{ 
-                            backgroundColor: l.status === 'invoice_sent' ? '#1e3a8a30' : l.status === 'lost' ? '#33161630' : l.status === 'pending_payment' ? '#7f1d1d30' : l.status === 'deposit_paid' ? '#B8960C30' : l.status === 'paid' ? '#065f4630' : '#1a1a1a',
-                            color: l.status === 'invoice_sent' ? '#60a5fa' : l.status === 'lost' ? '#F44336' : l.status === 'pending_payment' ? '#f87171' : l.status === 'deposit_paid' ? '#FBBF24' : l.status === 'paid' ? '#34d399' : '#FFFFFF',
-                            borderColor: l.status === 'invoice_sent' ? '#1e3a8a80' : l.status === 'lost' ? '#33161680' : l.status === 'pending_payment' ? '#7f1d1d80' : l.status === 'deposit_paid' ? '#B8960C80' : l.status === 'paid' ? '#065f4680' : '#333'
+                            backgroundColor: l.status === 'invoice_sent' ? '#1e3a8a30' : l.status === 'lost' ? '#33161630' : l.status === 'pending_payment' ? '#7f1d1d30' : l.status === 'deposit_paid' ? '#B8960C30' : l.status === 'paid' ? '#065f4630' : l.status === 'quote_requested' ? '#EF9F2730' : '#1a1a1a',
+                            color: l.status === 'invoice_sent' ? '#60a5fa' : l.status === 'lost' ? '#F44336' : l.status === 'pending_payment' ? '#f87171' : l.status === 'deposit_paid' ? '#FBBF24' : l.status === 'paid' ? '#34d399' : l.status === 'quote_requested' ? '#EF9F27' : '#FFFFFF',
+                            borderColor: l.status === 'invoice_sent' ? '#1e3a8a80' : l.status === 'lost' ? '#33161680' : l.status === 'pending_payment' ? '#7f1d1d80' : l.status === 'deposit_paid' ? '#B8960C80' : l.status === 'paid' ? '#065f4680' : l.status === 'quote_requested' ? '#EF9F2780' : '#333'
                           }}
                         >
                           <option value="new" style={{color: '#fff', background: '#111'}}>Manual (New)</option>
+                          <option value="quote_requested" style={{color: '#fff', background: '#111'}}>Quote Requested</option>
                           <option value="pending_payment" style={{color: '#fff', background: '#111'}}>Abandoned</option>
                           <option value="invoice_sent" style={{color: '#fff', background: '#111'}}>Invoice Sent</option>
                           <option value="deposit_paid" style={{color: '#fff', background: '#111'}}>Deposit Paid</option>
