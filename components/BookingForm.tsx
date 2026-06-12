@@ -126,6 +126,34 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   const [step, setStep] = useState<number>(1)
   const [paymentMode, setPaymentMode] = useState<'full' | 'deposit'>('full')
 
+  const getAvailableTimeSlots = (dateString: string) => {
+    if (!dateString) return TIME_SLOTS;
+    const now = new Date()
+    const selectedDate = new Date(`${dateString}T00:00:00`)
+    const isToday =
+      selectedDate.getFullYear() === now.getFullYear() &&
+      selectedDate.getMonth() === now.getMonth() &&
+      selectedDate.getDate() === now.getDate()
+    
+    if (!isToday) return TIME_SLOTS;
+
+    return TIME_SLOTS.filter(t => {
+      const match = t.match(/(\d+):(\d+) (AM|PM)/)
+      if (!match) return true
+      let hours = parseInt(match[1])
+      const minutes = parseInt(match[2])
+      const ampm = match[3]
+      if (ampm === 'PM' && hours < 12) hours += 12
+      if (ampm === 'AM' && hours === 12) hours = 0
+
+      const slotDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes)
+      return slotDateTime > now
+    })
+  }
+
+  const availableTimeSlotsList = useMemo(() => getAvailableTimeSlots(date), [date])
+  const availableReturnTimeSlotsList = useMemo(() => getAvailableTimeSlots(returnDate), [returnDate])
+
   const isUrgentRequest = useMemo(() => {
     if (!date || !time) return false;
     const now = new Date()
@@ -594,7 +622,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         style={INPUT_STYLE}
                       >
                         <option value="">Select time</option>
-                        {TIME_SLOTS.map((t) => (
+                        {availableTimeSlotsList.map((t) => (
                           <option key={t} value={t}>
                             {t}
                           </option>
@@ -632,7 +660,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                           style={INPUT_STYLE}
                         >
                           <option value="">Select time</option>
-                          {TIME_SLOTS.map((t) => (
+                          {availableReturnTimeSlotsList.map((t) => (
                             <option key={t} value={t}>
                               {t}
                             </option>
