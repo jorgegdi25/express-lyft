@@ -104,7 +104,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
             >
               <span>{v.shortLabel}</span>
               <span style={{ fontSize: '0.7rem', color: isSelected ? '#EF9F27' : (isDisabled ? '#333333' : '#666666') }}>
-                ${prices[v.type]}
+                {v.type === 'coachbus' ? 'Quote' : `$${prices[v.type]}`}
               </span>
             </button>
           )
@@ -112,28 +112,53 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
       </div>
 
       {/* Price row */}
-      <div
-        className="mt-auto rounded-xl px-5 py-4 flex items-center justify-between"
-        style={{
-          background: 'rgba(184,150,12,0.08)',
-          border: '1px solid rgba(184,150,12,0.25)',
-        }}
-      >
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#B8960C' }}>
-            Base Rate
-          </p>
-          <p className="text-xs" style={{ color: '#777777' }}>
-            One-way transfer
-          </p>
-        </div>
-        <span
-          className="text-4xl font-bold"
-          style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}
+      {vehicle.type !== 'coachbus' ? (
+        <div
+          className="mt-auto rounded-xl px-5 py-4 flex items-center justify-between"
+          style={{
+            background: 'rgba(184,150,12,0.08)',
+            border: '1px solid rgba(184,150,12,0.25)',
+          }}
         >
-          ${prices[vehicle.type]}
-        </span>
-      </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#B8960C' }}>
+              Base Rate
+            </p>
+            <p className="text-xs" style={{ color: '#777777' }}>
+              One-way transfer
+            </p>
+          </div>
+          <span
+            className="text-4xl font-bold"
+            style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
+            ${prices[vehicle.type]}
+          </span>
+        </div>
+      ) : (
+        <div
+          className="mt-auto rounded-xl px-5 py-4 flex items-center justify-between"
+          style={{
+            background: 'rgba(184,150,12,0.08)',
+            border: '1px solid rgba(184,150,12,0.25)',
+          }}
+        >
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#B8960C' }}>
+              Custom Rate
+            </p>
+            <p className="text-xs" style={{ color: '#777777' }}>
+              Quote upon request
+            </p>
+          </div>
+          <span
+            className="text-2xl font-bold"
+            style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
+            Quote Required
+          </span>
+        </div>
+      )}
 
       {/* Trust note */}
       <div className="flex items-start gap-3 pt-2" style={{ borderTop: '1px solid #222222' }}>

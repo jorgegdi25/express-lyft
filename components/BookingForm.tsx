@@ -226,7 +226,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
   const handleNextStep2 = () => {
     setError(null)
-    const maxLuggage = (vehicleType === 'sedan_suv' || vehicleType === 'suburban') ? 4 : 20
+    const maxLuggage = vehicleType === 'sedan_suv' || vehicleType === 'suburban' ? 4 : vehicleType === 'sprinter' ? 14 : vehicleType === 'minibus' ? 30 : 60;
     if (luggageCount > maxLuggage) {
       setError(`The selected vehicle allows a maximum of ${maxLuggage} bags. Please reduce your luggage or choose a larger vehicle.`)
       return
@@ -349,7 +349,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     }
 
     // Final luggage check just in case
-    const maxLuggage = (vehicleType === 'sedan_suv' || vehicleType === 'suburban') ? 4 : 20
+    const maxLuggage = vehicleType === 'sedan_suv' || vehicleType === 'suburban' ? 4 : vehicleType === 'sprinter' ? 14 : vehicleType === 'minibus' ? 30 : 60;
     if (luggageCount > maxLuggage) {
       setError(`The selected vehicle allows a maximum of ${maxLuggage} bags.`)
       setStep(2)
@@ -810,14 +810,14 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       </div>
                       <button
                         type="button"
-                        onClick={() => setLuggageCount((p) => Math.min(50, p + 1))}
+                        onClick={() => setLuggageCount((p) => Math.min(60, p + 1))}
                         className="w-11 h-11 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
                         style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
                       >
                         +
                       </button>
                     </div>
-                    <p className="text-xs text-[#888] mt-2">Sedan & Suburban max: 4 bags. Other vehicles max: 20 bags.</p>
+                    <p className="text-xs text-[#888] mt-2">Sedan/Suburban: Max 4 bags. Sprinter: Max 14. Minibus: Max 30. Coach: Max 60.</p>
                   </div>
 
                   {/* Car seats counter */}
