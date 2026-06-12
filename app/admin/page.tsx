@@ -2374,13 +2374,13 @@ export default function AdminPage() {
               {revenueStats.monthlyData.length === 0 ? (
                 <p className="text-sm italic text-[#666]">No data available yet.</p>
               ) : (
-                <div className="flex items-end gap-4 h-48 mt-4">
+                <div className="flex items-stretch gap-4 h-48 mt-4">
                   {revenueStats.monthlyData.map(([month, amount]) => {
                     const maxAmount = Math.max(...revenueStats.monthlyData.map(m => m[1]), 1)
                     const heightPercent = Math.max((amount / maxAmount) * 100, 5)
                     return (
                       <div key={month} className="flex flex-col items-center gap-2 flex-1 group">
-                        <div className="relative w-full flex justify-center h-full items-end">
+                        <div className="relative w-full flex-1 flex justify-center items-end">
                           <div 
                             className="w-full max-w-[60px] rounded-t-sm transition-all duration-500 ease-out group-hover:brightness-125"
                             style={{ height: `${heightPercent}%`, background: '#B8960C' }}
