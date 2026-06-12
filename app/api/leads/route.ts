@@ -184,10 +184,16 @@ export async function POST(req: NextRequest) {
       leadStatus = 'pending_assignment'
       isDeposit = false
     } else if (!isAdmin) {
-      const calculatedAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '')
-      if (calculatedAmount > 0 && Math.abs(calculatedAmount - inputTotal) > 0.01) {
-        console.warn(`[leads] Price mismatch: input=${inputTotal}, calculated=${calculatedAmount}. Using calculated price.`)
-        finalAmount = calculatedAmount
+      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '')
+      let expectedFee = 0;
+      if (meetingType === 'meet_greet') {
+        expectedFee = 25;
+      }
+      const expectedAmount = calculatedBaseAmount + expectedFee;
+      
+      if (expectedAmount > 0 && Math.abs(expectedAmount - inputTotal) > 0.01) {
+        console.warn(`[leads] Price mismatch: input=${inputTotal}, expected=${expectedAmount}. Using calculated price.`)
+        finalAmount = expectedAmount
       }
     }
 
