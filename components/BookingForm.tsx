@@ -128,7 +128,11 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
   const getAvailableTimeSlots = (dateString: string) => {
     if (!dateString) return TIME_SLOTS;
-    const now = new Date()
+    
+    // Obtener la hora actual en la zona horaria de Florida (Miami)
+    const nowStr = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+    const now = new Date(nowStr);
+    
     const selectedDate = new Date(`${dateString}T00:00:00`)
     const isToday =
       selectedDate.getFullYear() === now.getFullYear() &&
@@ -156,7 +160,11 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
   const isUrgentRequest = useMemo(() => {
     if (!date || !time) return false;
-    const now = new Date()
+    
+    // Obtener la hora actual en la zona horaria de Florida (Miami)
+    const nowStr = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+    const now = new Date(nowStr);
+    
     const selectedDate = new Date(`${date}T00:00:00`)
     if (
       selectedDate.getFullYear() === now.getFullYear() &&
