@@ -407,6 +407,12 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                       </div>
                     </details>
 
+                    <details className="group mt-2 overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="w-full py-4 text-center cursor-pointer select-none font-bold text-sm uppercase tracking-wider text-[#B8960C] hover:text-[#D4AF37] transition-all border border-[#252525] rounded-xl bg-[#161616] list-none hover:border-[#B8960C]">
+                        Show More Questions
+                      </summary>
+                      <div className="flex flex-col gap-4 mt-4">
+
                     <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
                       <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
                         <span>What is my reservation or contract number?</span>
@@ -514,6 +520,10 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                         We accept major credit cards and other approved payment methods. Payment options will be confirmed when you book.
                       </div>
                     </details>
+
+                      </div>
+                    </details>
+
                   </div>
                 </div>
               </section>
