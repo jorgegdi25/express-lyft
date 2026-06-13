@@ -1145,7 +1145,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                             </svg>
                             <p className="text-xs leading-relaxed" style={{ color: '#BBBBBB' }}>
-                              Remaining <strong style={{ color: '#EF9F27' }}>${total - depositAmount}</strong> is due before your trip — payable by card or cash to your driver.
+                              Remaining <strong style={{ color: '#EF9F27' }}>${total - depositAmount}</strong> is due before your trip — payable via secure payment link.
                             </p>
                           </div>
                         )}

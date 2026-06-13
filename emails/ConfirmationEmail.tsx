@@ -109,7 +109,7 @@ export const ConfirmationEmail = ({
                 <strong>Remaining Balance:</strong> ${amountRemaining} USD
               </Text>
               <Text style={{...detailItem, color: '#D4AF37', fontSize: '13px', marginTop: '12px'}}>
-                ⓘ Remaining balance is due before your trip — payable by card or cash to your driver.
+                ⓘ Remaining balance is due before your trip — payable via secure payment link.
               </Text>
             </>
           )}

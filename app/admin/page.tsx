@@ -2226,9 +2226,9 @@ export default function AdminPage() {
                                  💳 Stripe Link (Remaining)
                                </button>
                                <button onClick={() => { 
-                                 if(confirm(`Mark remaining as paid in cash?`)) { updateLead(l.id, { status: 'paid', amount_paid: l.amount_usd, amount_remaining: 0 } as any); setOpenMenuId(null); }
+                                 if(confirm(`Mark remaining balance as collected manually?`)) { updateLead(l.id, { status: 'paid', amount_paid: l.amount_usd, amount_remaining: 0 } as any); setOpenMenuId(null); }
                                }} className="px-4 py-3 text-left text-sm text-[#FBBF24] hover:bg-[#222] font-semibold border-b border-[#222] flex items-center gap-2">
-                                 💵 Mark Paid (Cash)
+                                 ✅ Mark Paid (Manual)
                                </button>
                              </>
                            )}
@@ -2436,9 +2436,9 @@ export default function AdminPage() {
                 <p className="text-xs uppercase tracking-wider text-[#666]">Direct to bank</p>
               </div>
               <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Cash Pending</p>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Balance Pending</p>
                 <p className="text-4xl font-bold" style={{ color: '#FBBF24' }}>${revenueStats.depositRemainingCash.toLocaleString()}</p>
-                <p className="text-xs uppercase tracking-wider text-[#666]">To collect from drivers</p>
+                <p className="text-xs uppercase tracking-wider text-[#666]">Via secure payment link</p>
               </div>
             </section>
 
