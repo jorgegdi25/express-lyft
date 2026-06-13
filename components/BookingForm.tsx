@@ -98,11 +98,16 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     new Set(normalizedRoutes.flatMap((r) => [r.pickup, r.destination]))
   ).filter(Boolean), [normalizedRoutes])
 
-  const LOCATIONS = useMemo(() => 
-    dynamicLocations.length > 0
+  const LOCATIONS = useMemo(() => {
+    let locs = dynamicLocations.length > 0
       ? dynamicLocations
-      : ['The Hotel', 'Miami International Airport (MIA)', 'Port of Miami', 'Other Destination']
-  , [dynamicLocations])
+      : ['The Hotel', 'Miami International Airport (MIA)', 'Fort Lauderdale Airport (FLL)', 'Port of Miami', 'Other Destination']
+    
+    if (isPromo) {
+      locs = locs.filter(loc => !loc.toLowerCase().includes('port') && !loc.toLowerCase().includes('other'))
+    }
+    return locs
+  }, [dynamicLocations, isPromo])
 
   const [tripType, setTripType] = useState<TripType>(isPromo ? 'round-trip' : 'one-way')
   const [pickup, setPickup] = useState<string>('')
