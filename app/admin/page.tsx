@@ -1036,7 +1036,7 @@ export default function AdminPage() {
       items: [
         { key: 'leads', label: 'Sales Pipeline', icon: <IconLeads />, getBadge: () => leads.filter(l => ['new', 'pending_payment', 'invoice_sent'].includes(l.status || '') && l.status !== 'quote_requested').length },
         { key: 'quotes', label: 'Quotes (Manual)', icon: <IconQuotes />, getBadge: () => leads.filter(l => l.status === 'quote_requested').length },
-        { key: 'clients', label: 'Hotel Partners', icon: <IconClients /> },
+        { key: 'clients', label: 'Frequent Flyers', icon: <IconClients /> },
         { key: 'revenue', label: 'Revenue Dashboard', icon: <IconRevenue /> },
       ] as const
     }
@@ -1490,8 +1490,8 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Hotel Partners</h1>
-                <p className="text-sm" style={{ color: '#888' }}>Manage your B2B hotel partners and affiliates. {clients.length} total partners.</p>
+                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Frequent Flyers</h1>
+                <p className="text-sm" style={{ color: '#888' }}>Manage your frequent flyers, VIPs, and corporate partners. {clients.length} total clients.</p>
               </div>
               <button
                 onClick={() => { resetClientForm(); setShowClientForm(true) }}
@@ -1608,7 +1608,7 @@ export default function AdminPage() {
                               </button>
                             )}
                           </div>
-                          {c.phone && <p className="text-[10px] text-[#555] font-mono">{c.phone}</p>}
+                          {c.phone && <p className="text-xs mt-1 text-[#aaa] font-mono tracking-wider">{c.phone}</p>}
                         </td>
                         <td className="py-4 pr-4">
                           <p className="text-xs text-white">{c.hotel_slug}</p>
