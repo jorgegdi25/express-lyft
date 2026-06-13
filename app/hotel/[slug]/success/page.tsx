@@ -1,12 +1,15 @@
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 
+import { stripe } from '@/lib/stripe'
+import Stripe from 'stripe'
+
 export default async function SuccessPage({ 
   params,
   searchParams,
 }: { 
   params: { slug: string }
-  searchParams: { lead_id?: string }
+  searchParams: { lead_id?: string; session_id?: string }
 }) {
   let lead = null;
   
@@ -24,6 +27,24 @@ export default async function SuccessPage({
       lead = data;
     } catch (e) {
       console.error('Failed to fetch lead for success page', e);
+    }
+  }
+
+  let receiptUrl: string | null = null;
+  if (searchParams.session_id) {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(searchParams.session_id, {
+        expand: ['payment_intent.latest_charge']
+      });
+      if (session.payment_intent) {
+        const pi = session.payment_intent as Stripe.PaymentIntent;
+        const charge = pi.latest_charge as Stripe.Charge;
+        if (charge && charge.receipt_url) {
+          receiptUrl = charge.receipt_url;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch stripe session for receipt', e);
     }
   }
 
@@ -88,16 +109,29 @@ export default async function SuccessPage({
           </>
         )}
         
-        <Link 
-          href={`/hotel/${params.slug}`}
-          className="inline-block w-full py-4 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-[0.98]"
-          style={{
-            background: 'linear-gradient(135deg, #B8960C, #D4AF37)',
-            color: '#0a0a0a',
-          }}
-        >
-          Return to Booking Page
-        </Link>
+        <div className="flex flex-col gap-3">
+          {receiptUrl && (
+            <a 
+              href={receiptUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block w-full py-4 rounded-xl text-sm font-bold tracking-wider transition-all hover:bg-white/10 active:scale-[0.98] border border-white/20"
+              style={{ color: '#FFFFFF' }}
+            >
+              📄 Download PDF Invoice / Receipt
+            </a>
+          )}
+          <Link 
+            href={`/hotel/${params.slug}`}
+            className="inline-block w-full py-4 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-[0.98]"
+            style={{
+              background: 'linear-gradient(135deg, #B8960C, #D4AF37)',
+              color: '#0a0a0a',
+            }}
+          >
+            Return to Booking Page
+          </Link>
+        </div>
       </div>
     </div>
   )

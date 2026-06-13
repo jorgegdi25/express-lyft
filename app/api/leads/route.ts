@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       }
 
       const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-      const successUrl = `${origin}/hotel/${lead.hotel_slug}/success?lead_id=${lead.id}`
+      const successUrl = `${origin}/hotel/${lead.hotel_slug}/success?lead_id=${lead.id}&session_id={CHECKOUT_SESSION_ID}`
       const cancelUrl = `${origin}/hotel/${lead.hotel_slug}`
 
       const session = await stripe.checkout.sessions.create({
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       }
 
       const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-      const successUrl = `${origin}/hotel/${lead.hotel_slug}/success?lead_id=${lead.id}`
+      const successUrl = `${origin}/hotel/${lead.hotel_slug}/success?lead_id=${lead.id}&session_id={CHECKOUT_SESSION_ID}`
       const cancelUrl = `${origin}/hotel/${lead.hotel_slug}`
 
       const session = await stripe.checkout.sessions.create({
@@ -250,7 +250,7 @@ export async function POST(req: NextRequest) {
     }
 
     const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const successUrl = isPromo ? `${origin}/promo/${hotelSlug}/success?lead_id=${data.id}` : `${origin}/hotel/${hotelSlug}/success?lead_id=${data.id}`
+    const successUrl = isPromo ? `${origin}/promo/${hotelSlug}/success?lead_id=${data.id}&session_id={CHECKOUT_SESSION_ID}` : `${origin}/hotel/${hotelSlug}/success?lead_id=${data.id}&session_id={CHECKOUT_SESSION_ID}`
     const cancelUrl = isPromo ? `${origin}/promo/${hotelSlug}` : `${origin}/hotel/${hotelSlug}`
 
     if (isPromo || paymentMode === 'quote') {
