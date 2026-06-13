@@ -214,7 +214,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     }
 
     const isAirportPickup = pickup.toLowerCase().includes('airport') || pickup.toLowerCase().includes('mia') || pickup.toLowerCase().includes('fll')
-    if (isAirportPickup && (!airline.trim() || !flightNumber.trim())) {
+    if (!isPromo && isAirportPickup && (!airline.trim() || !flightNumber.trim())) {
       setError('Airline and Flight Number are required for airport pickups.')
       return
     }
@@ -732,7 +732,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       </div>
                       <div>
                         <label className={LABEL_CLASS} style={LABEL_COLOR}>
-                          Airline *
+                          Airline {isPromo ? '(Optional)' : '*'}
                         </label>
                         <input
                           type="text"
@@ -745,7 +745,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       </div>
                       <div>
                         <label className={LABEL_CLASS} style={LABEL_COLOR}>
-                          Flight Number *
+                          Flight Number {isPromo ? '(Optional)' : '*'}
                         </label>
                         <input
                           type="text"

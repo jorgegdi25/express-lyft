@@ -2264,12 +2264,12 @@ export default function AdminPage() {
                   <div className="flex items-center justify-between mt-1">
                     <div className="flex flex-col gap-0.5 w-1/3">
                       <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold">
-                        {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? 'Custom Quote' : 'Est. Total'}
+                        {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? 'Custom Quote' : activeTab === 'hotel_bookings' ? 'Hotel Billable' : 'Est. Total'}
                       </span>
                       {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? (
                         <p className="text-sm font-bold mt-1" style={{ color: '#EF9F27' }}>Pending</p>
                       ) : (
-                        <p className="text-xl font-bold" style={{ color: '#4ade80' }}>${l.amount_usd || 0}</p>
+                        <p className="text-xl font-bold" style={{ color: activeTab === 'hotel_bookings' ? '#2dd4bf' : '#4ade80' }}>${l.amount_usd || 0}</p>
                       )}
                       {l.status === 'deposit_paid' && (
                         <div className="w-full bg-[#2a2a2a] rounded-full h-1 mt-1" title="20% Deposit Paid">
