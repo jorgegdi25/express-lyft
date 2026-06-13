@@ -2199,44 +2199,6 @@ export default function AdminPage() {
                   {/* Top Bar: Time Ago & Actions */}
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] font-bold text-[#888] uppercase tracking-wider">{timeAgo(l.created_at)}</span>
-                    <div className="relative" onMouseLeave={() => setOpenMenuId(null)}>
-                      <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === l.id ? null : l.id); }} className="p-1.5 rounded-lg bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#888] hover:text-white transition-colors border border-[#333]" title="Actions">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
-                      </button>
-                      {openMenuId === l.id && (
-                        <div className="absolute right-0 top-10 w-56 bg-[#161616] border border-[#333] rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-                           {l.status !== 'paid' && l.status !== 'deposit_paid' && (
-                             <>
-                               <button onClick={(e) => { e.stopPropagation(); generateStripeLink(l.id); setOpenMenuId(null); }} className="px-4 py-3 text-left text-sm text-[#D4AF37] hover:bg-[#222] font-semibold border-b border-[#222] flex items-center gap-2">
-                                 💳 Copy Stripe Link
-                               </button>
-                               <button onClick={(e) => { e.stopPropagation(); sendInvoice(l.id); setOpenMenuId(null); }} className="px-4 py-3 text-left text-sm text-[#10B981] hover:bg-[#222] font-semibold border-b border-[#222] flex items-center gap-2">
-                                 📧 Send Invoice
-                               </button>
-                             </>
-                           )}
-                           {l.status === 'deposit_paid' && (
-                             <>
-                               <button onClick={(e) => { e.stopPropagation(); generateRemainingStripeLink(l.id); setOpenMenuId(null); }} className="px-4 py-3 text-left text-sm text-[#D4AF37] hover:bg-[#222] font-semibold border-b border-[#222] flex items-center gap-2">
-                                 💳 Copy Link (Remaining)
-                               </button>
-                               <button onClick={(e) => { 
-                                 e.stopPropagation();
-                                 if(confirm(`Mark remaining balance as collected manually?`)) { updateLead(l.id, { status: 'paid', amount_paid: l.amount_usd, amount_remaining: 0 } as any); setOpenMenuId(null); }
-                               }} className="px-4 py-3 text-left text-sm text-[#FBBF24] hover:bg-[#222] font-semibold border-b border-[#222] flex items-center gap-2">
-                                 ✅ Mark Paid (Manual)
-                               </button>
-                             </>
-                           )}
-                           <button onClick={(e) => { e.stopPropagation(); setEditingLead(l); setOpenMenuId(null); }} className="px-4 py-3 text-left text-sm text-white hover:bg-[#222] font-semibold border-b border-[#222] flex items-center gap-2">
-                             ✏️ Edit Reservation
-                           </button>
-                           <button onClick={(e) => { e.stopPropagation(); deleteLead(l.id); setOpenMenuId(null); }} className="px-4 py-3 text-left text-sm text-[#F44336] hover:bg-[#331616] font-semibold flex items-center gap-2">
-                             🗑️ Delete
-                           </button>
-                        </div>
-                      )}
-                    </div>
                   </div>
 
                   {/* Customer Info */}
@@ -2514,18 +2476,33 @@ export default function AdminPage() {
                   </div>
 
                   {/* Actions Footer */}
-                  <div className="border-t border-[#222] bg-[#161616] p-6 flex flex-wrap gap-3 justify-end">
+                  <div className="border-t border-[#222] bg-[#161616] p-6 flex flex-wrap gap-3 justify-end items-center">
+                    <button onClick={() => { deleteLead(viewingLead.id); setViewingLead(null); }} className="px-4 py-2 mr-auto rounded-lg text-sm font-bold border border-red-900/50 bg-red-900/10 text-red-500 hover:bg-red-900/20 transition-colors">
+                      🗑️ Delete
+                    </button>
                     <button onClick={() => { setEditingLead(viewingLead); setViewingLead(null); }} className="px-4 py-2 rounded-lg text-sm font-bold border border-[#333] text-white hover:bg-[#222] transition-colors">
                       Edit
                     </button>
                     {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
+                      <button onClick={() => sendInvoice(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/50 hover:bg-[#10B981]/20 transition-colors flex items-center gap-2">
+                        📧 Send Invoice
+                      </button>
+                    )}
+                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
                       <button onClick={() => generateStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[#D4AF37] border border-[#B8960C] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
-                        💳 Copy Payment Link
+                        💳 Generate Payment Link
+                      </button>
+                    )}
+                    {viewingLead.status === 'deposit_paid' && (
+                      <button onClick={() => { 
+                        if(confirm(`Mark remaining balance as collected manually?`)) { updateLead(viewingLead.id, { status: 'paid', amount_paid: viewingLead.amount_usd, amount_remaining: 0 } as any); setViewingLead(null); }
+                      }} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#FBBF24]/10 text-[#FBBF24] border border-[#FBBF24]/50 hover:bg-[#FBBF24]/20 transition-colors flex items-center gap-2">
+                        ✅ Mark Paid (Manual)
                       </button>
                     )}
                     {viewingLead.status === 'deposit_paid' && (
                       <button onClick={() => generateRemainingStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[#D4AF37] border border-[#B8960C] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
-                        💳 Copy Balance Link
+                        💳 Generate Balance Link
                       </button>
                     )}
                   </div>
