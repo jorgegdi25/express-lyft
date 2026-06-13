@@ -110,8 +110,8 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   }, [dynamicLocations, isPromo])
 
   const [tripType, setTripType] = useState<TripType>(isPromo ? 'round-trip' : 'one-way')
-  const [pickup, setPickup] = useState<string>('')
-  const [destination, setDestination] = useState<string>('')
+  const [pickup, setPickup] = useState<string>(isPromo ? 'Airport' : '')
+  const [destination, setDestination] = useState<string>(isPromo ? 'The Hotel' : '')
   const [date, setDate] = useState<string>('')
   const [time, setTime] = useState<string>('')
   const [returnDate, setReturnDate] = useState<string>('')
@@ -571,45 +571,55 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     </div>
                   )}
 
-                  {/* Pickup */}
-                  <div>
-                    <label className={LABEL_CLASS} style={LABEL_COLOR}>
-                      Pickup Location
-                    </label>
-                    <select
-                      value={pickup}
-                      onChange={(e) => setPickup(e.target.value)}
-                      className={`${INPUT_CLASS} min-h-[50px] text-base`}
-                      style={INPUT_STYLE}
-                    >
-                      <option value="">Select Pickup Location...</option>
-                      {availablePickups.map((loc) => (
-                        <option key={loc} value={loc}>
-                          {loc === 'The Hotel' ? `The Hotel` : loc}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Pickup and Destination - Hidden on Promo */}
+                  {isPromo ? (
+                    <div className="w-full py-4 px-6 rounded-xl text-center mb-6" style={{ background: 'rgba(184,150,12,0.1)', border: '1px solid rgba(184,150,12,0.3)' }}>
+                      <p className="text-[#D4AF37] font-bold text-lg uppercase tracking-wider mb-1">Airport ⇄ Hotel Transfer</p>
+                      <p className="text-sm text-[#AAAAAA]">Round trip transportation from the airport to your hotel and back.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Pickup */}
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Pickup Location
+                        </label>
+                        <select
+                          value={pickup}
+                          onChange={(e) => setPickup(e.target.value)}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base`}
+                          style={INPUT_STYLE}
+                        >
+                          <option value="">Select Pickup Location...</option>
+                          {availablePickups.map((loc) => (
+                            <option key={loc} value={loc}>
+                              {loc === 'The Hotel' ? `The Hotel` : loc}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                  {/* Destination */}
-                  <div>
-                    <label className={LABEL_CLASS} style={LABEL_COLOR}>
-                      Destination
-                    </label>
-                    <select
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
-                      className={`${INPUT_CLASS} min-h-[50px] text-base`}
-                      style={INPUT_STYLE}
-                    >
-                      <option value="">Select Destination...</option>
-                      {availableDestinations.map((loc) => (
-                        <option key={loc} value={loc}>
-                          {loc === 'The Hotel' ? `The Hotel` : loc}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                      {/* Destination */}
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Destination
+                        </label>
+                        <select
+                          value={destination}
+                          onChange={(e) => setDestination(e.target.value)}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base`}
+                          style={INPUT_STYLE}
+                        >
+                          <option value="">Select Destination...</option>
+                          {availableDestinations.map((loc) => (
+                            <option key={loc} value={loc}>
+                              {loc === 'The Hotel' ? `The Hotel` : loc}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
 
                   {/* Date + Time */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
