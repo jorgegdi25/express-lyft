@@ -40,7 +40,22 @@ async function getHotelData(slug: string) {
     }
   }
 
-  return { hotel, prices, routePrices: routePricingRes.data || [] }
+  const routePrices = routePricingRes.data || []
+
+  // Find the lowest price across all routes for the starting rates
+  let startingPrices = { sedan_suv: prices.sedan_suv, suburban: prices.suburban, sprinter: prices.sprinter }
+  if (routePrices.length > 0) {
+    startingPrices.sedan_suv = Math.min(...routePrices.map(r => r.sedan_suv_price || Infinity))
+    startingPrices.suburban = Math.min(...routePrices.map(r => r.suburban_price || Infinity))
+    startingPrices.sprinter = Math.min(...routePrices.map(r => r.sprinter_price || Infinity))
+    
+    // Fallback if no routes have a valid price
+    if (startingPrices.sedan_suv === Infinity) startingPrices.sedan_suv = prices.sedan_suv
+    if (startingPrices.suburban === Infinity) startingPrices.suburban = prices.suburban
+    if (startingPrices.sprinter === Infinity) startingPrices.sprinter = prices.sprinter
+  }
+
+  return { hotel, prices, routePrices, startingPrices }
 }
 
 /* ─── Feature cards data ─────────────────────────────────────────── */
@@ -97,7 +112,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
   const data = await getHotelData(params.slug)
   if (!data) notFound()
 
-  const { hotel, prices } = data
+  const { hotel, prices, startingPrices } = data
   const showSuccess = searchParams.success === 'true'
   const activeTab = searchParams.tab || 'pricing'
 
@@ -315,7 +330,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                       </div>
                       <div className="my-6">
                         <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
-                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>$35</p>
+                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.sedan_suv}</p>
                       </div>
                       <a
                         href="#booking-form"
@@ -335,7 +350,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                       </div>
                       <div className="my-6">
                         <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
-                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>$45</p>
+                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.suburban}</p>
                       </div>
                       <a
                         href="#booking-form"
@@ -355,7 +370,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                       </div>
                       <div className="my-6">
                         <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
-                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>$50</p>
+                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.sprinter}</p>
                       </div>
                       <a
                         href="#booking-form"
