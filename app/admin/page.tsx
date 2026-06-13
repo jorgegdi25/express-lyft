@@ -1111,146 +1111,7 @@ export default function AdminPage() {
             Authenticate
           </button>
         </form>
-{/* FULL DETAILS MODAL */}
-            {viewingLead && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setViewingLead(null)}>
-                <div className="bg-[#111] border border-[#333] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
-                  {/* Header */}
-                  <div className="flex items-center justify-between p-6 border-b border-[#222] bg-[#161616]">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-[#B8960C] font-bold mb-1">Reservation Details</p>
-                      <h2 className="text-xl font-bold text-white">{viewingLead.customer_name || 'Anonymous'}</h2>
-                    </div>
-                    <button onClick={() => { setViewingLead(null); setGeneratedLink(null); }} className="p-2 text-[#888] hover:text-white bg-[#222] rounded-full transition-colors">
-                      ✕
-                    </button>
-                  </div>
 
-                  {/* Body Content */}
-                  <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
-                    
-                    {/* Financial Summary */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4 text-center">
-                        <p className="text-xs uppercase text-[#888] font-bold tracking-wider mb-1">Total</p>
-                        <p className="text-2xl font-bold text-white">${viewingLead.amount_usd || 0}</p>
-                      </div>
-                      <div className="bg-green-900/10 border border-green-900/30 rounded-xl p-4 text-center">
-                        <p className="text-xs uppercase text-green-500/70 font-bold tracking-wider mb-1">Paid</p>
-                        <p className="text-2xl font-bold text-green-400">${viewingLead.amount_paid || 0}</p>
-                      </div>
-                      <div className="bg-red-900/10 border border-red-900/30 rounded-xl p-4 text-center">
-                        <p className="text-xs uppercase text-red-500/70 font-bold tracking-wider mb-1">Owes</p>
-                        <p className="text-2xl font-bold text-red-400">${viewingLead.amount_remaining || 0}</p>
-                      </div>
-                    </div>
-
-                    {/* Status & Trip Info */}
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="flex flex-col gap-4">
-                        <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Status</p>
-                          <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border inline-block" style={{ 
-                            backgroundColor: viewingLead.status === 'hotel_b2b' ? '#134e4a80' : viewingLead.status === 'invoice_sent' ? '#1e3a8a30' : viewingLead.status === 'lost' ? '#33161630' : viewingLead.status === 'pending_payment' ? '#7f1d1d30' : viewingLead.status === 'deposit_paid' ? '#B8960C30' : viewingLead.status === 'paid' ? '#065f4630' : viewingLead.status === 'quote_requested' ? '#EF9F2730' : '#1a1a1a',
-                            color: viewingLead.status === 'hotel_b2b' ? '#2dd4bf' : viewingLead.status === 'invoice_sent' ? '#60a5fa' : viewingLead.status === 'lost' ? '#F44336' : viewingLead.status === 'pending_payment' ? '#f87171' : viewingLead.status === 'deposit_paid' ? '#FBBF24' : viewingLead.status === 'paid' ? '#34d399' : viewingLead.status === 'quote_requested' ? '#EF9F27' : '#FFFFFF',
-                            borderColor: viewingLead.status === 'hotel_b2b' ? '#2dd4bf80' : viewingLead.status === 'invoice_sent' ? '#1e3a8a80' : viewingLead.status === 'lost' ? '#33161680' : viewingLead.status === 'pending_payment' ? '#7f1d1d80' : viewingLead.status === 'deposit_paid' ? '#B8960C80' : viewingLead.status === 'paid' ? '#065f4680' : viewingLead.status === 'quote_requested' ? '#EF9F2780' : '#333'
-                          }}>
-                            {viewingLead.status === 'hotel_b2b' ? 'Hotel B2B' :
-                             viewingLead.status === 'quote_requested' ? 'Quote Requested' :
-                             viewingLead.status === 'pending_payment' ? 'Abandoned' :
-                             viewingLead.status === 'invoice_sent' ? 'Invoice Sent' :
-                             viewingLead.status === 'deposit_paid' ? 'Deposit Paid' :
-                             viewingLead.status === 'paid' ? 'Paid' :
-                             viewingLead.status === 'lost' ? 'Lost / Cancelled' :
-                             'Manual (New)'}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Date & Time</p>
-                          <p className="text-sm text-white font-medium">{formatDateUS(viewingLead.date)} at {viewingLead.time || 'TBD'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Route</p>
-                          <p className="text-sm text-white"><span className="text-[#B8960C]">•</span> {viewingLead.pickup}</p>
-                          <p className="text-sm text-white"><span className="text-[#D4AF37]">↓</span> {viewingLead.destination}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-4">
-                        <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Vehicle</p>
-                          <p className="text-sm text-white font-medium">{VEHICLE_LABELS[viewingLead.vehicle_type] || viewingLead.vehicle_type}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Passengers</p>
-                          <p className="text-sm text-white">{viewingLead.passengers || 1} PAX</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Contact</p>
-                          <p className="text-sm text-white">{viewingLead.customer_email || 'No email'}</p>
-                          <p className="text-sm text-[#888]">{viewingLead.customer_phone || 'No phone'}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Notes */}
-                    {viewingLead.notes && (
-                      <div>
-                        <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-2">Internal Notes</p>
-                        <div className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] text-sm text-[#ccc] whitespace-pre-wrap">
-                          {viewingLead.notes}
-                        </div>
-                      </div>
-                    )}
-
-
-                    {/* Generated Link Display */}
-                    {generatedLink && (
-                      <div className="bg-green-900/20 border border-green-500/50 p-4 rounded-xl flex flex-col gap-3 mt-2 animate-in fade-in slide-in-from-bottom-4">
-                        <p className="text-xs uppercase text-green-400 font-bold tracking-widest">✅ Payment Link Generated</p>
-                        <div className="flex items-center gap-2">
-                          <input type="text" readOnly value={generatedLink} className="bg-black text-green-400 p-3 rounded-lg w-full text-xs outline-none border border-green-900/50 font-mono" />
-                          <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Copied!'); }} className="text-xs font-bold uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white px-4 py-3 rounded-lg transition-colors">Copy</button>
-                          <a href={generatedLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-widest bg-[#222] hover:bg-[#333] border border-[#444] text-white px-4 py-3 rounded-lg whitespace-nowrap transition-colors">Open</a>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions Footer */}
-                  <div className="border-t border-[#222] bg-[#161616] p-6 flex flex-wrap gap-3 justify-end items-center">
-                    <button onClick={() => { deleteLead(viewingLead.id); setViewingLead(null); }} className="px-4 py-2 mr-auto rounded-lg text-sm font-bold border border-red-900/50 bg-red-900/10 text-red-500 hover:bg-red-900/20 transition-colors">
-                      🗑️ Delete
-                    </button>
-                    <button onClick={() => { setEditingLead(viewingLead); setViewingLead(null); }} className="px-4 py-2 rounded-lg text-sm font-bold border border-[#333] text-white hover:bg-[#222] transition-colors">
-                      Edit
-                    </button>
-                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
-                      <button onClick={() => sendInvoice(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/50 hover:bg-[#10B981]/20 transition-colors flex items-center gap-2">
-                        📧 Send Invoice
-                      </button>
-                    )}
-                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
-                      <button onClick={() => generateStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[#D4AF37] border border-[#B8960C] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
-                        💳 Generate Payment Link
-                      </button>
-                    )}
-                    {viewingLead.status === 'deposit_paid' && (
-                      <button onClick={() => { 
-                        if(confirm(`Mark remaining balance as collected manually?`)) { updateLead(viewingLead.id, { status: 'paid', amount_paid: viewingLead.amount_usd, amount_remaining: 0 } as any); setViewingLead(null); }
-                      }} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#FBBF24]/10 text-[#FBBF24] border border-[#FBBF24]/50 hover:bg-[#FBBF24]/20 transition-colors flex items-center gap-2">
-                        ✅ Mark Paid (Manual)
-                      </button>
-                    )}
-                    {viewingLead.status === 'deposit_paid' && (
-                      <button onClick={() => generateRemainingStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[#D4AF37] border border-[#B8960C] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
-                        💳 Generate Balance Link
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
 
       </main>
     )
@@ -2993,6 +2854,147 @@ export default function AdminPage() {
             </section>
           </div>
         )}
+
+      {/* FULL DETAILS MODAL */}
+            {viewingLead && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setViewingLead(null)}>
+                <div className="bg-[#111] border border-[#333] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-6 border-b border-[#222] bg-[#161616]">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-[#B8960C] font-bold mb-1">Reservation Details</p>
+                      <h2 className="text-xl font-bold text-white">{viewingLead.customer_name || 'Anonymous'}</h2>
+                    </div>
+                    <button onClick={() => { setViewingLead(null); setGeneratedLink(null); }} className="p-2 text-[#888] hover:text-white bg-[#222] rounded-full transition-colors">
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
+                    
+                    {/* Financial Summary */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4 text-center">
+                        <p className="text-xs uppercase text-[#888] font-bold tracking-wider mb-1">Total</p>
+                        <p className="text-2xl font-bold text-white">${viewingLead.amount_usd || 0}</p>
+                      </div>
+                      <div className="bg-green-900/10 border border-green-900/30 rounded-xl p-4 text-center">
+                        <p className="text-xs uppercase text-green-500/70 font-bold tracking-wider mb-1">Paid</p>
+                        <p className="text-2xl font-bold text-green-400">${viewingLead.amount_paid || 0}</p>
+                      </div>
+                      <div className="bg-red-900/10 border border-red-900/30 rounded-xl p-4 text-center">
+                        <p className="text-xs uppercase text-red-500/70 font-bold tracking-wider mb-1">Owes</p>
+                        <p className="text-2xl font-bold text-red-400">${viewingLead.amount_remaining || 0}</p>
+                      </div>
+                    </div>
+
+                    {/* Status & Trip Info */}
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="flex flex-col gap-4">
+                        <div>
+                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Status</p>
+                          <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border inline-block" style={{ 
+                            backgroundColor: viewingLead.status === 'hotel_b2b' ? '#134e4a80' : viewingLead.status === 'invoice_sent' ? '#1e3a8a30' : viewingLead.status === 'lost' ? '#33161630' : viewingLead.status === 'pending_payment' ? '#7f1d1d30' : viewingLead.status === 'deposit_paid' ? '#B8960C30' : viewingLead.status === 'paid' ? '#065f4630' : viewingLead.status === 'quote_requested' ? '#EF9F2730' : '#1a1a1a',
+                            color: viewingLead.status === 'hotel_b2b' ? '#2dd4bf' : viewingLead.status === 'invoice_sent' ? '#60a5fa' : viewingLead.status === 'lost' ? '#F44336' : viewingLead.status === 'pending_payment' ? '#f87171' : viewingLead.status === 'deposit_paid' ? '#FBBF24' : viewingLead.status === 'paid' ? '#34d399' : viewingLead.status === 'quote_requested' ? '#EF9F27' : '#FFFFFF',
+                            borderColor: viewingLead.status === 'hotel_b2b' ? '#2dd4bf80' : viewingLead.status === 'invoice_sent' ? '#1e3a8a80' : viewingLead.status === 'lost' ? '#33161680' : viewingLead.status === 'pending_payment' ? '#7f1d1d80' : viewingLead.status === 'deposit_paid' ? '#B8960C80' : viewingLead.status === 'paid' ? '#065f4680' : viewingLead.status === 'quote_requested' ? '#EF9F2780' : '#333'
+                          }}>
+                            {viewingLead.status === 'hotel_b2b' ? 'Hotel B2B' :
+                             viewingLead.status === 'quote_requested' ? 'Quote Requested' :
+                             viewingLead.status === 'pending_payment' ? 'Abandoned' :
+                             viewingLead.status === 'invoice_sent' ? 'Invoice Sent' :
+                             viewingLead.status === 'deposit_paid' ? 'Deposit Paid' :
+                             viewingLead.status === 'paid' ? 'Paid' :
+                             viewingLead.status === 'lost' ? 'Lost / Cancelled' :
+                             'Manual (New)'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Date & Time</p>
+                          <p className="text-sm text-white font-medium">{formatDateUS(viewingLead.date)} at {viewingLead.time || 'TBD'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Route</p>
+                          <p className="text-sm text-white"><span className="text-[#B8960C]">•</span> {viewingLead.pickup}</p>
+                          <p className="text-sm text-white"><span className="text-[#D4AF37]">↓</span> {viewingLead.destination}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-4">
+                        <div>
+                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Vehicle</p>
+                          <p className="text-sm text-white font-medium">{VEHICLE_LABELS[viewingLead.vehicle_type] || viewingLead.vehicle_type}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Passengers</p>
+                          <p className="text-sm text-white">{viewingLead.passengers || 1} PAX</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Contact</p>
+                          <p className="text-sm text-white">{viewingLead.customer_email || 'No email'}</p>
+                          <p className="text-sm text-[#888]">{viewingLead.customer_phone || 'No phone'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notes */}
+                    {viewingLead.notes && (
+                      <div>
+                        <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-2">Internal Notes</p>
+                        <div className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] text-sm text-[#ccc] whitespace-pre-wrap">
+                          {viewingLead.notes}
+                        </div>
+                      </div>
+                    )}
+
+
+                    {/* Generated Link Display */}
+                    {generatedLink && (
+                      <div className="bg-green-900/20 border border-green-500/50 p-4 rounded-xl flex flex-col gap-3 mt-2 animate-in fade-in slide-in-from-bottom-4">
+                        <p className="text-xs uppercase text-green-400 font-bold tracking-widest">✅ Payment Link Generated</p>
+                        <div className="flex items-center gap-2">
+                          <input type="text" readOnly value={generatedLink} className="bg-black text-green-400 p-3 rounded-lg w-full text-xs outline-none border border-green-900/50 font-mono" />
+                          <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Copied!'); }} className="text-xs font-bold uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white px-4 py-3 rounded-lg transition-colors">Copy</button>
+                          <a href={generatedLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-widest bg-[#222] hover:bg-[#333] border border-[#444] text-white px-4 py-3 rounded-lg whitespace-nowrap transition-colors">Open</a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions Footer */}
+                  <div className="border-t border-[#222] bg-[#161616] p-6 flex flex-wrap gap-3 justify-end items-center">
+                    <button onClick={() => { deleteLead(viewingLead.id); setViewingLead(null); }} className="px-4 py-2 mr-auto rounded-lg text-sm font-bold border border-red-900/50 bg-red-900/10 text-red-500 hover:bg-red-900/20 transition-colors">
+                      🗑️ Delete
+                    </button>
+                    <button onClick={() => { setEditingLead(viewingLead); setViewingLead(null); }} className="px-4 py-2 rounded-lg text-sm font-bold border border-[#333] text-white hover:bg-[#222] transition-colors">
+                      Edit
+                    </button>
+                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
+                      <button onClick={() => sendInvoice(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/50 hover:bg-[#10B981]/20 transition-colors flex items-center gap-2">
+                        📧 Send Invoice
+                      </button>
+                    )}
+                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
+                      <button onClick={() => generateStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[#D4AF37] border border-[#B8960C] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
+                        💳 Generate Payment Link
+                      </button>
+                    )}
+                    {viewingLead.status === 'deposit_paid' && (
+                      <button onClick={() => { 
+                        if(confirm(`Mark remaining balance as collected manually?`)) { updateLead(viewingLead.id, { status: 'paid', amount_paid: viewingLead.amount_usd, amount_remaining: 0 } as any); setViewingLead(null); }
+                      }} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#FBBF24]/10 text-[#FBBF24] border border-[#FBBF24]/50 hover:bg-[#FBBF24]/20 transition-colors flex items-center gap-2">
+                        ✅ Mark Paid (Manual)
+                      </button>
+                    )}
+                    {viewingLead.status === 'deposit_paid' && (
+                      <button onClick={() => generateRemainingStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[#D4AF37] border border-[#B8960C] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
+                        💳 Generate Balance Link
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
       </main>
     </div>
