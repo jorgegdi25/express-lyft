@@ -114,7 +114,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
 
   const { hotel, prices, startingPrices } = data
   const showSuccess = searchParams.success === 'true'
-  const activeTab = searchParams.tab || 'pricing'
+  const activeTab = searchParams.tab || 'fleet'
 
   return (
     <main style={{ background: '#111111', minHeight: '100vh', color: '#FFFFFF' }}>
@@ -246,6 +246,279 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <HeroSection vehicleType="sedan_suv" basePrice={prices.sedan_suv} hotelSlug={params.slug} />
 
+      {/* ── Fixed Pricing Section ─────────────────────────────────────────── */}
+      <section className="w-full py-16" style={{ background: '#0d0d0d', borderRadius: '1rem', border: '1px solid #252525' }}>
+                <div className="max-w-7xl mx-auto px-4 md:px-6">
+                  <div className="text-center mb-12">
+                    <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: '#B8960C' }}>
+                      Transparent Rates
+                    </p>
+                    <h2 className="text-2xl md:text-4xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                      Our Fleet Pricing
+                    </h2>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                    {/* Premium Ride */}
+                    <div className="rounded-2xl p-8 flex flex-col items-center justify-between text-center transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C08]" style={{ background: '#161616', border: '1px solid #252525' }}>
+                      <div>
+                        <h3 className="text-xl font-bold text-white mb-2">Premium Ride</h3>
+                        <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Sedan & SUV</p>
+                      </div>
+                      <div className="my-6">
+                        <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
+                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.sedan_suv}</p>
+                      </div>
+                      <a
+                        href="#booking-form"
+                        data-vehicle-select="sedan_suv"
+                        className="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 animate-pulse-subtle text-center"
+                        style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                      >
+                        Book Now
+                      </a>
+                    </div>
+
+                    {/* Premium SUV */}
+                    <div className="rounded-2xl p-8 flex flex-col items-center justify-between text-center transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C08]" style={{ background: '#161616', border: '1px solid #252525' }}>
+                      <div>
+                        <h3 className="text-xl font-bold text-white mb-2">Premium SUV</h3>
+                        <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Chevy Suburban</p>
+                      </div>
+                      <div className="my-6">
+                        <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
+                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.suburban}</p>
+                      </div>
+                      <a
+                        href="#booking-form"
+                        data-vehicle-select="suburban"
+                        className="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 text-center"
+                        style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                      >
+                        Book Now
+                      </a>
+                    </div>
+
+                    {/* Premium Sprinter */}
+                    <div className="rounded-2xl p-8 flex flex-col items-center justify-between text-center transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C08]" style={{ background: '#161616', border: '1px solid #252525' }}>
+                      <div>
+                        <h3 className="text-xl font-bold text-white mb-2">Premium Sprinter</h3>
+                        <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Mercedes Sprinter</p>
+                      </div>
+                      <div className="my-6">
+                        <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
+                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.sprinter}</p>
+                      </div>
+                      <a
+                        href="#booking-form"
+                        data-vehicle-select="sprinter"
+                        className="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 text-center"
+                        style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                      >
+                        Book Now
+                      </a>
+                    </div>
+
+                    {/* Group Transfers */}
+                    <div className="rounded-2xl p-8 flex flex-col items-center justify-between text-center transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C08]" style={{ background: '#161616', border: '1px solid #252525' }}>
+                      <div>
+                        <h3 className="text-xl font-bold text-white mb-2">Group Transfers</h3>
+                        <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Minibus & Coach Bus</p>
+                      </div>
+                      <div className="my-6">
+                        <span className="text-xs uppercase tracking-wider text-[#888888]">Rate</span>
+                        <p className="text-3xl font-bold mt-1 leading-tight" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>Custom<br/>Quote</p>
+                      </div>
+                      <a
+                        href="#booking-form"
+                        data-vehicle-select="coachbus"
+                        className="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 text-center"
+                        style={{ background: 'transparent', border: '1px solid #B8960C', color: '#B8960C' }}
+                      >
+                        Request Quote
+                      </a>
+                    </div>
+                  </div>
+
+                  <p className="text-center text-xs mt-8 max-w-xl mx-auto leading-relaxed" style={{ color: '#666666' }}>
+                    Prices are starting rates. Final price depends on trip details, vehicle availability, pickup location, destination, and service time.
+                  </p>
+                </div>
+              </section>
+
+      {/* ── Fixed FAQ Section ────────────────────────────────────────────── */}
+      <section className="w-full py-16" style={{ background: '#0d0d0d', borderRadius: '1rem', border: '1px solid #252525' }}>
+                <div className="max-w-7xl mx-auto px-4 md:px-6">
+                  <div className="text-center mb-16">
+                    <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: '#B8960C' }}>
+                      Questions & Answers
+                    </p>
+                    <h2 className="text-3xl md:text-5xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                      Frequently Asked Questions
+                    </h2>
+                  </div>
+
+                  <div className="max-w-3xl mx-auto flex flex-col gap-4">
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>How far in advance can I make a reservation?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        We recommend booking as early as possible, especially for airport transfers, cruise transfers, group transportation, and special events. Same-day availability may be limited.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>Can I make a reservation over the phone?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        Yes. You can call us directly at <a href="tel:+18889737896" className="text-[#B8960C] font-semibold hover:underline">+1 (888) 973-7896</a> or message us on WhatsApp at <a href="https://wa.me/19546236207" target="_blank" rel="noopener noreferrer" className="text-green-500 font-semibold hover:underline">954-623-6207</a> to check availability, ask questions, or book your ride.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>When do I have to pay?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        A deposit may be required to secure certain reservations. Full payment terms will be provided with your quote or booking confirmation.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>What confirmation do I get for my reservation?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        After your reservation is confirmed, we will provide your trip details, including pickup date, pickup time, pickup location, destination, vehicle/service type, and contact information.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>What is my reservation or contract number?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        If your booking includes a contract or reservation number, it will appear on the confirmation we send you. Please keep it available if you contact us about your trip.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>Can I change my booking?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        Yes. Contact us as soon as possible if you need to change your pickup time, pickup location, destination, passenger count, or vehicle type. Changes may affect the final price and availability.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>Can I cancel my booking?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        Cancellation terms may vary depending on the type of service and timing of the cancellation. Please contact us as soon as possible so we can review your reservation and explain any applicable charges.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>How do I book group transportation?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        Send us your trip date, pickup time, pickup location, destination, passenger count, luggage count, and any special requirements. We will review availability and provide a quote.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>What happens if my flight is delayed? Is there a wait time fee?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        We offer a complimentary 30-minute grace period for airport pickups. If your delay exceeds 30 minutes from the scheduled pickup time, a wait time fee of $20 per hour will apply.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>Where do I meet my driver at the airport?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        Our standard pickup is Curbside, meaning the driver will meet you outside the arrivals terminal. We also offer a VIP Meet & Greet service where the driver meets you inside at baggage claim with a sign, available for an additional $25 fee.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>Do you provide car seats for children?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        Yes, we provide up to 4 car seats free of charge. You must request them in advance when filling out your booking form to ensure availability.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>How much luggage can I bring?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        Sedans and Suburbans can comfortably accommodate up to 4 standard pieces of luggage. For larger groups, our Sprinter Vans, Minibuses, and Coach Buses can hold up to 20 pieces.
+                      </div>
+                    </details>
+
+                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
+                        <span>What forms of payment do you accept?</span>
+                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
+                        We accept major credit cards and other approved payment methods. Payment options will be confirmed when you book.
+                      </div>
+                    </details>
+                  </div>
+                </div>
+              </section>
+
+
             {/* ── Explore Tabs Section ─────────────────────────────────── */}
       <section id="explore" className="w-full py-12 animate-fade-in scroll-mt-20 md:scroll-mt-24" style={{ borderTop: '1px solid #1a1a1a', background: '#111111' }}>
         <div className="max-w-7xl mx-auto px-4 md:px-6">
@@ -269,11 +542,9 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
           `}} />
 
           {/* Tab selector */}
-          <div className="flex overflow-x-auto pb-4 mb-10 gap-3 no-scrollbar scroll-smooth w-full md:w-max md:mx-auto px-4 md:px-0">
+          <div className="hidden md:flex overflow-x-auto pb-4 mb-10 gap-3 no-scrollbar scroll-smooth w-full md:w-max md:mx-auto px-4 md:px-0">
             {[
-              { id: 'pricing', label: 'Rates & Pricing', icon: (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-              ) },
+              
               { id: 'fleet', label: 'Our Fleet', icon: (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="22" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
               ) },
@@ -283,10 +554,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
               { id: 'why', label: 'Why Choose Us', icon: (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
               ) },
-              { id: 'faq', label: 'FAQ', icon: (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-              ) }
-            ].map((tab) => {
+              ].map((tab) => {
               const isActive = activeTab === tab.id
               return (
                 <Link
@@ -319,7 +587,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                 <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </summary>
               <div className="px-4 pb-6 border-t border-[#1f1f1f] pt-4">
-                
+                <ImageGallery />
               </div>
             </details>
 
@@ -495,106 +763,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
 
           {/* Tab content */}
           <div className="transition-all duration-300 hidden md:block">
-            {activeTab === 'pricing' && (
-              <section className="w-full py-16" style={{ background: '#0d0d0d', borderRadius: '1rem', border: '1px solid #252525' }}>
-                <div className="max-w-7xl mx-auto px-4 md:px-6">
-                  <div className="text-center mb-12">
-                    <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: '#B8960C' }}>
-                      Transparent Rates
-                    </p>
-                    <h2 className="text-2xl md:text-4xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                      Our Fleet Pricing
-                    </h2>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-                    {/* Premium Ride */}
-                    <div className="rounded-2xl p-8 flex flex-col items-center justify-between text-center transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C08]" style={{ background: '#161616', border: '1px solid #252525' }}>
-                      <div>
-                        <h3 className="text-xl font-bold text-white mb-2">Premium Ride</h3>
-                        <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Sedan & SUV</p>
-                      </div>
-                      <div className="my-6">
-                        <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
-                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.sedan_suv}</p>
-                      </div>
-                      <a
-                        href="#booking-form"
-                        data-vehicle-select="sedan_suv"
-                        className="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 animate-pulse-subtle text-center"
-                        style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
-                      >
-                        Book Now
-                      </a>
-                    </div>
-
-                    {/* Premium SUV */}
-                    <div className="rounded-2xl p-8 flex flex-col items-center justify-between text-center transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C08]" style={{ background: '#161616', border: '1px solid #252525' }}>
-                      <div>
-                        <h3 className="text-xl font-bold text-white mb-2">Premium SUV</h3>
-                        <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Chevy Suburban</p>
-                      </div>
-                      <div className="my-6">
-                        <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
-                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.suburban}</p>
-                      </div>
-                      <a
-                        href="#booking-form"
-                        data-vehicle-select="suburban"
-                        className="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 text-center"
-                        style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
-                      >
-                        Book Now
-                      </a>
-                    </div>
-
-                    {/* Premium Sprinter */}
-                    <div className="rounded-2xl p-8 flex flex-col items-center justify-between text-center transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C08]" style={{ background: '#161616', border: '1px solid #252525' }}>
-                      <div>
-                        <h3 className="text-xl font-bold text-white mb-2">Premium Sprinter</h3>
-                        <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Mercedes Sprinter</p>
-                      </div>
-                      <div className="my-6">
-                        <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
-                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.sprinter}</p>
-                      </div>
-                      <a
-                        href="#booking-form"
-                        data-vehicle-select="sprinter"
-                        className="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 text-center"
-                        style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
-                      >
-                        Book Now
-                      </a>
-                    </div>
-
-                    {/* Group Transfers */}
-                    <div className="rounded-2xl p-8 flex flex-col items-center justify-between text-center transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C08]" style={{ background: '#161616', border: '1px solid #252525' }}>
-                      <div>
-                        <h3 className="text-xl font-bold text-white mb-2">Group Transfers</h3>
-                        <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Minibus & Coach Bus</p>
-                      </div>
-                      <div className="my-6">
-                        <span className="text-xs uppercase tracking-wider text-[#888888]">Rate</span>
-                        <p className="text-3xl font-bold mt-1 leading-tight" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>Custom<br/>Quote</p>
-                      </div>
-                      <a
-                        href="#booking-form"
-                        data-vehicle-select="coachbus"
-                        className="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 text-center"
-                        style={{ background: 'transparent', border: '1px solid #B8960C', color: '#B8960C' }}
-                      >
-                        Request Quote
-                      </a>
-                    </div>
-                  </div>
-
-                  <p className="text-center text-xs mt-8 max-w-xl mx-auto leading-relaxed" style={{ color: '#666666' }}>
-                    Prices are starting rates. Final price depends on trip details, vehicle availability, pickup location, destination, and service time.
-                  </p>
-                </div>
-              </section>
-            )}
+            
 
             {activeTab === 'fleet' && (
               <ImageGallery />
@@ -750,178 +919,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
               </div>
             )}
 
-            {activeTab === 'faq' && (
-              <section className="w-full py-16" style={{ background: '#0d0d0d', borderRadius: '1rem', border: '1px solid #252525' }}>
-                <div className="max-w-7xl mx-auto px-4 md:px-6">
-                  <div className="text-center mb-16">
-                    <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: '#B8960C' }}>
-                      Questions & Answers
-                    </p>
-                    <h2 className="text-3xl md:text-5xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                      Frequently Asked Questions
-                    </h2>
-                  </div>
-
-                  <div className="max-w-3xl mx-auto flex flex-col gap-4">
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>How far in advance can I make a reservation?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        We recommend booking as early as possible, especially for airport transfers, cruise transfers, group transportation, and special events. Same-day availability may be limited.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>Can I make a reservation over the phone?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        Yes. You can call us directly at <a href="tel:+18889737896" className="text-[#B8960C] font-semibold hover:underline">+1 (888) 973-7896</a> or message us on WhatsApp at <a href="https://wa.me/19546236207" target="_blank" rel="noopener noreferrer" className="text-green-500 font-semibold hover:underline">954-623-6207</a> to check availability, ask questions, or book your ride.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>When do I have to pay?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        A deposit may be required to secure certain reservations. Full payment terms will be provided with your quote or booking confirmation.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>What confirmation do I get for my reservation?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        After your reservation is confirmed, we will provide your trip details, including pickup date, pickup time, pickup location, destination, vehicle/service type, and contact information.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>What is my reservation or contract number?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        If your booking includes a contract or reservation number, it will appear on the confirmation we send you. Please keep it available if you contact us about your trip.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>Can I change my booking?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        Yes. Contact us as soon as possible if you need to change your pickup time, pickup location, destination, passenger count, or vehicle type. Changes may affect the final price and availability.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>Can I cancel my booking?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        Cancellation terms may vary depending on the type of service and timing of the cancellation. Please contact us as soon as possible so we can review your reservation and explain any applicable charges.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>How do I book group transportation?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        Send us your trip date, pickup time, pickup location, destination, passenger count, luggage count, and any special requirements. We will review availability and provide a quote.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>What happens if my flight is delayed? Is there a wait time fee?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        We offer a complimentary 30-minute grace period for airport pickups. If your delay exceeds 30 minutes from the scheduled pickup time, a wait time fee of $20 per hour will apply.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>Where do I meet my driver at the airport?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        Our standard pickup is Curbside, meaning the driver will meet you outside the arrivals terminal. We also offer a VIP Meet & Greet service where the driver meets you inside at baggage claim with a sign, available for an additional $25 fee.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>Do you provide car seats for children?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        Yes, we provide up to 4 car seats free of charge. You must request them in advance when filling out your booking form to ensure availability.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>How much luggage can I bring?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        Sedans and Suburbans can comfortably accommodate up to 4 standard pieces of luggage. For larger groups, our Sprinter Vans, Minibuses, and Coach Buses can hold up to 20 pieces.
-                      </div>
-                    </details>
-
-                    <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>What forms of payment do you accept?</span>
-                        <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </summary>
-                      <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        We accept major credit cards and other approved payment methods. Payment options will be confirmed when you book.
-                      </div>
-                    </details>
-                  </div>
-                </div>
-              </section>
-            )}
+            
           </div>
         </div>
       </section>
