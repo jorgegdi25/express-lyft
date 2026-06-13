@@ -2446,7 +2446,19 @@ export default function AdminPage() {
                       <div className="flex flex-col gap-4">
                         <div>
                           <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Status</p>
-                          {renderStatusBadge(viewingLead.status || 'new')}
+                          <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border inline-block" style={{ 
+                            backgroundColor: viewingLead.status === 'invoice_sent' ? '#1e3a8a30' : viewingLead.status === 'lost' ? '#33161630' : viewingLead.status === 'pending_payment' ? '#7f1d1d30' : viewingLead.status === 'deposit_paid' ? '#B8960C30' : viewingLead.status === 'paid' ? '#065f4630' : viewingLead.status === 'quote_requested' ? '#EF9F2730' : '#1a1a1a',
+                            color: viewingLead.status === 'invoice_sent' ? '#60a5fa' : viewingLead.status === 'lost' ? '#F44336' : viewingLead.status === 'pending_payment' ? '#f87171' : viewingLead.status === 'deposit_paid' ? '#FBBF24' : viewingLead.status === 'paid' ? '#34d399' : viewingLead.status === 'quote_requested' ? '#EF9F27' : '#FFFFFF',
+                            borderColor: viewingLead.status === 'invoice_sent' ? '#1e3a8a80' : viewingLead.status === 'lost' ? '#33161680' : viewingLead.status === 'pending_payment' ? '#7f1d1d80' : viewingLead.status === 'deposit_paid' ? '#B8960C80' : viewingLead.status === 'paid' ? '#065f4680' : viewingLead.status === 'quote_requested' ? '#EF9F2780' : '#333'
+                          }}>
+                            {viewingLead.status === 'quote_requested' ? 'Quote Requested' :
+                             viewingLead.status === 'pending_payment' ? 'Abandoned' :
+                             viewingLead.status === 'invoice_sent' ? 'Invoice Sent' :
+                             viewingLead.status === 'deposit_paid' ? 'Deposit Paid' :
+                             viewingLead.status === 'paid' ? 'Paid' :
+                             viewingLead.status === 'lost' ? 'Lost / Cancelled' :
+                             'Manual (New)'}
+                          </span>
                         </div>
                         <div>
                           <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Date & Time</p>
