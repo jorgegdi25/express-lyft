@@ -415,6 +415,30 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     }
   }
 
+  const handleResetForm = () => {
+    setTripType(isPromo ? 'round-trip' : 'one-way')
+    setPickup('')
+    setDestination('')
+    setDate('')
+    setTime('')
+    setReturnDate('')
+    setReturnTime('')
+    setPassengers(2)
+    setCustomerName('')
+    setCustomerEmail('')
+    setCustomerPhone('')
+    setCustomerCountry('')
+    setAirline('')
+    setFlightNumber('')
+    setMeetingType('curbside')
+    setCarSeatsRequested(0)
+    setLuggageCount(0)
+    setPaymentMode('full')
+    setSelectedVehicleOverride(null)
+    setStep(1)
+    setIsSuccess(false)
+  }
+
   return (
     <section id="booking-form" className="w-full py-14 md:py-20 scroll-mt-20 md:scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
@@ -473,7 +497,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                 </p>
                 <button
                   type="button"
-                  onClick={() => setIsSuccess(false)}
+                  onClick={handleResetForm}
                   className="mt-8 px-8 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95"
                   style={{ background: '#222222', color: '#FFFFFF', border: '1px solid #333333' }}
                 >
