@@ -190,9 +190,7 @@ export async function POST(req: NextRequest) {
       finalAmount = 0
       isDeposit = false
     } else if (isPromo) {
-      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '')
-      let expectedFee = meetingType === 'meet_greet' ? 25 : 0;
-      finalAmount = calculatedBaseAmount + expectedFee;
+      finalAmount = 0;
       leadStatus = 'hotel_b2b'
       isDeposit = false
     } else if (!isAdmin) {
