@@ -29,6 +29,7 @@ interface ConfirmationEmailProps {
   flightNumber?: string | null;
   meetingType?: string | null;
   carSeatsRequested?: number | null;
+  receiptUrl?: string | null;
 }
 
 export const ConfirmationEmail = ({
@@ -47,6 +48,7 @@ export const ConfirmationEmail = ({
   flightNumber,
   meetingType,
   carSeatsRequested,
+  receiptUrl,
 }: ConfirmationEmailProps) => (
   <Html>
     <Head />
@@ -110,6 +112,24 @@ export const ConfirmationEmail = ({
                 ⓘ Remaining balance is due before your trip — payable by card or cash to your driver.
               </Text>
             </>
+          )}
+          {receiptUrl && (
+            <Section style={{ marginTop: '24px', textAlign: 'center' }}>
+              <Link
+                href={receiptUrl}
+                style={{
+                  backgroundColor: '#B8960C',
+                  color: '#000000',
+                  padding: '12px 24px',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  fontWeight: 'bold',
+                  display: 'inline-block',
+                }}
+              >
+                Download Receipt / Invoice
+              </Link>
+            </Section>
           )}
         </Section>
 

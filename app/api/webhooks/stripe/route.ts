@@ -111,6 +111,22 @@ export async function POST(req: NextRequest) {
 
       // 2. Send the confirmation email now that payment is successful
       if (resend && leadData) {
+        let receiptUrl: string | null = null;
+        try {
+          const expandedSession = await stripe.checkout.sessions.retrieve(session.id, {
+            expand: ['payment_intent.latest_charge']
+          });
+          if (expandedSession.payment_intent) {
+            const pi = expandedSession.payment_intent as Stripe.PaymentIntent;
+            const charge = pi.latest_charge as Stripe.Charge;
+            if (charge && charge.receipt_url) {
+              receiptUrl = charge.receipt_url;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to get receipt URL for email', e);
+        }
+
         try {
           const emailSubject = isDeposit
             ? 'Ride Reserved (Deposit Paid) - Express Lyft'
@@ -136,6 +152,7 @@ export async function POST(req: NextRequest) {
               flightNumber: leadData.flight_number,
               meetingType: leadData.meeting_type,
               carSeatsRequested: leadData.car_seats_requested,
+              receiptUrl,
             }),
           })
           console.log(`Confirmation email sent for lead ${leadId} (${isDeposit ? 'deposit' : 'full'})`)
