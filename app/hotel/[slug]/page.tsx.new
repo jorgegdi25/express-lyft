@@ -798,7 +798,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                 alt="Express Lyft"
                 width={140}
                 height={36}
-                className="h-9 w-auto object-contain"
+                className="h-9 w-auto object-contain object-left mr-auto"
               />
               <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
                 Premium private transportation for airport transfers, cruise ports, hotel transfers, and group charters in South Florida. Licensed and insured.

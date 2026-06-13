@@ -108,7 +108,7 @@ const VEHICLE_LABELS: Record<string, string> = {
   coachbus: '55 Passenger Bus',
 }
 
-type TabKey = 'dashboard' | 'clients' | 'routes' | 'bookings' | 'leads' | 'quotes' | 'qr' | 'revenue' | 'drivers' | 'dispatch' | 'assign'
+type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support'
 
 
 
@@ -1019,19 +1019,39 @@ export default function AdminPage() {
 
   /* -- Sidebar Items -- */
 
-  const sidebarItems: { key: TabKey; label: string; icon: React.ReactNode; getBadge?: () => number }[] = [
-    { key: 'dashboard', label: 'Dashboard', icon: <IconDashboard /> },
-    { key: 'revenue',   label: 'Revenue & Finance', icon: <IconRevenue /> },
-    { key: 'clients',   label: 'Hotel Partners',   icon: <IconClients /> },
-    { key: 'routes',    label: 'Routes & Prices',     icon: <IconRoutes /> },
-    { key: 'bookings',  label: 'Confirmed Trips',   icon: <IconBookings /> },
-    { key: 'leads',     label: 'Sales Pipeline', icon: <IconLeads />, getBadge: () => leads.filter(l => l.status !== 'quote_requested').length },
-    { key: 'quotes',    label: 'Coach Bus Quotes', icon: <IconQuotes />, getBadge: () => leads.filter(l => l.status === 'quote_requested').length },
-    { key: 'drivers',   label: 'Drivers', icon: <IconDrivers /> },
-    { key: 'dispatch',  label: 'Dispatch Calendar', icon: <IconDispatch /> },
-    { key: 'qr',        label: 'QR Codes',   icon: <IconQR /> },
-    { key: 'assign',    label: 'Available to Talk?', icon: <IconAssign />, getBadge: () => leads.filter(l => l.status === 'pending_assignment').length },
+  /* -- Sidebar Groups -- */
+  const sidebarGroups = [
+    {
+      group: 'Operations',
+      items: [
+        { key: 'bookings', label: 'Bookings', icon: <IconBookings /> },
+        { key: 'drivers', label: 'Drivers', icon: <IconDrivers /> },
+        { key: 'dispatch', label: 'Dispatch Calendar', icon: <IconDispatch /> },
+      ] as const
+    },
+    {
+      group: 'Sales',
+      items: [
+        { key: 'leads', label: 'Leads & Pipeline', icon: <IconLeads />, getBadge: () => leads.filter(l => l.status !== 'quote_requested').length },
+        { key: 'quotes', label: 'Quotes', icon: <IconQuotes />, getBadge: () => leads.filter(l => l.status === 'quote_requested').length },
+        { key: 'clients', label: 'Hotel Partners', icon: <IconClients /> },
+      ] as const
+    },
+    {
+      group: 'Business',
+      items: [
+        { key: 'revenue', label: 'Revenue & Finance', icon: <IconRevenue /> },
+        { key: 'reports', label: 'Reports', icon: <IconDashboard /> }, // Reusing dashboard icon for now
+      ] as const
+    }
   ]
+
+  const settingsItems = [
+    { key: 'routes', label: 'Routes & Pricing', icon: <IconRoutes /> },
+    { key: 'qr', label: 'QR Codes', icon: <IconQR /> },
+    { key: 'settings', label: 'Settings', icon: <IconAssign /> }, // Reusing icon for now
+    { key: 'support', label: 'Support', icon: <IconClients /> }, // Reusing icon for now
+  ] as const
 
   /* =================================================== */
   /*  LOGIN SCREEN                                       */
@@ -1170,29 +1190,75 @@ export default function AdminPage() {
         </div>
 
         {/* Nav Items */}
-        <nav className="flex flex-col gap-1 flex-1">
-          {sidebarItems.map((item) => (
+        <nav className="flex flex-col gap-6 flex-1 overflow-y-auto pr-2 pb-4 no-scrollbar">
+          
+          {/* Dashboard (Top Level) */}
+          <div className="flex flex-col gap-1">
             <button
-              key={item.key}
-              onClick={() => setActiveTab(item.key)}
-              className="flex items-center justify-between px-3 py-2.5 rounded-lg text-left text-sm transition-all"
+              onClick={() => setActiveTab('dashboard')}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-all"
               style={{
-                background: activeTab === item.key ? 'rgba(184, 150, 12, 0.08)' : 'transparent',
-                color: activeTab === item.key ? '#D4AF37' : '#555',
-                borderLeft: activeTab === item.key ? '2px solid #B8960C' : '2px solid transparent',
+                background: activeTab === 'dashboard' ? 'rgba(184, 150, 12, 0.08)' : 'transparent',
+                color: activeTab === 'dashboard' ? '#D4AF37' : '#FFFFFF',
+                borderLeft: activeTab === 'dashboard' ? '2px solid #B8960C' : '2px solid transparent',
               }}
             >
-              <div className="flex items-center gap-3">
-                {item.icon}
-                <span className="font-medium tracking-wide">{item.label}</span>
-              </div>
-              {item.getBadge && item.getBadge() > 0 && (
-                <span className="text-[10px] font-bold bg-[#B8960C] text-black px-1.5 py-0.5 rounded-full">
-                  {item.getBadge!()}
-                </span>
-              )}
+              <IconDashboard />
+              <span className="font-medium tracking-wide">Dashboard</span>
             </button>
+          </div>
+
+          {sidebarGroups.map((group) => (
+            <div key={group.group} className="flex flex-col gap-2">
+              <h3 className="px-3 text-[10px] font-bold uppercase tracking-widest text-[#555]">{group.group}</h3>
+              <div className="flex flex-col gap-1">
+                {group.items.map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => setActiveTab(item.key as TabKey)}
+                    className="flex items-center justify-between px-3 py-2.5 rounded-lg text-left text-sm transition-all hover:bg-[#1a1a1a]"
+                    style={{
+                      background: activeTab === item.key ? 'rgba(184, 150, 12, 0.08)' : 'transparent',
+                      color: activeTab === item.key ? '#D4AF37' : '#999',
+                      borderLeft: activeTab === item.key ? '2px solid #B8960C' : '2px solid transparent',
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      {item.icon}
+                      <span className="font-medium tracking-wide">{item.label}</span>
+                    </div>
+                    {item.getBadge && item.getBadge() > 0 && (
+                      <span className="text-[10px] font-bold bg-[#B8960C] text-black px-1.5 py-0.5 rounded-full">
+                        {item.getBadge()}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
+
+          {/* Settings Group */}
+          <div className="flex flex-col gap-2 mt-auto">
+            <h3 className="px-3 text-[10px] font-bold uppercase tracking-widest text-[#555]">Settings</h3>
+            <div className="flex flex-col gap-1">
+              {settingsItems.map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => setActiveTab(item.key as TabKey)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-all hover:bg-[#1a1a1a]"
+                  style={{
+                    background: activeTab === item.key ? 'rgba(184, 150, 12, 0.08)' : 'transparent',
+                    color: activeTab === item.key ? '#D4AF37' : '#777',
+                    borderLeft: activeTab === item.key ? '2px solid #B8960C' : '2px solid transparent',
+                  }}
+                >
+                  {item.icon}
+                  <span className="font-medium tracking-wide">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </nav>
 
         {/* User / Logout */}
@@ -1225,189 +1291,204 @@ export default function AdminPage() {
         {activeTab === 'dashboard' && (
           <div className="flex flex-col gap-8">
             <div>
-              <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Dashboard</h1>
-              <p className="text-sm" style={{ color: '#888' }}>Command center - Overview of your transportation business</p>
+              <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Command Center</h1>
+              <p className="text-sm" style={{ color: '#888' }}>Overview and pending actions for your transportation business</p>
             </div>
 
-            {/* LEAD ALERT BANNER */}
-            {leads.filter(l => l.status === 'pending_payment').length > 0 && (
-              <section
-                onClick={() => setActiveTab('leads')}
-                className="rounded-xl p-5 flex items-center gap-5 cursor-pointer hover:brightness-110 transition-all"
-                style={{ background: 'linear-gradient(135deg, #B8960C15, #D4AF3720)', border: '2px solid #B8960C' }}
-              >
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#B8960C' }}>
-                  <span className="text-2xl font-black text-black">{leads.filter(l => l.status === 'pending_payment').length}</span>
+            {/* TOP SECTION: High-Level Metrics */}
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Monthly Revenue (Gross Revenue across all paid/deposits) */}
+              <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#888]">Monthly Revenue</p>
+                  <IconRevenue />
                 </div>
-                <div className="flex-1">
-                  <p className="text-lg font-bold text-white">
-                    You have {leads.filter(l => l.status === 'pending_payment').length} abandoned cart{leads.filter(l => l.status === 'pending_payment').length > 1 ? 's' : ''} waiting!
-                  </p>
-                  <p className="text-sm text-[#999]">Click here to view incomplete reservations and send payment links</p>
-                </div>
-                <span className="text-sm font-bold text-[#B8960C] uppercase tracking-wider">Go to Leads &rarr;</span>
-              </section>
-            )}
-
-            {/* Stats Grid */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {[
-                { label: 'Total Revenue', value: `$${bookings.reduce((s, b) => s + (b.amount_usd || 0), 0).toLocaleString()}`, sub: 'Paid bookings', color: '#4ade80', icon: '$' },
-                { label: 'Bookings', value: bookings.length, sub: 'Completed trips', color: '#60a5fa', icon: 'B' },
-                { label: 'Abandoned Carts', value: leads.filter(l => l.status === 'pending_payment').length, sub: 'Awaiting checkout', color: '#f87171', icon: 'AC' },
-                { label: 'Manual Leads', value: leads.filter(l => l.status === 'new').length, sub: 'Created by admin', color: '#c084fc', icon: 'ML' },
-              ].map((s) => (
-                <div
-                   key={s.label}
-                   className="rounded-xl p-6 flex flex-col gap-3"
-                   style={{ background: '#111', border: '1px solid #1a1a1a' }}
-                 >
-                   <p className="text-sm uppercase tracking-wider font-semibold" style={{ color: '#888' }}>
-                     {s.label}
-                   </p>
-                   <p className="text-3xl font-bold" style={{ color: s.color }}>
-                     {s.value}
-                   </p>
-                   <p className="text-xs uppercase tracking-wider" style={{ color: '#666' }}>
-                     {s.sub}
-                   </p>
-                 </div>
-              ))}
-            </section>
-
-
-            {/* Pipeline Summary */}
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-              <p className="text-sm font-bold uppercase tracking-wider mb-5" style={{ color: '#888' }}>Lead Funnel / Activity</p>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                {[
-                  { status: 'new', label: 'Manual Leads', color: '#c084fc', bg: '#c084fc15', getCount: () => leads.filter(l => l.status === 'new').length },
-                  { status: 'pending_payment', label: 'Abandoned Carts', color: '#f87171', bg: '#f8717115', getCount: () => leads.filter(l => l.status === 'pending_payment').length },
-                  { status: 'invoice_sent', label: 'Invoices Sent', color: '#60a5fa', bg: '#60a5fa15', getCount: () => leads.filter(l => l.status === 'invoice_sent').length },
-                  { status: 'deposit_paid', label: 'Deposit Paid', color: '#FBBF24', bg: '#FBBF2415', getCount: () => leads.filter(l => l.status === 'deposit_paid').length },
-                  { status: 'paid', label: 'Paid Bookings', color: '#4ade80', bg: '#4ade8015', getCount: () => bookings.length },
-                  { status: 'lost', label: 'Lost / Cancelled', color: '#94a3b8', bg: '#94a3b815', getCount: () => leads.filter(l => l.status === 'lost').length },
-                ].map((p) => {
-                  const count = p.getCount();
-                  return (
-                    <div key={p.status} className="rounded-xl p-4 text-center" style={{ background: p.bg, border: `1px solid ${p.color}30` }}>
-                      <p className="text-2xl font-bold" style={{ color: p.color }}>{count}</p>
-                      <p className="text-[10px] font-semibold uppercase tracking-wider mt-1" style={{ color: p.color }}>{p.label}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
-
-            {/* RECENT LEADS - latest 5 */}
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-              <div className="flex items-center justify-between mb-5">
-                <p className="text-sm font-bold uppercase tracking-wider" style={{ color: '#888' }}>Recent Leads</p>
-                <button
-                  onClick={() => setActiveTab('leads')}
-                  className="text-sm font-bold transition-colors hover:text-[#D4AF37] px-4 py-2 rounded-lg border border-[#333] hover:border-[#B8960C]"
-                  style={{ color: '#999' }}
-                >
-                  View All Leads &rarr;
-                </button>
-              </div>
-              {leads.length === 0 ? (
-                <p className="text-base italic py-8 text-center" style={{ color: '#666' }}>
-                  No leads yet. New booking requests will appear here automatically.
+                <p className="text-3xl font-bold text-green-400 mt-2">
+                  ${revenueStats.grossRevenue.toLocaleString()}
                 </p>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {leads.slice(0, 5).map((l) => (
-                    <div
-                      key={l.id}
-                      className="rounded-xl p-5 flex items-center gap-5 hover:bg-[#1a1a1a] transition-colors cursor-pointer"
-                      style={{ background: '#0a0a0a', border: l.status === 'new' ? '1px solid #B8960C50' : '1px solid #1a1a1a' }}
-                      onClick={() => { setActiveTab('leads'); setEditingLead(l); }}
-                    >
-                      {/* Status dot */}
-                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{
-                        background: l.status === 'new' ? '#c084fc' : l.status === 'pending_payment' ? '#f87171' : l.status === 'invoice_sent' ? '#60a5fa' : l.status === 'lost' ? '#94a3b8' : '#D4AF37'
-                      }} />
-                      {/* Customer info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-1">
-                          <p className="text-base font-bold text-white truncate">{l.customer_name || 'Anonymous'}</p>
-                          {l.status === 'new' && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider bg-[#c084fc20] text-[#c084fc] px-2 py-0.5 rounded-full border border-[#c084fc30]">MANUAL</span>
-                          )}
-                          {l.status === 'pending_payment' && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider bg-[#f8717120] text-[#f87171] px-2 py-0.5 rounded-full border border-[#f8717130]">ABANDONED</span>
-                          )}
+                <p className="text-xs text-[#666]">Total from bookings and deposits</p>
+              </div>
 
-                          {l.customer_country && (
-                            <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-0.5 rounded border border-blue-800/30 font-bold">{l.customer_country}</span>
-                          )}
-                        </div>
-                        <p className="text-sm text-[#888] truncate">{l.pickup} &rarr; {l.destination}</p>
-                      </div>
-                      {/* Trip details */}
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-lg font-bold" style={{ color: '#4ade80' }}>{l.amount_usd ? `$${l.amount_usd}` : '--'}</p>
-                        <p className="text-xs text-[#666]">{l.date ? formatDateUS(l.date) : 'No date'}</p>
-                      </div>
-                      {/* Status badge */}
-                      <div className="flex-shrink-0">
-                        <span className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg" style={{
-                          background: l.status === 'invoice_sent' ? '#1e3a8a30' : l.status === 'pending_payment' ? '#7f1d1d30' : l.status === 'lost' ? '#33161630' : '#1a1a1a',
-                          color: l.status === 'invoice_sent' ? '#60a5fa' : l.status === 'pending_payment' ? '#f87171' : l.status === 'lost' ? '#f87171' : '#999'
-                        }}>{l.status === 'pending_payment' ? 'abandoned' : l.status === 'invoice_sent' ? 'invoice sent' : l.status}</span>
-                      </div>
-
-                    </div>
-                  ))}
+              {/* Total Bookings */}
+              <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#888]">Total Bookings</p>
+                  <IconBookings />
                 </div>
-              )}
+                <p className="text-3xl font-bold text-blue-400 mt-2">
+                  {bookings.length}
+                </p>
+                <p className="text-xs text-[#666]">Confirmed and active trips</p>
+              </div>
+
+              {/* Pending Actions */}
+              <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: '#B8960C10', border: '1px solid #B8960C50' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#B8960C]">Pending Actions</p>
+                  <IconDashboard />
+                </div>
+                <p className="text-3xl font-bold text-[#D4AF37] mt-2">
+                  {leads.filter(l => ['pending_payment', 'new'].includes(l.status || '')).length}
+                </p>
+                <p className="text-xs text-[#B8960C] opacity-80">Requires immediate attention</p>
+              </div>
             </section>
 
-            {/* Recent Bookings Preview */}
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-              <div className="flex items-center justify-between mb-5">
-                <p className="text-sm font-bold uppercase tracking-wider" style={{ color: '#888' }}>Latest Bookings</p>
-                <button
-                  onClick={() => setActiveTab('bookings')}
-                  className="text-sm font-bold transition-colors hover:text-[#D4AF37] px-4 py-2 rounded-lg border border-[#333] hover:border-[#B8960C]"
-                  style={{ color: '#999' }}
+            {/* ACTION CENTER */}
+            <section>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-[#888] mb-4">Action Center</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Abandoned Reservations */}
+                <div 
+                  onClick={() => { setActiveTab('leads'); setLeadsStatusFilter('pending_payment'); }}
+                  className="rounded-xl p-5 flex items-center justify-between cursor-pointer hover:bg-[#1a1a1a] transition-all" 
+                  style={{ background: '#111', border: '1px solid #f8717140' }}
                 >
-                  View All &rarr;
-                </button>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-red-500/10 text-red-400">
+                      <span className="font-bold">{leads.filter(l => l.status === 'pending_payment').length}</span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-white text-sm">Abandoned Reservations</p>
+                      <p className="text-xs text-[#888]">Leads pending checkout</p>
+                    </div>
+                  </div>
+                  <span className="text-[#888]">&rarr;</span>
+                </div>
+
+                {/* Manual Leads / Quotes */}
+                <div 
+                  onClick={() => { setActiveTab('leads'); setLeadsStatusFilter('new'); }}
+                  className="rounded-xl p-5 flex items-center justify-between cursor-pointer hover:bg-[#1a1a1a] transition-all" 
+                  style={{ background: '#111', border: '1px solid #c084fc40' }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-500/10 text-purple-400">
+                      <span className="font-bold">{leads.filter(l => l.status === 'new').length}</span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-white text-sm">Pending Quotes / Leads</p>
+                      <p className="text-xs text-[#888]">Needs manual processing</p>
+                    </div>
+                  </div>
+                  <span className="text-[#888]">&rarr;</span>
+                </div>
+
+                {/* Unassigned Trips */}
+                <div 
+                  onClick={() => { setActiveTab('dispatch'); }}
+                  className="rounded-xl p-5 flex items-center justify-between cursor-pointer hover:bg-[#1a1a1a] transition-all" 
+                  style={{ background: '#111', border: '1px solid #FBBF2440' }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-yellow-500/10 text-yellow-400">
+                      <span className="font-bold">{bookings.filter(b => !b.assigned_driver_id).length}</span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-white text-sm">Unassigned Trips</p>
+                      <p className="text-xs text-[#888]">Bookings without a driver</p>
+                    </div>
+                  </div>
+                  <span className="text-[#888]">&rarr;</span>
+                </div>
+
+                {/* Deposits Awaiting Payment */}
+                <div 
+                  onClick={() => { setActiveTab('leads'); setLeadsStatusFilter('invoice_sent'); }}
+                  className="rounded-xl p-5 flex items-center justify-between cursor-pointer hover:bg-[#1a1a1a] transition-all" 
+                  style={{ background: '#111', border: '1px solid #60a5fa40' }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/10 text-blue-400">
+                      <span className="font-bold">{leads.filter(l => l.status === 'invoice_sent').length}</span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-white text-sm">Invoices Sent</p>
+                      <p className="text-xs text-[#888]">Awaiting deposit/payment</p>
+                    </div>
+                  </div>
+                  <span className="text-[#888]">&rarr;</span>
+                </div>
+
               </div>
-              {bookings.length === 0 ? (
-                <p className="text-base italic py-4" style={{ color: '#666' }}>
-                  No bookings yet. They will appear here after the first completed payment.
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-base">
-                    <thead>
-                      <tr style={{ color: '#888' }}>
-                        {['Date', 'Passenger', 'Route', 'Amount', 'Status'].map((h) => (
-                          <th key={h} className="text-left py-3 pr-6 text-sm uppercase tracking-wider font-semibold">{h}</th>
-                        ))}
+            </section>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* LATEST BOOKINGS */}
+              <section className="lg:col-span-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-bold uppercase tracking-widest text-[#888]">Latest Bookings</h2>
+                  <button onClick={() => setActiveTab('bookings')} className="text-xs text-[#B8960C] hover:underline font-bold">
+                    View All
+                  </button>
+                </div>
+                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1a1a1a', background: '#111' }}>
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead style={{ background: '#161616', borderBottom: '1px solid #222' }}>
+                      <tr>
+                        <th className="px-4 py-3 font-medium text-[#888] w-1/3">Client</th>
+                        <th className="px-4 py-3 font-medium text-[#888] w-1/4">Date</th>
+                        <th className="px-4 py-3 font-medium text-[#888] w-1/4">Status</th>
+                        <th className="px-4 py-3 font-medium text-[#888] text-right">Amount</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {bookings.slice(0, 5).map((b) => (
-                        <tr key={b.id} style={{ borderTop: '1px solid #1a1a1a' }}>
-                          <td className="py-4 pr-6 text-white">{formatDateUS(b.date)}</td>
-                          <td className="py-4 pr-6 text-white">{b.customer_name || 'Guest'}</td>
-                          <td className="py-4 pr-6 text-sm" style={{ color: '#999' }}>{b.pickup} &rarr; {b.destination}</td>
-                          <td className="py-4 pr-6 font-bold" style={{ color: '#D4AF37' }}>${b.amount_usd}</td>
-                          <td className="py-4"><StatusBadge status={b.status} /></td>
+                    <tbody className="divide-y divide-[#222]">
+                      {bookings.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-8 text-center text-[#666] italic">No recent bookings.</td>
                         </tr>
-                      ))}
+                      ) : (
+                        bookings.slice(0, 5).map((b) => (
+                          <tr key={b.id} className="hover:bg-[#1a1a1a] transition-colors">
+                            <td className="px-4 py-3 text-white font-medium">
+                              <div className="truncate max-w-[150px]">{b.customer_name || 'Unknown'}</div>
+                            </td>
+                            <td className="px-4 py-3 text-[#aaa]">{formatDateUS(b.date)}</td>
+                            <td className="px-4 py-3">
+                              <span className="px-2 py-1 rounded bg-green-500/10 text-green-400 text-[10px] font-bold uppercase tracking-wider">
+                                Confirmed
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-white font-medium">
+                              ${b.amount_usd}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
-              )}
-            </section>
+              </section>
+
+              {/* RECENT ACTIVITY */}
+              <section className="lg:col-span-1">
+                <h2 className="text-sm font-bold uppercase tracking-widest text-[#888] mb-4">Recent Activity</h2>
+                <div className="rounded-xl p-5 flex flex-col gap-4" style={{ border: '1px solid #1a1a1a', background: '#111' }}>
+                  {leads.slice(0, 5).map((l, i) => (
+                    <div key={l.id || i} className="flex gap-4">
+                      <div className="relative mt-1">
+                        <div className="w-2 h-2 rounded-full bg-[#B8960C]" />
+                        {i !== 4 && <div className="absolute top-2 left-1/2 -translate-x-1/2 w-px h-full bg-[#333]" />}
+                      </div>
+                      <div className="pb-4">
+                        <p className="text-sm text-white">
+                          <span className="font-bold">{l.customer_name || 'A customer'}</span> 
+                          {l.status === 'new' ? ' requested a quote' : l.status === 'pending_payment' ? ' abandoned checkout' : l.status === 'invoice_sent' ? ' received an invoice' : ' paid a deposit'}
+                        </p>
+                        <p className="text-xs text-[#666] mt-1">{timeAgo(l.created_at)}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {leads.length === 0 && (
+                    <p className="text-sm italic text-[#666] text-center">No recent activity.</p>
+                  )}
+                </div>
+              </section>
+            </div>
           </div>
         )}
+
 
         {/* ------- CLIENTS TAB ------- */}
         {activeTab === 'clients' && (
@@ -1742,7 +1823,7 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Confirmed Trips</h1>
+                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Bookings</h1>
                 <p className="text-sm" style={{ color: '#888' }}>Fully paid and confirmed trips. {filteredBookings.length} found ({bookings.length} total)</p>
               </div>
               <input
@@ -1849,11 +1930,11 @@ export default function AdminPage() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>
-                  {activeTab === 'quotes' ? 'Coach Bus Quotes' : 'Sales Pipeline'}
+                  {activeTab === 'quotes' ? 'Quotes' : 'Sales Pipeline & Leads'}
                 </h1>
                 <p className="text-sm" style={{ color: '#888' }}>
                   {activeTab === 'quotes' 
-                    ? `Manage large group requests and manual quotes. ${filteredLeads.length} found.` 
+                    ? `Manage all quote requests. ${filteredLeads.length} found.` 
                     : `Pending reservations, abandoned carts, and leads. ${filteredLeads.length} found (${leads.length} total)`}
                 </p>
               </div>
