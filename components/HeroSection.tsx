@@ -82,11 +82,13 @@ export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroS
           {/* CTA row */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4 w-full">
             <a
-              href="#booking-form"
+              href={hotelSlug ? "#booking-form" : "https://wa.me/19546236207"}
+              target={hotelSlug ? undefined : "_blank"}
+              rel={hotelSlug ? undefined : "noopener noreferrer"}
               className="px-10 py-4 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 shadow-2xl text-center w-full sm:w-auto"
               style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
             >
-              Book Now
+              {hotelSlug ? "Book Now" : "WhatsApp Us"}
             </a>
           </div>
 
