@@ -1024,24 +1024,17 @@ export default function AdminPage() {
     {
       group: 'Operations',
       items: [
-        { key: 'bookings', label: 'Bookings', icon: <IconBookings /> },
+        { key: 'bookings', label: 'Reservations', icon: <IconBookings /> },
+        { key: 'dispatch', label: 'Dispatch', icon: <IconDispatch /> },
         { key: 'drivers', label: 'Drivers', icon: <IconDrivers /> },
-        { key: 'dispatch', label: 'Dispatch Calendar', icon: <IconDispatch /> },
       ] as const
     },
     {
-      group: 'Sales',
+      group: 'Sales & Finance',
       items: [
-        { key: 'leads', label: 'Leads & Pipeline', icon: <IconLeads />, getBadge: () => leads.filter(l => l.status !== 'quote_requested').length },
-        { key: 'quotes', label: 'Quotes', icon: <IconQuotes />, getBadge: () => leads.filter(l => l.status === 'quote_requested').length },
+        { key: 'leads', label: 'Sales Pipeline', icon: <IconLeads />, getBadge: () => leads.filter(l => ['new', 'pending_payment', 'invoice_sent'].includes(l.status || '')).length },
         { key: 'clients', label: 'Hotel Partners', icon: <IconClients /> },
-      ] as const
-    },
-    {
-      group: 'Business',
-      items: [
-        { key: 'revenue', label: 'Revenue & Finance', icon: <IconRevenue /> },
-        { key: 'reports', label: 'Reports', icon: <IconDashboard /> }, // Reusing dashboard icon for now
+        { key: 'revenue', label: 'Revenue Dashboard', icon: <IconRevenue /> },
       ] as const
     }
   ]
@@ -1049,8 +1042,6 @@ export default function AdminPage() {
   const settingsItems = [
     { key: 'routes', label: 'Routes & Pricing', icon: <IconRoutes /> },
     { key: 'qr', label: 'QR Codes', icon: <IconQR /> },
-    { key: 'settings', label: 'Settings', icon: <IconAssign /> }, // Reusing icon for now
-    { key: 'support', label: 'Support', icon: <IconClients /> }, // Reusing icon for now
   ] as const
 
   /* =================================================== */
@@ -1123,12 +1114,7 @@ export default function AdminPage() {
   const paginatedBookings = filteredBookings.slice(bookingsStartIndex, bookingsStartIndex + bookingsPerPage)
   const bookingsTotalPages = Math.ceil(filteredBookings.length / bookingsPerPage)
 
-  // Filter & paginate leads
-  const baseLeads = activeTab === 'quotes' 
-    ? leads.filter((l) => l.status === 'quote_requested') 
-    : leads.filter((l) => l.status !== 'quote_requested')
-
-  const filteredLeads = baseLeads
+  const filteredLeads = leads
     .filter((l) => {
       const term = leadsSearch.toLowerCase()
       const matchesSearch = (
@@ -1193,42 +1179,42 @@ export default function AdminPage() {
         <nav className="flex flex-col gap-6 flex-1 overflow-y-auto pr-2 pb-4 no-scrollbar">
           
           {/* Dashboard (Top Level) */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 mb-2">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-all"
+              className="flex items-center gap-3 px-3 py-3 rounded-xl text-left text-sm transition-all"
               style={{
-                background: activeTab === 'dashboard' ? 'rgba(184, 150, 12, 0.08)' : 'transparent',
-                color: activeTab === 'dashboard' ? '#D4AF37' : '#FFFFFF',
-                borderLeft: activeTab === 'dashboard' ? '2px solid #B8960C' : '2px solid transparent',
+                background: activeTab === 'dashboard' ? 'linear-gradient(135deg, rgba(184, 150, 12, 0.15), rgba(212, 175, 55, 0.05))' : 'transparent',
+                color: activeTab === 'dashboard' ? '#D4AF37' : '#999',
+                border: activeTab === 'dashboard' ? '1px solid rgba(184, 150, 12, 0.2)' : '1px solid transparent',
               }}
             >
               <IconDashboard />
-              <span className="font-medium tracking-wide">Dashboard</span>
+              <span className="font-semibold tracking-wide">Command Center</span>
             </button>
           </div>
 
           {sidebarGroups.map((group) => (
-            <div key={group.group} className="flex flex-col gap-2">
+            <div key={group.group} className="flex flex-col gap-2 mb-2">
               <h3 className="px-3 text-[10px] font-bold uppercase tracking-widest text-[#555]">{group.group}</h3>
               <div className="flex flex-col gap-1">
                 {group.items.map((item) => (
                   <button
                     key={item.key}
                     onClick={() => setActiveTab(item.key as TabKey)}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-lg text-left text-sm transition-all hover:bg-[#1a1a1a]"
+                    className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-sm transition-all hover:bg-[#1a1a1a]"
                     style={{
-                      background: activeTab === item.key ? 'rgba(184, 150, 12, 0.08)' : 'transparent',
+                      background: activeTab === item.key ? 'linear-gradient(135deg, rgba(184, 150, 12, 0.15), rgba(212, 175, 55, 0.05))' : 'transparent',
                       color: activeTab === item.key ? '#D4AF37' : '#999',
-                      borderLeft: activeTab === item.key ? '2px solid #B8960C' : '2px solid transparent',
+                      border: activeTab === item.key ? '1px solid rgba(184, 150, 12, 0.2)' : '1px solid transparent',
                     }}
                   >
                     <div className="flex items-center gap-3">
                       {item.icon}
-                      <span className="font-medium tracking-wide">{item.label}</span>
+                      <span className="font-semibold tracking-wide">{item.label}</span>
                     </div>
                     {item.getBadge && item.getBadge() > 0 && (
-                      <span className="text-[10px] font-bold bg-[#B8960C] text-black px-1.5 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold bg-[#D4AF37] text-black px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(212,175,55,0.4)]">
                         {item.getBadge()}
                       </span>
                     )}
@@ -1240,21 +1226,21 @@ export default function AdminPage() {
 
           {/* Settings Group */}
           <div className="flex flex-col gap-2 mt-auto">
-            <h3 className="px-3 text-[10px] font-bold uppercase tracking-widest text-[#555]">Settings</h3>
+            <h3 className="px-3 text-[10px] font-bold uppercase tracking-widest text-[#555]">Configuration</h3>
             <div className="flex flex-col gap-1">
               {settingsItems.map((item) => (
                 <button
                   key={item.key}
                   onClick={() => setActiveTab(item.key as TabKey)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-all hover:bg-[#1a1a1a]"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all hover:bg-[#1a1a1a]"
                   style={{
-                    background: activeTab === item.key ? 'rgba(184, 150, 12, 0.08)' : 'transparent',
+                    background: activeTab === item.key ? 'linear-gradient(135deg, rgba(184, 150, 12, 0.15), rgba(212, 175, 55, 0.05))' : 'transparent',
                     color: activeTab === item.key ? '#D4AF37' : '#777',
-                    borderLeft: activeTab === item.key ? '2px solid #B8960C' : '2px solid transparent',
+                    border: activeTab === item.key ? '1px solid rgba(184, 150, 12, 0.2)' : '1px solid transparent',
                   }}
                 >
                   {item.icon}
-                  <span className="font-medium tracking-wide">{item.label}</span>
+                  <span className="font-semibold tracking-wide">{item.label}</span>
                 </button>
               ))}
             </div>
@@ -1342,8 +1328,8 @@ export default function AdminPage() {
                 {/* Abandoned Reservations */}
                 <div 
                   onClick={() => { setActiveTab('leads'); setLeadsStatusFilter('pending_payment'); }}
-                  className="rounded-xl p-5 flex items-center justify-between cursor-pointer hover:bg-[#1a1a1a] transition-all" 
-                  style={{ background: '#111', border: '1px solid #f8717140' }}
+                  className="rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg hover:shadow-red-900/20 hover:-translate-y-1 relative overflow-hidden group" 
+                  style={{ background: 'linear-gradient(145deg, #160f0f, #111111)', border: '1px solid rgba(248, 113, 113, 0.1)' }}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-red-500/10 text-red-400">
@@ -1360,8 +1346,8 @@ export default function AdminPage() {
                 {/* Manual Leads / Quotes */}
                 <div 
                   onClick={() => { setActiveTab('leads'); setLeadsStatusFilter('new'); }}
-                  className="rounded-xl p-5 flex items-center justify-between cursor-pointer hover:bg-[#1a1a1a] transition-all" 
-                  style={{ background: '#111', border: '1px solid #c084fc40' }}
+                  className="rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg hover:shadow-purple-900/20 hover:-translate-y-1 relative overflow-hidden group" 
+                  style={{ background: 'linear-gradient(145deg, #140f1a, #111111)', border: '1px solid rgba(192, 132, 252, 0.1)' }}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-500/10 text-purple-400">
@@ -1378,8 +1364,8 @@ export default function AdminPage() {
                 {/* Unassigned Trips */}
                 <div 
                   onClick={() => { setActiveTab('dispatch'); }}
-                  className="rounded-xl p-5 flex items-center justify-between cursor-pointer hover:bg-[#1a1a1a] transition-all" 
-                  style={{ background: '#111', border: '1px solid #FBBF2440' }}
+                  className="rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg hover:shadow-yellow-900/20 hover:-translate-y-1 relative overflow-hidden group" 
+                  style={{ background: 'linear-gradient(145deg, #18150a, #111111)', border: '1px solid rgba(251, 191, 36, 0.1)' }}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-yellow-500/10 text-yellow-400">
@@ -1396,8 +1382,8 @@ export default function AdminPage() {
                 {/* Deposits Awaiting Payment */}
                 <div 
                   onClick={() => { setActiveTab('leads'); setLeadsStatusFilter('invoice_sent'); }}
-                  className="rounded-xl p-5 flex items-center justify-between cursor-pointer hover:bg-[#1a1a1a] transition-all" 
-                  style={{ background: '#111', border: '1px solid #60a5fa40' }}
+                  className="rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg hover:shadow-blue-900/20 hover:-translate-y-1 relative overflow-hidden group" 
+                  style={{ background: 'linear-gradient(145deg, #0d121a, #111111)', border: '1px solid rgba(96, 165, 250, 0.1)' }}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/10 text-blue-400">
@@ -1925,17 +1911,15 @@ export default function AdminPage() {
 
 
         {/* ------- LEADS & QUOTES TAB ------- */}
-        {(activeTab === 'leads' || activeTab === 'quotes') && (
+        {activeTab === 'leads' && (
           <div className="flex flex-col gap-8">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>
-                  {activeTab === 'quotes' ? 'Quotes' : 'Sales Pipeline & Leads'}
+                  Sales Pipeline & Leads
                 </h1>
                 <p className="text-sm" style={{ color: '#888' }}>
-                  {activeTab === 'quotes' 
-                    ? `Manage all quote requests. ${filteredLeads.length} found.` 
-                    : `Pending reservations, abandoned carts, and leads. ${filteredLeads.length} found (${leads.length} total)`}
+                  Manage leads, send quotes, and track conversions.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
