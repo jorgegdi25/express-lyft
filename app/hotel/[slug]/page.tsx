@@ -6,7 +6,7 @@ import HeroSection from '@/components/HeroSection'
 import BookingForm from '@/components/BookingForm'
 import ImageGallery from '@/components/ImageGallery'
 import Testimonials from '@/components/Testimonials'
-
+import ReviewsMarquee from '@/components/ReviewsMarquee'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const fetchCache = 'force-no-store'
@@ -375,6 +375,9 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                   </p>
                 </div>
               </section>
+
+      {/* ── Reviews Marquee ──────────────────────────────────────────────── */}
+      <ReviewsMarquee />
 
       {/* ── Fixed FAQ Section ────────────────────────────────────────────── */}
       <section className="w-full py-16" style={{ background: '#0d0d0d', borderRadius: '1rem', border: '1px solid #252525' }}>

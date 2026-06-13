@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase'
 import BookingForm from '@/components/BookingForm'
+import ReviewsMarquee from '@/components/ReviewsMarquee'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -177,6 +178,9 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
       />
 
 
+
+      {/* ── Reviews Marquee ──────────────────────────────────────────────── */}
+      <ReviewsMarquee />
 
       {/* ── Footer ───────────────────────────────────────────────── */}
       <footer className="w-full py-16" style={{ borderTop: '1px solid #1e1e1e', background: '#0a0a0a' }}>
