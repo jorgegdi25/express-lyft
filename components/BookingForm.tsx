@@ -104,7 +104,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
       : ['The Hotel', 'Miami International Airport (MIA)', 'Port of Miami', 'Other Destination']
   , [dynamicLocations])
 
-  const [tripType, setTripType] = useState<TripType>('one-way')
+  const [tripType, setTripType] = useState<TripType>(isPromo ? 'round-trip' : 'one-way')
   const [pickup, setPickup] = useState<string>('')
   const [destination, setDestination] = useState<string>('')
   const [date, setDate] = useState<string>('')
@@ -544,25 +544,27 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     1. Trip Details
                   </h3>
                   {/* Trip Type Toggle */}
-                  <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #333333' }}>
-                    {(['one-way', 'round-trip'] as TripType[]).map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setTripType(type)}
-                        className="flex-1 py-3.5 text-sm font-bold uppercase tracking-wider transition-all"
-                        style={{
-                          background:
-                            tripType === type
-                              ? 'linear-gradient(135deg, #B8960C, #D4AF37)'
-                              : 'transparent',
-                          color: tripType === type ? '#111111' : '#888888',
-                        }}
-                      >
-                        {type === 'one-way' ? 'One Way' : 'Round Trip'}
-                      </button>
-                    ))}
-                  </div>
+                  {!isPromo && (
+                    <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #333333' }}>
+                      {(['one-way', 'round-trip'] as TripType[]).map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setTripType(type)}
+                          className="flex-1 py-3.5 text-sm font-bold uppercase tracking-wider transition-all"
+                          style={{
+                            background:
+                              tripType === type
+                                ? 'linear-gradient(135deg, #B8960C, #D4AF37)'
+                                : 'transparent',
+                            color: tripType === type ? '#111111' : '#888888',
+                          }}
+                        >
+                          {type === 'one-way' ? 'One Way' : 'Round Trip'}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Pickup */}
                   <div>
