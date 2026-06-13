@@ -232,7 +232,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
       <HeroSection vehicleType="sedan_suv" basePrice={prices.sedan_suv} hotelSlug={params.slug} />
 
             {/* ── Explore Tabs Section ─────────────────────────────────── */}
-      <section id="explore" className="w-full py-12 animate-fade-in" style={{ borderTop: '1px solid #1a1a1a', background: '#111111' }}>
+      <section id="explore" className="w-full py-12 animate-fade-in scroll-mt-20 md:scroll-mt-24" style={{ borderTop: '1px solid #1a1a1a', background: '#111111' }}>
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="text-center mb-8">
             <p className="text-xs font-bold uppercase tracking-[3px] mb-2" style={{ color: '#B8960C' }}>
@@ -254,7 +254,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
           `}} />
 
           {/* Tab selector */}
-          <div className="flex justify-start md:justify-center overflow-x-auto pb-4 mb-10 gap-3 no-scrollbar scroll-smooth">
+          <div className="flex overflow-x-auto pb-4 mb-10 gap-3 no-scrollbar scroll-smooth w-full md:w-max md:mx-auto px-4 md:px-0">
             {[
               { id: 'pricing', label: 'Rates & Pricing', icon: (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>

@@ -36,7 +36,7 @@ export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroS
     fetchPrice()
   }, [hotelSlug, vehicleType])
   return (
-    <section className="relative w-full min-h-[85vh] md:min-h-screen flex items-center py-20 md:py-0 overflow-hidden">
+    <section className="relative w-full min-h-[85vh] md:min-h-screen flex items-center justify-center py-20 md:py-0 overflow-hidden">
       {/* ── Background Video ─────────────────────────────────────── */}
       <div className="absolute inset-0 w-full h-full z-0">
         <video

@@ -26,12 +26,14 @@ type TripType = 'one-way' | 'round-trip'
 
 function generateTimeSlots() {
   const slots: string[] = []
-  for (let h = 8; h <= 22; h++) {
+  for (let h = 5; h <= 23; h++) {
     const hStr = h > 12 ? h - 12 : h
+    // 12 is PM, 24 would be AM but loop goes up to 23
     const ampm = h >= 12 ? 'PM' : 'AM'
     const hDisplay = h === 12 ? 12 : hStr
     slots.push(`${hDisplay}:00 ${ampm}`)
-    if (h < 22) slots.push(`${hDisplay}:30 ${ampm}`)
+    // Include the 30-minute slot for all hours up to 23 (11:30 PM)
+    slots.push(`${hDisplay}:30 ${ampm}`)
   }
   return slots
 }
@@ -409,7 +411,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   }
 
   return (
-    <section id="booking-form" className="w-full py-14 md:py-20">
+    <section id="booking-form" className="w-full py-14 md:py-20 scroll-mt-20 md:scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         {/* Section header */}
         <div className="text-center mb-10 md:mb-14">
@@ -473,7 +475,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               {/* Progress indicator */}
               <div className="flex items-center justify-center gap-2 mb-6 max-w-md mx-auto select-none w-full">
                 {(isPromo ? [1, 3] : [1, 2, 3]).map((s, index) => {
@@ -531,7 +533,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
               {/* Step 1: Trip Details */}
               {step === 1 && (
                 <div
-                  className="rounded-2xl p-7 md:p-10 flex flex-col gap-6"
+                  className="rounded-2xl p-5 md:p-8 flex flex-col gap-4"
                   style={{
                     background: '#161616',
                     border: '1px solid #2a2a2a',
@@ -570,7 +572,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     <select
                       value={pickup}
                       onChange={(e) => setPickup(e.target.value)}
-                      className={`${INPUT_CLASS} min-h-[60px] text-lg sm:text-base`}
+                      className={`${INPUT_CLASS} min-h-[50px] text-base`}
                       style={INPUT_STYLE}
                     >
                       <option value="">Select Pickup Location...</option>
@@ -590,7 +592,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     <select
                       value={destination}
                       onChange={(e) => setDestination(e.target.value)}
-                      className={`${INPUT_CLASS} min-h-[60px] text-lg sm:text-base`}
+                      className={`${INPUT_CLASS} min-h-[50px] text-base`}
                       style={INPUT_STYLE}
                     >
                       <option value="">Select Destination...</option>
@@ -614,7 +616,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
                         required
-                        className={`${INPUT_CLASS} min-h-[60px] text-lg px-5 py-4`}
+                        className={`${INPUT_CLASS} min-h-[50px] text-base px-4 py-3`}
                         style={INPUT_STYLE}
                       />
                     </div>
@@ -626,7 +628,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         value={time}
                         onChange={(e) => setTime(e.target.value)}
                         required
-                        className={`${INPUT_CLASS} min-h-[60px] text-lg px-5 py-4`}
+                        className={`${INPUT_CLASS} min-h-[50px] text-base px-4 py-3`}
                         style={INPUT_STYLE}
                       >
                         <option value="">Select time</option>
@@ -652,7 +654,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                           value={returnDate}
                           onChange={(e) => setReturnDate(e.target.value)}
                           required
-                          className={`${INPUT_CLASS} min-h-[60px] text-lg px-5 py-4`}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base px-4 py-3`}
                           style={INPUT_STYLE}
                         />
                       </div>
@@ -664,7 +666,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                           value={returnTime}
                           onChange={(e) => setReturnTime(e.target.value)}
                           required
-                          className={`${INPUT_CLASS} min-h-[60px] text-lg px-5 py-4`}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base px-4 py-3`}
                           style={INPUT_STYLE}
                         >
                           <option value="">Select time</option>
@@ -745,117 +747,112 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     </div>
                   )}
 
-                  {/* Passengers counter */}
-                  <div>
-                    <label className={LABEL_CLASS} style={LABEL_COLOR}>
-                      Number of Passengers
-                    </label>
-                    <div
-                      className="flex items-center justify-between rounded-xl px-4 py-3"
-                      style={{ background: '#0e0e0e', border: '1px solid #333333' }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setPassengers((p) => Math.max(1, p - 1))}
-                        className="w-11 h-11 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                        style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
-                        aria-label="Decrease passengers"
+                  {/* Counters Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {/* Passengers counter */}
+                    <div>
+                      <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                        Passengers
+                      </label>
+                      <div
+                        className="flex items-center justify-between rounded-xl px-4 py-2"
+                        style={{ background: '#0e0e0e', border: '1px solid #333333' }}
                       >
-                        −
-                      </button>
-                      <div className="text-center">
-                        <span className="text-3xl font-bold" style={{ color: '#FFFFFF' }}>
-                          {passengers}
-                        </span>
-                        <p className="text-xs mt-0.5" style={{ color: '#888888' }}>
-                          passenger{passengers !== 1 ? 's' : ''}
-                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setPassengers((p) => Math.max(1, p - 1))}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
+                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                          aria-label="Decrease passengers"
+                        >
+                          −
+                        </button>
+                        <div className="text-center">
+                          <span className="text-2xl font-bold" style={{ color: '#FFFFFF' }}>
+                            {passengers}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPassengers((p) => Math.min(55, p + 1))}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
+                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                          aria-label="Increase passengers"
+                        >
+                          +
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setPassengers((p) => Math.min(55, p + 1))}
-                        className="w-11 h-11 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                        style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
-                        aria-label="Increase passengers"
-                      >
-                        +
-                      </button>
                     </div>
-                  </div>
 
-                  {/* Luggage counter */}
-                  <div>
-                    <label className={LABEL_CLASS} style={LABEL_COLOR}>
-                      Number of Luggage Pieces
-                    </label>
-                    <div
-                      className="flex items-center justify-between rounded-xl px-4 py-3"
-                      style={{ background: '#0e0e0e', border: '1px solid #333333' }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setLuggageCount((p) => Math.max(0, p - 1))}
-                        className="w-11 h-11 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                        style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                    {/* Luggage counter */}
+                    <div>
+                      <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                        Luggage Pieces
+                      </label>
+                      <div
+                        className="flex items-center justify-between rounded-xl px-4 py-2"
+                        style={{ background: '#0e0e0e', border: '1px solid #333333' }}
                       >
-                        −
-                      </button>
-                      <div className="text-center">
-                        <span className="text-3xl font-bold" style={{ color: '#FFFFFF' }}>
-                          {luggageCount}
-                        </span>
-                        <p className="text-xs mt-0.5" style={{ color: '#888888' }}>
-                          bag{luggageCount !== 1 ? 's' : ''}
-                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setLuggageCount((p) => Math.max(0, p - 1))}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
+                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                        >
+                          −
+                        </button>
+                        <div className="text-center">
+                          <span className="text-2xl font-bold" style={{ color: '#FFFFFF' }}>
+                            {luggageCount}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setLuggageCount((p) => Math.min(60, p + 1))}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
+                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                        >
+                          +
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setLuggageCount((p) => Math.min(60, p + 1))}
-                        className="w-11 h-11 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                        style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
-                      >
-                        +
-                      </button>
                     </div>
-                    <p className="text-xs text-[#888] mt-2">Sedan/Suburban: Max 4 bags. Sprinter: Max 14. Minibus: Max 30. Coach: Max 60.</p>
-                  </div>
 
-                  {/* Car seats counter */}
-                  <div>
-                    <label className={LABEL_CLASS} style={LABEL_COLOR}>
-                      Child Car Seats Needed
-                    </label>
-                    <div
-                      className="flex items-center justify-between rounded-xl px-4 py-3"
-                      style={{ background: '#0e0e0e', border: '1px solid #333333' }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setCarSeatsRequested((p) => Math.max(0, p - 1))}
-                        className="w-11 h-11 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                        style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                    {/* Car seats counter */}
+                    <div>
+                      <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                        Child Car Seats
+                      </label>
+                      <div
+                        className="flex items-center justify-between rounded-xl px-4 py-2"
+                        style={{ background: '#0e0e0e', border: '1px solid #333333' }}
                       >
-                        −
-                      </button>
-                      <div className="text-center">
-                        <span className="text-3xl font-bold" style={{ color: '#FFFFFF' }}>
-                          {carSeatsRequested}
-                        </span>
-                        <p className="text-xs mt-0.5" style={{ color: '#888888' }}>
-                          seat{carSeatsRequested !== 1 ? 's' : ''}
-                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setCarSeatsRequested((p) => Math.max(0, p - 1))}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
+                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                        >
+                          −
+                        </button>
+                        <div className="text-center">
+                          <span className="text-2xl font-bold" style={{ color: '#FFFFFF' }}>
+                            {carSeatsRequested}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setCarSeatsRequested((p) => Math.min(4, p + 1))}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
+                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                        >
+                          +
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setCarSeatsRequested((p) => Math.min(4, p + 1))}
-                        className="w-11 h-11 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                        style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
-                      >
-                        +
-                      </button>
                     </div>
-                    <p className="text-xs text-[#888] mt-2">Complimentary car seats available upon request.</p>
                   </div>
+                  <p className="text-[11px] text-[#888] mt-0">
+                    Sedan/Suburban: Max 4 bags. Sprinter: Max 14. Minibus: Max 30. Coach: Max 60. Complimentary car seats available.
+                  </p>
 
                   {error && !isUrgentRequest && (
                     <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
@@ -952,6 +949,32 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     {isPromo ? '2. Contact Info' : '3. Contact & Checkout'}
                   </h3>
 
+                  {/* Trip Summary Card */}
+                  <div className="p-5 rounded-xl flex flex-col gap-3" style={{ background: 'rgba(184, 150, 12, 0.05)', border: '1px solid rgba(184, 150, 12, 0.2)' }}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[#B8960C] text-xs font-bold uppercase tracking-wider">Trip Summary</span>
+                      <span className="text-white font-bold text-sm bg-[#B8960C] text-[#0a0a0a] px-2 py-0.5 rounded uppercase">{vehicleType === 'sedan_suv' ? 'Sedan & SUV' : vehicleType === 'suburban' ? 'Suburban' : vehicleType === 'sprinter' ? 'Sprinter' : vehicleType === 'minibus' ? 'Minibus' : 'Coach Bus'}</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-[#888888] text-xs mb-1">Pickup</p>
+                        <p className="text-white font-medium truncate" title={pickup}>{pickup}</p>
+                      </div>
+                      <div>
+                        <p className="text-[#888888] text-xs mb-1">Drop-off</p>
+                        <p className="text-white font-medium truncate" title={destination}>{destination}</p>
+                      </div>
+                      <div>
+                        <p className="text-[#888888] text-xs mb-1">Date & Time</p>
+                        <p className="text-white font-medium">{date} at {time}</p>
+                      </div>
+                      <div>
+                        <p className="text-[#888888] text-xs mb-1">Passengers</p>
+                        <p className="text-white font-medium">{passengers} {passengers === 1 ? 'Person' : 'People'}</p>
+                      </div>
+                    </div>
+                  </div>
                   {/* Passenger Details */}
                   <div>
                     <label className={LABEL_CLASS} style={LABEL_COLOR}>

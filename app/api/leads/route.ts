@@ -42,6 +42,59 @@ export async function POST(req: NextRequest) {
     body = await req.json()
     const { id } = body
 
+    // Generate remaining balance payment link (for deposit customers)
+    // This MUST be checked before the regular id-based checkout to avoid being unreachable
+    if (body.generateRemainingLink && id) {
+      const { data: lead, error: fetchError } = await supabaseAdmin
+        .from('leads')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (fetchError || !lead || lead.amount_remaining <= 0) {
+        return NextResponse.json({ error: 'Lead not found or no remaining balance' }, { status: 404 })
+      }
+
+      const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+      const successUrl = `${origin}/hotel/${lead.hotel_slug}/success?lead_id=${lead.id}`
+      const cancelUrl = `${origin}/hotel/${lead.hotel_slug}`
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        invoice_creation: {
+          enabled: true,
+        },
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `Express Lyft Remaining Balance: ${lead.pickup} to ${lead.destination}`,
+                description: `${lead.date} at ${lead.time} | ${lead.vehicle_type} | ${lead.passengers} passengers`,
+              },
+              unit_amount: Math.round(lead.amount_remaining * 100),
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        customer_email: lead.customer_email || undefined,
+        metadata: {
+          lead_id: lead.id,
+          hotel_slug: lead.hotel_slug,
+          payment_type: 'remaining',
+          total_amount: String(lead.amount_usd),
+          charge_amount: String(lead.amount_remaining),
+        }
+      })
+
+      // We do NOT change the status here, it stays deposit_paid
+      return NextResponse.json({ success: true, url: session.url })
+    }
+
+    // Generate checkout session for an existing lead (re-send payment link from CRM)
     if (id) {
       const { data: lead, error: fetchError } = await supabaseAdmin
         .from('leads')
@@ -54,7 +107,7 @@ export async function POST(req: NextRequest) {
       }
 
       const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-      const successUrl = `${origin}/hotel/${lead.hotel_slug}/success`
+      const successUrl = `${origin}/hotel/${lead.hotel_slug}/success?lead_id=${lead.id}`
       const cancelUrl = `${origin}/hotel/${lead.hotel_slug}`
 
       const session = await stripe.checkout.sessions.create({
@@ -87,53 +140,6 @@ export async function POST(req: NextRequest) {
 
       await supabaseAdmin.from('leads').update({ status: 'pending_payment' }).eq('id', lead.id)
 
-      return NextResponse.json({ success: true, url: session.url })
-    }
-
-    if (body.generateRemainingLink && id) {
-      const { data: lead, error: fetchError } = await supabaseAdmin
-        .from('leads')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (fetchError || !lead || lead.amount_remaining <= 0) {
-        return NextResponse.json({ error: 'Lead not found or no remaining balance' }, { status: 404 })
-      }
-
-      const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-      const successUrl = `${origin}/hotel/${lead.hotel_slug}/success`
-      const cancelUrl = `${origin}/hotel/${lead.hotel_slug}`
-
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: `Express Lyft Remaining Balance: ${lead.pickup} to ${lead.destination}`,
-                description: `${lead.date} at ${lead.time} | ${lead.vehicle_type} | ${lead.passengers} passengers`,
-              },
-              unit_amount: Math.round(lead.amount_remaining * 100),
-            },
-            quantity: 1,
-          },
-        ],
-        mode: 'payment',
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        customer_email: lead.customer_email || undefined,
-        metadata: {
-          lead_id: lead.id,
-          hotel_slug: lead.hotel_slug,
-          payment_type: 'remaining',
-          total_amount: String(lead.amount_usd),
-          charge_amount: String(lead.amount_remaining),
-        }
-      })
-
-      // We do NOT change the status here, it stays deposit_paid
       return NextResponse.json({ success: true, url: session.url })
     }
 
@@ -181,6 +187,7 @@ export async function POST(req: NextRequest) {
 
     if (paymentMode === 'quote') {
       leadStatus = 'quote_requested'
+      finalAmount = 0
       isDeposit = false
     } else if (isPromo) {
       finalAmount = 0
@@ -243,7 +250,7 @@ export async function POST(req: NextRequest) {
     }
 
     const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const successUrl = isPromo ? `${origin}/promo/${hotelSlug}/success` : `${origin}/hotel/${hotelSlug}/success`
+    const successUrl = isPromo ? `${origin}/promo/${hotelSlug}/success?lead_id=${data.id}` : `${origin}/hotel/${hotelSlug}/success?lead_id=${data.id}`
     const cancelUrl = isPromo ? `${origin}/promo/${hotelSlug}` : `${origin}/hotel/${hotelSlug}`
 
     if (isPromo || paymentMode === 'quote') {

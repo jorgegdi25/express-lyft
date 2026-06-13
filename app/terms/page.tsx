@@ -1,13 +1,19 @@
+'use client'
+
 import React from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function TermsOfService() {
+  const router = useRouter()
   return (
     <main style={{ background: '#111111', minHeight: '100vh', color: '#FFFFFF' }} className="py-20 px-4">
       <div className="max-w-3xl mx-auto flex flex-col gap-8">
-        <Link href="/" className="text-[#B8960C] hover:underline text-sm font-bold uppercase tracking-wider">
+        <button 
+          onClick={() => router.back()} 
+          className="text-[#B8960C] hover:underline text-sm font-bold uppercase tracking-wider text-left"
+        >
           ← Back to Booking
-        </Link>
+        </button>
         <h1 className="text-4xl md:text-5xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
           Terms of Service & Cancellation Policy
         </h1>
