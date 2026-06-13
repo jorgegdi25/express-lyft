@@ -45,15 +45,13 @@ export default function ReviewsMarquee() {
         </h2>
       </div>
 
-      <div className="relative flex overflow-x-hidden group">
-        {/* First Marquee Track */}
-        <div className="animate-marquee flex gap-6 px-3 whitespace-nowrap group-hover:[animation-play-state:paused]">
+      <div className="flex overflow-hidden group">
+        <div className="animate-marquee flex shrink-0 gap-6 px-3 group-hover:[animation-play-state:paused]">
           {REVIEWS.map((review, i) => (
             <ReviewCard key={`review-1-${i}`} review={review} />
           ))}
         </div>
-        {/* Second Marquee Track (for seamless looping) */}
-        <div className="animate-marquee flex gap-6 px-3 whitespace-nowrap group-hover:[animation-play-state:paused] absolute top-0" style={{ left: '100%' }}>
+        <div className="animate-marquee flex shrink-0 gap-6 px-3 group-hover:[animation-play-state:paused]">
           {REVIEWS.map((review, i) => (
             <ReviewCard key={`review-2-${i}`} review={review} />
           ))}
@@ -66,7 +64,7 @@ export default function ReviewsMarquee() {
 function ReviewCard({ review }: { review: { name: string; text: string; rating: number } }) {
   return (
     <div 
-      className="inline-block w-[320px] md:w-[400px] p-6 rounded-2xl whitespace-normal"
+      className="shrink-0 w-[320px] md:w-[400px] p-6 rounded-2xl whitespace-normal"
       style={{ background: '#161616', border: '1px solid #252525' }}
     >
       <div className="flex gap-1 mb-3">
