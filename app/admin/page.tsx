@@ -108,11 +108,21 @@ const VEHICLE_LABELS: Record<string, string> = {
   coachbus: '55 Passenger Bus',
 }
 
-type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support'
+type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support'
 
-
-
-
+function IconHotel() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 21h18" />
+      <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
+      <path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4" />
+      <path d="M10 9h.01" />
+      <path d="M14 9h.01" />
+      <path d="M10 13h.01" />
+      <path d="M14 13h.01" />
+    </svg>
+  )
+}
 
 /* -- Sidebar Icon Components -------------------------- */
 
@@ -1006,9 +1016,10 @@ export default function AdminPage() {
       paid:           { bg: 'rgba(74, 222, 128, 0.1)', text: '#4ade80',  border: 'rgba(74, 222, 128, 0.25)' },
       pending:        { bg: 'rgba(248, 113, 113, 0.1)', text: '#f87171', border: 'rgba(248, 113, 113, 0.25)' },
       deposit_paid:   { bg: 'rgba(251, 191, 36, 0.1)', text: '#FBBF24', border: 'rgba(251, 191, 36, 0.25)' },
+      hotel_b2b:      { bg: 'rgba(45, 212, 191, 0.1)', text: '#2dd4bf',  border: 'rgba(45, 212, 191, 0.25)' },
     }
     const c = colors[status] || colors.inactive
-    const displayLabel = status === 'deposit_paid' ? 'Deposit Paid' : status
+    const displayLabel = status === 'deposit_paid' ? 'Deposit Paid' : status === 'hotel_b2b' ? 'Hotel B2B' : status
     return (
       <span
         className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"
@@ -1034,8 +1045,9 @@ export default function AdminPage() {
     {
       group: 'Sales & Finance',
       items: [
-        { key: 'leads', label: 'Sales Pipeline', icon: <IconLeads />, getBadge: () => leads.filter(l => ['new', 'pending_payment', 'invoice_sent'].includes(l.status || '') && l.status !== 'quote_requested').length },
+        { key: 'leads', label: 'Sales Pipeline', icon: <IconLeads />, getBadge: () => leads.filter(l => ['new', 'pending_payment', 'invoice_sent'].includes(l.status || '') && l.status !== 'quote_requested' && l.status !== 'hotel_b2b').length },
         { key: 'quotes', label: 'Quotes (Manual)', icon: <IconQuotes />, getBadge: () => leads.filter(l => l.status === 'quote_requested').length },
+        { key: 'hotel_bookings', label: 'Hotel Bookings', icon: <IconHotel />, getBadge: () => leads.filter(l => l.status === 'hotel_b2b').length },
         { key: 'clients', label: 'Frequent Flyers', icon: <IconClients /> },
         { key: 'revenue', label: 'Revenue Dashboard', icon: <IconRevenue /> },
       ] as const
@@ -1118,9 +1130,12 @@ export default function AdminPage() {
   const bookingsTotalPages = Math.ceil(filteredBookings.length / bookingsPerPage)
 
   // Filter & paginate leads & quotes
-  const baseLeads = activeTab === 'quotes' 
-    ? leads.filter((l) => l.status === 'quote_requested') 
-    : leads.filter((l) => l.status !== 'quote_requested')
+  let baseLeads = leads.filter((l) => l.status !== 'quote_requested' && l.status !== 'hotel_b2b')
+  if (activeTab === 'quotes') {
+    baseLeads = leads.filter((l) => l.status === 'quote_requested')
+  } else if (activeTab === 'hotel_bookings') {
+    baseLeads = leads.filter((l) => l.status === 'hotel_b2b')
+  }
 
   const filteredLeads = baseLeads
     .filter((l) => {
@@ -1920,16 +1935,18 @@ export default function AdminPage() {
 
 
         {/* ------- LEADS & QUOTES TAB ------- */}
-        {(activeTab === 'leads' || activeTab === 'quotes') && (
+        {(activeTab === 'leads' || activeTab === 'quotes' || activeTab === 'hotel_bookings') && (
           <div className="flex flex-col gap-8">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>
-                  {activeTab === 'quotes' ? 'Manual Quotes (Buses)' : 'Sales Pipeline & Leads'}
+                  {activeTab === 'quotes' ? 'Manual Quotes (Buses)' : activeTab === 'hotel_bookings' ? 'Hotel Partner Bookings' : 'Sales Pipeline & Leads'}
                 </h1>
                 <p className="text-sm" style={{ color: '#888' }}>
                   {activeTab === 'quotes' 
                     ? 'High priority requests that need manual pricing and availability verification.' 
+                    : activeTab === 'hotel_bookings'
+                    ? 'Manage bookings originating from B2B hotel partners (invoiced monthly).'
                     : 'Manage leads, follow-ups, and track conversions.'}
                 </p>
               </div>
@@ -2410,11 +2427,12 @@ export default function AdminPage() {
                         <div>
                           <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Status</p>
                           <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border inline-block" style={{ 
-                            backgroundColor: viewingLead.status === 'invoice_sent' ? '#1e3a8a30' : viewingLead.status === 'lost' ? '#33161630' : viewingLead.status === 'pending_payment' ? '#7f1d1d30' : viewingLead.status === 'deposit_paid' ? '#B8960C30' : viewingLead.status === 'paid' ? '#065f4630' : viewingLead.status === 'quote_requested' ? '#EF9F2730' : '#1a1a1a',
-                            color: viewingLead.status === 'invoice_sent' ? '#60a5fa' : viewingLead.status === 'lost' ? '#F44336' : viewingLead.status === 'pending_payment' ? '#f87171' : viewingLead.status === 'deposit_paid' ? '#FBBF24' : viewingLead.status === 'paid' ? '#34d399' : viewingLead.status === 'quote_requested' ? '#EF9F27' : '#FFFFFF',
-                            borderColor: viewingLead.status === 'invoice_sent' ? '#1e3a8a80' : viewingLead.status === 'lost' ? '#33161680' : viewingLead.status === 'pending_payment' ? '#7f1d1d80' : viewingLead.status === 'deposit_paid' ? '#B8960C80' : viewingLead.status === 'paid' ? '#065f4680' : viewingLead.status === 'quote_requested' ? '#EF9F2780' : '#333'
+                            backgroundColor: viewingLead.status === 'hotel_b2b' ? '#134e4a80' : viewingLead.status === 'invoice_sent' ? '#1e3a8a30' : viewingLead.status === 'lost' ? '#33161630' : viewingLead.status === 'pending_payment' ? '#7f1d1d30' : viewingLead.status === 'deposit_paid' ? '#B8960C30' : viewingLead.status === 'paid' ? '#065f4630' : viewingLead.status === 'quote_requested' ? '#EF9F2730' : '#1a1a1a',
+                            color: viewingLead.status === 'hotel_b2b' ? '#2dd4bf' : viewingLead.status === 'invoice_sent' ? '#60a5fa' : viewingLead.status === 'lost' ? '#F44336' : viewingLead.status === 'pending_payment' ? '#f87171' : viewingLead.status === 'deposit_paid' ? '#FBBF24' : viewingLead.status === 'paid' ? '#34d399' : viewingLead.status === 'quote_requested' ? '#EF9F27' : '#FFFFFF',
+                            borderColor: viewingLead.status === 'hotel_b2b' ? '#2dd4bf80' : viewingLead.status === 'invoice_sent' ? '#1e3a8a80' : viewingLead.status === 'lost' ? '#33161680' : viewingLead.status === 'pending_payment' ? '#7f1d1d80' : viewingLead.status === 'deposit_paid' ? '#B8960C80' : viewingLead.status === 'paid' ? '#065f4680' : viewingLead.status === 'quote_requested' ? '#EF9F2780' : '#333'
                           }}>
-                            {viewingLead.status === 'quote_requested' ? 'Quote Requested' :
+                            {viewingLead.status === 'hotel_b2b' ? 'Hotel B2B' :
+                             viewingLead.status === 'quote_requested' ? 'Quote Requested' :
                              viewingLead.status === 'pending_payment' ? 'Abandoned' :
                              viewingLead.status === 'invoice_sent' ? 'Invoice Sent' :
                              viewingLead.status === 'deposit_paid' ? 'Deposit Paid' :
