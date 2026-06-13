@@ -381,7 +381,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           date,
           time,
           passengers,
-          estimatedTotal: total,
+          estimatedTotal: isPromo ? 0 : total,
           tripType,
           returnDate: tripType === 'round-trip' ? returnDate : undefined,
           returnTime: tripType === 'round-trip' ? returnTime : undefined,
