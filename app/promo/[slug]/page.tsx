@@ -145,15 +145,24 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
       </header>
 
       {/* ── Simple Promo Header ──────────────────────────────────── */}
-      <section className="w-full pt-12 pb-6 animate-fade-in" style={{ background: '#111111' }}>
-        <div className="max-w-3xl mx-auto px-4 md:px-6 text-center flex flex-col gap-4">
+      <section 
+        className="relative w-full pt-20 pb-16 animate-fade-in flex items-center justify-center" 
+        style={{ 
+          backgroundImage: "url('/bocean-promo-bg.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          minHeight: '300px'
+        }}
+      >
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]"></div>
+        <div className="relative z-10 max-w-3xl mx-auto px-4 md:px-6 text-center flex flex-col gap-4">
           <p className="text-xs font-bold uppercase tracking-[3px]" style={{ color: '#B8960C' }}>
             {hotel.name}
           </p>
           <h1 className="text-3xl md:text-5xl font-bold leading-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
             Make your reservation here
           </h1>
-          <p className="text-sm md:text-base leading-relaxed" style={{ color: '#888888' }}>
+          <p className="text-sm md:text-base leading-relaxed" style={{ color: '#DDDDDD' }}>
             Fill out the form below to secure your transportation with Express Lyft.
           </p>
         </div>

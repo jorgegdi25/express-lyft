@@ -419,17 +419,19 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     <section id="booking-form" className="w-full py-14 md:py-20 scroll-mt-20 md:scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         {/* Section header */}
-        <div className="text-center mb-10 md:mb-14">
-          <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: '#B8960C' }}>
-            Online Reservation
-          </p>
-          <h2 className="text-2xl md:text-4xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-            Book Your Luxury Ride
-          </h2>
-          <p className="text-base mt-3" style={{ color: '#999999' }}>
-            Fill in the details below and our concierge team will confirm your transfer.
-          </p>
-        </div>
+        {!isPromo && (
+          <div className="text-center mb-10 md:mb-14">
+            <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: '#B8960C' }}>
+              Online Reservation
+            </p>
+            <h2 className="text-2xl md:text-4xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+              Book Your Luxury Ride
+            </h2>
+            <p className="text-base mt-3" style={{ color: '#999999' }}>
+              Fill in the details below and our concierge team will confirm your transfer.
+            </p>
+          </div>
+        )}
 
         <div className="max-w-3xl mx-auto">
           {/* ── Booking Form ──────────────────────────────────── */}
