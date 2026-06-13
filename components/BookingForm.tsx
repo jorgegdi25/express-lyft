@@ -730,37 +730,39 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                           style={INPUT_STYLE}
                         />
                       </div>
-                      <div className="sm:col-span-2 mt-2">
-                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
-                          Meeting Type
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setMeetingType('curbside')}
-                            className="rounded-xl p-4 flex flex-col gap-1 text-left transition-all duration-200"
-                            style={{
-                              background: meetingType === 'curbside' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
-                              border: meetingType === 'curbside' ? '2px solid #B8960C' : '1px solid #333333',
-                            }}
-                          >
-                            <span className="text-sm font-bold text-white">Curbside Pickup</span>
-                            <span className="text-xs text-[#888]">Meet driver outside at arrivals</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setMeetingType('meet_greet')}
-                            className="rounded-xl p-4 flex flex-col gap-1 text-left transition-all duration-200"
-                            style={{
-                              background: meetingType === 'meet_greet' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
-                              border: meetingType === 'meet_greet' ? '2px solid #B8960C' : '1px solid #333333',
-                            }}
-                          >
-                            <span className="text-sm font-bold text-white">VIP Meet & Greet (+$25)</span>
-                            <span className="text-xs text-[#888]">Driver meets you inside with a sign</span>
-                          </button>
+                      {!isPromo && (
+                        <div className="sm:col-span-2 mt-2">
+                          <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                            Meeting Type
+                          </label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setMeetingType('curbside')}
+                              className="rounded-xl p-4 flex flex-col gap-1 text-left transition-all duration-200"
+                              style={{
+                                background: meetingType === 'curbside' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
+                                border: meetingType === 'curbside' ? '2px solid #B8960C' : '1px solid #333333',
+                              }}
+                            >
+                              <span className="text-sm font-bold text-white">Curbside Pickup</span>
+                              <span className="text-xs text-[#888]">Meet driver outside at arrivals</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setMeetingType('meet_greet')}
+                              className="rounded-xl p-4 flex flex-col gap-1 text-left transition-all duration-200"
+                              style={{
+                                background: meetingType === 'meet_greet' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
+                                border: meetingType === 'meet_greet' ? '2px solid #B8960C' : '1px solid #333333',
+                              }}
+                            >
+                              <span className="text-sm font-bold text-white">VIP Meet & Greet (+$25)</span>
+                              <span className="text-xs text-[#888]">Driver meets you inside with a sign</span>
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
 
@@ -835,7 +837,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     </div>
 
                     {/* Car seats counter */}
-                    <div>
+                    <div className="sm:col-span-2">
                       <label className={LABEL_CLASS} style={LABEL_COLOR}>
                         Child Car Seats
                       </label>
