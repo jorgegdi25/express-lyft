@@ -100,13 +100,13 @@ export default function ImageGallery() {
         })}
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+      {/* Grid / Mobile Slider */}
+      <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full snap-x snap-mandatory pb-6 no-scrollbar" style={{ scrollPaddingLeft: '1rem' }}>
         {filteredItems.map((item, index) => (
           <div
             key={item.src}
             onClick={() => setLightboxIndex(index)}
-            className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 hover:shadow-xl hover:shadow-[#B8960C08]"
+            className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 hover:shadow-xl hover:shadow-[#B8960C08] shrink-0 w-[85vw] sm:w-auto snap-center"
             style={{
               aspectRatio: '4/3',
               background: '#161616',
