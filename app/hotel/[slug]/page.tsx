@@ -263,13 +263,15 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
             <div className="w-12 h-[1px] md:w-[1px] md:h-14" style={{ background: '#333333' }}></div>
             
             {/* Logo */}
-            <Image
-              src="/b-ocean-logo.png"
-              alt="B Ocean Resort Fort Lauderdale"
-              width={200}
-              height={80}
-              className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-60 hover:opacity-100 transition-all duration-300"
-            />
+            <a href="https://www.boceanresort.com" target="_blank" rel="noopener noreferrer">
+              <Image
+                src="/b-ocean-logo.png"
+                alt="B Ocean Resort Fort Lauderdale"
+                width={200}
+                height={80}
+                className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-60 hover:opacity-100 transition-all duration-300"
+              />
+            </a>
           </div>
         </section>
       )}
