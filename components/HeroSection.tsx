@@ -94,7 +94,7 @@ export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroS
       </div>
 
       {/* Scroll indicator */}
-      <div className="hidden md:flex absolute bottom-12 left-1/2 -translate-x-1/2 z-20">
+      <div className="hidden md:flex absolute bottom-24 left-1/2 -translate-x-1/2 z-20">
         <div className="flex flex-col items-center gap-2 animate-bounce">
           <span className="text-xs font-bold uppercase tracking-[3px]" style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>
             Scroll
