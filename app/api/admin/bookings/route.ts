@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from('leads')
     .select('*')
-    .eq('status', 'paid')
+    .in('status', ['paid', 'deposit_paid'])
     .order('created_at', { ascending: false })
     .limit(100)
 
