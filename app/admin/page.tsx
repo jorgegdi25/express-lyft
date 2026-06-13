@@ -1032,7 +1032,8 @@ export default function AdminPage() {
     {
       group: 'Sales & Finance',
       items: [
-        { key: 'leads', label: 'Sales Pipeline', icon: <IconLeads />, getBadge: () => leads.filter(l => ['new', 'pending_payment', 'invoice_sent'].includes(l.status || '')).length },
+        { key: 'leads', label: 'Sales Pipeline', icon: <IconLeads />, getBadge: () => leads.filter(l => ['new', 'pending_payment', 'invoice_sent'].includes(l.status || '') && l.status !== 'quote_requested').length },
+        { key: 'quotes', label: 'Quotes (Manual)', icon: <IconQuotes />, getBadge: () => leads.filter(l => l.status === 'quote_requested').length },
         { key: 'clients', label: 'Hotel Partners', icon: <IconClients /> },
         { key: 'revenue', label: 'Revenue Dashboard', icon: <IconRevenue /> },
       ] as const
@@ -1114,7 +1115,12 @@ export default function AdminPage() {
   const paginatedBookings = filteredBookings.slice(bookingsStartIndex, bookingsStartIndex + bookingsPerPage)
   const bookingsTotalPages = Math.ceil(filteredBookings.length / bookingsPerPage)
 
-  const filteredLeads = leads
+  // Filter & paginate leads & quotes
+  const baseLeads = activeTab === 'quotes' 
+    ? leads.filter((l) => l.status === 'quote_requested') 
+    : leads.filter((l) => l.status !== 'quote_requested')
+
+  const filteredLeads = baseLeads
     .filter((l) => {
       const term = leadsSearch.toLowerCase()
       const matchesSearch = (
@@ -1345,20 +1351,21 @@ export default function AdminPage() {
 
                 {/* Manual Leads / Quotes */}
                 <div 
-                  onClick={() => { setActiveTab('leads'); setLeadsStatusFilter('new'); }}
+                  onClick={() => { setActiveTab('quotes'); setLeadsStatusFilter('all'); }}
                   className="rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg hover:shadow-purple-900/20 hover:-translate-y-1 relative overflow-hidden group" 
                   style={{ background: 'linear-gradient(145deg, #140f1a, #111111)', border: '1px solid rgba(192, 132, 252, 0.1)' }}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-500/10 text-purple-400">
-                      <span className="font-bold">{leads.filter(l => l.status === 'new').length}</span>
+                      <span className="font-bold">{leads.filter(l => l.status === 'quote_requested').length}</span>
                     </div>
                     <div>
-                      <p className="font-bold text-white text-sm">Pending Quotes / Leads</p>
-                      <p className="text-xs text-[#888]">Needs manual processing</p>
+                      <p className="font-bold text-white text-sm">Pending Quotes</p>
+                      <p className="text-xs text-[#888]">Needs manual processing (Buses)</p>
                     </div>
                   </div>
-                  <span className="text-[#888]">&rarr;</span>
+                  <span className="text-[#888] group-hover:text-purple-400 group-hover:translate-x-1 transition-all">&rarr;</span>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
                 </div>
 
                 {/* Unassigned Trips */}
@@ -1911,15 +1918,17 @@ export default function AdminPage() {
 
 
         {/* ------- LEADS & QUOTES TAB ------- */}
-        {activeTab === 'leads' && (
+        {(activeTab === 'leads' || activeTab === 'quotes') && (
           <div className="flex flex-col gap-8">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>
-                  Sales Pipeline & Leads
+                  {activeTab === 'quotes' ? 'Manual Quotes (Buses)' : 'Sales Pipeline & Leads'}
                 </h1>
                 <p className="text-sm" style={{ color: '#888' }}>
-                  Manage leads, send quotes, and track conversions.
+                  {activeTab === 'quotes' 
+                    ? 'High priority requests that need manual pricing and availability verification.' 
+                    : 'Manage leads, follow-ups, and track conversions.'}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
