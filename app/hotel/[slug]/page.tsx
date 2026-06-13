@@ -307,8 +307,194 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
             })}
           </div>
 
+          
+          {/* Mobile Accordion */}
+          <div className="flex flex-col gap-4 md:hidden px-4">
+            <details name="explore-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base text-white hover:text-[#D4AF37] list-none">
+                <div className="flex items-center gap-3">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="22" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                  Our Fleet
+                </div>
+                <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </summary>
+              <div className="px-4 pb-6 border-t border-[#1f1f1f] pt-4">
+                
+              </div>
+            </details>
+
+            <details name="explore-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base text-white hover:text-[#D4AF37] list-none">
+                <div className="flex items-center gap-3">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                  Our Services
+                </div>
+                <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </summary>
+              <div className="px-4 pb-6 border-t border-[#1f1f1f] pt-4">
+                <section className="w-full py-16" style={{ background: '#161616', borderRadius: '1rem', border: '1px solid #252525' }}>
+                <div className="max-w-7xl mx-auto px-4 md:px-6">
+                  <div className="text-center mb-12">
+                    <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: '#B8960C' }}>
+                      What We Do
+                    </p>
+                    <h2 className="text-2xl md:text-4xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                      Our Services
+                    </h2>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Hotel Transfers */}
+                    <div className="rounded-2xl p-6 transition-all duration-300 hover:border-[#B8960C] hover:shadow-lg" style={{ background: '#0d0d0d', border: '1px solid #252525' }}>
+                      <h3 className="text-lg font-bold text-white mb-2">Hotel Transfers</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
+                        We provide private transfers from Miami International Airport to hotels and resorts throughout Miami and South Florida. Starting rates are available by quote.
+                      </p>
+                    </div>
+
+                    {/* Airport Transfers */}
+                    <div className="rounded-2xl p-6 transition-all duration-300 hover:border-[#B8960C] hover:shadow-lg" style={{ background: '#0d0d0d', border: '1px solid #252525' }}>
+                      <h3 className="text-lg font-bold text-white mb-2">Airport Transfers</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
+                        We provide airport transportation to and from Miami International Airport and Orlando-area airports, available 7 days a week.
+                      </p>
+                    </div>
+
+                    {/* Corporate Transfers */}
+                    <div className="rounded-2xl p-6 transition-all duration-300 hover:border-[#B8960C] hover:shadow-lg" style={{ background: '#0d0d0d', border: '1px solid #252525' }}>
+                      <h3 className="text-lg font-bold text-white mb-2">Corporate Transfers</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
+                        Professional transportation for business travel, private meetings, events, and group transportation throughout South Florida.
+                      </p>
+                    </div>
+
+                    {/* Beach & Downtown Transfers */}
+                    <div className="rounded-2xl p-6 transition-all duration-300 hover:border-[#B8960C] hover:shadow-lg" style={{ background: '#0d0d0d', border: '1px solid #252525' }}>
+                      <h3 className="text-lg font-bold text-white mb-2">Beach & Downtown Transfers</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
+                        Private transportation to Miami Beach, downtown Miami, hotels, restaurants, events, and popular South Florida destinations.
+                      </p>
+                    </div>
+
+                    {/* Minibus Hire */}
+                    <div className="rounded-2xl p-6 transition-all duration-300 hover:border-[#B8960C] hover:shadow-lg" style={{ background: '#0d0d0d', border: '1px solid #252525' }}>
+                      <h3 className="text-lg font-bold text-white mb-2">Minibus Hire</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
+                        Group transportation available for airports, cruises, private events, corporate events, and special occasions.
+                      </p>
+                    </div>
+
+                    {/* Wedding Transfers */}
+                    <div className="rounded-2xl p-6 transition-all duration-300 hover:border-[#B8960C] hover:shadow-lg" style={{ background: '#0d0d0d', border: '1px solid #252525' }}>
+                      <h3 className="text-lg font-bold text-white mb-2">Wedding Transfers</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
+                        If you are looking for elegant transportation for your wedding day, we can help arrange private vehicles and group transportation for your guests.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              </div>
+            </details>
+
+            <details name="explore-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base text-white hover:text-[#D4AF37] list-none">
+                <div className="flex items-center gap-3">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  Why Choose Us
+                </div>
+                <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </summary>
+              <div className="px-4 pb-6 border-t border-[#1f1f1f] pt-4">
+                <div className="flex flex-col gap-12">
+                <section className="w-full py-16" style={{ background: '#161616', borderRadius: '1rem', border: '1px solid #252525' }}>
+                  <div className="max-w-7xl mx-auto px-4 md:px-6">
+                    <div className="text-center mb-12">
+                      <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: '#B8960C' }}>
+                        Our Promise
+                      </p>
+                      <h2 className="text-2xl md:text-4xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                        Why Choose Express Lyft
+                      </h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                      {FEATURES.map((f) => (
+                        <div
+                          key={f.title}
+                          className="rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 hover:border-[#B8960C] hover:-translate-y-1 hover:shadow-lg hover:shadow-[#B8960C10]"
+                          style={{ background: '#0d0d0d', border: '1px solid #252525' }}
+                        >
+                          <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center"
+                            style={{ background: 'rgba(184,150,12,0.1)', border: '1px solid rgba(184,150,12,0.2)' }}
+                          >
+                            {f.icon}
+                          </div>
+                          <div>
+                            <p className="text-base font-bold mb-2" style={{ color: '#FFFFFF' }}>
+                              {f.title}
+                            </p>
+                            <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
+                              {f.desc}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                {/* Stats section */}
+                <section className="w-full py-16" style={{ background: '#0d0d0d', borderRadius: '1rem', border: '1px solid #252525' }}>
+                  <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
+                    <div className="flex flex-col gap-5">
+                      <p className="text-xs font-bold uppercase tracking-[3px]" style={{ color: '#B8960C' }}>
+                        By the Numbers
+                      </p>
+                      <h2 className="text-2xl md:text-4xl font-bold leading-snug" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                        Florida&apos;s most trusted luxury transfer service.
+                      </h2>
+                      <p className="text-base leading-relaxed" style={{ color: '#888888' }}>
+                        From the airport to the cruise terminal, we move Florida&apos;s most discerning travelers with precision and care.
+                      </p>
+                      <a
+                        href="#booking-form"
+                        className="inline-flex w-fit px-6 py-3.5 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95"
+                        style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                      >
+                        Book Now →
+                      </a>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {STATS.map((s) => (
+                        <div
+                          key={s.label}
+                          className="rounded-2xl p-6 text-center flex flex-col gap-1 transition-all hover:border-[#B8960C]"
+                          style={{ background: '#161616', border: '1px solid #252525' }}
+                        >
+                          <p className="text-4xl md:text-5xl font-bold" style={{ color: '#B8960C', fontFamily: "'Playfair Display', Georgia, serif" }}>
+                            {s.stat}
+                          </p>
+                          <p className="text-sm font-medium mt-1" style={{ color: '#888888' }}>
+                            {s.label}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                <Testimonials />
+              </div>
+              </div>
+            </details>
+          </div>
+
+
           {/* Tab content */}
-          <div className="transition-all duration-300">
+          <div className="transition-all duration-300 hidden md:block">
             {activeTab === 'pricing' && (
               <section className="w-full py-16" style={{ background: '#0d0d0d', borderRadius: '1rem', border: '1px solid #252525' }}>
                 <div className="max-w-7xl mx-auto px-4 md:px-6">
