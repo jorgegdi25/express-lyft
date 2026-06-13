@@ -195,7 +195,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
               <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
                 Premium private transportation for airport transfers, cruise ports, hotel transfers, and group charters in South Florida. Licensed and insured.
               </p>
-              <p className="text-sm font-bold leading-relaxed" style={{ color: '#888888' }}>
+              <p className="text-base font-bold leading-relaxed" style={{ color: '#EF9F27' }}>
                 ExpLyft is an independent transportation service and is not affiliated with Lyft, Inc.
               </p>
             </div>
