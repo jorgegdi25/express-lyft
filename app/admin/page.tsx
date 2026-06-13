@@ -342,6 +342,7 @@ export default function AdminPage() {
 
   // Bookings pagination & search
   const [bookingsSearch, setBookingsSearch] = useState('')
+  const [bookingsStatusFilter, setBookingsStatusFilter] = useState('all')
   const [bookingsPage, setBookingsPage] = useState(1)
   const bookingsPerPage = 15
 
@@ -1116,6 +1117,7 @@ export default function AdminPage() {
 
   // Filter & paginate bookings
   const filteredBookings = bookings.filter((b) => {
+    if (bookingsStatusFilter !== 'all' && b.status !== bookingsStatusFilter) return false;
     const term = bookingsSearch.toLowerCase()
     return (
       (b.customer_name || '').toLowerCase().includes(term) ||
@@ -1836,13 +1838,25 @@ export default function AdminPage() {
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Bookings</h1>
                 <p className="text-sm" style={{ color: '#888' }}>Fully paid and confirmed trips. {filteredBookings.length} found ({bookings.length} total)</p>
               </div>
-              <input
-                type="text"
-                placeholder="Search bookings..."
-                value={bookingsSearch}
-                onChange={(e) => { setBookingsSearch(e.target.value); setBookingsPage(1); }}
-                className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors w-full md:max-w-xs"
-              />
+              <div className="flex items-center gap-3">
+                <select
+                  value={bookingsStatusFilter}
+                  onChange={(e) => { setBookingsStatusFilter(e.target.value); setBookingsPage(1); }}
+                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="paid">Paid</option>
+                  <option value="deposit_paid">Deposit Paid</option>
+                  <option value="hotel_b2b">Hotel B2B</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Search bookings..."
+                  value={bookingsSearch}
+                  onChange={(e) => { setBookingsSearch(e.target.value); setBookingsPage(1); }}
+                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors w-full md:max-w-xs"
+                />
+              </div>
             </div>
 
             <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
@@ -1862,7 +1876,7 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                       {paginatedBookings.map((b) => (
-                        <tr key={b.id} style={{ borderTop: '1px solid #1a1a1a' }} className="hover:bg-[#1a1a1a40] transition-colors">
+                        <tr key={b.id} onClick={() => setViewingLead(b as any)} style={{ borderTop: '1px solid #1a1a1a' }} className="hover:bg-[#1a1a1a40] transition-colors cursor-pointer">
                           <td className="py-4 pr-4 text-white">
                             <span className="font-bold block">{formatDateUS(b.date)}</span>
                             <span className="text-xs text-[#888]">{b.time || '—'}</span>
