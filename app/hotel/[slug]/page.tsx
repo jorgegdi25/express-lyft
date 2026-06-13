@@ -246,6 +246,34 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <HeroSection vehicleType="sedan_suv" basePrice={prices.sedan_suv} hotelSlug={params.slug} />
 
+      {/* ── Official Partner Banner ──────────────────────────────── */}
+      {(params.slug === 'bocean-resort' || params.slug === 'demo') && (
+        <section className="w-full py-8 md:py-10" style={{ background: '#0a0a0a', borderBottom: '1px solid #1a1a1a' }}>
+          <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12">
+            <div className="text-center md:text-right">
+              <p className="text-sm font-bold uppercase tracking-[3px]" style={{ color: '#B8960C' }}>
+                Official Transportation Partner
+              </p>
+              <p className="text-sm text-gray-400 mt-1 font-medium">
+                Trusted by {hotel?.name || 'B Ocean Resort Fort Lauderdale'}
+              </p>
+            </div>
+            
+            {/* Divider */}
+            <div className="w-12 h-[1px] md:w-[1px] md:h-14" style={{ background: '#333333' }}></div>
+            
+            {/* Logo */}
+            <Image
+              src="/b-ocean-logo.png"
+              alt="B Ocean Resort Fort Lauderdale"
+              width={200}
+              height={80}
+              className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-60 hover:opacity-100 transition-all duration-300"
+            />
+          </div>
+        </section>
+      )}
+
       {/* ── Fixed Pricing Section ─────────────────────────────────────────── */}
       <section className="w-full py-16" style={{ background: '#0d0d0d', borderRadius: '1rem', border: '1px solid #252525' }}>
                 <div className="max-w-7xl mx-auto px-4 md:px-6">
