@@ -258,6 +258,7 @@ export default function AdminPage() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
   const [sendingInvoice, setSendingInvoice] = useState<string | null>(null)
   const [viewingLead, setViewingLead] = useState<Lead | null>(null)
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null)
   const [newLead, setNewLead] = useState({
     hotelSlug: 'bocean-resort', 
     customerName: '', 
@@ -750,8 +751,8 @@ export default function AdminPage() {
       })
       const data = await res.json()
       if (data.url) {
-        await navigator.clipboard.writeText(data.url)
-        alert('Stripe Payment Link generated and copied to clipboard!')
+        setGeneratedLink(data.url)
+        try { await navigator.clipboard.writeText(data.url) } catch(e) {} // Fallback silent copy
         fetchLeads(password).then(setLeads)
       } else {
         alert('Failed to generate Stripe link: ' + (data.error || 'Unknown error'))
@@ -773,8 +774,8 @@ export default function AdminPage() {
       })
       const data = await res.json()
       if (data.url) {
-        await navigator.clipboard.writeText(data.url)
-        alert('Stripe Payment Link for REMAINING BALANCE generated and copied to clipboard!')
+        setGeneratedLink(data.url)
+        try { await navigator.clipboard.writeText(data.url) } catch(e) {} // Fallback silent copy
       } else {
         alert('Failed to generate Stripe link: ' + (data.error || 'Unknown error'))
       }
@@ -2417,7 +2418,7 @@ export default function AdminPage() {
                       <p className="text-[10px] uppercase tracking-widest text-[#B8960C] font-bold mb-1">Reservation Details</p>
                       <h2 className="text-xl font-bold text-white">{viewingLead.customer_name || 'Anonymous'}</h2>
                     </div>
-                    <button onClick={() => setViewingLead(null)} className="p-2 text-[#888] hover:text-white bg-[#222] rounded-full transition-colors">
+                    <button onClick={() => { setViewingLead(null); setGeneratedLink(null); }} className="p-2 text-[#888] hover:text-white bg-[#222] rounded-full transition-colors">
                       ✕
                     </button>
                   </div>
@@ -2494,6 +2495,19 @@ export default function AdminPage() {
                         <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-2">Internal Notes</p>
                         <div className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] text-sm text-[#ccc] whitespace-pre-wrap">
                           {viewingLead.notes}
+                        </div>
+                      </div>
+                    )}
+
+
+                    {/* Generated Link Display */}
+                    {generatedLink && (
+                      <div className="bg-green-900/20 border border-green-500/50 p-4 rounded-xl flex flex-col gap-3 mt-2 animate-in fade-in slide-in-from-bottom-4">
+                        <p className="text-xs uppercase text-green-400 font-bold tracking-widest">✅ Payment Link Generated</p>
+                        <div className="flex items-center gap-2">
+                          <input type="text" readOnly value={generatedLink} className="bg-black text-green-400 p-3 rounded-lg w-full text-xs outline-none border border-green-900/50 font-mono" />
+                          <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Copied!'); }} className="text-xs font-bold uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white px-4 py-3 rounded-lg transition-colors">Copy</button>
+                          <a href={generatedLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-widest bg-[#222] hover:bg-[#333] border border-[#444] text-white px-4 py-3 rounded-lg whitespace-nowrap transition-colors">Open</a>
                         </div>
                       </div>
                     )}
