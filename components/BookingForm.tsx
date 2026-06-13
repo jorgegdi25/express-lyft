@@ -110,8 +110,8 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   }, [dynamicLocations, isPromo])
 
   const [tripType, setTripType] = useState<TripType>(isPromo ? 'round-trip' : 'one-way')
-  const [pickup, setPickup] = useState<string>(isPromo ? 'Airport' : '')
-  const [destination, setDestination] = useState<string>(isPromo ? 'The Hotel' : '')
+  const [pickup, setPickup] = useState<string>('')
+  const [destination, setDestination] = useState<string>('')
   const [date, setDate] = useState<string>('')
   const [time, setTime] = useState<string>('')
   const [returnDate, setReturnDate] = useState<string>('')
@@ -573,11 +573,35 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     </div>
                   )}
 
-                  {/* Pickup and Destination - Hidden on Promo */}
+                  {/* Pickup and Destination */}
                   {isPromo ? (
-                    <div className="w-full py-4 px-6 rounded-xl text-center mb-6" style={{ background: 'rgba(184,150,12,0.1)', border: '1px solid rgba(184,150,12,0.3)' }}>
-                      <p className="text-[#D4AF37] font-bold text-lg uppercase tracking-wider mb-1">Airport ⇄ Hotel Transfer</p>
-                      <p className="text-sm text-[#AAAAAA]">Round trip transportation from the airport to your hotel and back.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-2">
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Pickup Location
+                        </label>
+                        <input
+                          type="text"
+                          value={pickup}
+                          onChange={(e) => setPickup(e.target.value)}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base`}
+                          style={INPUT_STYLE}
+                          placeholder="e.g. Miami Airport or B Ocean"
+                        />
+                      </div>
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Destination
+                        </label>
+                        <input
+                          type="text"
+                          value={destination}
+                          onChange={(e) => setDestination(e.target.value)}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base`}
+                          style={INPUT_STYLE}
+                          placeholder="e.g. South Beach or FLL Airport"
+                        />
+                      </div>
                     </div>
                   ) : (
                     <>
