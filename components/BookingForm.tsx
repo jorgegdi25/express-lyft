@@ -575,27 +575,25 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     1. Trip Details
                   </h3>
                   {/* Trip Type Toggle */}
-                  {!isPromo && (
-                    <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #333333' }}>
-                      {(['one-way', 'round-trip'] as TripType[]).map((type) => (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => setTripType(type)}
-                          className="flex-1 py-3.5 text-sm font-bold uppercase tracking-wider transition-all"
-                          style={{
-                            background:
-                              tripType === type
-                                ? 'linear-gradient(135deg, #B8960C, #D4AF37)'
-                                : 'transparent',
-                            color: tripType === type ? '#111111' : '#888888',
-                          }}
-                        >
-                          {type === 'one-way' ? 'One Way' : 'Round Trip'}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #333333' }}>
+                    {(['one-way', 'round-trip'] as TripType[]).map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setTripType(type)}
+                        className="flex-1 py-3.5 text-sm font-bold uppercase tracking-wider transition-all"
+                        style={{
+                          background:
+                            tripType === type
+                              ? 'linear-gradient(135deg, #B8960C, #D4AF37)'
+                              : 'transparent',
+                          color: tripType === type ? '#111111' : '#888888',
+                        }}
+                      >
+                        {type === 'one-way' ? 'One Way' : 'Round Trip'}
+                      </button>
+                    ))}
+                  </div>
 
                   {/* Pickup and Destination */}
                   {isPromo ? (
@@ -654,19 +652,14 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         <label className={LABEL_CLASS} style={LABEL_COLOR}>
                           Destination
                         </label>
-                        <select
+                        <input
+                          type="text"
                           value={destination}
                           onChange={(e) => setDestination(e.target.value)}
                           className={`${INPUT_CLASS} min-h-[50px] text-base`}
                           style={INPUT_STYLE}
-                        >
-                          <option value="">Select Destination...</option>
-                          {availableDestinations.map((loc) => (
-                            <option key={loc} value={loc}>
-                              {loc === 'The Hotel' ? `The Hotel` : loc}
-                            </option>
-                          ))}
-                        </select>
+                          placeholder="Enter destination..."
+                        />
                       </div>
                     </>
                   )}
