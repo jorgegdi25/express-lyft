@@ -655,14 +655,19 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         <label className={LABEL_CLASS} style={LABEL_COLOR}>
                           Destination
                         </label>
-                        <input
-                          type="text"
+                        <select
                           value={destination}
                           onChange={(e) => setDestination(e.target.value)}
                           className={`${INPUT_CLASS} min-h-[50px] text-base`}
                           style={INPUT_STYLE}
-                          placeholder="Enter destination..."
-                        />
+                        >
+                          <option value="">Select Destination...</option>
+                          {availableDestinations.map((loc) => (
+                            <option key={loc} value={loc}>
+                              {loc === 'The Hotel' ? `The Hotel` : loc}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </>
                   )}
