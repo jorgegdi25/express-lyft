@@ -126,6 +126,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   const [meetingType, setMeetingType] = useState<'curbside' | 'meet_greet'>('curbside')
   const [carSeatsRequested, setCarSeatsRequested] = useState<number>(0)
   const [luggageCount, setLuggageCount] = useState<number>(0)
+  const [notes, setNotes] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -391,6 +392,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           meetGreetFee,
           carSeatsRequested,
           luggageCount,
+          notes,
           paymentMode: vehicleType === 'coachbus' || vehicleType === 'minibus' ? 'quote' : paymentMode,
           isPromo,
         }),
@@ -433,6 +435,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     setMeetingType('curbside')
     setCarSeatsRequested(0)
     setLuggageCount(0)
+    setNotes('')
     setPaymentMode('full')
     setSelectedVehicleOverride(null)
     setStep(1)
@@ -810,7 +813,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   )}
 
                   {/* Counters Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     {/* Passengers counter */}
                     <div>
                       <label className={LABEL_CLASS} style={LABEL_COLOR}>
@@ -880,7 +883,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     </div>
 
                     {/* Car seats counter */}
-                    <div className="sm:col-span-2">
+                    <div>
                       <label className={LABEL_CLASS} style={LABEL_COLOR}>
                         Child Car Seats
                       </label>
@@ -911,6 +914,20 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         </button>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Notes Field */}
+                  <div className="mt-2">
+                    <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                      Special Requests / Notes (Optional)
+                    </label>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className={`${INPUT_CLASS} min-h-[100px] text-base resize-y`}
+                      style={INPUT_STYLE}
+                      placeholder="e.g. Need a wheelchair accessible vehicle, please have coffee, etc."
+                    />
                   </div>
                   <p className="text-[11px] text-[#888] mt-0">
                     Sedan/Suburban: Max 4 bags. Sprinter: Max 14. Minibus: Max 30. Coach: Max 60. Complimentary car seats available.

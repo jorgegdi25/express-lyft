@@ -168,7 +168,8 @@ export async function POST(req: NextRequest) {
       meetingType,
       meetGreetFee,
       carSeatsRequested,
-      luggageCount
+      luggageCount,
+      notes
     } = body
 
     if (!hotelSlug) return NextResponse.json({ error: 'Missing hotelSlug' }, { status: 400 })
@@ -236,7 +237,8 @@ export async function POST(req: NextRequest) {
       meeting_type: meetingType || 'curbside',
       meet_greet_fee: meetGreetFee || 0,
       car_seats_requested: carSeatsRequested || 0,
-      luggage_count: luggageCount || 0
+      luggage_count: luggageCount || 0,
+      notes: notes || null
     }).select().single()
 
     if (error) {
