@@ -57,12 +57,18 @@ const LABEL_COLOR = { color: '#BBBBBB' }
 const INPUT_CLASS = 'w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[#B8960C]'
 const INPUT_STYLE = { background: '#0e0e0e', border: '1px solid #333333', color: '#FFFFFF' }
 
-const todayStr = new Date().toISOString().split('T')[0]
+// Removed global todayStr to prevent hydration mismatches
 
 export default function BookingForm({ hotelSlug, prices: serverPrices, routePrices: serverRoutePrices, isPromo }: BookingFormProps) {
   // Live data fetched client-side to bypass Next.js server cache
   const [livePrices, setLivePrices] = useState(serverPrices)
   const [liveRoutePrices, setLiveRoutePrices] = useState(serverRoutePrices)
+  const [minDateStr, setMinDateStr] = useState<string>('')
+
+  // Calculate local date safely on the client
+  useEffect(() => {
+    setMinDateStr(new Date().toISOString().split('T')[0])
+  }, [])
 
   // Fetch fresh data from the public API every time the component mounts
   useEffect(() => {
@@ -680,7 +686,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       </label>
                       <input
                         type="date"
-                        min={todayStr}
+                        min={minDateStr}
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
                         required
@@ -718,7 +724,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         </label>
                         <input
                           type="date"
-                          min={date || todayStr}
+                          min={date || minDateStr}
                           value={returnDate}
                           onChange={(e) => setReturnDate(e.target.value)}
                           required
@@ -837,10 +843,16 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         >
                           −
                         </button>
-                        <div className="text-center">
-                          <span className="text-2xl font-bold" style={{ color: '#FFFFFF' }}>
-                            {passengers}
-                          </span>
+                        <div className="text-center flex-1">
+                          <input 
+                            type="number" 
+                            min="1" 
+                            max="55" 
+                            value={passengers} 
+                            onChange={(e) => setPassengers(Math.max(1, Math.min(55, parseInt(e.target.value) || 1)))}
+                            className="w-full text-center text-2xl font-bold bg-transparent outline-none" 
+                            style={{ color: '#FFFFFF' }} 
+                          />
                         </div>
                         <button
                           type="button"
@@ -871,10 +883,16 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         >
                           −
                         </button>
-                        <div className="text-center">
-                          <span className="text-2xl font-bold" style={{ color: '#FFFFFF' }}>
-                            {luggageCount}
-                          </span>
+                        <div className="text-center flex-1">
+                          <input 
+                            type="number" 
+                            min="0" 
+                            max="60" 
+                            value={luggageCount} 
+                            onChange={(e) => setLuggageCount(Math.max(0, Math.min(60, parseInt(e.target.value) || 0)))}
+                            className="w-full text-center text-2xl font-bold bg-transparent outline-none" 
+                            style={{ color: '#FFFFFF' }} 
+                          />
                         </div>
                         <button
                           type="button"
@@ -904,10 +922,16 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         >
                           −
                         </button>
-                        <div className="text-center">
-                          <span className="text-2xl font-bold" style={{ color: '#FFFFFF' }}>
-                            {carSeatsRequested}
-                          </span>
+                        <div className="text-center flex-1">
+                          <input 
+                            type="number" 
+                            min="0" 
+                            max="4" 
+                            value={carSeatsRequested} 
+                            onChange={(e) => setCarSeatsRequested(Math.max(0, Math.min(4, parseInt(e.target.value) || 0)))}
+                            className="w-full text-center text-2xl font-bold bg-transparent outline-none" 
+                            style={{ color: '#FFFFFF' }} 
+                          />
                         </div>
                         <button
                           type="button"
