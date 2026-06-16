@@ -54,6 +54,16 @@ async function getHotelData(slug: string) {
     if (startingPrices.sprinter === Infinity) startingPrices.sprinter = prices.sprinter
   }
 
+  // Hardcode prices for the main landing page to decouple from the DB
+  if (slug === 'demo') {
+    prices.sedan_suv = 35
+    prices.suburban = 65
+    prices.sprinter = 250
+    startingPrices.sedan_suv = 35
+    startingPrices.suburban = 65
+    startingPrices.sprinter = 250
+  }
+
   return { hotel, prices, routePrices, startingPrices }
 }
 
