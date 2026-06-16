@@ -21,7 +21,7 @@ async function getHotelData(slug: string) {
     supabaseAdmin.from('route_pricing').select('*').eq('hotel_slug', slug),
   ])
 
-  const prices = { sedan_suv: 120, suburban: 150, sprinter: 260, minibus: 450, coachbus: 800 }
+  const prices = { sedan_suv: 35, suburban: 65, sprinter: 250, minibus: 450, coachbus: 800 }
   if (pricingRes.data) {
     for (const row of pricingRes.data) {
       if (row.vehicle_type in prices) {
