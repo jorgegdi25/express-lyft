@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import VehicleDisplay from './VehicleDisplay'
 import dynamic from 'next/dynamic'
+import ErrorBoundary from './ErrorBoundary'
 
 const MapRouteSelector = dynamic(() => import('./MapRouteSelector'), { ssr: false })
 
@@ -635,16 +636,18 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
                   {/* Pickup, Destination, and Map via MapRouteSelector */}
                   <div className="mb-4">
-                    <MapRouteSelector 
-                      initialPickup={pickup}
-                      initialDestination={destination}
-                      onRouteCalculated={(data) => {
-                        setPickup(data.pickup);
-                        setDestination(data.destination);
-                        setDistanceMiles(data.distanceMiles);
-                        setDurationMinutes(data.durationMinutes);
-                      }}
-                    />
+                    <ErrorBoundary>
+                      <MapRouteSelector 
+                        initialPickup={pickup}
+                        initialDestination={destination}
+                        onRouteCalculated={(data) => {
+                          setPickup(data.pickup);
+                          setDestination(data.destination);
+                          setDistanceMiles(data.distanceMiles);
+                          setDurationMinutes(data.durationMinutes);
+                        }}
+                      />
+                    </ErrorBoundary>
                   </div>
 
                   {/* Date + Time */}
