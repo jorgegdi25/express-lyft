@@ -41,9 +41,15 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
   const currentPickupCoords = useRef<[number, number] | null>(null);
   const currentDropoffCoords = useRef<[number, number] | null>(null);
+  const onRouteCalculatedRef = useRef(onRouteCalculated);
+  const pickupTextRef = useRef(pickupText);
+  const dropoffTextRef = useRef(dropoffText);
 
   useEffect(() => { currentPickupCoords.current = pickupCoords; }, [pickupCoords]);
   useEffect(() => { currentDropoffCoords.current = dropoffCoords; }, [dropoffCoords]);
+  useEffect(() => { onRouteCalculatedRef.current = onRouteCalculated; }, [onRouteCalculated]);
+  useEffect(() => { pickupTextRef.current = pickupText; }, [pickupText]);
+  useEffect(() => { dropoffTextRef.current = dropoffText; }, [dropoffText]);
 
   // Helper for Reverse Geocoding
   const reverseGeocode = async (lng: number, lat: number) => {
@@ -250,9 +256,9 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
         // Convert duration from seconds to minutes
         const durationMinutes = data.duration / 60;
 
-        onRouteCalculated({
-          pickup: pickupText,
-          destination: dropoffText,
+        onRouteCalculatedRef.current({
+          pickup: pickupTextRef.current,
+          destination: dropoffTextRef.current,
           distanceMiles,
           durationMinutes,
         });
@@ -305,7 +311,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
     getRoute();
 
-  }, [map, pickupCoords, dropoffCoords, pickupText, dropoffText, onRouteCalculated]);
+  }, [map, pickupCoords, dropoffCoords]);
 
   return (
     <div className="flex flex-col gap-4">
