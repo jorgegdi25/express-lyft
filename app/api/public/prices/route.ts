@@ -12,9 +12,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing hotel_slug' }, { status: 400 })
   }
 
-  const [pricingRes, routePricingRes] = await Promise.all([
+  const [pricingRes, routePricingRes, hotelRes] = await Promise.all([
     supabaseAdmin.from('pricing').select('vehicle_type, price_usd'),
     supabaseAdmin.from('route_pricing').select('*').eq('hotel_slug', hotel_slug),
+    supabaseAdmin.from('hotels').select('*').eq('slug', hotel_slug).maybeSingle(),
   ])
 
   const prices: Record<string, number> = {
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest) {
   const response = NextResponse.json({
     prices,
     routePrices: routePricingRes.data || [],
+    hotel: hotelRes.data || null,
   })
 
   // Prevent ANY caching

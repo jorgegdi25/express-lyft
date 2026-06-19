@@ -4,7 +4,7 @@ import { stripe } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 
-async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string) {
+async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number) {
   // Fetch route-specific pricing from route_pricing table
   const { data: route } = await supabaseAdmin
     .from('route_pricing')
@@ -26,10 +26,26 @@ async function calculatePrice(hotelSlug: string, pickup: string, destination: st
   }
 
   let basePrice = defaultPrices[vehicleType] || 0
+  
+  // 1. Try to use exact route match
   if (route) {
     const key = `${vehicleType}_price`
-    if (key in route) {
-      basePrice = (route as any)[key] || basePrice
+    if (key in route && (route as any)[key]) {
+      basePrice = (route as any)[key]
+      return tripType === 'round-trip' ? basePrice * 2 : basePrice
+    }
+  }
+
+  // 2. Dynamic pricing based on distance
+  if (distanceMiles > 0) {
+    const { data: hotel } = await supabaseAdmin.from('hotels').select('*').eq('slug', hotelSlug).maybeSingle()
+    if (hotel) {
+      const rateKey = `price_per_mile_${vehicleType}`
+      if (rateKey in hotel && (hotel as any)[rateKey]) {
+        const perMileRate = (hotel as any)[rateKey]
+        const calcPrice = Math.ceil(perMileRate * distanceMiles)
+        basePrice = Math.max(calcPrice, defaultPrices[vehicleType])
+      }
     }
   }
 
@@ -169,7 +185,9 @@ export async function POST(req: NextRequest) {
       meetGreetFee,
       carSeatsRequested,
       luggageCount,
-      notes
+      notes,
+      distanceMiles,
+      durationMinutes
     } = body
 
     if (!hotelSlug) return NextResponse.json({ error: 'Missing hotelSlug' }, { status: 400 })
@@ -195,7 +213,7 @@ export async function POST(req: NextRequest) {
       leadStatus = 'hotel_b2b'
       isDeposit = false
     } else if (!isAdmin) {
-      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '')
+      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0)
       let expectedFee = 0;
       if (meetingType === 'meet_greet') {
         expectedFee = 25;
@@ -238,7 +256,9 @@ export async function POST(req: NextRequest) {
       meet_greet_fee: meetGreetFee || 0,
       car_seats_requested: carSeatsRequested || 0,
       luggage_count: luggageCount || 0,
-      notes: notes || null
+      notes: notes || null,
+      distance_miles: distanceMiles || 0,
+      duration_minutes: durationMinutes || 0
     }).select().single()
 
     if (error) {

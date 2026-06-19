@@ -156,3 +156,16 @@ alter table clients enable row level security;
 drop policy if exists "Service role only clients" on clients;
 create policy "Service role only clients" on clients for all using (auth.role() = 'service_role');
 
+
+-- Dynamic Pricing Update
+ALTER TABLE hotels ADD COLUMN IF NOT EXISTS price_per_mile_sedan_suv numeric(10,2) DEFAULT 4.00;
+ALTER TABLE hotels ADD COLUMN IF NOT EXISTS price_per_mile_suburban numeric(10,2) DEFAULT 5.00;
+ALTER TABLE hotels ADD COLUMN IF NOT EXISTS price_per_mile_sprinter numeric(10,2) DEFAULT 8.00;
+ALTER TABLE hotels ADD COLUMN IF NOT EXISTS price_per_mile_minibus numeric(10,2) DEFAULT 12.00;
+ALTER TABLE hotels ADD COLUMN IF NOT EXISTS price_per_mile_coachbus numeric(10,2) DEFAULT 20.00;
+
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS distance_miles numeric(10,2) DEFAULT 0;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS duration_minutes numeric(10,2) DEFAULT 0;
+
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS distance_miles numeric(10,2) DEFAULT 0;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS duration_minutes numeric(10,2) DEFAULT 0;
