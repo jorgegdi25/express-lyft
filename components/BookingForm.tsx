@@ -2,10 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import VehicleDisplay from './VehicleDisplay'
-import dynamic from 'next/dynamic'
-import ErrorBoundary from './ErrorBoundary'
-
-const MapRouteSelector = dynamic(() => import('./MapRouteSelector'), { ssr: false })
 
 interface RoutePrice {
   id: string
@@ -67,7 +63,6 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   // Live data fetched client-side to bypass Next.js server cache
   const [livePrices, setLivePrices] = useState(serverPrices)
   const [liveRoutePrices, setLiveRoutePrices] = useState(serverRoutePrices)
-  const [hotelData, setHotelData] = useState<any>(null)
   const [minDateStr, setMinDateStr] = useState<string>('')
 
   // Calculate local date safely on the client
@@ -87,7 +82,6 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           const data = await res.json()
           if (data.prices) setLivePrices(data.prices)
           if (data.routePrices) setLiveRoutePrices(data.routePrices)
-          if (data.hotel) setHotelData(data.hotel)
         }
       } catch (err) {
         console.error('Failed to fetch fresh prices:', err)
@@ -124,8 +118,6 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   const [tripType, setTripType] = useState<TripType>(isPromo ? 'round-trip' : 'one-way')
   const [pickup, setPickup] = useState<string>('')
   const [destination, setDestination] = useState<string>('')
-  const [distanceMiles, setDistanceMiles] = useState<number>(0)
-  const [durationMinutes, setDurationMinutes] = useState<number>(0)
   const [date, setDate] = useState<string>('')
   const [time, setTime] = useState<string>('')
   const [returnDate, setReturnDate] = useState<string>('')
@@ -316,7 +308,6 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   const getRoutePrices = () => {
     const p = pickup.trim()
     const d = destination.trim()
-    // 1. Try to find an exact route match
     const route = normalizedRoutes.find(
       (r) => (r.pickup === p && r.destination === d) || (r.pickup === d && r.destination === p)
     )
@@ -329,25 +320,6 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
         coachbus: route.coachbus_price || prices.coachbus,
       }
     }
-
-    // 2. If no exact match but we have distance and hotel per-mile rates
-    if (distanceMiles > 0 && hotelData) {
-      const calculateTypePrice = (type: string, fallbackBase: number) => {
-        const rate = hotelData[`price_per_mile_${type}`] || 0;
-        const calcPrice = Math.ceil(rate * distanceMiles);
-        return Math.max(calcPrice, fallbackBase); // Minimum fare is the base price
-      };
-
-      return {
-        sedan_suv: calculateTypePrice('sedan_suv', prices.sedan_suv),
-        suburban: calculateTypePrice('suburban', prices.suburban),
-        sprinter: calculateTypePrice('sprinter', prices.sprinter),
-        minibus: calculateTypePrice('minibus', prices.minibus),
-        coachbus: calculateTypePrice('coachbus', prices.coachbus),
-      }
-    }
-
-    // 3. Fallback to base prices
     return prices
   }
 
@@ -416,8 +388,6 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           date,
           time,
           passengers,
-          distanceMiles,
-          durationMinutes,
           estimatedTotal: isPromo ? 0 : total,
           tripType,
           returnDate: tripType === 'round-trip' ? returnDate : undefined,
@@ -634,21 +604,79 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     ))}
                   </div>
 
-                  {/* Pickup, Destination, and Map via MapRouteSelector */}
-                  <div className="mb-4">
-                    <ErrorBoundary>
-                      <MapRouteSelector 
-                        initialPickup={pickup}
-                        initialDestination={destination}
-                        onRouteCalculated={(data) => {
-                          setPickup(data.pickup);
-                          setDestination(data.destination);
-                          setDistanceMiles(data.distanceMiles);
-                          setDurationMinutes(data.durationMinutes);
-                        }}
-                      />
-                    </ErrorBoundary>
-                  </div>
+                  {/* Pickup and Destination */}
+                  {isPromo ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-2">
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Pickup Location
+                        </label>
+                        <input
+                          type="text"
+                          value={pickup}
+                          onChange={(e) => setPickup(e.target.value)}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base`}
+                          style={INPUT_STYLE}
+                          placeholder="e.g. Miami Airport or B Ocean"
+                        />
+                      </div>
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Destination
+                        </label>
+                        <input
+                          type="text"
+                          value={destination}
+                          onChange={(e) => setDestination(e.target.value)}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base`}
+                          style={INPUT_STYLE}
+                          placeholder="e.g. South Beach or FLL Airport"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Pickup */}
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Pickup Location
+                        </label>
+                        <select
+                          value={pickup}
+                          onChange={(e) => setPickup(e.target.value)}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base`}
+                          style={INPUT_STYLE}
+                        >
+                          <option value="">Select Pickup Location...</option>
+                          {availablePickups.map((loc) => (
+                            <option key={loc} value={loc}>
+                              {loc === 'The Hotel' ? `The Hotel` : loc}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Destination */}
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Destination
+                        </label>
+                        <select
+                          value={destination}
+                          onChange={(e) => setDestination(e.target.value)}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base`}
+                          style={INPUT_STYLE}
+                        >
+                          <option value="">Select Destination...</option>
+                          {availableDestinations.map((loc) => (
+                            <option key={loc} value={loc}>
+                              {loc === 'The Hotel' ? `The Hotel` : loc}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
 
                   {/* Date + Time */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
