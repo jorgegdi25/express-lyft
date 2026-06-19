@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import VehicleDisplay from './VehicleDisplay'
-import MapRouteSelector from './MapRouteSelector'
+import dynamic from 'next/dynamic'
+
+const MapRouteSelector = dynamic(() => import('./MapRouteSelector'), { ssr: false })
 
 interface RoutePrice {
   id: string
