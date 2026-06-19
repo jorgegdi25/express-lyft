@@ -164,8 +164,12 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
     });
 
     return () => {
-      pickupGeocoder.onRemove();
-      dropoffGeocoder.onRemove();
+      if (pickupGeocoderContainerRef.current) {
+        pickupGeocoderContainerRef.current.innerHTML = '';
+      }
+      if (dropoffGeocoderContainerRef.current) {
+        dropoffGeocoderContainerRef.current.innerHTML = '';
+      }
     };
   }, []);
 
