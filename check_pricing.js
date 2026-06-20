@@ -1,10 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
-const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const fs = require('fs');
+const dotenv = require('dotenv');
+
+const envConfig = dotenv.parse(fs.readFileSync('.env.local'));
+const supabase = createClient(envConfig.SUPABASE_URL, envConfig.SUPABASE_SERVICE_ROLE_KEY);
 
 async function check() {
-  const { data, error } = await supabaseAdmin.from('pricing').select('*').limit(1);
-  if (error) console.error('Error:', error);
-  else console.log('Columns:', Object.keys(data[0] || {}));
+  const { data, error } = await supabase.from('pricing').select('*');
+  console.log('Pricing:', data);
 }
 check();

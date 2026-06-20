@@ -4,7 +4,7 @@ import { stripe } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 
-async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number) {
+async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number, durationMinutes: number) {
   // Fetch route-specific pricing from route_pricing table
   const { data: route } = await supabaseAdmin
     .from('route_pricing')
@@ -13,43 +13,50 @@ async function calculatePrice(hotelSlug: string, pickup: string, destination: st
     .or(`and(pickup.eq."${pickup.trim()}",destination.eq."${destination.trim()}"),and(pickup.eq."${destination.trim()}",destination.eq."${pickup.trim()}")`)
     .maybeSingle()
 
-  const defaultPrices: Record<string, number> = { sedan_suv: 120, suburban: 150, sprinter: 260, minibus: 450, coachbus: 800 }
+  // Default fallback values
+  let basePrice = 25
+  let pricePerMile = 3.5
+  let pricePerMinute = 0.5
+  let minPrice = 90
 
-  // Fetch global prices from pricing table to override defaults if present
-  const { data: pricingData } = await supabaseAdmin.from('pricing').select('vehicle_type, price_usd')
+  // Fetch global prices from pricing table for the specific vehicle
+  const { data: pricingData } = await supabaseAdmin.from('pricing').select('*').eq('vehicle_type', vehicleType).maybeSingle()
   if (pricingData) {
-    for (const row of pricingData) {
-      if (row.vehicle_type in defaultPrices) {
-        defaultPrices[row.vehicle_type] = row.price_usd
-      }
-    }
+    basePrice = pricingData.price_usd ?? basePrice
+    pricePerMile = pricingData.price_per_mile ?? pricePerMile
+    pricePerMinute = pricingData.price_per_minute ?? pricePerMinute
+    minPrice = pricingData.min_price ?? minPrice
   }
 
-  let basePrice = defaultPrices[vehicleType] || 0
-  
   // 1. Try to use exact route match
   if (route) {
     const key = `${vehicleType}_price`
     if (key in route && (route as any)[key]) {
-      basePrice = (route as any)[key]
-      return tripType === 'round-trip' ? basePrice * 2 : basePrice
+      const exactPrice = (route as any)[key]
+      return tripType === 'round-trip' ? exactPrice * 2 : exactPrice
     }
   }
 
-  // 2. Dynamic pricing based on distance
+  // 2. Dynamic pricing based on distance and duration
+  let calculatedAmount = minPrice
   if (distanceMiles > 0) {
     const { data: hotel } = await supabaseAdmin.from('hotels').select('*').eq('slug', hotelSlug).maybeSingle()
     if (hotel) {
       const rateKey = `price_per_mile_${vehicleType}`
       if (rateKey in hotel && (hotel as any)[rateKey]) {
-        const perMileRate = (hotel as any)[rateKey]
-        const calcPrice = Math.ceil(perMileRate * distanceMiles)
-        basePrice = Math.max(calcPrice, defaultPrices[vehicleType])
+        pricePerMile = (hotel as any)[rateKey] // Override with hotel specific per-mile rate if it exists
       }
     }
+    
+    const distanceCost = distanceMiles * pricePerMile
+    const timeCost = durationMinutes * pricePerMinute
+    calculatedAmount = basePrice + distanceCost + timeCost
   }
 
-  return tripType === 'round-trip' ? basePrice * 2 : basePrice
+  // Enforce minimum price floor
+  calculatedAmount = Math.ceil(Math.max(calculatedAmount, minPrice))
+
+  return tripType === 'round-trip' ? calculatedAmount * 2 : calculatedAmount
 }
 
 export async function POST(req: NextRequest) {
@@ -213,7 +220,7 @@ export async function POST(req: NextRequest) {
       leadStatus = 'hotel_b2b'
       isDeposit = false
     } else if (!isAdmin) {
-      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0)
+      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0, durationMinutes || 0)
       let expectedFee = 0;
       if (meetingType === 'meet_greet') {
         expectedFee = 25;
