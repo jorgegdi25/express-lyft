@@ -409,7 +409,8 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
           luggageCount,
           notes,
           paymentMode: vehicleType === 'coachbus' || vehicleType === 'minibus' ? 'quote' : paymentMode,
-          false: false,
+          distanceMiles,
+          durationMinutes,
         }),
       })
 
