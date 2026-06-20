@@ -2523,6 +2523,15 @@ export default function AdminPage() {
                         {l.trip_type === 'round-trip' ? 'Round Trip' : 'One Way'}
                       </span>
                     </div>
+                    {/* Meet & Greet Badge */}
+                    {l.meeting_type === 'meet_greet' && (
+                      <div className="flex items-center gap-2 pt-2 pb-1 border-t border-[#222]">
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full" style={{ background: '#B8960C20', color: '#D4AF37', border: '1px solid #B8960C50' }}>
+                          ✨ VIP Meet &amp; Greet
+                        </span>
+                        <span className="text-xs font-bold" style={{ color: '#4ade80' }}>+${l.meet_greet_fee || 25}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center pt-3 border-t border-[#222]">
                       <div className="flex flex-col">
                         <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold mb-0.5">Date & Time</span>
@@ -3149,6 +3158,17 @@ export default function AdminPage() {
                         <p className="text-2xl font-bold text-red-400">${viewingLead.amount_remaining || 0}</p>
                       </div>
                     </div>
+
+                    {/* Meet & Greet Info */}
+                    {viewingLead.meeting_type === 'meet_greet' && (
+                      <div className="flex items-center justify-between bg-[#B8960C10] border border-[#B8960C30] rounded-xl px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">✨</span>
+                          <span className="text-sm font-bold text-[#D4AF37]">VIP Meet &amp; Greet</span>
+                        </div>
+                        <span className="text-sm font-bold text-[#4ade80]">+${viewingLead.meet_greet_fee || 25} included</span>
+                      </div>
+                    )}
 
                     {/* Status & Trip Info */}
                     <div className="grid grid-cols-2 gap-6">
