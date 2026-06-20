@@ -108,7 +108,7 @@ const VEHICLE_LABELS: Record<string, string> = {
   coachbus: '55 Passenger Bus',
 }
 
-type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support'
+type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites'
 
 function IconHotel() {
   return (
@@ -120,6 +120,16 @@ function IconHotel() {
       <path d="M14 9h.01" />
       <path d="M10 13h.01" />
       <path d="M14 13h.01" />
+    </svg>
+  )
+}
+
+function IconWeb() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      <path d="M2 12h20" />
     </svg>
   )
 }
@@ -1135,6 +1145,7 @@ export default function AdminPage() {
   ]
 
   const settingsItems = [
+    { key: 'websites', label: 'Websites & Domains', icon: <IconWeb /> },
     { key: 'routes', label: 'Routes & Pricing', icon: <IconRoutes /> },
     { key: 'qr', label: 'QR Codes', icon: <IconQR /> },
   ] as const
@@ -1740,6 +1751,56 @@ export default function AdminPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* ------- WEBSITES & DOMAINS TAB ------- */}
+        {activeTab === 'websites' && (
+          <div className="flex flex-col gap-8">
+            <div>
+              <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Websites & Domains</h1>
+              <p className="text-sm" style={{ color: '#888' }}>Quick links to all your active landing pages, hotels, and promos.</p>
+            </div>
+
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Main Website */}
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: '#D4AF37' }}>Main Website</h2>
+                <p className="text-xs text-[#888]">The main landing page for general customers.</p>
+                <div className="mt-auto pt-4">
+                  <a href="/" target="_blank" className="text-sm text-[#4ade80] hover:underline flex items-center gap-2">
+                    Open Main Site ↗
+                  </a>
+                </div>
+              </div>
+
+              {/* Dynamic Hotels */}
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: '#D4AF37' }}>Hotel Pages</h2>
+                <p className="text-xs text-[#888]">These are all the active hotels detected in your pricing database.</p>
+                <div className="mt-2 flex flex-col gap-2">
+                  {Array.from(new Set(routePrices.map(r => r.hotel_slug))).filter(Boolean).map(slug => (
+                    <a key={slug} href={`/hotel/${slug}`} target="_blank" className="text-sm text-[#4ade80] hover:underline flex items-center gap-2">
+                      /hotel/{slug} ↗
+                    </a>
+                  ))}
+                  {Array.from(new Set(routePrices.map(r => r.hotel_slug))).filter(Boolean).length === 0 && (
+                    <p className="text-xs text-[#555] italic">No hotels found in pricing.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Promos */}
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: '#D4AF37' }}>Promo Links</h2>
+                <p className="text-xs text-[#888]">You can create any promo code simply by typing it in the URL!</p>
+                <div className="mt-auto pt-4">
+                  <a href="/promo/SUMMER2026" target="_blank" className="text-sm text-[#4ade80] hover:underline flex items-center gap-2">
+                    Example: /promo/SUMMER2026 ↗
+                  </a>
+                </div>
               </div>
             </section>
           </div>
