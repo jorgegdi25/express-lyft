@@ -27,16 +27,18 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { vehicle_type, price_usd, price_per_mile } = await req.json()
+  const { vehicle_type, price_usd, price_per_mile, price_per_minute, min_price, max_price, multiplier } = await req.json()
 
   if (!vehicle_type || price_usd === undefined) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
 
   const updateData: any = { price_usd, updated_at: new Date().toISOString() }
-  if (price_per_mile !== undefined) {
-    updateData.price_per_mile = price_per_mile
-  }
+  if (price_per_mile !== undefined) updateData.price_per_mile = price_per_mile
+  if (price_per_minute !== undefined) updateData.price_per_minute = price_per_minute
+  if (min_price !== undefined) updateData.min_price = min_price
+  if (max_price !== undefined) updateData.max_price = max_price
+  if (multiplier !== undefined) updateData.multiplier = multiplier
 
   const { error } = await supabaseAdmin
     .from('pricing')

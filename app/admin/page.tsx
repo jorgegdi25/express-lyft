@@ -489,10 +489,14 @@ export default function AdminPage() {
     vehicle_type: string;
     price_usd: number;
     price_per_mile: number;
+    price_per_minute: number;
+    min_price: number;
+    max_price: number;
+    multiplier: number;
   }
 
   const [basePrices, setBasePrices] = useState<BasePrice[]>([])
-  const [editBasePriceData, setEditBasePriceData] = useState<Record<string, { price_usd: number, price_per_mile: number }>>({})
+  const [editBasePriceData, setEditBasePriceData] = useState<Record<string, { price_usd: number, price_per_mile: number, price_per_minute: number, min_price: number, max_price: number, multiplier: number }>>({})
 
   async function fetchBasePrices(pw: string) {
     const res = await fetch(`/api/admin/prices?t=${Date.now()}`, {
@@ -588,7 +592,14 @@ export default function AdminPage() {
       Object.fromEntries(
         bp.map((p) => [
           p.vehicle_type,
-          { price_usd: p.price_usd, price_per_mile: p.price_per_mile || 0 }
+          { 
+            price_usd: p.price_usd, 
+            price_per_mile: p.price_per_mile || 0,
+            price_per_minute: p.price_per_minute || 0,
+            min_price: p.min_price || 0,
+            max_price: p.max_price || 0,
+            multiplier: p.multiplier || 1.0,
+          }
         ])
       )
     )
@@ -605,7 +616,7 @@ export default function AdminPage() {
 
   const [savingBasePrice, setSavingBasePrice] = useState<string | null>(null)
 
-  async function updateBasePrice(vehicle_type: string, price_usd: number, price_per_mile: number) {
+  async function updateBasePrice(vehicle_type: string, data: { price_usd: number, price_per_mile: number, price_per_minute: number, min_price: number, max_price: number, multiplier: number }) {
     setSavingBasePrice(vehicle_type)
     try {
       const res = await fetch('/api/admin/prices', {
@@ -614,16 +625,23 @@ export default function AdminPage() {
           'Content-Type': 'application/json',
           authorization: `Bearer ${password}`
         },
-        body: JSON.stringify({ vehicle_type, price_usd, price_per_mile })
+        body: JSON.stringify({ vehicle_type, ...data })
       })
       if (!res.ok) throw new Error('Failed to update')
-      const data = await fetchBasePrices(password)
-      setBasePrices(data)
+      const fetched = await fetchBasePrices(password)
+      setBasePrices(fetched)
       setEditBasePriceData(
         Object.fromEntries(
-          data.map((p) => [
+          fetched.map((p) => [
             p.vehicle_type,
-            { price_usd: p.price_usd, price_per_mile: p.price_per_mile || 0 }
+            { 
+              price_usd: p.price_usd, 
+              price_per_mile: p.price_per_mile || 0,
+              price_per_minute: p.price_per_minute || 0,
+              min_price: p.min_price || 0,
+              max_price: p.max_price || 0,
+              multiplier: p.multiplier || 1.0,
+            }
           ])
         )
       )
@@ -1744,8 +1762,12 @@ export default function AdminPage() {
                   <thead>
                     <tr style={{ borderBottom: '1px solid #222', color: '#888' }}>
                       <th className="pb-3 px-4 font-normal">Vehicle Type</th>
-                      <th className="pb-3 px-4 font-normal text-right">Base Price (Min Fare)</th>
-                      <th className="pb-3 px-4 font-normal text-right">Price per Mile</th>
+                      <th className="pb-3 px-4 font-normal text-right">Base Price</th>
+                      <th className="pb-3 px-4 font-normal text-right">Per Mile</th>
+                      <th className="pb-3 px-4 font-normal text-right">Per Min</th>
+                      <th className="pb-3 px-4 font-normal text-right">Min Price</th>
+                      <th className="pb-3 px-4 font-normal text-right">Max Price</th>
+                      <th className="pb-3 px-4 font-normal text-right">Multiplier</th>
                       <th className="pb-3 px-4 font-normal text-right">Action</th>
                     </tr>
                   </thead>
@@ -1756,7 +1778,7 @@ export default function AdminPage() {
                         <td className="py-3 px-4 text-right">
                           <input
                             type="number"
-                            className="w-20 bg-transparent text-right border-b border-transparent group-hover:border-white/20 focus:border-white outline-none transition-colors"
+                            className="w-16 bg-transparent text-right border-b border-transparent group-hover:border-white/20 focus:border-white outline-none transition-colors"
                             value={editBasePriceData[bp.vehicle_type]?.price_usd ?? bp.price_usd}
                             onChange={(e) =>
                               setEditBasePriceData(prev => ({
@@ -1770,7 +1792,7 @@ export default function AdminPage() {
                           <input
                             type="number"
                             step="0.01"
-                            className="w-20 bg-transparent text-right border-b border-transparent group-hover:border-white/20 focus:border-white outline-none transition-colors"
+                            className="w-16 bg-transparent text-right border-b border-transparent group-hover:border-white/20 focus:border-white outline-none transition-colors"
                             value={editBasePriceData[bp.vehicle_type]?.price_per_mile ?? bp.price_per_mile ?? 0}
                             onChange={(e) =>
                               setEditBasePriceData(prev => ({
@@ -1781,8 +1803,64 @@ export default function AdminPage() {
                           />
                         </td>
                         <td className="py-3 px-4 text-right">
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="w-16 bg-transparent text-right border-b border-transparent group-hover:border-white/20 focus:border-white outline-none transition-colors"
+                            value={editBasePriceData[bp.vehicle_type]?.price_per_minute ?? bp.price_per_minute ?? 0}
+                            onChange={(e) =>
+                              setEditBasePriceData(prev => ({
+                                ...prev,
+                                [bp.vehicle_type]: { ...prev[bp.vehicle_type], price_per_minute: Number(e.target.value) }
+                              }))
+                            }
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="w-16 bg-transparent text-right border-b border-transparent group-hover:border-white/20 focus:border-white outline-none transition-colors"
+                            value={editBasePriceData[bp.vehicle_type]?.min_price ?? bp.min_price ?? 0}
+                            onChange={(e) =>
+                              setEditBasePriceData(prev => ({
+                                ...prev,
+                                [bp.vehicle_type]: { ...prev[bp.vehicle_type], min_price: Number(e.target.value) }
+                              }))
+                            }
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="w-16 bg-transparent text-right border-b border-transparent group-hover:border-white/20 focus:border-white outline-none transition-colors"
+                            value={editBasePriceData[bp.vehicle_type]?.max_price ?? bp.max_price ?? 0}
+                            onChange={(e) =>
+                              setEditBasePriceData(prev => ({
+                                ...prev,
+                                [bp.vehicle_type]: { ...prev[bp.vehicle_type], max_price: Number(e.target.value) }
+                              }))
+                            }
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="w-16 bg-transparent text-right border-b border-transparent group-hover:border-white/20 focus:border-white outline-none transition-colors"
+                            value={editBasePriceData[bp.vehicle_type]?.multiplier ?? bp.multiplier ?? 1.0}
+                            onChange={(e) =>
+                              setEditBasePriceData(prev => ({
+                                ...prev,
+                                [bp.vehicle_type]: { ...prev[bp.vehicle_type], multiplier: Number(e.target.value) }
+                              }))
+                            }
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-right">
                           <button
-                            onClick={() => updateBasePrice(bp.vehicle_type, editBasePriceData[bp.vehicle_type].price_usd, editBasePriceData[bp.vehicle_type].price_per_mile)}
+                            onClick={() => updateBasePrice(bp.vehicle_type, editBasePriceData[bp.vehicle_type])}
                             disabled={savingBasePrice === bp.vehicle_type}
                             className="text-[#B8960C] hover:text-white transition-colors disabled:opacity-50"
                           >

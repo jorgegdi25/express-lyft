@@ -310,10 +310,11 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
   const vehicleType = selectedVehicleOverride || minVehicleType
 
   const getRoutePrices = () => {
-    const calculateTypePrice = (type: VehicleType, priceData: { base: number, per_mile: number }) => {
+    const calculateTypePrice = (type: VehicleType, priceData: { base: number, per_mile: number, per_minute: number, min_price: number, max_price: number, multiplier: number }) => {
       if (distanceMiles <= 0) return priceData.base;
-      const calcPrice = Math.ceil(priceData.per_mile * distanceMiles);
-      return Math.max(calcPrice, priceData.base);
+      const calcPrice = (priceData.base + (priceData.per_mile * distanceMiles) + (priceData.per_minute * durationMinutes)) * priceData.multiplier;
+      const finalPrice = Math.max(priceData.min_price, Math.min(priceData.max_price, calcPrice));
+      return Math.ceil(finalPrice);
     };
 
     return {

@@ -18,20 +18,24 @@ interface PageProps {
 
 
 async function getBasePrices() {
-  const pricingRes = await supabaseAdmin.from('pricing').select('vehicle_type, price_usd, price_per_mile')
+  const pricingRes = await supabaseAdmin.from('pricing').select('vehicle_type, price_usd, price_per_mile, price_per_minute, min_price, max_price, multiplier')
   const prices = { 
-    sedan_suv: { base: 120, per_mile: 3.50 }, 
-    suburban: { base: 150, per_mile: 5.00 }, 
-    sprinter: { base: 260, per_mile: 6.00 }, 
-    minibus: { base: 450, per_mile: 8.00 }, 
-    coachbus: { base: 800, per_mile: 10.00 } 
+    sedan_suv: { base: 120, per_mile: 3.50, per_minute: 0.30, min_price: 15, max_price: 120, multiplier: 1.0 }, 
+    suburban: { base: 150, per_mile: 5.00, per_minute: 0.40, min_price: 25, max_price: 150, multiplier: 1.0 }, 
+    sprinter: { base: 260, per_mile: 6.00, per_minute: 0.50, min_price: 50, max_price: 260, multiplier: 1.0 }, 
+    minibus: { base: 450, per_mile: 8.00, per_minute: 0.70, min_price: 100, max_price: 450, multiplier: 1.0 }, 
+    coachbus: { base: 800, per_mile: 10.00, per_minute: 1.00, min_price: 200, max_price: 800, multiplier: 1.0 } 
   }
   if (pricingRes.data) {
     for (const row of pricingRes.data) {
       if (row.vehicle_type in prices) {
         prices[row.vehicle_type as keyof typeof prices] = {
           base: row.price_usd,
-          per_mile: row.price_per_mile || prices[row.vehicle_type as keyof typeof prices].per_mile
+          per_mile: row.price_per_mile || prices[row.vehicle_type as keyof typeof prices].per_mile,
+          per_minute: row.price_per_minute || prices[row.vehicle_type as keyof typeof prices].per_minute,
+          min_price: row.min_price || prices[row.vehicle_type as keyof typeof prices].min_price,
+          max_price: row.max_price || prices[row.vehicle_type as keyof typeof prices].max_price,
+          multiplier: row.multiplier || prices[row.vehicle_type as keyof typeof prices].multiplier,
         }
       }
     }
