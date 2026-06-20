@@ -19,11 +19,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-    if (!webhookSecret) {
-      if (process.env.NODE_ENV === 'production') {
+    const isPreview = process.env.NEXT_PUBLIC_BASE_URL?.includes('pruebas') || req.headers.get('host')?.includes('pruebas')
+    
+    if (!webhookSecret || isPreview) {
+      if (process.env.NODE_ENV === 'production' && !isPreview) {
         throw new Error('STRIPE_WEBHOOK_SECRET is not configured in production.')
       }
-      console.warn('⚠️ STRIPE_WEBHOOK_SECRET is missing. Bypassing signature verification for development.')
+      console.warn('⚠️ Bypassing signature verification for development or preview environment.')
       event = JSON.parse(payload) as Stripe.Event
     } else {
       event = stripe.webhooks.constructEvent(payload, sig, webhookSecret)
