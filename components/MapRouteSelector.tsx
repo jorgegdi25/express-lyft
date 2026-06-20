@@ -121,20 +121,23 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    const pickupGeocoder = new MapboxGeocoder({
+    const geocoderConfig = {
       accessToken: mapboxgl.accessToken,
-      placeholder: 'Pickup location (e.g., Miami Airport)',
       mapboxgl: mapboxgl as any,
       marker: false,
-      bbox: [-81.0, 25.0, -79.0, 27.0], // Limit search roughly to South Florida
+      bbox: [-81.0, 25.0, -79.0, 27.0] as [number, number, number, number], // South Florida
+      proximity: { longitude: -80.1918, latitude: 25.7617 }, // Center of Miami
+      types: 'address,poi', // Prioritize specific addresses and Points of Interest
+    };
+
+    const pickupGeocoder = new MapboxGeocoder({
+      ...geocoderConfig,
+      placeholder: 'Pickup location (e.g., Miami Airport)',
     });
 
     const dropoffGeocoder = new MapboxGeocoder({
-      accessToken: mapboxgl.accessToken,
+      ...geocoderConfig,
       placeholder: 'Destination (e.g., B Ocean Resort)',
-      mapboxgl: mapboxgl as any,
-      marker: false,
-      bbox: [-81.0, 25.0, -79.0, 27.0],
     });
 
     pickupGeocoderRef.current = pickupGeocoder;
