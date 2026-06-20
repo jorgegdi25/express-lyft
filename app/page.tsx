@@ -84,8 +84,6 @@ export default async function HomePage({ searchParams }: { searchParams: { succe
   const headersList = headers()
   const host = headersList.get('host') || ''
   const xForwardedHost = headersList.get('x-forwarded-host') || ''
-  const host = headersList.get('host') || ''
-  const xForwardedHost = headersList.get('x-forwarded-host') || ''
   const isPruebas = host.includes('pruebas') || xForwardedHost.includes('pruebas')
 
   const prices = await getBasePrices()
