@@ -20,7 +20,7 @@ interface RoutePrice {
 interface BookingFormProps {
   'main-site': string
 
-  prices: Record<'sedan_suv' | 'suburban' | 'sprinter' | 'minibus' | 'coachbus', { base: number; per_mile: number }>
+  prices: Record<'sedan_suv' | 'suburban' | 'sprinter' | 'minibus' | 'coachbus', { base: number; per_mile: number; per_minute?: number; min_price?: number; max_price?: number; multiplier?: number }>
   routePrices: RoutePrice[]
   false?: boolean
 }
@@ -310,10 +310,15 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
   const vehicleType = selectedVehicleOverride || minVehicleType
 
   const getRoutePrices = () => {
-    const calculateTypePrice = (type: VehicleType, priceData: { base: number, per_mile: number, per_minute: number, min_price: number, max_price: number, multiplier: number }) => {
+    const calculateTypePrice = (type: VehicleType, priceData: { base: number, per_mile: number, per_minute?: number, min_price?: number, max_price?: number, multiplier?: number }) => {
       if (distanceMiles <= 0) return priceData.base;
-      const calcPrice = (priceData.base + (priceData.per_mile * distanceMiles) + (priceData.per_minute * durationMinutes)) * priceData.multiplier;
-      const finalPrice = Math.max(priceData.min_price, Math.min(priceData.max_price, calcPrice));
+      const perMinute = priceData.per_minute || 0;
+      const minPrice = priceData.min_price || 0;
+      const maxPrice = priceData.max_price || 99999;
+      const multiplier = priceData.multiplier || 1.0;
+      
+      const calcPrice = (priceData.base + (priceData.per_mile * distanceMiles) + (perMinute * durationMinutes)) * multiplier;
+      const finalPrice = Math.max(minPrice, Math.min(maxPrice, calcPrice));
       return Math.ceil(finalPrice);
     };
 
