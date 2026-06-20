@@ -37,3 +37,7 @@ next-env.d.ts
 scratch/
 .env.vercel
 .env.vercel.production
+fix_original_db.js
+check_*.js
+fix_*.js
+test_*.js
