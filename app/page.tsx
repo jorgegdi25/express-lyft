@@ -226,7 +226,7 @@ export default async function HomePage({ searchParams }: { searchParams: { succe
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <HeroSection vehicleType="sedan_suv" basePrice={prices.sedan_suv} />
+      <HeroSection vehicleType="sedan_suv" basePrice={prices.sedan_suv.base} />
 
       {/* ── Map Booking Form (Only for pruebas.explyft.com) ─────── */}
       {isPruebas && (
@@ -257,7 +257,7 @@ export default async function HomePage({ searchParams }: { searchParams: { succe
                       </div>
                       <div className="my-6">
                         <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
-                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.sedan_suv}</p>
+                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.sedan_suv.base}</p>
                       </div>
                       <a
                         href="https://wa.me/19546236207" target="_blank" rel="noopener noreferrer"
@@ -275,7 +275,7 @@ export default async function HomePage({ searchParams }: { searchParams: { succe
                       </div>
                       <div className="my-6">
                         <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
-                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.suburban}</p>
+                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.suburban.base}</p>
                       </div>
                       <a
                         href="https://wa.me/19546236207" target="_blank" rel="noopener noreferrer"
@@ -293,7 +293,7 @@ export default async function HomePage({ searchParams }: { searchParams: { succe
                       </div>
                       <div className="my-6">
                         <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
-                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.sprinter}</p>
+                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.sprinter.base}</p>
                       </div>
                       <a
                         href="https://wa.me/19546236207" target="_blank" rel="noopener noreferrer"

@@ -172,7 +172,13 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
       {/* ── Booking form ─────────────────────────────────────────── */}
       <BookingForm
         hotelSlug={params.slug}
-        prices={prices}
+        prices={{
+          sedan_suv: prices.sedan_suv.base,
+          suburban: prices.suburban.base,
+          sprinter: prices.sprinter.base,
+          minibus: prices.minibus.base,
+          coachbus: prices.coachbus.base,
+        }}
         routePrices={data.routePrices}
         isPromo={true}
       />
