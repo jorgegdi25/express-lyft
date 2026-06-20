@@ -95,17 +95,7 @@ export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroS
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="hidden md:flex absolute bottom-24 left-1/2 -translate-x-1/2 z-20">
-        <div className="flex flex-col items-center gap-2 animate-bounce">
-          <span className="text-xs font-bold uppercase tracking-[3px]" style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>
-            Scroll
-          </span>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.9))' }}>
-            <path d="M12 5v14m-7-7l7 7 7-7" />
-          </svg>
-        </div>
-      </div>
+
     </section>
   )
 }
