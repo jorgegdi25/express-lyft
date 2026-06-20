@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import VehicleDisplay from './VehicleDisplay'
+import dynamic from 'next/dynamic'
+import ErrorBoundary from './ErrorBoundary'
+const MapRouteSelector = dynamic(() => import('./MapRouteSelector'), { ssr: false })
 
 interface RoutePrice {
   id: string
@@ -15,7 +18,7 @@ interface RoutePrice {
 }
 
 interface BookingFormProps {
-  hotelSlug: string
+  'main-site': string
 
   prices: { sedan_suv: number; suburban: number; sprinter: number; minibus: number; coachbus: number }
   routePrices: RoutePrice[]
@@ -59,19 +62,11 @@ const INPUT_STYLE = { background: '#0e0e0e', border: '1px solid #333333', color:
 
 // Removed global todayStr to prevent hydration mismatches
 
-
-import dynamic from 'next/dynamic';
-import ErrorBoundary from './ErrorBoundary';
-
-const MapRouteSelector = dynamic(() => import('./MapRouteSelector'), { ssr: false });
-
-export default function MainMapBookingForm({ prices: serverPrices }: { prices: { sedan_suv: number; suburban: number; sprinter: number; minibus: number; coachbus: number } }) {
-
+export default function MainMapBookingForm({ prices: serverPrices }: { prices: any }) {
   // Live data fetched client-side to bypass Next.js server cache
   const [livePrices, setLivePrices] = useState(serverPrices)
   const [distanceMiles, setDistanceMiles] = useState(0);
   const [durationMinutes, setDurationMinutes] = useState(0);
-  
   const [minDateStr, setMinDateStr] = useState<string>('')
 
   // Calculate local date safely on the client
@@ -83,7 +78,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: {
   useEffect(() => {
     async function fetchFreshData() {
       try {
-        const res = await fetch(`/api/public/prices?hotel_slug=demo`, {
+        const res = await fetch(`/api/public/prices?hotel_slug=${encodeURIComponent('main-site')}`, {
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache' },
         })
@@ -98,12 +93,31 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: {
       }
     }
     fetchFreshData()
-  }, [])
+  }, ['main-site'])
 
   const prices = livePrices
-  
+  const routePrices = []
 
-  
+  const normalizedRoutes = useMemo(() => routePrices.map((r) => ({
+    ...r,
+    pickup: r.pickup.trim(),
+    destination: r.destination.trim(),
+  })), [routePrices])
+
+  const dynamicLocations = useMemo(() => Array.from(
+    new Set(normalizedRoutes.flatMap((r) => [r.pickup, r.destination]))
+  ).filter(Boolean), [normalizedRoutes])
+
+  const LOCATIONS = useMemo(() => {
+    let locs = dynamicLocations.length > 0
+      ? dynamicLocations
+      : ['The Hotel', 'Miami International Airport (MIA)', 'Fort Lauderdale Airport (FLL)', 'Port of Miami', 'Other Destination']
+    
+    if (false) {
+      locs = locs.filter(loc => !loc.toLowerCase().includes('port') && !loc.toLowerCase().includes('other'))
+    }
+    return locs
+  }, [dynamicLocations, false])
 
   const [tripType, setTripType] = useState<TripType>(false ? 'round-trip' : 'one-way')
   const [pickup, setPickup] = useState<string>('')
@@ -210,7 +224,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: {
       return
     }
 
-    const isAirportPickup = pickup.toLowerCase().includes('airport') || pickup.toLowerCase().includes('mia') || pickup.toLowerCase().includes('fll')
+    const isAirportPickup = typeof pickup === 'string' && (pickup.toLowerCase().includes('airport') || pickup.toLowerCase().includes('mia') || pickup.toLowerCase().includes('fll'))
     if (true && isAirportPickup && (!airline.trim() || !flightNumber.trim())) {
       setError('Airline and Flight Number are required for airport pickups.')
       return
@@ -295,7 +309,6 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: {
   const minVehicleType = getVehicleType(passengers)
   const vehicleType = selectedVehicleOverride || minVehicleType
 
-  
   const getRoutePrices = () => {
     const calculateTypePrice = (type, fallbackBase) => {
       let rate = 0;
@@ -312,14 +325,13 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: {
     };
 
     return {
-      sedan_suv: calculateTypePrice('sedan_suv', prices.sedan_suv),
-      suburban: calculateTypePrice('suburban', prices.suburban),
-      sprinter: calculateTypePrice('sprinter', prices.sprinter),
-      minibus: calculateTypePrice('minibus', prices.minibus),
-      coachbus: calculateTypePrice('coachbus', prices.coachbus),
+      sedan_suv: calculateTypePrice('sedan_suv', livePrices.sedan_suv),
+      suburban: calculateTypePrice('suburban', livePrices.suburban),
+      sprinter: calculateTypePrice('sprinter', livePrices.sprinter),
+      minibus: calculateTypePrice('minibus', livePrices.minibus),
+      coachbus: calculateTypePrice('coachbus', livePrices.coachbus),
     };
   }
-
 
   const currentPrices = getRoutePrices()
   let basePrice = currentPrices[vehicleType]
@@ -328,8 +340,8 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: {
   const depositAmount = Math.ceil(total * 0.20)
   const chargeAmount = paymentMode === 'deposit' ? depositAmount : total
 
-  
-  
+  const availableDestinations = LOCATIONS.filter((l) => l !== pickup)
+  const availablePickups = LOCATIONS.filter((l) => l !== destination)
 
   // Auto-correct invalid states if the user selects the same location for both
   useEffect(() => {
@@ -375,7 +387,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          hotelSlug: 'main-website',
+          hotelSlug: 'main-site',
           customerName,
           customerEmail,
           customerPhone,
@@ -602,24 +614,20 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: {
                     ))}
                   </div>
 
-                  
-                  {/* Pickup and Destination via Map */}
-
-                  <ErrorBoundary>
-                    <MapRouteSelector
-                      initialPickup={pickup}
-                      initialDestination={destination}
-                      onRouteCalculated={(route) => {
-                        setPickup(route.pickup);
-                        setDestination(route.destination);
-                        setDistanceMiles(route.distanceMiles);
-                        setDurationMinutes(route.durationMinutes);
-                      }}
-                    />
-                  </ErrorBoundary>
-
-                  {/* Date + Time */}
-
+                  {/* Pickup and Destination */}
+<ErrorBoundary>
+  <MapRouteSelector
+    initialPickup={pickup}
+    initialDestination={destination}
+    onRouteCalculated={(route) => {
+      setPickup(route.pickup);
+      setDestination(route.destination);
+      setDistanceMiles(route.distanceMiles);
+      setDurationMinutes(route.durationMinutes);
+    }}
+  />
+</ErrorBoundary>
+{/* Date + Time */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                       <label className={LABEL_CLASS} style={LABEL_COLOR}>
