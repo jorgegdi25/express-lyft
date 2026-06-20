@@ -484,6 +484,25 @@ export default function AdminPage() {
     return res.json() as Promise<Driver[]>
   }
 
+  interface BasePrice {
+    id?: string;
+    vehicle_type: string;
+    price_usd: number;
+    price_per_mile: number;
+  }
+
+  const [basePrices, setBasePrices] = useState<BasePrice[]>([])
+  const [editBasePriceData, setEditBasePriceData] = useState<Record<string, { price_usd: number, price_per_mile: number }>>({})
+
+  async function fetchBasePrices(pw: string) {
+    const res = await fetch(`/api/admin/prices?t=${Date.now()}`, {
+      headers: { authorization: `Bearer ${pw}` },
+      cache: 'no-store'
+    })
+    if (!res.ok) return []
+    return res.json() as Promise<BasePrice[]>
+  }
+
   /* -- Auth -- */
 
   useEffect(() => {
@@ -526,14 +545,16 @@ export default function AdminPage() {
     let rt: RoutePricing[] = []
     let ld: Lead[] = []
     let cl: Client[] = []
+    let bp: BasePrice[] = []
 
     try {
-      const [bData, rData, lData, cData, dData] = await Promise.all([
+      const [bData, rData, lData, cData, dData, bpData] = await Promise.all([
         fetchBookings(pw),
         fetchRoutes(pw),
         fetchLeads(pw),
         fetchClients(pw),
-        fetchDrivers(pw)
+        fetchDrivers(pw),
+        fetchBasePrices(pw)
       ])
       
       setBookings(bData)
@@ -541,10 +562,12 @@ export default function AdminPage() {
       setLeads(lData)
       setClients(cData)
       setDrivers(dData)
+      setBasePrices(bpData)
       bk = bData
       rt = rData
       ld = lData
       cl = cData
+      bp = bpData
     } catch {
       // Data loading failed, continue with sample data
     }
@@ -561,6 +584,14 @@ export default function AdminPage() {
         ])
       )
     )
+    setEditBasePriceData(
+      Object.fromEntries(
+        bp.map((p) => [
+          p.vehicle_type,
+          { price_usd: p.price_usd, price_per_mile: p.price_per_mile || 0 }
+        ])
+      )
+    )
     setLoadingBookings(false)
   }
 
@@ -571,6 +602,36 @@ export default function AdminPage() {
   }
 
   /* -- Route CRUD -- */
+
+  const [savingBasePrice, setSavingBasePrice] = useState<string | null>(null)
+
+  async function updateBasePrice(vehicle_type: string, price_usd: number, price_per_mile: number) {
+    setSavingBasePrice(vehicle_type)
+    try {
+      const res = await fetch('/api/admin/prices', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: `Bearer ${password}`
+        },
+        body: JSON.stringify({ vehicle_type, price_usd, price_per_mile })
+      })
+      if (!res.ok) throw new Error('Failed to update')
+      const data = await fetchBasePrices(password)
+      setBasePrices(data)
+      setEditBasePriceData(
+        Object.fromEntries(
+          data.map((p) => [
+            p.vehicle_type,
+            { price_usd: p.price_usd, price_per_mile: p.price_per_mile || 0 }
+          ])
+        )
+      )
+    } catch (e: any) {
+      alert(e.message)
+    }
+    setSavingBasePrice(null)
+  }
 
   async function saveRoute(route: RoutePricing) {
     setSavingRoute(route.id)
@@ -1671,8 +1732,69 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div>
               <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Routes & Prices</h1>
-              <p className="text-sm" style={{ color: '#888' }}>Manage per-route pricing by vehicle type</p>
+              <p className="text-sm" style={{ color: '#888' }}>Manage base prices, per-mile rates, and per-route pricing by vehicle type</p>
             </div>
+
+            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif' }}>Dynamic Map Rates & Base Prices</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #222', color: '#888' }}>
+                      <th className="pb-3 px-4 font-normal">Vehicle Type</th>
+                      <th className="pb-3 px-4 font-normal text-right">Base Price (Min Fare)</th>
+                      <th className="pb-3 px-4 font-normal text-right">Price per Mile</th>
+                      <th className="pb-3 px-4 font-normal text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {basePrices.map((bp) => (
+                      <tr key={bp.vehicle_type} className="group" style={{ borderBottom: '1px solid #1a1a1a' }}>
+                        <td className="py-3 px-4 font-medium text-white">{VEHICLE_LABELS[bp.vehicle_type] || bp.vehicle_type}</td>
+                        <td className="py-3 px-4 text-right">
+                          <input
+                            type="number"
+                            className="w-20 bg-transparent text-right border-b border-transparent group-hover:border-white/20 focus:border-white outline-none transition-colors"
+                            value={editBasePriceData[bp.vehicle_type]?.price_usd ?? bp.price_usd}
+                            onChange={(e) =>
+                              setEditBasePriceData(prev => ({
+                                ...prev,
+                                [bp.vehicle_type]: { ...prev[bp.vehicle_type], price_usd: Number(e.target.value) }
+                              }))
+                            }
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="w-20 bg-transparent text-right border-b border-transparent group-hover:border-white/20 focus:border-white outline-none transition-colors"
+                            value={editBasePriceData[bp.vehicle_type]?.price_per_mile ?? bp.price_per_mile ?? 0}
+                            onChange={(e) =>
+                              setEditBasePriceData(prev => ({
+                                ...prev,
+                                [bp.vehicle_type]: { ...prev[bp.vehicle_type], price_per_mile: Number(e.target.value) }
+                              }))
+                            }
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => updateBasePrice(bp.vehicle_type, editBasePriceData[bp.vehicle_type].price_usd, editBasePriceData[bp.vehicle_type].price_per_mile)}
+                            disabled={savingBasePrice === bp.vehicle_type}
+                            className="text-[#B8960C] hover:text-white transition-colors disabled:opacity-50"
+                          >
+                            {savingBasePrice === bp.vehicle_type ? 'Saving...' : 'Save'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
 
             <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
               <div className="overflow-x-auto">

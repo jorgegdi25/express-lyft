@@ -13,23 +13,26 @@ export async function GET(req: NextRequest) {
   }
 
   const [pricingRes, routePricingRes, hotelRes] = await Promise.all([
-    supabaseAdmin.from('pricing').select('vehicle_type, price_usd'),
+    supabaseAdmin.from('pricing').select('vehicle_type, price_usd, price_per_mile'),
     supabaseAdmin.from('route_pricing').select('*').eq('hotel_slug', hotel_slug),
     supabaseAdmin.from('hotels').select('*').eq('slug', hotel_slug).maybeSingle(),
   ])
 
-  const prices: Record<string, number> = {
-    sedan_suv: 120,
-    suburban: 150,
-    sprinter: 260,
-    minibus: 450,
-    coachbus: 800,
+  const prices: Record<string, { base: number, per_mile: number }> = {
+    sedan_suv: { base: 120, per_mile: 3.50 },
+    suburban: { base: 150, per_mile: 5.00 },
+    sprinter: { base: 260, per_mile: 6.00 },
+    minibus: { base: 450, per_mile: 8.00 },
+    coachbus: { base: 800, per_mile: 10.00 },
   }
 
   if (pricingRes.data) {
     for (const row of pricingRes.data) {
       if (row.vehicle_type in prices) {
-        prices[row.vehicle_type] = row.price_usd
+        prices[row.vehicle_type] = {
+          base: row.price_usd,
+          per_mile: row.price_per_mile || prices[row.vehicle_type].per_mile
+        }
       }
     }
   }

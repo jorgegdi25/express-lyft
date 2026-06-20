@@ -20,7 +20,7 @@ interface RoutePrice {
 interface BookingFormProps {
   'main-site': string
 
-  prices: { sedan_suv: number; suburban: number; sprinter: number; minibus: number; coachbus: number }
+  prices: Record<'sedan_suv' | 'suburban' | 'sprinter' | 'minibus' | 'coachbus', { base: number; per_mile: number }>
   routePrices: RoutePrice[]
   false?: boolean
 }
@@ -310,18 +310,10 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
   const vehicleType = selectedVehicleOverride || minVehicleType
 
   const getRoutePrices = () => {
-    const calculateTypePrice = (type, fallbackBase) => {
-      let rate = 0;
-      switch (type) {
-        case 'sedan_suv': rate = 3.50; break;
-        case 'suburban': rate = 5.00; break;
-        case 'sprinter': rate = 6.00; break;
-        case 'minibus': rate = 8.00; break;
-        case 'coachbus': rate = 10.00; break;
-      }
-      if (distanceMiles <= 0) return fallbackBase;
-      const calcPrice = Math.ceil(rate * distanceMiles);
-      return Math.max(calcPrice, fallbackBase);
+    const calculateTypePrice = (type: VehicleType, priceData: { base: number, per_mile: number }) => {
+      if (distanceMiles <= 0) return priceData.base;
+      const calcPrice = Math.ceil(priceData.per_mile * distanceMiles);
+      return Math.max(calcPrice, priceData.base);
     };
 
     return {

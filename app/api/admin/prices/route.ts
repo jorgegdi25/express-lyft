@@ -27,15 +27,20 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { vehicle_type, price_usd } = await req.json()
+  const { vehicle_type, price_usd, price_per_mile } = await req.json()
 
-  if (!vehicle_type || !price_usd) {
+  if (!vehicle_type || price_usd === undefined) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  }
+
+  const updateData: any = { price_usd, updated_at: new Date().toISOString() }
+  if (price_per_mile !== undefined) {
+    updateData.price_per_mile = price_per_mile
   }
 
   const { error } = await supabaseAdmin
     .from('pricing')
-    .update({ price_usd, updated_at: new Date().toISOString() })
+    .update(updateData)
     .eq('vehicle_type', vehicle_type)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -43,6 +48,7 @@ export async function PUT(req: NextRequest) {
   try {
     revalidatePath('/hotel/[slug]', 'page')
     revalidatePath('/', 'layout')
+    revalidatePath('/')
   } catch (e) {
     console.error('Error revalidating path:', e)
   }
