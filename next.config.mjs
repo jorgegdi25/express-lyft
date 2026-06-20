@@ -19,16 +19,7 @@ const nextConfig = {
           ],
           destination: '/hotel/bocean-resort',
         },
-        {
-          source: '/',
-          has: [
-            {
-              type: 'host',
-              value: 'pruebas.explyft.com',
-            },
-          ],
-          destination: '/hotel/bocean-resort',
-        },
+
       ]
     };
   },
