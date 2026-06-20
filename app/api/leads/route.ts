@@ -321,7 +321,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, url: session.url })
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+    const errorMsg = err instanceof Error ? err.message : JSON.stringify(err)
     console.error('[leads] POST error:', errorMsg, 'Body:', body || 'no-body-read')
     return NextResponse.json({ error: 'Failed to log lead: ' + errorMsg }, { status: 500 })
   }
