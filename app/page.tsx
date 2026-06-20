@@ -1,8 +1,10 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { headers } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase'
 import HeroSection from '@/components/HeroSection'
+import MainMapBookingForm from '@/components/MainMapBookingForm'
 import ImageGallery from '@/components/ImageGallery'
 import Testimonials from '@/components/Testimonials'
 import ReviewsMarquee from '@/components/ReviewsMarquee'
@@ -14,13 +16,9 @@ interface PageProps {
   searchParams: { success?: string; tab?: string }
 }
 
-async function getHotelData(slug: string) {
-  const [hotelRes, pricingRes, routePricingRes] = await Promise.all([
-    supabaseAdmin.from('hotels').select('slug, name').eq('slug', slug).eq('active', true).maybeSingle(),
-    supabaseAdmin.from('pricing').select('vehicle_type, price_usd'),
-    supabaseAdmin.from('route_pricing').select('*').eq('hotel_slug', slug),
-  ])
 
+async function getBasePrices() {
+  const pricingRes = await supabaseAdmin.from('pricing').select('vehicle_type, price_usd')
   const prices = { sedan_suv: 120, suburban: 150, sprinter: 260, minibus: 450, coachbus: 800 }
   if (pricingRes.data) {
     for (const row of pricingRes.data) {
@@ -29,42 +27,7 @@ async function getHotelData(slug: string) {
       }
     }
   }
-
-  let hotel = hotelRes.data
-  if (!hotel) {
-    if (slug === 'demo' || slug === 'bocean-resort') {
-      hotel = { slug: slug, name: 'B Ocean Resort' }
-    } else {
-      return null
-    }
-  }
-
-  const routePrices = routePricingRes.data || []
-
-  // Find the lowest price across all routes for the starting rates
-  let startingPrices = { sedan_suv: prices.sedan_suv, suburban: prices.suburban, sprinter: prices.sprinter }
-  if (routePrices.length > 0) {
-    startingPrices.sedan_suv = Math.min(...routePrices.map(r => r.sedan_suv_price || Infinity))
-    startingPrices.suburban = Math.min(...routePrices.map(r => r.suburban_price || Infinity))
-    startingPrices.sprinter = Math.min(...routePrices.map(r => r.sprinter_price || Infinity))
-    
-    // Fallback if no routes have a valid price
-    if (startingPrices.sedan_suv === Infinity) startingPrices.sedan_suv = prices.sedan_suv
-    if (startingPrices.suburban === Infinity) startingPrices.suburban = prices.suburban
-    if (startingPrices.sprinter === Infinity) startingPrices.sprinter = prices.sprinter
-  }
-
-  // Hardcode prices for the main landing page to decouple from the DB
-  if (slug === 'demo') {
-    prices.sedan_suv = 35
-    prices.suburban = 65
-    prices.sprinter = 250
-    startingPrices.sedan_suv = 35
-    startingPrices.suburban = 65
-    startingPrices.sprinter = 250
-  }
-
-  return { hotel, prices, routePrices, startingPrices }
+  return prices
 }
 
 /* ─── Feature cards data ─────────────────────────────────────────── */
@@ -118,10 +81,12 @@ const STATS = [
 ]
 
 export default async function HomePage({ searchParams }: { searchParams: { success?: string; tab?: string } }) {
-  const data = await getHotelData('demo')
-  if (!data) notFound()
+  const headersList = headers()
+  const host = headersList.get('host') || ''
+  const isPruebas = host.startsWith('pruebas.')
 
-  const { prices, startingPrices } = data
+  const prices = await getBasePrices()
+  const startingPrices = prices // Same for main page without routes
   const showSuccess = searchParams.success === 'true'
   const activeTab = searchParams.tab || 'services'
 
@@ -248,6 +213,11 @@ export default async function HomePage({ searchParams }: { searchParams: { succe
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <HeroSection vehicleType="sedan_suv" basePrice={prices.sedan_suv} />
+
+      {/* ── Map Booking Form (Only for pruebas.explyft.com) ─────── */}
+      {isPruebas && (
+        <MainMapBookingForm prices={prices} />
+      )}
 
       {/* ── Official Partner Banner ──────────────────────────────── */}
       
