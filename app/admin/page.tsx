@@ -2541,13 +2541,12 @@ export default function AdminPage() {
                         <p className="text-xs text-[#888]">{l.time || '—'}</p>
                       </div>
                       {l.trip_type === 'round-trip' && l.return_date && (
-                        <div className="flex flex-col text-right">
+                        <div className="flex flex-col text-center px-2">
                           <span className="text-[10px] text-[#B8960C] uppercase tracking-widest font-bold mb-0.5">Return Date</span>
                           <p className="text-xs text-white font-bold">{formatDateUS(l.return_date)}</p>
                           <p className="text-xs text-[#888]">{l.return_time || '—'}</p>
                         </div>
                       )}
-                    </div>
                       <div className="flex flex-col items-end">
                         <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold mb-0.5">Vehicle</span>
                         <p className="text-xs font-bold text-white">{l.passengers || 1} PAX</p>
