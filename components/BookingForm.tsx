@@ -1074,9 +1074,17 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         <p className="text-white font-medium truncate" title={destination}>{destination}</p>
                       </div>
                       <div>
-                        <p className="text-[#888888] text-xs mb-1">Date & Time</p>
+                        <p className="text-[#888888] text-xs mb-1">
+                          {tripType === 'round-trip' ? 'Outbound Date' : 'Date & Time'}
+                        </p>
                         <p className="text-white font-medium">{date} at {time}</p>
                       </div>
+                      {tripType === 'round-trip' && returnDate && returnTime && (
+                        <div>
+                          <p className="text-[#B8960C] text-xs mb-1 uppercase tracking-widest font-bold">Return Date</p>
+                          <p className="text-white font-medium">{returnDate} at {returnTime}</p>
+                        </div>
+                      )}
                       <div>
                         <p className="text-[#888888] text-xs mb-1">Passengers</p>
                         <p className="text-white font-medium">{passengers} {passengers === 1 ? 'Person' : 'People'}</p>

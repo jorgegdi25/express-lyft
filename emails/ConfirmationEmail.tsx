@@ -30,6 +30,9 @@ interface ConfirmationEmailProps {
   meetingType?: string | null;
   carSeatsRequested?: number | null;
   receiptUrl?: string | null;
+  tripType?: string | null;
+  returnDate?: string | null;
+  returnTime?: string | null;
 }
 
 export const ConfirmationEmail = ({
@@ -49,6 +52,9 @@ export const ConfirmationEmail = ({
   meetingType,
   carSeatsRequested,
   receiptUrl,
+  tripType,
+  returnDate,
+  returnTime,
 }: ConfirmationEmailProps) => (
   <Html>
     <Head />
@@ -80,8 +86,13 @@ export const ConfirmationEmail = ({
           </Text>
           <Hr style={hr} />
           <Text style={detailItem}>
-            <strong>Scheduled:</strong> {date} at {time}
+            <strong>Scheduled (Outbound):</strong> {date} at {time}
           </Text>
+          {tripType === 'round-trip' && returnDate && returnTime && (
+            <Text style={detailItem}>
+              <strong>Scheduled (Return):</strong> {returnDate} at {returnTime}
+            </Text>
+          )}
           {airline && flightNumber && (
             <Text style={detailItem}>
               <strong>Flight Info:</strong> {airline} - {flightNumber}

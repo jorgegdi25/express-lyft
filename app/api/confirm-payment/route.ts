@@ -157,6 +157,9 @@ export async function POST(req: NextRequest) {
             meetingType: updatedLead.meeting_type,
             carSeatsRequested: updatedLead.car_seats_requested,
             receiptUrl,
+            tripType: updatedLead.trip_type,
+            returnDate: updatedLead.return_date,
+            returnTime: updatedLead.return_time,
           }),
         })
         console.log(`[confirm-payment] Email sent for lead ${lead_id}`)
