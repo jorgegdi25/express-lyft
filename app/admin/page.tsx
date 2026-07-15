@@ -2535,14 +2535,14 @@ export default function AdminPage() {
                     <div className="flex justify-between items-center pt-3 border-t border-[#222]">
                       <div className="flex flex-col">
                         <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold mb-0.5">
-                          {l.trip_type === 'round-trip' ? 'Outbound Date' : 'Date & Time'}
+                          {l.trip_type === 'round-trip' ? 'Pick up Date' : 'Date & Time'}
                         </span>
                         <p className="text-xs text-white font-bold">{formatDateUS(l.date)}</p>
                         <p className="text-xs text-[#888]">{l.time || '—'}</p>
                       </div>
                       {l.trip_type === 'round-trip' && l.return_date && (
                         <div className="flex flex-col text-center px-2">
-                          <span className="text-[10px] text-[#B8960C] uppercase tracking-widest font-bold mb-0.5">Return Date</span>
+                          <span className="text-[10px] text-[#B8960C] uppercase tracking-widest font-bold mb-0.5">Drop off Date</span>
                           <p className="text-xs text-white font-bold">{formatDateUS(l.return_date)}</p>
                           <p className="text-xs text-[#888]">{l.return_time || '—'}</p>
                         </div>
@@ -3201,13 +3201,13 @@ export default function AdminPage() {
                         </div>
                         <div>
                           <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">
-                            {viewingLead.trip_type === 'round-trip' ? 'Outbound Date & Time' : 'Date & Time'}
+                            {viewingLead.trip_type === 'round-trip' ? 'Pick up Date & Time' : 'Date & Time'}
                           </p>
                           <p className="text-sm text-white font-medium">{formatDateUS(viewingLead.date)} at {viewingLead.time || 'TBD'}</p>
                         </div>
                         {viewingLead.trip_type === 'round-trip' && viewingLead.return_date && viewingLead.return_time && (
                           <div>
-                            <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Return Date & Time</p>
+                            <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Drop off Date & Time</p>
                             <p className="text-sm text-white font-medium">{formatDateUS(viewingLead.return_date)} at {viewingLead.return_time}</p>
                           </div>
                         )}

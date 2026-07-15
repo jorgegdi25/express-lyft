@@ -86,11 +86,11 @@ export const ConfirmationEmail = ({
           </Text>
           <Hr style={hr} />
           <Text style={detailItem}>
-            <strong>Scheduled (Outbound):</strong> {date} at {time}
+            <strong>Scheduled (Pick up):</strong> {date} at {time}
           </Text>
           {tripType === 'round-trip' && returnDate && returnTime && (
             <Text style={detailItem}>
-              <strong>Scheduled (Return):</strong> {returnDate} at {returnTime}
+              <strong>Scheduled (Drop off):</strong> {returnDate} at {returnTime}
             </Text>
           )}
           {airline && flightNumber && (

@@ -1024,13 +1024,13 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                       </div>
                       <div>
                         <p className="text-[#888888] text-xs mb-1">
-                          {tripType === 'round-trip' ? 'Outbound Date' : 'Date & Time'}
+                          {tripType === 'round-trip' ? 'Pick up Date' : 'Date & Time'}
                         </p>
                         <p className="text-white font-medium">{date} at {time}</p>
                       </div>
                       {tripType === 'round-trip' && returnDate && returnTime && (
                         <div>
-                          <p className="text-[#B8960C] text-xs mb-1 uppercase tracking-widest font-bold">Return Date</p>
+                          <p className="text-[#B8960C] text-xs mb-1 uppercase tracking-widest font-bold">Drop off Date</p>
                           <p className="text-white font-medium">{returnDate} at {returnTime}</p>
                         </div>
                       )}
