@@ -71,3 +71,27 @@ select option {
 .animate-bounce-subtle {
   animation: bounce-subtle 2s ease-in-out infinite;
 }
+
+/* Phone Input Overrides */
+.phone-input-override {
+  display: flex;
+  align-items: center;
+}
+.phone-input-override .PhoneInputCountry {
+  margin-right: 12px;
+}
+.phone-input-override input {
+  background: transparent !important;
+  border: none !important;
+  color: #FFFFFF !important;
+  width: 100%;
+  outline: none !important;
+  font-size: 16px;
+  padding: 0;
+}
+.PhoneInputCountrySelectArrow {
+  opacity: 0.6;
+}
+.PhoneInputCountryIcon {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}

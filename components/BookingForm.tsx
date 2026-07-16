@@ -1,6 +1,10 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { loadStripe } from '@stripe/stripe-js'
+import Image from 'next/image'
+import PhoneInput from 'react-phone-number-input'
+import 'react-phone-number-input/style.css'
 import VehicleDisplay from './VehicleDisplay'
 
 interface RoutePrice {
@@ -357,7 +361,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
       setError('Please select a return date and time.')
       return
     }
-    if (!customerName.trim() || !customerEmail.trim() || !customerPhone.trim() || !customerCountry.trim()) {
+    if (!customerName.trim() || !customerEmail.trim() || !customerPhone) {
       setError('Please provide your full contact information, including phone and country.')
       return
     }
@@ -1115,23 +1119,14 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         className={INPUT_CLASS}
                         style={{ ...INPUT_STYLE }}
                       />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <input
-                          type="tel"
-                          placeholder="Phone *"
+                      <div className="w-full">
+                        <PhoneInput
+                          placeholder="Phone Number *"
                           value={customerPhone}
-                          onChange={(e) => setCustomerPhone(e.target.value)}
-                          className={INPUT_CLASS}
-                          style={{ ...INPUT_STYLE }}
-                          required
-                        />
-                        <input
-                          type="text"
-                          placeholder="Country *"
-                          value={customerCountry}
-                          onChange={(e) => setCustomerCountry(e.target.value)}
-                          className={INPUT_CLASS}
-                          style={{ ...INPUT_STYLE }}
+                          onChange={(val) => setCustomerPhone(val || '')}
+                          defaultCountry="US"
+                          className={`${INPUT_CLASS} phone-input-override`}
+                          style={INPUT_STYLE}
                           required
                         />
                       </div>
