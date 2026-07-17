@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
-import { resend } from '@/lib/resend'
+import { resend, sendOwnerNotification } from '@/lib/resend'
 import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
 import Stripe from 'stripe'
 
@@ -137,7 +137,6 @@ export async function POST(req: NextRequest) {
           await resend.emails.send({
             from: 'Express Lyft <book@explyft.com>',
             to: [leadData.customer_email],
-            bcc: process.env.ADMIN_EMAIL ? [process.env.ADMIN_EMAIL] : undefined,
             subject: emailSubject,
             react: ConfirmationEmail({
               customerName: leadData.customer_name || 'Valued Guest',
@@ -164,6 +163,9 @@ export async function POST(req: NextRequest) {
         } catch (emailErr) {
           console.error('[webhook] Failed to send email:', emailErr)
         }
+
+        // Aviso dedicado al dueño (correo aparte, no BCC)
+        await sendOwnerNotification(leadData, { isDeposit, amountPaid, totalAmount })
       }
 
     }
