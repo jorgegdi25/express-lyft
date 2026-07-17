@@ -41,3 +41,11 @@ fix_original_db.js
 check_*.js
 fix_*.js
 test_*.js
+
+# archivo con la conexion de la base de pruebas (NO subir)
+.env.pruebas
+
+.env.backup.production
+
+# carpeta de archivo de la limpieza (local, no subir)
+_archive_limpieza/
