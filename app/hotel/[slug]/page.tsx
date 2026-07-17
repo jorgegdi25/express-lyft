@@ -244,7 +244,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <HeroSection vehicleType="sedan_suv" basePrice={prices.sedan_suv.base} hotelSlug={params.slug} />
+      <HeroSection vehicleType="sedan_suv" basePrice={prices.sedan_suv} hotelSlug={params.slug} />
 
       {/* ── Official Partner Banner ──────────────────────────────── */}
       {(params.slug === 'bocean-resort' || params.slug === 'demo') && (
