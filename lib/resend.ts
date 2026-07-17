@@ -5,9 +5,13 @@ export const resend = process.env.RESEND_API_KEY
   : null;
 
 // Dirección donde el dueño recibe los avisos de nuevas reservas.
-// IMPORTANTE: debe ser DISTINTA del remitente (book@explyft.com); si es la
-// misma, Google Workspace descarta el correo por "auto-envío"/spoofing.
-export const OWNER_EMAIL = process.env.OWNER_EMAIL || 'info@explyft.com';
+export const OWNER_EMAIL = process.env.OWNER_EMAIL || 'book@explyft.com';
+
+// Remitente del aviso al dueño. IMPORTANTE: debe ser DISTINTO de OWNER_EMAIL.
+// Si el remitente y el destinatario son iguales (p. ej. book@ -> book@),
+// Google Workspace descarta el correo por "auto-envío"/spoofing. Por eso el
+// aviso sale desde notifications@ aunque el correo del cliente use book@.
+export const OWNER_NOTIFY_FROM = 'Express Lyft <notifications@explyft.com>';
 
 /**
  * Envía al dueño una alerta clara de "nueva reserva pagada".
@@ -68,7 +72,7 @@ export async function sendOwnerNotification(
       </div>`;
 
     await resend.emails.send({
-      from: 'Express Lyft <book@explyft.com>',
+      from: OWNER_NOTIFY_FROM,
       to: [OWNER_EMAIL],
       subject: `🔔 New booking — ${lead.customer_name || 'Customer'} (${lead.pickup || ''} → ${lead.destination || ''})`,
       html,
