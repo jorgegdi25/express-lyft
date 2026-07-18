@@ -49,6 +49,11 @@ export async function POST(req: NextRequest) {
       const isDeposit = paymentType === 'deposit'
       const newStatus = isDeposit ? 'deposit_paid' : 'paid'
 
+      // Monto realmente cobrado: en depósito es el cargo parcial; en pago
+      // completo es el total. (Antes se usaba `amountPaid` sin declararla, lo
+      // que hacía crashear el webhook y NO se enviaban los correos.)
+      const amountPaid = (isDeposit ? chargeAmount : totalAmount) ?? 0
+
       // Build update object
       const updateFields: Record<string, any> = { status: newStatus }
       if (isDeposit && totalAmount && chargeAmount) {
