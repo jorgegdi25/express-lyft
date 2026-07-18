@@ -147,12 +147,12 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
     dropoffGeocoder.addTo(dropoffGeocoderContainerRef.current);
 
     pickupGeocoder.on('result', (e) => {
-      setPickupCoords(e.result.center);
+      setPickupCoords(e.result.center as [number, number]);
       setPickupText(e.result.place_name);
     });
 
     dropoffGeocoder.on('result', (e) => {
-      setDropoffCoords(e.result.center);
+      setDropoffCoords(e.result.center as [number, number]);
       setDropoffText(e.result.place_name);
     });
 

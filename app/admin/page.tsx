@@ -110,6 +110,8 @@ const VEHICLE_LABELS: Record<string, string> = {
 
 type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites'
 
+type SidebarItem = { key: TabKey; label: string; icon: React.ReactNode; getBadge?: () => number }
+
 function IconHotel() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1130,7 +1132,7 @@ export default function AdminPage() {
         { key: 'bookings', label: 'Reservations', icon: <IconBookings /> },
         { key: 'dispatch', label: 'Dispatch', icon: <IconDispatch /> },
         { key: 'drivers', label: 'Drivers', icon: <IconDrivers /> },
-      ] as const
+      ] as SidebarItem[]
     },
     {
       group: 'Sales & Finance',
@@ -1140,7 +1142,7 @@ export default function AdminPage() {
         { key: 'hotel_bookings', label: 'Hotel Bookings', icon: <IconHotel />, getBadge: () => leads.filter(l => l.status === 'hotel_b2b').length },
         { key: 'clients', label: 'Frequent Flyers', icon: <IconClients /> },
         { key: 'revenue', label: 'Revenue Dashboard', icon: <IconRevenue /> },
-      ] as const
+      ] as SidebarItem[]
     }
   ]
 
@@ -1148,7 +1150,7 @@ export default function AdminPage() {
     { key: 'websites', label: 'Websites & Domains', icon: <IconWeb /> },
     { key: 'routes', label: 'Routes & Pricing', icon: <IconRoutes /> },
     { key: 'qr', label: 'QR Codes', icon: <IconQR /> },
-  ] as const
+  ] as SidebarItem[]
 
   /* =================================================== */
   /*  LOGIN SCREEN                                       */
@@ -3020,7 +3022,7 @@ export default function AdminPage() {
         )}
 
         {/* ------- ASSIGN DRIVERS TAB ------- */}
-        {activeTab === 'assign' && (
+        {(activeTab as string) === 'assign' && (
           <div className="flex flex-col gap-8">
             <div className="flex items-center justify-between">
               <div>

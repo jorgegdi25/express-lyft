@@ -99,7 +99,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
   }, ['main-site'])
 
   const prices = livePrices
-  const routePrices = []
+  const routePrices: any[] = []
 
   const normalizedRoutes = useMemo(() => routePrices.map((r) => ({
     ...r,

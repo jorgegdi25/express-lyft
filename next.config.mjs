@@ -1,10 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
+    // ESLint sigue sin bloquear el build (evita ruido de advertencias de estilo).
     ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    // Los errores de TypeScript AHORA SÍ rompen el build a propósito: así un bug
+    // como el de la variable `amountPaid` (que dejó de enviar correos de reservas)
+    // se detecta antes de desplegar y nunca llega a un cliente real.
+    ignoreBuildErrors: false,
   },
   async rewrites() {
     return {

@@ -45,7 +45,7 @@ export default function MapBookingForm() {
             
             {/* Pickup Input */}
             <div className="relative flex items-center mb-6">
-              <div className="w-[10px] h-[10px] rounded-full absolute left-[11px] top-1/2 -translate-y-1/2 z-10 ring-4" style={{ background: '#B8960C', ringColor: '#0a0a0a' }}></div>
+              <div className="w-[10px] h-[10px] rounded-full absolute left-[11px] top-1/2 -translate-y-1/2 z-10 ring-4" style={{ background: '#B8960C' }}></div>
               <div className="w-full pl-8">
                 <label className={LABEL_CLASS} style={LABEL_COLOR}>Pickup Location</label>
                 <input 
@@ -61,7 +61,7 @@ export default function MapBookingForm() {
 
             {/* Dropoff Input */}
             <div className="relative flex items-center">
-              <div className="w-[10px] h-[10px] absolute left-[11px] top-1/2 -translate-y-1/2 z-10 ring-4" style={{ background: '#FFFFFF', ringColor: '#0a0a0a' }}></div>
+              <div className="w-[10px] h-[10px] absolute left-[11px] top-1/2 -translate-y-1/2 z-10 ring-4" style={{ background: '#FFFFFF' }}></div>
               <div className="w-full pl-8">
                 <label className={LABEL_CLASS} style={LABEL_COLOR}>Destination</label>
                 <input 

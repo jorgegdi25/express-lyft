@@ -971,11 +971,11 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
       <BookingForm
         hotelSlug={params.slug}
         prices={{
-          sedan_suv: prices.sedan_suv.base,
-          suburban: prices.suburban.base,
-          sprinter: prices.sprinter.base,
-          minibus: prices.minibus.base,
-          coachbus: prices.coachbus.base,
+          sedan_suv: prices.sedan_suv,
+          suburban: prices.suburban,
+          sprinter: prices.sprinter,
+          minibus: prices.minibus,
+          coachbus: prices.coachbus,
         }}
         routePrices={data.routePrices}
       />
