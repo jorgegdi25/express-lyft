@@ -607,6 +607,23 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       </button>
                     ))}
                   </div>
+                  <p className="text-xs -mt-1" style={{ color: '#888' }}>
+                    Need more than 2 stops on your trip?{' '}
+                    <a href="tel:+18889737896" style={{ color: '#D4AF37' }} className="hover:underline">
+                      Call us
+                    </a>{' '}
+                    or{' '}
+                    <a
+                      href="https://wa.me/19546236207"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#D4AF37' }}
+                      className="hover:underline"
+                    >
+                      WhatsApp us
+                    </a>{' '}
+                    and we'll arrange it directly.
+                  </p>
 
                   {/* Pickup and Destination */}
                   {isPromo ? (
