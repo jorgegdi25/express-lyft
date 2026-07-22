@@ -309,12 +309,14 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   const minVehicleType = getVehicleType(passengers)
   const vehicleType = selectedVehicleOverride || minVehicleType
 
-  const getRoutePrices = () => {
-    const p = pickup.trim()
-    const d = destination.trim()
-    const route = normalizedRoutes.find(
-      (r) => (r.pickup === p && r.destination === d) || (r.pickup === d && r.destination === p)
-    )
+  // Looks up fixed prices for one specific direction (from -> to). Tries the exact
+  // direction first so hotel<->airport pairs priced differently per direction (e.g.
+  // hotel->airport $25, airport->hotel $40) show the right rate. Only falls back to
+  // the reverse direction's price when this exact direction has none loaded, so
+  // routes that still only have one direction configured keep working as before.
+  const getPricesForRoute = (from: string, to: string) => {
+    const exactRoute = normalizedRoutes.find((r) => r.pickup === from && r.destination === to)
+    const route = exactRoute || normalizedRoutes.find((r) => r.pickup === to && r.destination === from)
     if (route) {
       return {
         sedan_suv: route.sedan_suv_price || prices.sedan_suv,
@@ -327,10 +329,16 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     return prices
   }
 
-  const currentPrices = getRoutePrices()
+  const p = pickup.trim()
+  const d = destination.trim()
+  const currentPrices = getPricesForRoute(p, d)
   let basePrice = currentPrices[vehicleType]
   const meetGreetFee = meetingType === 'meet_greet' ? 25 : 0
-  const total = (tripType === 'round-trip' ? basePrice * 2 : basePrice) + meetGreetFee
+  // Round trip: price each direction independently and add them up, instead of
+  // doubling the outbound price — hotel->airport and airport->hotel can (and often
+  // do) cost different amounts.
+  const returnBasePrice = tripType === 'round-trip' ? getPricesForRoute(d, p)[vehicleType] : 0
+  const total = (tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice) + meetGreetFee
   const depositAmount = Math.ceil(total * 0.20)
   const chargeAmount = paymentMode === 'deposit' ? depositAmount : total
 

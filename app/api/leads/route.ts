@@ -4,15 +4,42 @@ import { stripe } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 
-async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number, durationMinutes: number) {
-  // Fetch route-specific pricing from route_pricing table
-  const { data: route } = await supabaseAdmin
+// Looks up a fixed route price for one specific direction (pickup -> destination).
+// Tries the exact direction first so hotel<->airport pairs priced differently per
+// direction (e.g. hotel->airport $25, airport->hotel $40) are respected. Only falls
+// back to the reverse direction's price when this exact direction has none loaded,
+// so routes that still only have one direction configured keep working as before.
+async function findExactRoutePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string): Promise<number | null> {
+  const key = `${vehicleType}_price`
+
+  const { data: exactRoute } = await supabaseAdmin
     .from('route_pricing')
     .select('*')
     .eq('hotel_slug', hotelSlug)
-    .or(`and(pickup.eq."${pickup.trim()}",destination.eq."${destination.trim()}"),and(pickup.eq."${destination.trim()}",destination.eq."${pickup.trim()}")`)
+    .eq('pickup', pickup)
+    .eq('destination', destination)
     .maybeSingle()
 
+  if (exactRoute && key in exactRoute && (exactRoute as any)[key]) {
+    return (exactRoute as any)[key]
+  }
+
+  const { data: reversedRoute } = await supabaseAdmin
+    .from('route_pricing')
+    .select('*')
+    .eq('hotel_slug', hotelSlug)
+    .eq('pickup', destination)
+    .eq('destination', pickup)
+    .maybeSingle()
+
+  if (reversedRoute && key in reversedRoute && (reversedRoute as any)[key]) {
+    return (reversedRoute as any)[key]
+  }
+
+  return null
+}
+
+async function calculateDistancePrice(hotelSlug: string, vehicleType: string, distanceMiles: number, durationMinutes: number) {
   // Default fallback values
   let basePrice = 25
   let pricePerMile = 3.5
@@ -28,16 +55,6 @@ async function calculatePrice(hotelSlug: string, pickup: string, destination: st
     minPrice = pricingData.min_price ?? minPrice
   }
 
-  // 1. Try to use exact route match
-  if (route) {
-    const key = `${vehicleType}_price`
-    if (key in route && (route as any)[key]) {
-      const exactPrice = (route as any)[key]
-      return tripType === 'round-trip' ? exactPrice * 2 : exactPrice
-    }
-  }
-
-  // 2. Dynamic pricing based on distance and duration
   let calculatedAmount = minPrice
   if (distanceMiles > 0) {
     const { data: hotel } = await supabaseAdmin.from('hotels').select('*').eq('slug', hotelSlug).maybeSingle()
@@ -47,16 +64,37 @@ async function calculatePrice(hotelSlug: string, pickup: string, destination: st
         pricePerMile = (hotel as any)[rateKey] // Override with hotel specific per-mile rate if it exists
       }
     }
-    
+
     const distanceCost = distanceMiles * pricePerMile
     const timeCost = durationMinutes * pricePerMinute
     calculatedAmount = basePrice + distanceCost + timeCost
   }
 
   // Enforce minimum price floor
-  calculatedAmount = Math.ceil(Math.max(calculatedAmount, minPrice))
+  return Math.ceil(Math.max(calculatedAmount, minPrice))
+}
 
-  return tripType === 'round-trip' ? calculatedAmount * 2 : calculatedAmount
+async function calculateLegPrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, distanceMiles: number, durationMinutes: number) {
+  const exactPrice = await findExactRoutePrice(hotelSlug, pickup, destination, vehicleType)
+  if (exactPrice !== null) return exactPrice
+  return calculateDistancePrice(hotelSlug, vehicleType, distanceMiles, durationMinutes)
+}
+
+async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number, durationMinutes: number) {
+  const pickupTrim = pickup.trim()
+  const destinationTrim = destination.trim()
+
+  const outboundPrice = await calculateLegPrice(hotelSlug, pickupTrim, destinationTrim, vehicleType, distanceMiles, durationMinutes)
+
+  if (tripType !== 'round-trip') {
+    return outboundPrice
+  }
+
+  // Round trip: price each direction independently and add them up, instead of
+  // doubling the outbound price — hotel->airport and airport->hotel can (and often
+  // do) cost different amounts.
+  const returnPrice = await calculateLegPrice(hotelSlug, destinationTrim, pickupTrim, vehicleType, distanceMiles, durationMinutes)
+  return outboundPrice + returnPrice
 }
 
 export async function POST(req: NextRequest) {
