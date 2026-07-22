@@ -254,6 +254,7 @@ export default function AdminPage() {
   const [checkingSession, setCheckingSession] = useState(true)
   const [authError, setAuthError] = useState('')
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [secondsSinceRefresh, setSecondsSinceRefresh] = useState(0)
@@ -1319,33 +1320,53 @@ export default function AdminPage() {
   return (
     <div className="flex min-h-screen" style={{ background: '#0a0a0a', color: '#FFFFFF' }}>
 
+      {/* -- Mobile nav backdrop -- */}
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+
       {/* -- Sidebar -- */}
       <aside
-        className="w-[240px] min-h-screen flex flex-col py-6 px-4 fixed left-0 top-0"
+        className={`w-[240px] min-h-screen flex flex-col py-6 px-4 fixed left-0 top-0 z-50 transition-transform duration-300 lg:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ background: '#0f0f0f', borderRight: '1px solid #1a1a1a' }}
       >
         {/* Brand */}
-        <div className="flex items-center gap-3 px-2 mb-10">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#B8960C' }}>
-            <span className="text-black font-bold text-xs">EL</span>
+        <div className="flex items-center justify-between px-2 mb-10">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#B8960C' }}>
+              <span className="text-black font-bold text-xs">EL</span>
+            </div>
+            <div>
+              <p className="text-sm font-bold tracking-[2px] uppercase" style={{ color: '#B8960C', fontFamily: 'Georgia, serif' }}>
+                Express Lyft
+              </p>
+              <p className="text-[9px] uppercase tracking-[1.5px]" style={{ color: '#999' }}>
+                Management
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-bold tracking-[2px] uppercase" style={{ color: '#B8960C', fontFamily: 'Georgia, serif' }}>
-              Express Lyft
-            </p>
-            <p className="text-[9px] uppercase tracking-[1.5px]" style={{ color: '#999' }}>
-              Management
-            </p>
-          </div>
+          <button
+            onClick={() => setMobileNavOpen(false)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center lg:hidden"
+            style={{ color: '#999' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
 
         {/* Nav Items */}
         <nav className="flex flex-col gap-6 flex-1 overflow-y-auto pr-2 pb-4 no-scrollbar">
-          
+
           {/* Dashboard (Top Level) */}
           <div className="flex flex-col gap-1 mb-2">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => { setActiveTab('dashboard'); setMobileNavOpen(false) }}
               className="flex items-center gap-3 px-3 py-3 rounded-xl text-left text-sm transition-all"
               style={{
                 background: activeTab === 'dashboard' ? 'linear-gradient(135deg, rgba(184, 150, 12, 0.15), rgba(212, 175, 55, 0.05))' : 'transparent',
@@ -1365,7 +1386,7 @@ export default function AdminPage() {
                 {group.items.map((item) => (
                   <button
                     key={item.key}
-                    onClick={() => setActiveTab(item.key as TabKey)}
+                    onClick={() => { setActiveTab(item.key as TabKey); setMobileNavOpen(false) }}
                     className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-sm transition-all hover:bg-[#1a1a1a]"
                     style={{
                       background: activeTab === item.key ? 'linear-gradient(135deg, rgba(184, 150, 12, 0.15), rgba(212, 175, 55, 0.05))' : 'transparent',
@@ -1395,7 +1416,7 @@ export default function AdminPage() {
               {settingsItems.map((item) => (
                 <button
                   key={item.key}
-                  onClick={() => setActiveTab(item.key as TabKey)}
+                  onClick={() => { setActiveTab(item.key as TabKey); setMobileNavOpen(false) }}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all hover:bg-[#1a1a1a]"
                   style={{
                     background: activeTab === item.key ? 'linear-gradient(135deg, rgba(184, 150, 12, 0.15), rgba(212, 175, 55, 0.05))' : 'transparent',
@@ -1435,7 +1456,26 @@ export default function AdminPage() {
       </aside>
 
       {/* -- Main Content -- */}
-      <main className="flex-1 ml-[240px] p-8 max-w-6xl">
+      <main className="flex-1 ml-0 lg:ml-[240px] p-4 lg:p-8 max-w-6xl w-full min-w-0">
+
+        {/* -- Mobile top bar -- */}
+        <div className="flex items-center justify-between mb-4 lg:hidden">
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            className="w-9 h-9 rounded-lg flex items-center justify-center"
+            style={{ background: '#111', border: '1px solid #2a2a2a', color: '#B8960C' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+          <p className="text-xs font-bold tracking-[2px] uppercase" style={{ color: '#B8960C', fontFamily: 'Georgia, serif' }}>
+            Express Lyft
+          </p>
+          <div className="w-9" />
+        </div>
 
         {/* -- Live refresh indicator -- */}
         <div className="flex items-center justify-end gap-3 mb-4 -mt-2">
@@ -3237,7 +3277,7 @@ export default function AdminPage() {
                   <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
                     
                     {/* Financial Summary */}
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4 text-center">
                         <p className="text-xs uppercase text-[#888] font-bold tracking-wider mb-1">Total</p>
                         <p className="text-2xl font-bold text-white">${viewingLead.amount_usd || 0}</p>
@@ -3264,7 +3304,7 @@ export default function AdminPage() {
                     )}
 
                     {/* Status & Trip Info */}
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="flex flex-col gap-4">
                         <div>
                           <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Status</p>
