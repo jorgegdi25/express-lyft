@@ -254,6 +254,9 @@ export default function AdminPage() {
   const [checkingSession, setCheckingSession] = useState(true)
   const [authError, setAuthError] = useState('')
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [secondsSinceRefresh, setSecondsSinceRefresh] = useState(0)
 
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loadingBookings, setLoadingBookings] = useState(false)
@@ -616,7 +619,49 @@ export default function AdminPage() {
       )
     )
     setLoadingBookings(false)
+    setLastRefreshedAt(new Date())
   }
+
+  // Lightweight refresh for data that changes as new reservations come in.
+  // Skips route/base pricing so it never clobbers an in-progress admin edit.
+  async function refreshData(pw: string) {
+    setIsRefreshing(true)
+    try {
+      const [bData, lData, cData] = await Promise.all([
+        fetchBookings(pw),
+        fetchLeads(pw),
+        fetchClients(pw),
+      ])
+      setBookings(bData)
+      setLeads(lData)
+      setClients(cData)
+      setLastRefreshedAt(new Date())
+    } catch {
+      // Keep showing the last known-good data if a refresh fails
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!authed) return
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshData(password)
+      }
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [authed, password])
+
+  useEffect(() => {
+    if (!authed) return
+    const tick = setInterval(() => setSecondsSinceRefresh((s) => s + 1), 1000)
+    return () => clearInterval(tick)
+  }, [authed])
+
+  useEffect(() => {
+    setSecondsSinceRefresh(0)
+  }, [lastRefreshedAt])
 
   function handleLogout() {
     localStorage.removeItem('admin_pass')
@@ -1391,6 +1436,43 @@ export default function AdminPage() {
 
       {/* -- Main Content -- */}
       <main className="flex-1 ml-[240px] p-8 max-w-6xl">
+
+        {/* -- Live refresh indicator -- */}
+        <div className="flex items-center justify-end gap-3 mb-4 -mt-2">
+          <span className="text-[11px] uppercase tracking-widest" style={{ color: '#666' }}>
+            {isRefreshing
+              ? 'Updating…'
+              : lastRefreshedAt
+              ? secondsSinceRefresh < 5
+                ? 'Updated just now'
+                : secondsSinceRefresh < 60
+                ? `Updated ${secondsSinceRefresh}s ago`
+                : `Updated ${Math.floor(secondsSinceRefresh / 60)}m ago`
+              : ''}
+          </span>
+          <button
+            onClick={() => refreshData(password)}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all hover:brightness-110 disabled:opacity-50"
+            style={{ borderColor: '#2a2a2a', color: '#B8960C', background: '#111' }}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={isRefreshing ? 'animate-spin' : ''}
+            >
+              <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+              <path d="M21 3v6h-6" />
+            </svg>
+            Refresh
+          </button>
+        </div>
 
         {/* ------- DASHBOARD TAB ------- */}
         {activeTab === 'dashboard' && (

@@ -44,7 +44,7 @@ export async function sendOwnerNotification(
       ['Destination', lead.destination],
       ['Date', lead.date],
       ['Time', lead.time],
-      lead.trip_type === 'roundtrip'
+      lead.trip_type === 'round-trip'
         ? ['Return', [lead.return_date, lead.return_time].filter(Boolean).join(' ')]
         : ['Trip type', lead.trip_type || 'One way'],
       ['Vehicle', vehicle],
