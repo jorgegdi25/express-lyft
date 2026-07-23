@@ -278,6 +278,8 @@ export default function AdminPage() {
     status: 'available'
   })
 
+  const [calendarMonth, setCalendarMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
+
   const [metrics, setMetrics] = useState<any>(null)
   const [leads, setLeads] = useState<Lead[]>([])
   const [addingLead, setAddingLead] = useState(false)
@@ -431,6 +433,23 @@ export default function AdminPage() {
       if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`
     }
     return dateStr
+  }
+
+  // Builds a 6-week, Sunday-start grid for the given month so the calendar
+  // view always shows a fixed 42-cell layout (same shape every month).
+  function getMonthGridDays(monthDate: Date) {
+    const year = monthDate.getFullYear()
+    const month = monthDate.getMonth()
+    const firstOfMonth = new Date(year, month, 1)
+    const gridStart = new Date(year, month, 1 - firstOfMonth.getDay())
+    const days: { date: Date; dateStr: string; inMonth: boolean }[] = []
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(gridStart)
+      d.setDate(gridStart.getDate() + i)
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      days.push({ date: d, dateStr, inMonth: d.getMonth() === month })
+    }
+    return days
   }
 
   function timeAgo(dateStr: string) {
@@ -3072,6 +3091,77 @@ export default function AdminPage() {
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Dispatch Calendar</h1>
                 <p className="text-sm" style={{ color: '#888' }}>View assigned trips and detect conflicts</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => { const d = new Date(calendarMonth); d.setMonth(d.getMonth() - 1); setCalendarMonth(d); }}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2a2a] text-[#aaa] hover:text-white hover:border-[#B8960C] transition-colors"
+                  aria-label="Previous month"
+                >&larr;</button>
+                <span className="text-sm font-bold text-white min-w-[140px] text-center" style={{ fontFamily: 'Georgia, serif' }}>
+                  {calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </span>
+                <button
+                  onClick={() => { const d = new Date(calendarMonth); d.setMonth(d.getMonth() + 1); setCalendarMonth(d); }}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2a2a] text-[#aaa] hover:text-white hover:border-[#B8960C] transition-colors"
+                  aria-label="Next month"
+                >&rarr;</button>
+                <button
+                  onClick={() => { const d = new Date(); d.setDate(1); setCalendarMonth(d); }}
+                  className="px-3 py-2 rounded-lg border border-[#2a2a2a] text-xs font-bold uppercase tracking-wider text-[#aaa] hover:text-[#D4AF37] hover:border-[#B8960C] transition-colors"
+                >Today</button>
+              </div>
+            </div>
+
+            {/* Month grid — mirrors what should be on Google Calendar, straight from the leads table */}
+            <div className="rounded-xl overflow-hidden" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <div className="grid grid-cols-7">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                  <div key={d} className="text-center text-[10px] uppercase font-bold tracking-widest text-[#666] py-2 border-b border-[#1a1a1a]">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7">
+                {getMonthGridDays(calendarMonth).map(({ date, dateStr, inMonth }) => {
+                  const isToday = dateStr === new Date().toLocaleDateString('en-CA')
+                  const dayLeads = leads.filter(l =>
+                    (l.date === dateStr || (l.trip_type === 'round-trip' && l.return_date === dateStr)) &&
+                    (l.status === 'paid' || l.status === 'deposit_paid' || l.status === 'hotel_b2b')
+                  )
+                  const STATUS_DOT: Record<string, string> = { paid: '#4ade80', deposit_paid: '#FBBF24', hotel_b2b: '#2dd4bf' }
+                  return (
+                    <div
+                      key={dateStr}
+                      className="min-h-[92px] p-1.5 border-b border-r border-[#1a1a1a] flex flex-col gap-1"
+                      style={{ opacity: inMonth ? 1 : 0.35 }}
+                    >
+                      <span
+                        className="text-[11px] font-bold w-5 h-5 flex items-center justify-center rounded-full"
+                        style={{ color: isToday ? '#0a0a0a' : '#888', background: isToday ? '#D4AF37' : 'transparent' }}
+                      >
+                        {date.getDate()}
+                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        {dayLeads.slice(0, 3).map(l => {
+                          const isReturnLeg = l.date !== dateStr
+                          return (
+                            <button
+                              key={l.id + (isReturnLeg ? '-return' : '')}
+                              onClick={() => setViewingLead(l)}
+                              title={`${l.customer_name} • ${l.pickup} → ${l.destination}`}
+                              className="text-left text-[10px] px-1.5 py-0.5 rounded truncate hover:brightness-125 transition-all"
+                              style={{ background: `${STATUS_DOT[l.status || '']}20`, color: STATUS_DOT[l.status || ''] || '#999', borderLeft: `2px solid ${STATUS_DOT[l.status || '']}` }}
+                            >
+                              {isReturnLeg ? '↩ ' : ''}{l.time || l.return_time} {l.customer_name}
+                            </button>
+                          )
+                        })}
+                        {dayLeads.length > 3 && (
+                          <span className="text-[9px] text-[#666] px-1.5">+{dayLeads.length - 3} more</span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
