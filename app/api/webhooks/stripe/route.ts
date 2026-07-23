@@ -7,6 +7,7 @@ import Stripe from 'stripe'
 import { createCalendarEvent } from '@/lib/calendar'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 30 // Give webhook 30 seconds instead of default 10
 
 export async function POST(req: NextRequest) {
   const payload = await req.text()
