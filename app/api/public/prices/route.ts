@@ -12,10 +12,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing hotel_slug' }, { status: 400 })
   }
 
-  const [pricingRes, routePricingRes, hotelRes] = await Promise.all([
+  const [pricingRes, routePricingRes, hotelRes, surchargeRes] = await Promise.all([
     supabaseAdmin.from('pricing').select('vehicle_type, price_usd, price_per_mile, price_per_minute, min_price, max_price, multiplier'),
     supabaseAdmin.from('route_pricing').select('*').eq('hotel_slug', hotel_slug),
     supabaseAdmin.from('hotels').select('*').eq('slug', hotel_slug).maybeSingle(),
+    supabaseAdmin.from('pricing_settings').select('surcharge_type, surcharge_amount, surcharge_start_hour, surcharge_end_hour').eq('id', 1).maybeSingle(),
   ])
 
   const prices: Record<string, { base: number, per_mile: number, per_minute: number, min_price: number, max_price: number, multiplier: number }> = {
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
     prices,
     routePrices: routePricingRes.data || [],
     hotel: hotelRes.data || null,
+    surcharge: surchargeRes.data || null,
   })
 
   // Prevent ANY caching

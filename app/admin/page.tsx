@@ -534,6 +534,17 @@ export default function AdminPage() {
   const [basePrices, setBasePrices] = useState<BasePrice[]>([])
   const [editBasePriceData, setEditBasePriceData] = useState<Record<string, { price_usd: number, price_per_mile: number, price_per_minute: number, min_price: number, max_price: number, multiplier: number }>>({})
 
+  interface PricingSettings {
+    surcharge_type: 'fixed' | 'percentage';
+    surcharge_amount: number;
+    surcharge_start_hour: number;
+    surcharge_end_hour: number;
+  }
+
+  const [pricingSettings, setPricingSettings] = useState<PricingSettings | null>(null)
+  const [editPricingSettings, setEditPricingSettings] = useState<PricingSettings | null>(null)
+  const [savingPricingSettings, setSavingPricingSettings] = useState(false)
+
   async function fetchBasePrices(pw: string) {
     const res = await fetch(`/api/admin/prices?t=${Date.now()}`, {
       headers: { authorization: `Bearer ${pw}` },
@@ -541,6 +552,32 @@ export default function AdminPage() {
     })
     if (!res.ok) return []
     return res.json() as Promise<BasePrice[]>
+  }
+
+  async function fetchPricingSettings(pw: string) {
+    const res = await fetch(`/api/admin/pricing-settings?t=${Date.now()}`, {
+      headers: { authorization: `Bearer ${pw}` },
+      cache: 'no-store'
+    })
+    if (!res.ok) return null
+    return res.json() as Promise<PricingSettings | null>
+  }
+
+  async function updatePricingSettings() {
+    if (!editPricingSettings) return
+    setSavingPricingSettings(true)
+    try {
+      const res = await fetch('/api/admin/pricing-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
+        body: JSON.stringify(editPricingSettings),
+      })
+      if (res.ok) {
+        setPricingSettings(editPricingSettings)
+      }
+    } finally {
+      setSavingPricingSettings(false)
+    }
   }
 
   /* -- Auth -- */
@@ -588,13 +625,14 @@ export default function AdminPage() {
     let bp: BasePrice[] = []
 
     try {
-      const [bData, rData, lData, cData, dData, bpData] = await Promise.all([
+      const [bData, rData, lData, cData, dData, bpData, psData] = await Promise.all([
         fetchBookings(pw),
         fetchRoutes(pw),
         fetchLeads(pw),
         fetchClients(pw),
         fetchDrivers(pw),
-        fetchBasePrices(pw)
+        fetchBasePrices(pw),
+        fetchPricingSettings(pw)
       ])
       
       setBookings(bData)
@@ -603,6 +641,7 @@ export default function AdminPage() {
       setClients(cData)
       setDrivers(dData)
       setBasePrices(bpData)
+      if (psData) { setPricingSettings(psData); setEditPricingSettings(psData) }
       bk = bData
       rt = rData
       ld = lData
@@ -1957,6 +1996,76 @@ export default function AdminPage() {
               <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Routes & Prices</h1>
               <p className="text-sm" style={{ color: '#888' }}>Manage base prices, per-mile rates, and per-route pricing by vehicle type</p>
             </div>
+
+            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif' }}>Time-of-Day Surcharge</h2>
+              </div>
+              <p className="text-xs mb-4" style={{ color: '#888' }}>
+                Applied automatically per leg (pickup and, on round trips, the return separately) when its scheduled time falls inside the window below.
+              </p>
+              {!editPricingSettings ? (
+                <p className="text-sm italic" style={{ color: '#888' }}>Loading…</p>
+              ) : (
+                <div className="flex flex-wrap items-end gap-4">
+                  <div>
+                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: '#888' }}>Type</label>
+                    <select
+                      value={editPricingSettings.surcharge_type}
+                      onChange={(e) => setEditPricingSettings(prev => prev && ({ ...prev, surcharge_type: e.target.value as 'fixed' | 'percentage' }))}
+                      className="rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[#0a0a0a] border border-[#1e1e1e] focus:border-[#B8960C]"
+                    >
+                      <option value="fixed">Flat $ amount</option>
+                      <option value="percentage">Percentage %</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: '#888' }}>
+                      {editPricingSettings.surcharge_type === 'percentage' ? 'Amount (%)' : 'Amount ($)'}
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editPricingSettings.surcharge_amount}
+                      onChange={(e) => setEditPricingSettings(prev => prev && ({ ...prev, surcharge_amount: Number(e.target.value) }))}
+                      className="w-28 rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[#0a0a0a] border border-[#1e1e1e] focus:border-[#B8960C]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: '#888' }}>From hour</label>
+                    <select
+                      value={editPricingSettings.surcharge_start_hour}
+                      onChange={(e) => setEditPricingSettings(prev => prev && ({ ...prev, surcharge_start_hour: Number(e.target.value) }))}
+                      className="rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[#0a0a0a] border border-[#1e1e1e] focus:border-[#B8960C]"
+                    >
+                      {Array.from({ length: 24 }, (_, h) => (
+                        <option key={h} value={h}>{h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: '#888' }}>Until hour</label>
+                    <select
+                      value={editPricingSettings.surcharge_end_hour}
+                      onChange={(e) => setEditPricingSettings(prev => prev && ({ ...prev, surcharge_end_hour: Number(e.target.value) }))}
+                      className="rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[#0a0a0a] border border-[#1e1e1e] focus:border-[#B8960C]"
+                    >
+                      {Array.from({ length: 24 }, (_, h) => (
+                        <option key={h} value={h}>{h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    onClick={updatePricingSettings}
+                    disabled={savingPricingSettings}
+                    className="px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                  >
+                    {savingPricingSettings ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              )}
+            </section>
 
             <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
               <div className="flex items-center justify-between mb-4">

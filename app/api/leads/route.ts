@@ -2,8 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/calendar'
+import { calculateDistanceAmount, applyTimeSurcharge, SurchargeConfig } from '@/lib/pricing'
 
 export const dynamic = 'force-dynamic'
+
+async function getSurchargeConfig(): Promise<SurchargeConfig | null> {
+  const { data } = await supabaseAdmin
+    .from('pricing_settings')
+    .select('surcharge_type, surcharge_amount, surcharge_start_hour, surcharge_end_hour')
+    .eq('id', 1)
+    .maybeSingle()
+  return data as SurchargeConfig | null
+}
 
 // Looks up a fixed route price for one specific direction (pickup -> destination).
 // Tries the exact direction first so hotel<->airport pairs priced differently per
@@ -42,50 +52,53 @@ async function findExactRoutePrice(hotelSlug: string, pickup: string, destinatio
 
 async function calculateDistancePrice(hotelSlug: string, vehicleType: string, distanceMiles: number, durationMinutes: number) {
   // Default fallback values
-  let basePrice = 25
-  let pricePerMile = 3.5
-  let pricePerMinute = 0.5
-  let minPrice = 90
+  const params = { base: 25, per_mile: 3.5, per_minute: 0.5, min_price: 90, max_price: Infinity, multiplier: 1 }
 
   // Fetch global prices from pricing table for the specific vehicle
   const { data: pricingData } = await supabaseAdmin.from('pricing').select('*').eq('vehicle_type', vehicleType).maybeSingle()
   if (pricingData) {
-    basePrice = pricingData.price_usd ?? basePrice
-    pricePerMile = pricingData.price_per_mile ?? pricePerMile
-    pricePerMinute = pricingData.price_per_minute ?? pricePerMinute
-    minPrice = pricingData.min_price ?? minPrice
+    params.base = pricingData.price_usd ?? params.base
+    params.per_mile = pricingData.price_per_mile ?? params.per_mile
+    params.per_minute = pricingData.price_per_minute ?? params.per_minute
+    params.min_price = pricingData.min_price ?? params.min_price
+    params.max_price = pricingData.max_price ?? params.max_price
+    params.multiplier = pricingData.multiplier ?? params.multiplier
   }
 
-  let calculatedAmount = minPrice
   if (distanceMiles > 0) {
     const { data: hotel } = await supabaseAdmin.from('hotels').select('*').eq('slug', hotelSlug).maybeSingle()
     if (hotel) {
       const rateKey = `price_per_mile_${vehicleType}`
       if (rateKey in hotel && (hotel as any)[rateKey]) {
-        pricePerMile = (hotel as any)[rateKey] // Override with hotel specific per-mile rate if it exists
+        params.per_mile = (hotel as any)[rateKey] // Override with hotel specific per-mile rate if it exists
       }
     }
-
-    const distanceCost = distanceMiles * pricePerMile
-    const timeCost = durationMinutes * pricePerMinute
-    calculatedAmount = basePrice + distanceCost + timeCost
   }
 
-  // Enforce minimum price floor
-  return Math.ceil(Math.max(calculatedAmount, minPrice))
+  return calculateDistanceAmount(params, distanceMiles, durationMinutes)
 }
 
-async function calculateLegPrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, distanceMiles: number, durationMinutes: number) {
+async function calculateLegPrice(
+  hotelSlug: string,
+  pickup: string,
+  destination: string,
+  vehicleType: string,
+  distanceMiles: number,
+  durationMinutes: number,
+  legTime: string,
+  surcharge: SurchargeConfig | null
+) {
   const exactPrice = await findExactRoutePrice(hotelSlug, pickup, destination, vehicleType)
-  if (exactPrice !== null) return exactPrice
-  return calculateDistancePrice(hotelSlug, vehicleType, distanceMiles, durationMinutes)
+  const basePrice = exactPrice !== null ? exactPrice : await calculateDistancePrice(hotelSlug, vehicleType, distanceMiles, durationMinutes)
+  return Math.ceil(applyTimeSurcharge(basePrice, legTime, surcharge))
 }
 
-async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number, durationMinutes: number) {
+async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number, durationMinutes: number, time: string, returnTime?: string) {
   const pickupTrim = pickup.trim()
   const destinationTrim = destination.trim()
+  const surcharge = await getSurchargeConfig()
 
-  const outboundPrice = await calculateLegPrice(hotelSlug, pickupTrim, destinationTrim, vehicleType, distanceMiles, durationMinutes)
+  const outboundPrice = await calculateLegPrice(hotelSlug, pickupTrim, destinationTrim, vehicleType, distanceMiles, durationMinutes, time, surcharge)
 
   if (tripType !== 'round-trip') {
     return outboundPrice
@@ -93,8 +106,9 @@ async function calculatePrice(hotelSlug: string, pickup: string, destination: st
 
   // Round trip: price each direction independently and add them up, instead of
   // doubling the outbound price — hotel->airport and airport->hotel can (and often
-  // do) cost different amounts.
-  const returnPrice = await calculateLegPrice(hotelSlug, destinationTrim, pickupTrim, vehicleType, distanceMiles, durationMinutes)
+  // do) cost different amounts. Each leg's own pickup time decides its own
+  // time-of-day surcharge (e.g. daytime outbound, night-time return).
+  const returnPrice = await calculateLegPrice(hotelSlug, destinationTrim, pickupTrim, vehicleType, distanceMiles, durationMinutes, returnTime || time, surcharge)
   return outboundPrice + returnPrice
 }
 
@@ -259,7 +273,7 @@ export async function POST(req: NextRequest) {
       leadStatus = 'hotel_b2b'
       isDeposit = false
     } else if (!isAdmin) {
-      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0, durationMinutes || 0)
+      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0, durationMinutes || 0, time || '', returnTime)
       let expectedFee = 0;
       if (meetingType === 'meet_greet') {
         expectedFee = 25;

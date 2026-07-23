@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import VehicleDisplay from './VehicleDisplay'
 import dynamic from 'next/dynamic'
 import ErrorBoundary from './ErrorBoundary'
+import { applyTimeSurcharge, calculateDistanceAmount, SurchargeConfig } from '@/lib/pricing'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 
@@ -68,6 +69,7 @@ const INPUT_STYLE = { background: '#0e0e0e', border: '1px solid #333333', color:
 export default function MainMapBookingForm({ prices: serverPrices }: { prices: any }) {
   // Live data fetched client-side to bypass Next.js server cache
   const [livePrices, setLivePrices] = useState(serverPrices)
+  const [surcharge, setSurcharge] = useState<SurchargeConfig | null>(null)
   const [distanceMiles, setDistanceMiles] = useState(0);
   const [durationMinutes, setDurationMinutes] = useState(0);
   const [minDateStr, setMinDateStr] = useState<string>('')
@@ -88,7 +90,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
         if (res.ok) {
           const data = await res.json()
           if (data.prices) setLivePrices(data.prices)
-          
+          if (data.surcharge) setSurcharge(data.surcharge)
         }
       } catch (err) {
         console.error('Failed to fetch fresh prices:', err)
@@ -313,32 +315,31 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
   const vehicleType = selectedVehicleOverride || minVehicleType
 
   const getRoutePrices = () => {
-    const calculateTypePrice = (type: VehicleType, priceData: { base: number, per_mile: number, per_minute?: number, min_price?: number, max_price?: number, multiplier?: number } | undefined) => {
+    const calculateTypePrice = (priceData: { base: number, per_mile: number, per_minute?: number, min_price?: number, max_price?: number, multiplier?: number } | undefined) => {
       if (!priceData) return 0;
-      if (distanceMiles <= 0) return priceData.base || 0;
-      const perMinute = priceData.per_minute || 0;
-      const minPrice = priceData.min_price || 0;
-      const maxPrice = priceData.max_price || 99999;
-      const multiplier = priceData.multiplier || 1.0;
-      
-      const calcPrice = ((priceData.base || 0) + ((priceData.per_mile || 0) * distanceMiles) + (perMinute * durationMinutes)) * multiplier;
-      const finalPrice = Math.max(minPrice, Math.min(maxPrice, calcPrice));
-      return Math.ceil(finalPrice);
+      return calculateDistanceAmount(priceData, distanceMiles, durationMinutes);
     };
 
     return {
-      sedan_suv: calculateTypePrice('sedan_suv', livePrices.sedan_suv),
-      suburban: calculateTypePrice('suburban', livePrices.suburban),
-      sprinter: calculateTypePrice('sprinter', livePrices.sprinter),
-      minibus: calculateTypePrice('minibus', livePrices.minibus),
-      coachbus: calculateTypePrice('coachbus', livePrices.coachbus),
+      sedan_suv: calculateTypePrice(livePrices.sedan_suv),
+      suburban: calculateTypePrice(livePrices.suburban),
+      sprinter: calculateTypePrice(livePrices.sprinter),
+      minibus: calculateTypePrice(livePrices.minibus),
+      coachbus: calculateTypePrice(livePrices.coachbus),
     };
   }
 
   const currentPrices = getRoutePrices()
-  let basePrice = currentPrices[vehicleType]
+  const basePrice = Math.ceil(applyTimeSurcharge(currentPrices[vehicleType], time, surcharge))
   const meetGreetFee = meetingType === 'meet_greet' ? 25 : 0
-  const total = (tripType === 'round-trip' ? basePrice * 2 : basePrice) + meetGreetFee
+  // Round trip: price each direction independently and add them up, instead of
+  // doubling the outbound price — mirrors the fix already applied to the hotel
+  // booking form. Distance is symmetric either direction, but each leg's own
+  // pickup time gets its own time-of-day surcharge.
+  const returnBasePrice = tripType === 'round-trip'
+    ? Math.ceil(applyTimeSurcharge(currentPrices[vehicleType], returnTime, surcharge))
+    : 0
+  const total = (tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice) + meetGreetFee
   const depositAmount = Math.ceil(total * 0.20)
   const chargeAmount = paymentMode === 'deposit' ? depositAmount : total
 

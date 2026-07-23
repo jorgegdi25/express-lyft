@@ -6,6 +6,7 @@ import Image from 'next/image'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 import VehicleDisplay from './VehicleDisplay'
+import { applyTimeSurcharge, SurchargeConfig } from '@/lib/pricing'
 
 interface RoutePrice {
   id: string
@@ -67,6 +68,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   // Live data fetched client-side to bypass Next.js server cache
   const [livePrices, setLivePrices] = useState(serverPrices)
   const [liveRoutePrices, setLiveRoutePrices] = useState(serverRoutePrices)
+  const [surcharge, setSurcharge] = useState<SurchargeConfig | null>(null)
   const [minDateStr, setMinDateStr] = useState<string>('')
 
   // Calculate local date safely on the client
@@ -86,6 +88,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           const data = await res.json()
           if (data.prices) setLivePrices(data.prices)
           if (data.routePrices) setLiveRoutePrices(data.routePrices)
+          if (data.surcharge) setSurcharge(data.surcharge)
         }
       } catch (err) {
         console.error('Failed to fetch fresh prices:', err)
@@ -332,12 +335,15 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   const p = pickup.trim()
   const d = destination.trim()
   const currentPrices = getPricesForRoute(p, d)
-  let basePrice = currentPrices[vehicleType]
+  let basePrice = Math.ceil(applyTimeSurcharge(currentPrices[vehicleType], time, surcharge))
   const meetGreetFee = meetingType === 'meet_greet' ? 25 : 0
   // Round trip: price each direction independently and add them up, instead of
   // doubling the outbound price — hotel->airport and airport->hotel can (and often
-  // do) cost different amounts.
-  const returnBasePrice = tripType === 'round-trip' ? getPricesForRoute(d, p)[vehicleType] : 0
+  // do) cost different amounts. Each leg's own pickup time gets its own
+  // time-of-day surcharge.
+  const returnBasePrice = tripType === 'round-trip'
+    ? Math.ceil(applyTimeSurcharge(getPricesForRoute(d, p)[vehicleType], returnTime, surcharge))
+    : 0
   const total = (tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice) + meetGreetFee
   const depositAmount = Math.ceil(total * 0.20)
   const chargeAmount = paymentMode === 'deposit' ? depositAmount : total
