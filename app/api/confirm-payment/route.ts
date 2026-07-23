@@ -4,6 +4,7 @@ import { stripe } from '@/lib/stripe'
 import { resend, sendOwnerNotification } from '@/lib/resend'
 import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
 import Stripe from 'stripe'
+import { createCalendarEvent } from '@/lib/calendar'
 
 export const dynamic = 'force-dynamic'
 
@@ -77,7 +78,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
-    // 6. Create or update Client profile
+    // 6. Create Calendar Event
+    if (updatedLead) {
+      try {
+        let googleEventId = await createCalendarEvent(updatedLead);
+        let googleReturnEventId = null;
+        if (updatedLead.trip_type === 'round-trip') {
+          googleReturnEventId = await createCalendarEvent(updatedLead, true);
+        }
+        if (googleEventId || googleReturnEventId) {
+          const { error: idUpdateErr } = await supabaseAdmin
+            .from('leads')
+            .update({ google_event_id: googleEventId, google_return_event_id: googleReturnEventId })
+            .eq('id', updatedLead.id);
+          if (idUpdateErr) {
+            console.error(`[confirm-payment][calendar] Evento creado (${googleEventId}) pero falló guardar el id en Supabase:`, idUpdateErr);
+          } else {
+            console.log(`[confirm-payment][calendar] Evento creado para lead ${lead_id}:`, googleEventId);
+          }
+        } else {
+          console.warn(`[confirm-payment][calendar] createCalendarEvent devolvió null para lead ${lead_id} (revisa date="${updatedLead.date}", time="${updatedLead.time}" y GOOGLE_CALENDAR_ID).`);
+        }
+      } catch (calErr: any) {
+        const detail = calErr?.response?.data || calErr?.errors || calErr?.message || calErr;
+        console.error(`[confirm-payment][calendar] Error creando evento para lead ${lead_id}:`, JSON.stringify(detail));
+      }
+    }
+
+    // 7. Create or update Client profile
     if (updatedLead && updatedLead.customer_email) {
       try {
         const { data: existingClient } = await supabaseAdmin
@@ -116,7 +144,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 7. Send confirmation email
+    // 8. Send confirmation email
     if (resend && updatedLead) {
       let receiptUrl: string | null = null
       try {
@@ -166,7 +194,7 @@ export async function POST(req: NextRequest) {
         console.error('[confirm-payment] Failed to send email:', emailErr)
       }
 
-      // 8. Aviso dedicado al dueño (correo aparte, no BCC)
+      // 9. Aviso dedicado al dueño (correo aparte, no BCC)
       await sendOwnerNotification(updatedLead, {
         isDeposit,
         amountPaid: isDeposit ? chargeAmount : (totalAmount ?? updatedLead.amount_usd),
