@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/calendar'
 
 export const dynamic = 'force-dynamic'
 
@@ -311,6 +312,23 @@ export async function POST(req: NextRequest) {
       throw error
     }
 
+    // Create Calendar Event if status warrants it
+    if (data.status === 'hotel_b2b' || data.status === 'paid' || data.status === 'deposit_paid') {
+      try {
+        let googleEventId = await createCalendarEvent(data);
+        let googleReturnEventId = null;
+        if (data.trip_type === 'round-trip') {
+          googleReturnEventId = await createCalendarEvent(data, true);
+        }
+        if (googleEventId || googleReturnEventId) {
+          await supabaseAdmin
+            .from('leads')
+            .update({ google_event_id: googleEventId, google_return_event_id: googleReturnEventId })
+            .eq('id', data.id);
+        }
+      } catch(e) { console.error('Calendar err', e) }
+    }
+
     // If request is from admin, do not create a Stripe checkout session
     if (isAdmin) {
       return NextResponse.json({ success: true, lead: data })
@@ -432,6 +450,35 @@ export async function PUT(req: NextRequest) {
       .select()
 
     if (error) throw error
+    const updatedLead = data?.[0];
+
+    // Calendar sync
+    if (updatedLead) {
+      try {
+        if (updatedLead.google_event_id) {
+          await updateCalendarEvent(updatedLead.google_event_id, updatedLead);
+        } else if (updatedLead.status === 'paid' || updatedLead.status === 'deposit_paid' || updatedLead.status === 'hotel_b2b') {
+          const googleEventId = await createCalendarEvent(updatedLead);
+          if (googleEventId) {
+            await supabaseAdmin.from('leads').update({ google_event_id: googleEventId }).eq('id', updatedLead.id);
+          }
+        }
+
+        if (updatedLead.trip_type === 'round-trip') {
+          if (updatedLead.google_return_event_id) {
+            await updateCalendarEvent(updatedLead.google_return_event_id, updatedLead, true);
+          } else if (updatedLead.status === 'paid' || updatedLead.status === 'deposit_paid' || updatedLead.status === 'hotel_b2b') {
+            const googleReturnEventId = await createCalendarEvent(updatedLead, true);
+            if (googleReturnEventId) {
+              await supabaseAdmin.from('leads').update({ google_return_event_id: googleReturnEventId }).eq('id', updatedLead.id);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error syncing calendar on update:', e);
+      }
+    }
+
     return NextResponse.json({ success: true, updated: data })
   } catch (err: any) {
     const errorMsg = err?.message || (typeof err === 'string' ? err : 'Unknown error')
@@ -470,12 +517,18 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
 
   try {
+    const { data: lead } = await supabaseAdmin.from('leads').select('google_event_id, google_return_event_id').eq('id', id).maybeSingle()
+
     const { error } = await supabaseAdmin
       .from('leads')
       .delete()
       .eq('id', id)
 
     if (error) throw error
+
+    if (lead?.google_event_id) await deleteCalendarEvent(lead.google_event_id)
+    if (lead?.google_return_event_id) await deleteCalendarEvent(lead.google_return_event_id)
+
     return NextResponse.json({ success: true })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Unknown error'

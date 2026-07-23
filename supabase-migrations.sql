@@ -169,3 +169,7 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS duration_minutes numeric(10,2) DEFAUL
 
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS distance_miles numeric(10,2) DEFAULT 0;
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS duration_minutes numeric(10,2) DEFAULT 0;
+
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS google_event_id text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS google_return_event_id text;
+

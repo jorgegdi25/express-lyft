@@ -4,6 +4,7 @@ import { stripe } from '@/lib/stripe'
 import { resend, sendOwnerNotification } from '@/lib/resend'
 import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
 import Stripe from 'stripe'
+import { createCalendarEvent } from '@/lib/calendar'
 
 export const dynamic = 'force-dynamic'
 
@@ -75,6 +76,29 @@ export async function POST(req: NextRequest) {
       if (updateError) {
         console.error('Error updating lead status:', updateError)
         return NextResponse.json({ error: 'Database error' }, { status: 500 })
+      }
+
+      // 1.2 Create Google Calendar Event
+      try {
+        let googleEventId = null;
+        let googleReturnEventId = null;
+
+        googleEventId = await createCalendarEvent(leadData);
+        if (leadData.trip_type === 'round-trip') {
+          googleReturnEventId = await createCalendarEvent(leadData, true);
+        }
+
+        if (googleEventId || googleReturnEventId) {
+          await supabaseAdmin
+            .from('leads')
+            .update({
+              google_event_id: googleEventId,
+              google_return_event_id: googleReturnEventId
+            })
+            .eq('id', leadData.id);
+        }
+      } catch (calErr) {
+        console.error('Error creating calendar event in webhook:', calErr);
       }
 
       // 1.5 Create or update Client profile
