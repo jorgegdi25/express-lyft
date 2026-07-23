@@ -78,31 +78,28 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Database error' }, { status: 500 })
       }
 
-      // 1.2 Create Google Calendar Event
-      try {
-        let googleEventId = null;
-        let googleReturnEventId = null;
-
-        googleEventId = await createCalendarEvent(leadData);
-        if (leadData.trip_type === 'round-trip') {
-          googleReturnEventId = await createCalendarEvent(leadData, true);
+      // Run calendar, client profile, and emails IN PARALLEL to avoid timeout
+      const calendarTask = async () => {
+        try {
+          let googleEventId = await createCalendarEvent(leadData);
+          let googleReturnEventId = null;
+          if (leadData.trip_type === 'round-trip') {
+            googleReturnEventId = await createCalendarEvent(leadData, true);
+          }
+          if (googleEventId || googleReturnEventId) {
+            await supabaseAdmin
+              .from('leads')
+              .update({ google_event_id: googleEventId, google_return_event_id: googleReturnEventId })
+              .eq('id', leadData.id);
+          }
+          console.log(`Calendar event created for lead ${leadId}:`, googleEventId);
+        } catch (calErr) {
+          console.error('Error creating calendar event in webhook:', calErr);
         }
+      };
 
-        if (googleEventId || googleReturnEventId) {
-          await supabaseAdmin
-            .from('leads')
-            .update({
-              google_event_id: googleEventId,
-              google_return_event_id: googleReturnEventId
-            })
-            .eq('id', leadData.id);
-        }
-      } catch (calErr) {
-        console.error('Error creating calendar event in webhook:', calErr);
-      }
-
-      // 1.5 Create or update Client profile
-      if (leadData && leadData.customer_email) {
+      const clientProfileTask = async () => {
+        if (!leadData?.customer_email) return;
         try {
           const { data: existingClient } = await supabaseAdmin
             .from('clients')
@@ -138,10 +135,10 @@ export async function POST(req: NextRequest) {
         } catch (clientErr) {
           console.error('Error updating clients table:', clientErr)
         }
-      }
+      };
 
-      // 2. Send the confirmation email now that payment is successful
-      if (resend && leadData) {
+      const emailTask = async () => {
+        if (!resend || !leadData) return;
         let receiptUrl: string | null = null;
         try {
           const expandedSession = await stripe.checkout.sessions.retrieve(session.id, {
@@ -195,7 +192,10 @@ export async function POST(req: NextRequest) {
 
         // Aviso dedicado al dueño (correo aparte, no BCC)
         await sendOwnerNotification(leadData, { isDeposit, amountPaid, totalAmount })
-      }
+      };
+
+      // Execute ALL tasks simultaneously - don't wait one by one
+      await Promise.allSettled([calendarTask(), clientProfileTask(), emailTask()]);
 
     }
   }
