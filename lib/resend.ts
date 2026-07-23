@@ -82,3 +82,38 @@ export async function sendOwnerNotification(
     console.error('[owner-notification] Falló el envío:', e);
   }
 }
+
+/**
+ * Avisa al dueño que se le mandó al cliente el recordatorio de saldo
+ * pendiente (12h antes del viaje). Igual que sendOwnerNotification, nunca
+ * lanza error: si falla, solo lo registra en consola.
+ */
+export async function sendReminderSentNotification(lead: any, amountRemaining: number) {
+  if (!resend || !lead) return;
+
+  try {
+    const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;">
+        <h2 style="color:#111;margin:0 0 4px;">⏰ Payment Reminder Sent</h2>
+        <p style="color:#888;margin:0 0 16px;">Booking #${lead.id || ''}</p>
+        <table style="border-collapse:collapse;font-size:15px;">
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Customer</td><td style="padding:6px 0;font-weight:600;color:#111;">${lead.customer_name || ''}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Email</td><td style="padding:6px 0;font-weight:600;color:#111;">${lead.customer_email || ''}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Pickup</td><td style="padding:6px 0;font-weight:600;color:#111;">${lead.date} ${lead.time}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Route</td><td style="padding:6px 0;font-weight:600;color:#111;">${lead.pickup || ''} → ${lead.destination || ''}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Balance due</td><td style="padding:6px 0;font-weight:600;color:#111;">$${amountRemaining}</td></tr>
+        </table>
+        <p style="color:#888;margin-top:16px;">The customer was emailed a payment link for the remaining balance.</p>
+      </div>`;
+
+    await resend.emails.send({
+      from: OWNER_NOTIFY_FROM,
+      to: [OWNER_EMAIL],
+      subject: `⏰ Reminder sent — ${lead.customer_name || 'Customer'} (balance due $${amountRemaining})`,
+      html,
+    });
+    console.log(`[reminder-notification] Enviado a ${OWNER_EMAIL} para lead ${lead.id}`);
+  } catch (e) {
+    console.error('[reminder-notification] Falló el envío:', e);
+  }
+}

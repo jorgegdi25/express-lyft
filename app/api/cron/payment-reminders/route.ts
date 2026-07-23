@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
-import { resend } from '@/lib/resend'
+import { resend, sendReminderSentNotification } from '@/lib/resend'
 import { PaymentReminderEmail } from '@/emails/PaymentReminderEmail'
 
 export const dynamic = 'force-dynamic'
@@ -120,6 +120,8 @@ export async function GET(req: NextRequest) {
           }),
         })
       }
+
+      await sendReminderSentNotification(lead, lead.amount_remaining)
 
       const { error: markErr } = await supabaseAdmin
         .from('leads')
