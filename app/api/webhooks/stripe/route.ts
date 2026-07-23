@@ -7,6 +7,11 @@ import Stripe from 'stripe'
 import { createCalendarEvent } from '@/lib/calendar'
 
 export const dynamic = 'force-dynamic'
+// Sin esto, Vercel usa un timeout bajo (~15s) y en cold start el trabajo
+// pesado (googleapis + Stripe retrieve + correos Resend) excede el límite:
+// la función se mata DESPUÉS de marcar `paid` pero ANTES de escribir
+// `google_event_id`, dejándolo en NULL. (Plan Pro admite hasta 300.)
+export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   const payload = await req.text()
@@ -78,7 +83,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Database error' }, { status: 500 })
       }
 
-      // Run calendar, client profile, and emails IN PARALLEL to avoid timeout
       const calendarTask = async () => {
         try {
           let googleEventId = await createCalendarEvent(leadData);
@@ -87,14 +91,25 @@ export async function POST(req: NextRequest) {
             googleReturnEventId = await createCalendarEvent(leadData, true);
           }
           if (googleEventId || googleReturnEventId) {
-            await supabaseAdmin
+            const { error: idUpdateErr } = await supabaseAdmin
               .from('leads')
               .update({ google_event_id: googleEventId, google_return_event_id: googleReturnEventId })
               .eq('id', leadData.id);
+            if (idUpdateErr) {
+              console.error(`[webhook][calendar] Evento creado (${googleEventId}) pero falló guardar el id en Supabase:`, idUpdateErr);
+            } else {
+              console.log(`[webhook][calendar] Evento creado para lead ${leadId}:`, googleEventId);
+            }
+          } else {
+            // No lanzó excepción pero no hubo id: normalmente date/time faltantes
+            // o GOOGLE_CALENDAR_ID ausente. Ver createCalendarEvent().
+            console.warn(`[webhook][calendar] createCalendarEvent devolvió null para lead ${leadId} (revisa date="${leadData.date}", time="${leadData.time}" y GOOGLE_CALENDAR_ID).`);
           }
-          console.log(`Calendar event created for lead ${leadId}:`, googleEventId);
-        } catch (calErr) {
-          console.error('Error creating calendar event in webhook:', calErr);
+        } catch (calErr: any) {
+          // Los errores de googleapis esconden el detalle real en response.data,
+          // que un console.error(calErr) plano NO imprime.
+          const detail = calErr?.response?.data || calErr?.errors || calErr?.message || calErr;
+          console.error(`[webhook][calendar] Error creando evento para lead ${leadId}:`, JSON.stringify(detail));
         }
       };
 
@@ -194,8 +209,13 @@ export async function POST(req: NextRequest) {
         await sendOwnerNotification(leadData, { isDeposit, amountPaid, totalAmount })
       };
 
-      // Execute ALL tasks simultaneously - don't wait one by one
-      await Promise.allSettled([calendarTask(), clientProfileTask(), emailTask()]);
+      // El calendario es lo que fallaba: lo ejecutamos y esperamos PRIMERO para
+      // garantizar que su escritura de google_event_id se commitee, antes de
+      // arriesgar el timeout con el trabajo de red más lento (Stripe + correos).
+      await calendarTask();
+
+      // El resto en paralelo.
+      await Promise.allSettled([clientProfileTask(), emailTask()]);
 
     }
   }
