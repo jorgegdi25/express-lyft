@@ -85,6 +85,7 @@ interface Lead {
   luggage_count?: number
   wait_time_minutes?: number
   wait_time_fee?: number
+  reminder_sent_at?: string | null
 }
 
 interface Client {
