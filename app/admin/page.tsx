@@ -101,6 +101,23 @@ interface Client {
   notes: string
 }
 
+interface Review {
+  id: string
+  lead_id: string | null
+  hotel_slug: string | null
+  customer_name: string
+  customer_email: string | null
+  token: string
+  status: 'requested' | 'pending' | 'approved' | 'rejected'
+  rating: number | null
+  would_recommend: boolean | null
+  comment: string | null
+  requested_at: string | null
+  submitted_at: string | null
+  reviewed_at: string | null
+  created_at: string
+}
+
 const VEHICLE_LABELS: Record<string, string> = {
   sedan_suv: 'Sedan & SUV',
   suburban: 'Chevy Suburban',
@@ -109,7 +126,7 @@ const VEHICLE_LABELS: Record<string, string> = {
   coachbus: '55 Passenger Bus',
 }
 
-type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites'
+type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites' | 'reviews'
 
 type SidebarItem = { key: TabKey; label: string; icon: React.ReactNode; getBadge?: () => number }
 
@@ -164,6 +181,13 @@ function IconClients() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
+    </svg>
+  )
+}
+function IconReviews() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
   )
 }
@@ -286,6 +310,7 @@ export default function AdminPage() {
   const [addingLead, setAddingLead] = useState(false)
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
   const [sendingInvoice, setSendingInvoice] = useState<string | null>(null)
+  const [sendingReview, setSendingReview] = useState<string | null>(null)
   const [viewingLead, setViewingLead] = useState<Lead | null>(null)
   const [generatedLink, setGeneratedLink] = useState<string | null>(null)
   const [newLead, setNewLead] = useState({
@@ -341,6 +366,10 @@ export default function AdminPage() {
     
     return Array.from(locs)
   }, [routePrices])
+
+  // Reviews moderation state
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviewActionId, setReviewActionId] = useState<string | null>(null)
 
   // Client CRUD state
   const [clients, setClients] = useState<Client[]>([])
@@ -502,6 +531,15 @@ export default function AdminPage() {
     return res.json() as Promise<Lead[]>
   }
 
+  async function fetchReviews(pw: string) {
+    const res = await fetch(`/api/admin/reviews?t=${Date.now()}`, {
+      headers: { authorization: `Bearer ${pw}` },
+      cache: 'no-store'
+    })
+    if (!res.ok) return []
+    return res.json() as Promise<Review[]>
+  }
+
   async function fetchClients(pw: string) {
     const res = await fetch(`/api/admin/clients?t=${Date.now()}`, {
       headers: { authorization: `Bearer ${pw}` },
@@ -625,16 +663,17 @@ export default function AdminPage() {
     let bp: BasePrice[] = []
 
     try {
-      const [bData, rData, lData, cData, dData, bpData, psData] = await Promise.all([
+      const [bData, rData, lData, cData, dData, bpData, psData, rvData] = await Promise.all([
         fetchBookings(pw),
         fetchRoutes(pw),
         fetchLeads(pw),
         fetchClients(pw),
         fetchDrivers(pw),
         fetchBasePrices(pw),
-        fetchPricingSettings(pw)
+        fetchPricingSettings(pw),
+        fetchReviews(pw)
       ])
-      
+
       setBookings(bData)
       setRoutePrices(rData)
       setLeads(lData)
@@ -642,6 +681,7 @@ export default function AdminPage() {
       setDrivers(dData)
       setBasePrices(bpData)
       if (psData) { setPricingSettings(psData); setEditPricingSettings(psData) }
+      setReviews(rvData)
       bk = bData
       rt = rData
       ld = lData
@@ -687,14 +727,16 @@ export default function AdminPage() {
   async function refreshData(pw: string) {
     setIsRefreshing(true)
     try {
-      const [bData, lData, cData] = await Promise.all([
+      const [bData, lData, cData, rvData] = await Promise.all([
         fetchBookings(pw),
         fetchLeads(pw),
         fetchClients(pw),
+        fetchReviews(pw),
       ])
       setBookings(bData)
       setLeads(lData)
       setClients(cData)
+      setReviews(rvData)
       setLastRefreshedAt(new Date())
     } catch {
       // Keep showing the last known-good data if a refresh fails
@@ -945,6 +987,48 @@ export default function AdminPage() {
       alert('Error: ' + e.message)
     } finally {
       setSendingInvoice(null)
+    }
+  }
+
+  async function moderateReview(id: string, status: 'approved' | 'rejected') {
+    setReviewActionId(id)
+    try {
+      const res = await fetch('/api/admin/reviews', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${password}` },
+        body: JSON.stringify({ id, status })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setReviews(prev => prev.map(r => r.id === id ? { ...r, status, reviewed_at: new Date().toISOString() } : r))
+      } else {
+        alert('Error: ' + data.error)
+      }
+    } catch (e: any) {
+      alert('Error: ' + e.message)
+    } finally {
+      setReviewActionId(null)
+    }
+  }
+
+  async function sendReviewRequest(leadId: string) {
+    setSendingReview(leadId)
+    try {
+      const res = await fetch('/api/admin/reviews/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${password}` },
+        body: JSON.stringify({ lead_id: leadId })
+      })
+      const data = await res.json()
+      if (data.success) {
+        alert('Review request sent!')
+      } else {
+        alert('Error: ' + data.error)
+      }
+    } catch (e: any) {
+      alert('Error: ' + e.message)
+    } finally {
+      setSendingReview(null)
     }
   }
 
@@ -1246,6 +1330,7 @@ export default function AdminPage() {
         { key: 'quotes', label: 'Quotes (Manual)', icon: <IconQuotes />, getBadge: () => leads.filter(l => l.status === 'quote_requested').length },
         { key: 'hotel_bookings', label: 'Hotel Bookings', icon: <IconHotel />, getBadge: () => leads.filter(l => l.status === 'hotel_b2b').length },
         { key: 'clients', label: 'Frequent Flyers', icon: <IconClients /> },
+        { key: 'reviews', label: 'Reviews', icon: <IconReviews />, getBadge: () => reviews.filter(r => r.status === 'pending').length },
         { key: 'revenue', label: 'Revenue Dashboard', icon: <IconRevenue /> },
       ] as SidebarItem[]
     }
@@ -2431,6 +2516,16 @@ export default function AdminPage() {
                                 WhatsApp
                               </button>
                             )}
+                            {b.customer_email && (
+                              <button
+                                onClick={() => sendReviewRequest(b.id)}
+                                disabled={sendingReview === b.id}
+                                className="text-[11px] bg-[#B8960C]/10 text-[#D4AF37] px-2.5 py-1.5 rounded-lg border border-[#B8960C]/30 hover:bg-[#B8960C]/20 transition-all flex items-center gap-1.5 font-bold uppercase tracking-wider disabled:opacity-50"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+                                {sendingReview === b.id ? 'Sending...' : 'Ask for Review'}
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -2938,6 +3033,97 @@ export default function AdminPage() {
               </div>
             )}
             
+          </div>
+        )}
+
+        {/* ------- REVIEWS TAB ------- */}
+        {activeTab === 'reviews' && (
+          <div className="flex flex-col gap-8">
+            <div>
+              <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Reviews</h1>
+              <p className="text-sm" style={{ color: '#888' }}>
+                Nothing goes live on the website until you approve it here.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {reviews.length === 0 && (
+                <div className="p-10 text-center rounded-2xl" style={{ border: '1px dashed #333' }}>
+                  <p className="text-[#888]">No reviews yet.</p>
+                </div>
+              )}
+              {reviews.map((r) => (
+                <div
+                  key={r.id}
+                  className="p-6 rounded-xl flex flex-col gap-4"
+                  style={{
+                    background: '#111',
+                    border: r.would_recommend === false ? '1px solid #7f1d1d' : '1px solid #1a1a1a',
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <p className="text-white font-bold">{r.customer_name}</p>
+                        <span
+                          className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-full"
+                          style={{
+                            background: r.status === 'approved' ? 'rgba(74,222,128,0.1)' : r.status === 'rejected' ? 'rgba(148,163,184,0.1)' : r.status === 'pending' ? 'rgba(251,191,36,0.1)' : 'rgba(148,163,184,0.1)',
+                            color: r.status === 'approved' ? '#4ade80' : r.status === 'rejected' ? '#94a3b8' : r.status === 'pending' ? '#FBBF24' : '#94a3b8',
+                          }}
+                        >
+                          {r.status}
+                        </span>
+                        {r.hotel_slug && (
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-[#666]">{r.hotel_slug}</span>
+                        )}
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: '#666' }}>{r.customer_email}</p>
+                    </div>
+                    {r.rating && (
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <span key={n} style={{ color: n <= (r.rating || 0) ? '#D4AF37' : '#333' }}>★</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {r.status === 'requested' ? (
+                    <p className="text-sm italic" style={{ color: '#666' }}>Waiting on customer response.</p>
+                  ) : (
+                    <>
+                      <p className="text-sm font-bold" style={{ color: r.would_recommend ? '#4ade80' : '#f87171' }}>
+                        {r.would_recommend ? '✓ Recommends Express Lyft' : '✗ Does not recommend'}
+                      </p>
+                      {r.comment && (
+                        <p className="text-sm italic" style={{ color: '#ccc' }}>&ldquo;{r.comment}&rdquo;</p>
+                      )}
+                    </>
+                  )}
+
+                  {r.status === 'pending' && (
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => moderateReview(r.id, 'approved')}
+                        disabled={reviewActionId === r.id}
+                        className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+                        style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                      >
+                        Approve — Show on Website
+                      </button>
+                      <button
+                        onClick={() => moderateReview(r.id, 'rejected')}
+                        disabled={reviewActionId === r.id}
+                        className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 border border-[#333] text-[#aaa] hover:text-white"
+                      >
+                        Keep Private
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

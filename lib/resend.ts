@@ -117,3 +117,46 @@ export async function sendReminderSentNotification(lead: any, amountRemaining: n
     console.error('[reminder-notification] Falló el envío:', e);
   }
 }
+
+/**
+ * Avisa de inmediato al dueño cuando llega una reseña negativa (no
+ * recomienda). Nunca se publica sola en la web — queda en el CRM para que
+ * el equipo la vea y pueda contactar al cliente. Nunca lanza error.
+ */
+export async function sendNegativeReviewAlert(review: {
+  id: string
+  customer_name: string
+  customer_email?: string | null
+  hotel_slug?: string | null
+  rating?: number | null
+  comment?: string | null
+}) {
+  if (!resend || !review) return;
+
+  try {
+    const stars = review.rating ? '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating) : 'N/A';
+    const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;">
+        <h2 style="color:#c0392b;margin:0 0 4px;">⚠️ Negative Review Received</h2>
+        <p style="color:#888;margin:0 0 16px;">Not published — review only, in the CRM</p>
+        <table style="border-collapse:collapse;font-size:15px;">
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Customer</td><td style="padding:6px 0;font-weight:600;color:#111;">${review.customer_name || ''}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Email</td><td style="padding:6px 0;font-weight:600;color:#111;">${review.customer_email || ''}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Hotel</td><td style="padding:6px 0;font-weight:600;color:#111;">${review.hotel_slug || ''}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Rating</td><td style="padding:6px 0;font-weight:600;color:#111;">${stars}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888;vertical-align:top;">Comment</td><td style="padding:6px 0;font-weight:600;color:#111;">${review.comment || '(sin comentario)'}</td></tr>
+        </table>
+        <p style="color:#888;margin-top:16px;">Considera contactar al cliente para resolver lo que haya pasado.</p>
+      </div>`;
+
+    await resend.emails.send({
+      from: OWNER_NOTIFY_FROM,
+      to: [OWNER_EMAIL],
+      subject: `⚠️ Reseña negativa — ${review.customer_name || 'Cliente'}`,
+      html,
+    });
+    console.log(`[negative-review-alert] Enviado a ${OWNER_EMAIL} para review ${review.id}`);
+  } catch (e) {
+    console.error('[negative-review-alert] Falló el envío:', e);
+  }
+}

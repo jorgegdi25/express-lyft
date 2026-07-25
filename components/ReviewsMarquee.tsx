@@ -33,7 +33,16 @@ const REVIEWS = [
   },
 ];
 
-export default function ReviewsMarquee() {
+interface MarqueeReview {
+  name: string
+  text: string
+  rating: number
+}
+
+export default function ReviewsMarquee({ reviews }: { reviews?: MarqueeReview[] }) {
+  // Real approved reviews take priority; the curated list above is only a
+  // fallback so this section isn't empty before reviews start coming in.
+  const items = reviews && reviews.length > 0 ? reviews : REVIEWS
   return (
     <section className="w-full py-16 overflow-hidden" style={{ background: '#0a0a0a', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
       <div className="max-w-7xl mx-auto px-4 md:px-6 mb-10 text-center">
@@ -47,12 +56,12 @@ export default function ReviewsMarquee() {
 
       <div className="flex overflow-hidden group">
         <div className="animate-marquee flex shrink-0 gap-6 px-3 group-hover:[animation-play-state:paused]">
-          {REVIEWS.map((review, i) => (
+          {items.map((review, i) => (
             <ReviewCard key={`review-1-${i}`} review={review} />
           ))}
         </div>
         <div className="animate-marquee flex shrink-0 gap-6 px-3 group-hover:[animation-play-state:paused]">
-          {REVIEWS.map((review, i) => (
+          {items.map((review, i) => (
             <ReviewCard key={`review-2-${i}`} review={review} />
           ))}
         </div>

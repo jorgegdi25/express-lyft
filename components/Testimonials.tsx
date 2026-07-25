@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-interface Testimonial {
+export interface Testimonial {
   name: string
   role: string
   rating: number
@@ -86,24 +86,27 @@ const TESTIMONIALS: Testimonial[] = [
   },
 ]
 
-export default function Testimonials() {
+export default function Testimonials({ reviews }: { reviews?: Testimonial[] }) {
   const [startIndex, setStartIndex] = useState(0)
+  // Real approved reviews take priority; the curated list above is only a
+  // fallback so this section isn't empty before reviews start coming in.
+  const items = reviews && reviews.length > 0 ? reviews : TESTIMONIALS
 
   const handlePrev = () => {
-    setStartIndex((prev) => (prev === 0 ? TESTIMONIALS.length - 1 : prev - 1))
+    setStartIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1))
   }
 
   const handleNext = () => {
-    setStartIndex((prev) => (prev === TESTIMONIALS.length - 1 ? 0 : prev + 1))
+    setStartIndex((prev) => (prev === items.length - 1 ? 0 : prev + 1))
   }
 
   // Get current visible testimonials (up to 3, looping around)
   const getVisibleTestimonials = () => {
-    const items = []
+    const visible = []
     for (let i = 0; i < 3; i++) {
-      items.push(TESTIMONIALS[(startIndex + i) % TESTIMONIALS.length])
+      visible.push(items[(startIndex + i) % items.length])
     }
-    return items
+    return visible
   }
 
   const visibleItems = getVisibleTestimonials()
@@ -201,7 +204,7 @@ export default function Testimonials() {
 
         {/* Carousel indicators/dots */}
         <div className="flex justify-center gap-2 mt-10">
-          {TESTIMONIALS.map((_, index) => (
+          {items.map((_, index) => (
             <button
               key={index}
               onClick={() => setStartIndex(index)}
