@@ -1,38 +1,5 @@
 import React from 'react';
 
-const REVIEWS = [
-  {
-    name: "Michael T.",
-    text: "Impeccable service. The driver was waiting for us at FLL baggage claim. The SUV was pristine.",
-    rating: 5,
-  },
-  {
-    name: "Sarah L.",
-    text: "Used them for a transfer to B Ocean Resort. Very professional and the ride was incredibly smooth.",
-    rating: 5,
-  },
-  {
-    name: "David R.",
-    text: "Highly recommend for anyone needing luxury transport in Miami. Punctual and courteous.",
-    rating: 5,
-  },
-  {
-    name: "Elena G.",
-    text: "The best way to start our vacation! The Mercedes Sprinter was perfect for our large group.",
-    rating: 5,
-  },
-  {
-    name: "James H.",
-    text: "Excellent communication from booking to drop-off. Will definitely be using ExpLyft again.",
-    rating: 5,
-  },
-  {
-    name: "Victoria M.",
-    text: "Five-star experience. The chauffeur was sharply dressed and handled all our heavy luggage.",
-    rating: 5,
-  },
-];
-
 interface MarqueeReview {
   name: string
   text: string
@@ -40,9 +7,12 @@ interface MarqueeReview {
 }
 
 export default function ReviewsMarquee({ reviews }: { reviews?: MarqueeReview[] }) {
-  // Real approved reviews take priority; the curated list above is only a
-  // fallback so this section isn't empty before reviews start coming in.
-  const items = reviews && reviews.length > 0 ? reviews : REVIEWS
+  const items = reviews || []
+
+  // No fabricated placeholder reviews — this section stays hidden until
+  // there are real, approved reviews to show.
+  if (items.length === 0) return null
+
   return (
     <section className="w-full py-16 overflow-hidden" style={{ background: '#0a0a0a', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
       <div className="max-w-7xl mx-auto px-4 md:px-6 mb-10 text-center">

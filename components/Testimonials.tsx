@@ -11,86 +11,13 @@ export interface Testimonial {
   avatarText: string
 }
 
-const TESTIMONIALS: Testimonial[] = [
-  {
-    name: 'Sarah Jenkins',
-    role: 'Leisure Traveler',
-    rating: 5,
-    text: 'Punctual, polite, and the Suburban was immaculate. Best private transfer service we have ever used in Miami. Highly recommend!',
-    date: 'May 2026',
-    avatarText: 'SJ',
-  },
-  {
-    name: 'Alejandro Gómez',
-    role: 'Business Traveler',
-    rating: 5,
-    text: 'Excellent service. The chauffeur waited for us despite our flight delay at MIA, and the service was extremely professional and attentive.',
-    date: 'May 2026',
-    avatarText: 'AG',
-  },
-  {
-    name: 'Michael Sterling',
-    role: 'Corporate Coordinator',
-    rating: 5,
-    text: 'Booked three Sprinter vans for our executive board meeting. Flawless communication, on-time arrivals, and very comfortable cabins.',
-    date: 'Apr 2026',
-    avatarText: 'MS',
-  },
-  {
-    name: 'David Vance',
-    role: 'Frequent Flyer',
-    rating: 5,
-    text: 'Top-tier airport transfer service. The ride from FLL to Miami South Beach was incredibly smooth. Will definitely book again.',
-    date: 'Apr 2026',
-    avatarText: 'DV',
-  },
-  {
-    name: 'Valeria Rodríguez',
-    role: 'VIP Traveler',
-    rating: 5,
-    text: 'The online booking process was extremely quick and simple. The chauffeur\'s attention and the amenities in the cabin exceeded our expectations.',
-    date: 'Mar 2026',
-    avatarText: 'VR',
-  },
-  {
-    name: 'Emily Watson',
-    role: 'Family Vacation',
-    rating: 5,
-    text: 'Traveling with children can be stressful, but our chauffeur was so helpful and patient. The SUV was pristine and very safe.',
-    date: 'Mar 2026',
-    avatarText: 'EW',
-  },
-  {
-    name: 'Carlos Mendoza',
-    role: 'Event Organizer',
-    rating: 5,
-    text: 'We hired the 55-passenger bus to transfer our wedding guests. Perfect coordination and very friendly drivers.',
-    date: 'Feb 2026',
-    avatarText: 'CM',
-  },
-  {
-    name: 'Marcus Vance',
-    role: 'VIP Client',
-    rating: 5,
-    text: 'Exceptional standards. From the bottled water to the high-speed Wi-Fi, everything is designed to provide a premium travel experience.',
-    date: 'Jan 2026',
-    avatarText: 'MV',
-  },
-  {
-    name: 'Sofía Rossi',
-    role: 'Leisure Traveler',
-    rating: 5,
-    text: 'Impeccable service from start to finish. The car was a brand new model and the driver knew the best routes to avoid Miami traffic.',
-    date: 'Jan 2026',
-    avatarText: 'SR',
-  },
-]
-
 export default function Testimonials({ reviews }: { reviews?: Testimonial[] }) {
   const [startIndex, setStartIndex] = useState(0)
-  // Real approved reviews take priority; the curated list above is only a
-  // fallback so this section isn't empty before reviews start coming in.
-  const items = reviews && reviews.length > 0 ? reviews : TESTIMONIALS
+  const items = reviews || []
+
+  // No fabricated placeholder testimonials — this section stays hidden
+  // until there are real, approved reviews to show.
+  if (items.length === 0) return null
 
   const handlePrev = () => {
     setStartIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1))
