@@ -247,7 +247,12 @@ export async function POST(req: NextRequest) {
       luggageCount,
       notes,
       distanceMiles,
-      durationMinutes
+      durationMinutes,
+      paymentSource,
+      externalPlatform,
+      externalReference,
+      amountPaid: manualAmountPaid,
+      amountRemaining: manualAmountRemaining
     } = body
 
     if (!hotelSlug) return NextResponse.json({ error: 'Missing hotelSlug' }, { status: 400 })
@@ -286,9 +291,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Calculate deposit amounts
+    // Calculate deposit amounts (online Stripe checkout path)
     const depositAmount = isDeposit ? Math.ceil(finalAmount * 0.20) : finalAmount
     const amountRemaining = isDeposit ? finalAmount - depositAmount : 0
+
+    // For reservations entered manually by the admin (CRM "Add Reservation"),
+    // how much is already collected comes straight from the admin's input
+    // instead of the online-deposit math above — e.g. a reservation booked
+    // and paid on an external platform, or in cash.
+    const finalAmountPaid = isAdmin && manualAmountPaid !== undefined ? manualAmountPaid : 0
+    const finalAmountRemaining = isAdmin && manualAmountRemaining !== undefined ? manualAmountRemaining : amountRemaining
+    const resolvedPaymentSource = isAdmin ? (paymentSource || 'stripe') : 'stripe'
+    const isPaidNow = leadStatus === 'paid' || leadStatus === 'deposit_paid' || leadStatus === 'hotel_b2b'
 
     const { data, error } = await supabaseAdmin.from('leads').insert({
       hotel_slug: hotelSlug,
@@ -308,8 +322,12 @@ export async function POST(req: NextRequest) {
       trip_type: tripType,
       status: leadStatus,
       payment_type: isDeposit ? 'deposit' : 'full',
-      amount_paid: 0,
-      amount_remaining: isDeposit ? finalAmount : 0,
+      amount_paid: finalAmountPaid,
+      amount_remaining: finalAmountRemaining,
+      payment_source: resolvedPaymentSource,
+      external_platform: isAdmin ? (externalPlatform || null) : null,
+      external_reference: isAdmin ? (externalReference || null) : null,
+      paid_at: isAdmin && isPaidNow ? new Date().toISOString() : null,
       airline,
       flight_number: flightNumber,
       meeting_type: meetingType || 'curbside',

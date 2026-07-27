@@ -125,7 +125,7 @@ create table if not exists leads (
   return_date       text,
   return_time       text,
   passengers        integer,
-  amount_usd        integer,
+  amount_usd        numeric,
   trip_type         text,
   customer_country  text,
   payment_type      text,
@@ -141,7 +141,13 @@ create table if not exists leads (
   wait_time_fee     integer default 0,
   assigned_driver_id uuid,
   distance_miles    numeric,
-  duration_minutes  numeric
+  duration_minutes  numeric,
+  -- De dónde entró el pago: 'stripe' (por defecto), 'external' (plataforma
+  -- externa que maneja la clienta) o 'cash' (efectivo/transferencia directa).
+  payment_source    text default 'stripe',
+  external_platform text,
+  external_reference text,
+  paid_at           timestamptz
 );
 
 -- ---------- 7. clients (clientes recurrentes) ----------

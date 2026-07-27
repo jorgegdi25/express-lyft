@@ -30,6 +30,12 @@ interface Booking {
   meet_greet_fee?: number
   car_seats_requested?: number
   luggage_count?: number
+  amount_paid?: number
+  amount_remaining?: number
+  payment_source?: string
+  external_platform?: string | null
+  external_reference?: string | null
+  paid_at?: string | null
 }
 
 interface Driver {
@@ -86,6 +92,10 @@ interface Lead {
   wait_time_minutes?: number
   wait_time_fee?: number
   reminder_sent_at?: string | null
+  payment_source?: string
+  external_platform?: string | null
+  external_reference?: string | null
+  paid_at?: string | null
 }
 
 interface Client {
@@ -313,23 +323,32 @@ export default function AdminPage() {
   const [sendingReview, setSendingReview] = useState<string | null>(null)
   const [viewingLead, setViewingLead] = useState<Lead | null>(null)
   const [generatedLink, setGeneratedLink] = useState<string | null>(null)
-  const [newLead, setNewLead] = useState({
-    hotelSlug: 'bocean-resort', 
-    customerName: '', 
-    customerEmail: '', 
-    customerPhone: '', 
+  const emptyNewLead = {
+    hotelSlug: '',
+    customerName: '',
+    customerEmail: '',
+    customerPhone: '',
     customerCountry: '',
-    pickup: '', 
-    destination: '', 
-    vehicleType: 'sedan_suv', 
-    status: 'new', 
+    routeMode: 'preset' as 'preset' | 'custom',
+    pickup: '',
+    destination: '',
+    vehicleType: 'sedan_suv',
+    status: 'new',
     notes: '',
     passengers: 1,
     date: '',
     time: '',
+    returnDate: '',
+    returnTime: '',
     amountUsd: 0,
-    tripType: 'one-way' as 'one-way' | 'round-trip'
-  })
+    tripType: 'one-way' as 'one-way' | 'round-trip',
+    paymentSource: 'stripe' as 'stripe' | 'external' | 'cash',
+    externalPlatform: '',
+    externalReference: '',
+    fullyPaid: true,
+    amountPaid: 0,
+  }
+  const [newLead, setNewLead] = useState(emptyNewLead)
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [expandedNotes, setExpandedNotes] = useState<string[]>([])
@@ -405,34 +424,91 @@ export default function AdminPage() {
   // Dynamic Stripe link generation state
   const [generatingLink, setGeneratingLink] = useState<string | null>(null)
 
+  // Hotels available for the "Add Reservation" modal — derived from whatever
+  // hotels already have routes loaded, same source of truth as the Websites tab.
+  const hotelOptions = useMemo(
+    () => Array.from(new Set(routePrices.map((r) => r.hotel_slug))).filter(Boolean),
+    [routePrices]
+  )
+
+  // Looks up the loaded rate for a preset route (airport/port), trying the
+  // exact direction first and falling back to the reverse one — same
+  // direction-aware logic the server uses in app/api/leads/route.ts, just for
+  // suggesting a price in the modal (the admin can still override it).
+  function lookupRoutePrice(pickup: string, destination: string, vehicleType: string, hotelSlug: string): number | null {
+    const key = `${vehicleType}_price` as keyof RoutePricing
+    const exact = routePrices.find((r) => r.hotel_slug === hotelSlug && r.pickup === pickup && r.destination === destination)
+    if (exact && (exact as any)[key]) return (exact as any)[key]
+    const reversed = routePrices.find((r) => r.hotel_slug === hotelSlug && r.pickup === destination && r.destination === pickup)
+    if (reversed && (reversed as any)[key]) return (reversed as any)[key]
+    return null
+  }
+
+  // Auto-suggests the total for preset routes as soon as route/vehicle/trip
+  // type are picked, since those rates are already known. Custom trajectories
+  // (routeMode 'custom') are left alone — the admin types that price by hand.
+  useEffect(() => {
+    if (newLead.routeMode !== 'preset') return
+    if (!newLead.pickup || !newLead.destination || !newLead.vehicleType) return
+    const outbound = lookupRoutePrice(newLead.pickup, newLead.destination, newLead.vehicleType, newLead.hotelSlug)
+    if (outbound === null) return
+    const total = newLead.tripType === 'round-trip'
+      ? outbound + (lookupRoutePrice(newLead.destination, newLead.pickup, newLead.vehicleType, newLead.hotelSlug) ?? outbound)
+      : outbound
+    setNewLead((prev) => (prev.routeMode === 'preset' ? { ...prev, amountUsd: total } : prev))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newLead.routeMode, newLead.pickup, newLead.destination, newLead.vehicleType, newLead.tripType, newLead.hotelSlug, routePrices])
+
   // Revenue computations
   const revenueStats = useMemo(() => {
-    // 1. Bookings (Confirmed Trips)
-    const bookingsTotal = bookings.reduce((sum, b) => sum + (b.amount_usd || 0), 0)
-    
-    // 2. Leads (Deposit Paid)
-    const depositLeads = leads.filter(l => l.status === 'deposit_paid')
-    const depositPaidOnline = depositLeads.reduce((sum, l) => sum + (l.amount_paid || 0), 0)
-    const depositRemainingCash = depositLeads.reduce((sum, l) => sum + (l.amount_remaining || 0), 0)
+    // Money actually collected for a booking so far. For 'paid'/'hotel_b2b'
+    // that's the full amount_usd; for 'deposit_paid' only amount_paid was
+    // collected — the rest is still owed. Using amount_usd for deposit_paid
+    // rows here (instead of amount_paid) was the old double-count bug: the
+    // full total AND the deposit split got added on top of each other.
+    const collected = (b: Booking) => {
+      if (b.status === 'paid' || b.status === 'hotel_b2b') return b.amount_usd || 0
+      if (b.status === 'deposit_paid') return b.amount_paid || 0
+      return 0
+    }
+    const pending = (b: Booking) => (b.status === 'deposit_paid' ? (b.amount_remaining || 0) : 0)
 
-    // 3. Gross Revenue
-    const grossRevenue = bookingsTotal + depositPaidOnline + depositRemainingCash
+    // Split collected revenue by where the payment actually came from —
+    // Stripe (online, hits the bank directly), the external platform the
+    // client also books through, or cash/transfer collected in person.
+    let stripeTotal = 0
+    let externalTotal = 0
+    let cashTotal = 0
+    let pendingTotal = 0
 
-    // 4. Monthly Breakdown
-    const monthlyData: Record<string, number> = {}
-    bookings.forEach(b => {
-      if (!b.date) return
-      const month = b.date.substring(0, 7) // YYYY-MM
-      monthlyData[month] = (monthlyData[month] || 0) + (b.amount_usd || 0)
+    bookings.forEach((b) => {
+      const source = b.payment_source || 'stripe'
+      const amount = collected(b)
+      if (source === 'external') externalTotal += amount
+      else if (source === 'cash') cashTotal += amount
+      else stripeTotal += amount
+      pendingTotal += pending(b)
     })
 
-    // 5. Top Routes
+    const grossRevenue = stripeTotal + externalTotal + cashTotal
+
+    // Monthly breakdown (collected amounts, by month of the trip date)
+    const monthlyData: Record<string, number> = {}
+    bookings.forEach((b) => {
+      if (!b.date) return
+      const month = b.date.substring(0, 7) // YYYY-MM
+      monthlyData[month] = (monthlyData[month] || 0) + collected(b)
+    })
+    const currentMonth = new Date().toISOString().substring(0, 7)
+    const currentMonthRevenue = monthlyData[currentMonth] || 0
+
+    // Top Routes (by collected revenue)
     const routesData: Record<string, { count: number; revenue: number }> = {}
     bookings.forEach(b => {
       const routeKey = `${b.pickup} -> ${b.destination}`
       if (!routesData[routeKey]) routesData[routeKey] = { count: 0, revenue: 0 }
       routesData[routeKey].count += 1
-      routesData[routeKey].revenue += (b.amount_usd || 0)
+      routesData[routeKey].revenue += collected(b)
     })
 
     const topRoutes = Object.entries(routesData)
@@ -440,14 +516,16 @@ export default function AdminPage() {
       .slice(0, 5)
 
     return {
-      bookingsTotal,
-      depositPaidOnline,
-      depositRemainingCash,
+      stripeTotal,
+      externalTotal,
+      cashTotal,
+      pendingTotal,
       grossRevenue,
+      currentMonthRevenue,
       monthlyData: Object.entries(monthlyData).sort((a, b) => a[0].localeCompare(b[0])),
       topRoutes
     }
-  }, [bookings, leads])
+  }, [bookings])
 
   /* -- API Fetchers -- */
 
@@ -880,13 +958,45 @@ export default function AdminPage() {
   async function addLead() {
     setAddingLead(true)
     try {
+      // Reservations paid on Stripe keep the old flow: they're created as a
+      // plain lead ('new') and the admin sends an invoice / payment link
+      // afterward. Reservations already collected elsewhere (the external
+      // platform, cash) go straight in as paid — that's what makes the
+      // calendar event get created immediately instead of living only in
+      // the other platform's calendar.
+      const isExternalPayment = newLead.paymentSource !== 'stripe'
+      let resolvedStatus = newLead.status
+      let amountPaid = 0
+      let amountRemaining = 0
+
+      if (isExternalPayment) {
+        if (newLead.fullyPaid) {
+          resolvedStatus = 'paid'
+          amountPaid = newLead.amountUsd
+          amountRemaining = 0
+        } else {
+          resolvedStatus = 'deposit_paid'
+          amountPaid = newLead.amountPaid
+          amountRemaining = Math.max(newLead.amountUsd - newLead.amountPaid, 0)
+        }
+      }
+
+      const payload = {
+        ...newLead,
+        pickup: newLead.pickup.trim(),
+        destination: newLead.destination.trim(),
+        status: resolvedStatus,
+        amountPaid,
+        amountRemaining,
+      }
+
       const res = await fetch('/api/leads', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           authorization: `Bearer ${password}`
         },
-        body: JSON.stringify(newLead)
+        body: JSON.stringify(payload)
       })
       const result = await res.json()
       if (!res.ok) {
@@ -894,25 +1004,10 @@ export default function AdminPage() {
         setAddingLead(false)
         return
       }
-      const data = await fetchLeads(password)
-      setLeads(data)
-      setNewLead({ 
-        hotelSlug: 'bocean-resort', 
-        customerName: '', 
-        customerEmail: '', 
-        customerPhone: '', 
-        customerCountry: '',
-        pickup: '', 
-        destination: '', 
-        vehicleType: 'sedan_suv', 
-        status: 'new', 
-        notes: '',
-        passengers: 1,
-        date: '',
-        time: '',
-        amountUsd: 0,
-        tripType: 'one-way'
-      })
+      const [leadsData, bookingsData] = await Promise.all([fetchLeads(password), fetchBookings(password)])
+      setLeads(leadsData)
+      setBookings(bookingsData)
+      setNewLead({ ...emptyNewLead, hotelSlug: hotelOptions[0] || '' })
     } catch (err) {
       alert(`Network error adding lead: ${err}`)
     }
@@ -1668,16 +1763,16 @@ export default function AdminPage() {
 
             {/* TOP SECTION: High-Level Metrics */}
             <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* Monthly Revenue (Gross Revenue across all paid/deposits) */}
+              {/* Monthly Revenue (collected so far this calendar month) */}
               <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold uppercase tracking-widest text-[#888]">Monthly Revenue</p>
                   <IconRevenue />
                 </div>
                 <p className="text-3xl font-bold text-green-400 mt-2">
-                  ${revenueStats.grossRevenue.toLocaleString()}
+                  ${revenueStats.currentMonthRevenue.toLocaleString()}
                 </p>
-                <p className="text-xs text-[#666]">Total from bookings and deposits</p>
+                <p className="text-xs text-[#666]">Collected this month (Stripe + External + Cash)</p>
               </div>
 
               {/* Total Bookings */}
@@ -2577,7 +2672,7 @@ export default function AdminPage() {
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
-                  onClick={() => setShowAddLeadModal(true)}
+                  onClick={() => { setNewLead({ ...emptyNewLead, hotelSlug: hotelOptions[0] || '' }); setShowAddLeadModal(true); }}
                   className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
                   style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
                 >
@@ -2642,10 +2737,10 @@ export default function AdminPage() {
                       <input type="text" placeholder="e.g. Colombia" value={newLead.customerCountry} onChange={(e) => setNewLead({ ...newLead, customerCountry: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Route *</label>
-                      <select value={`${newLead.pickup}|||${newLead.destination}`} onChange={(e) => { const [p, d] = e.target.value.split('|||'); setNewLead({ ...newLead, pickup: p || '', destination: d || '' }); }} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
-                        <option value="|||">— Select Route —</option>
-                        {routePrices.map((r) => (<option key={r.id} value={`${r.pickup}|||${r.destination}`}>{r.pickup} → {r.destination}</option>))}
+                      <label className="text-sm font-semibold text-[#aaa]">Hotel *</label>
+                      <select value={newLead.hotelSlug} onChange={(e) => setNewLead({ ...newLead, hotelSlug: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                        <option value="">— Select Hotel —</option>
+                        {hotelOptions.map((slug) => (<option key={slug} value={slug}>{slug}</option>))}
                       </select>
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -2655,6 +2750,33 @@ export default function AdminPage() {
                         <option value="round-trip">Round Trip</option>
                       </select>
                     </div>
+                  </div>
+
+                  <div className="mb-5">
+                    <label className="text-sm font-semibold text-[#aaa] mb-2 block">Route</label>
+                    <div className="flex gap-2 mb-3">
+                      <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'preset', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'preset' ? { background: '#B8960C', color: '#0a0a0a' } : { background: '#0a0a0a', color: '#888', border: '1px solid #2a2a2a' }}>
+                        Preestablecida (Aeropuerto / Puerto)
+                      </button>
+                      <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'custom', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'custom' ? { background: '#B8960C', color: '#0a0a0a' } : { background: '#0a0a0a', color: '#888', border: '1px solid #2a2a2a' }}>
+                        Otro Trayecto
+                      </button>
+                    </div>
+
+                    {newLead.routeMode === 'preset' ? (
+                      <select value={`${newLead.pickup}|||${newLead.destination}`} onChange={(e) => { const [p, d] = e.target.value.split('|||'); setNewLead({ ...newLead, pickup: p || '', destination: d || '' }); }} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                        <option value="|||">— Select Route —</option>
+                        {routePrices.filter((r) => !newLead.hotelSlug || r.hotel_slug === newLead.hotelSlug).map((r) => (<option key={r.id} value={`${r.pickup}|||${r.destination}`}>{r.pickup} → {r.destination}</option>))}
+                      </select>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <input type="text" placeholder="Pickup (e.g. B Ocean Resort)" value={newLead.pickup} onChange={(e) => setNewLead({ ...newLead, pickup: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                        <input type="text" placeholder="Destination (e.g. Club Space Miami)" value={newLead.destination} onChange={(e) => setNewLead({ ...newLead, destination: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-semibold text-[#aaa]">Date</label>
                       <input type="date" value={newLead.date} onChange={(e) => setNewLead({ ...newLead, date: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
@@ -2667,6 +2789,18 @@ export default function AdminPage() {
                       <label className="text-sm font-semibold text-[#aaa]">Passengers</label>
                       <input type="number" placeholder="1" value={newLead.passengers} onChange={(e) => setNewLead({ ...newLead, passengers: parseInt(e.target.value) || 1 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
                     </div>
+                    {newLead.tripType === 'round-trip' && (
+                      <>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-[#aaa]">Return Date</label>
+                          <input type="date" value={newLead.returnDate} onChange={(e) => setNewLead({ ...newLead, returnDate: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-[#aaa]">Return Time</label>
+                          <input type="text" placeholder="e.g. 11:00 PM" value={newLead.returnTime} onChange={(e) => setNewLead({ ...newLead, returnTime: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                        </div>
+                      </>
+                    )}
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-semibold text-[#aaa]">Vehicle</label>
                       <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
@@ -2678,18 +2812,67 @@ export default function AdminPage() {
                       </select>
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Estimated Total ($)</label>
-                      <input type="number" placeholder="0" value={newLead.amountUsd} onChange={(e) => setNewLead({ ...newLead, amountUsd: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[#aaa]">
+                        {newLead.routeMode === 'preset' ? 'Total ($) — sugerido de la tarifa' : 'Total ($)'}
+                      </label>
+                      <input type="number" step="0.01" placeholder="0" value={newLead.amountUsd} onChange={(e) => setNewLead({ ...newLead, amountUsd: parseFloat(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
                     </div>
                   </div>
+
+                  <div className="mb-5 pt-5 border-t border-[#2a2a2a]">
+                    <label className="text-sm font-semibold text-[#aaa] mb-2 block">Payment Source</label>
+                    <div className="flex gap-2 mb-4">
+                      {(['stripe', 'external', 'cash'] as const).map((src) => (
+                        <button key={src} type="button" onClick={() => setNewLead({ ...newLead, paymentSource: src })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.paymentSource === src ? { background: '#B8960C', color: '#0a0a0a' } : { background: '#0a0a0a', color: '#888', border: '1px solid #2a2a2a' }}>
+                          {src === 'stripe' ? 'Stripe' : src === 'external' ? 'Plataforma Externa' : 'Efectivo'}
+                        </button>
+                      ))}
+                    </div>
+
+                    {newLead.paymentSource === 'stripe' ? (
+                      <p className="text-xs text-[#666]">Se crea como reserva pendiente — después usa &quot;Generate Payment Link&quot; o &quot;Send Invoice&quot; para cobrarla.</p>
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        {newLead.paymentSource === 'external' && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-[#aaa]">Plataforma</label>
+                              <input type="text" placeholder="e.g. GetYourGuide" value={newLead.externalPlatform} onChange={(e) => setNewLead({ ...newLead, externalPlatform: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-[#aaa]">Referencia / # de reserva</label>
+                              <input type="text" value={newLead.externalReference} onChange={(e) => setNewLead({ ...newLead, externalReference: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                            </div>
+                          </div>
+                        )}
+                        <label className="flex items-center gap-2 text-sm text-[#aaa]">
+                          <input type="checkbox" checked={newLead.fullyPaid} onChange={(e) => setNewLead({ ...newLead, fullyPaid: e.target.checked })} />
+                          Ya se cobró el total
+                        </label>
+                        {!newLead.fullyPaid && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-[#aaa]">Monto ya cobrado ($)</label>
+                              <input type="number" step="0.01" placeholder="0" value={newLead.amountPaid} onChange={(e) => setNewLead({ ...newLead, amountPaid: parseFloat(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-[#aaa]">Saldo pendiente</label>
+                              <input type="text" readOnly value={`$${Math.max(newLead.amountUsd - newLead.amountPaid, 0)}`} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#111] px-4 py-3 text-[#888]" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex gap-4 pt-6 border-t border-[#2a2a2a]">
                     <button
                       onClick={() => { addLead(); setShowAddLeadModal(false); }}
-                      disabled={addingLead || !newLead.customerName || !newLead.pickup || !newLead.destination}
+                      disabled={addingLead || !newLead.customerName || !newLead.hotelSlug || !newLead.pickup || !newLead.destination || !newLead.amountUsd}
                       className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
                       style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
                     >
-                      {addingLead ? 'Saving…' : '+ Add Lead'}
+                      {addingLead ? 'Saving…' : newLead.paymentSource === 'stripe' ? '+ Add Reservation' : '+ Add Paid Reservation'}
                     </button>
                     <button onClick={() => setShowAddLeadModal(false)} className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] transition-all">
                       Cancel
@@ -3136,21 +3319,31 @@ export default function AdminPage() {
             </div>
 
             {/* Top Cards */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
               <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
                 <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Gross Revenue</p>
-                <p className="text-4xl font-bold" style={{ color: '#4ade80' }}>${revenueStats.grossRevenue.toLocaleString()}</p>
-                <p className="text-xs uppercase tracking-wider text-[#666]">All confirmed income</p>
+                <p className="text-3xl font-bold" style={{ color: '#4ade80' }}>${revenueStats.grossRevenue.toLocaleString()}</p>
+                <p className="text-xs uppercase tracking-wider text-[#666]">All collected income</p>
               </div>
               <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Stripe / Online</p>
-                <p className="text-4xl font-bold" style={{ color: '#60a5fa' }}>${(revenueStats.bookingsTotal + revenueStats.depositPaidOnline).toLocaleString()}</p>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Stripe</p>
+                <p className="text-3xl font-bold" style={{ color: '#60a5fa' }}>${revenueStats.stripeTotal.toLocaleString()}</p>
                 <p className="text-xs uppercase tracking-wider text-[#666]">Direct to bank</p>
               </div>
               <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Balance Pending</p>
-                <p className="text-4xl font-bold" style={{ color: '#FBBF24' }}>${revenueStats.depositRemainingCash.toLocaleString()}</p>
-                <p className="text-xs uppercase tracking-wider text-[#666]">Via secure payment link</p>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Plataforma Externa</p>
+                <p className="text-3xl font-bold" style={{ color: '#2dd4bf' }}>${revenueStats.externalTotal.toLocaleString()}</p>
+                <p className="text-xs uppercase tracking-wider text-[#666]">Cobrado en la otra plataforma</p>
+              </div>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Efectivo</p>
+                <p className="text-3xl font-bold" style={{ color: '#c084fc' }}>${revenueStats.cashTotal.toLocaleString()}</p>
+                <p className="text-xs uppercase tracking-wider text-[#666]">Cobrado en persona</p>
+              </div>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Por Cobrar</p>
+                <p className="text-3xl font-bold" style={{ color: '#FBBF24' }}>${revenueStats.pendingTotal.toLocaleString()}</p>
+                <p className="text-xs uppercase tracking-wider text-[#666]">Saldos de depósitos pendientes</p>
               </div>
             </section>
 
