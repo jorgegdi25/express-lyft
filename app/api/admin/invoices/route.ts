@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import Stripe from 'stripe'
+import { flTaxRateIds } from '@/lib/tax'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
       amount: Math.round(lead.amount_usd * 100), // Convert to cents
       currency: 'usd',
       description: `Express Lyft Reservation: ${lead.pickup} to ${lead.destination} (${lead.date} at ${lead.time}) | ${lead.vehicle_type} | ${lead.passengers} passengers`,
+      tax_rates: flTaxRateIds(),
     })
 
     // 4. Create the Invoice

@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 import { resend, sendReminderSentNotification } from '@/lib/resend'
 import { PaymentReminderEmail } from '@/emails/PaymentReminderEmail'
+import { flTaxRateIds } from '@/lib/tax'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,8 +77,6 @@ export async function GET(req: NextRequest) {
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         invoice_creation: { enabled: true },
-        automatic_tax: { enabled: true },
-        billing_address_collection: 'required',
         line_items: [
           {
             price_data: {
@@ -89,6 +88,7 @@ export async function GET(req: NextRequest) {
               unit_amount: Math.round(lead.amount_remaining * 100),
             },
             quantity: 1,
+            tax_rates: flTaxRateIds(),
           },
         ],
         mode: 'payment',
