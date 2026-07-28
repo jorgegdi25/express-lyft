@@ -140,6 +140,15 @@ export async function POST(req: NextRequest) {
         invoice_creation: {
           enabled: true,
         },
+        // Florida sales tax was never being charged — this makes Stripe
+        // calculate and add it on top of the fare. Requires Stripe Tax to be
+        // activated (and the FL registration added) in the Stripe dashboard
+        // for this same mode (test/live), or every checkout session below
+        // fails to create. billing_address_collection lets Stripe's hosted
+        // page collect the address it needs to determine the tax rate,
+        // since our own booking forms don't ask for one.
+        automatic_tax: { enabled: true },
+        billing_address_collection: 'required',
         line_items: [
           {
             price_data: {
@@ -191,6 +200,15 @@ export async function POST(req: NextRequest) {
         invoice_creation: {
           enabled: true,
         },
+        // Florida sales tax was never being charged — this makes Stripe
+        // calculate and add it on top of the fare. Requires Stripe Tax to be
+        // activated (and the FL registration added) in the Stripe dashboard
+        // for this same mode (test/live), or every checkout session below
+        // fails to create. billing_address_collection lets Stripe's hosted
+        // page collect the address it needs to determine the tax rate,
+        // since our own booking forms don't ask for one.
+        automatic_tax: { enabled: true },
+        billing_address_collection: 'required',
         line_items: [
           {
             price_data: {
@@ -388,6 +406,8 @@ export async function POST(req: NextRequest) {
       invoice_creation: {
         enabled: true,
       },
+      automatic_tax: { enabled: true },
+      billing_address_collection: 'required',
       line_items: [
         {
           price_data: {

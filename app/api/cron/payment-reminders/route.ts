@@ -76,6 +76,8 @@ export async function GET(req: NextRequest) {
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         invoice_creation: { enabled: true },
+        automatic_tax: { enabled: true },
+        billing_address_collection: 'required',
         line_items: [
           {
             price_data: {
