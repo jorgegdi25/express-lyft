@@ -5,6 +5,7 @@ import VehicleDisplay from './VehicleDisplay'
 import dynamic from 'next/dynamic'
 import ErrorBoundary from './ErrorBoundary'
 import { applyTimeSurcharge, calculateDistanceAmount, SurchargeConfig } from '@/lib/pricing'
+import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 
@@ -342,6 +343,14 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
   const total = (tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice) + meetGreetFee
   const depositAmount = Math.ceil(total * 0.20)
   const chargeAmount = paymentMode === 'deposit' ? depositAmount : total
+  // Display-only: shown so the customer sees the same tax-inclusive number
+  // here that Stripe actually charges, instead of the total jumping up once
+  // they reach checkout. The pre-tax `total`/`depositAmount` above are still
+  // what gets sent to the server — Stripe adds the real tax on its own.
+  const taxMultiplier = 1 + FL_TAX_RATE_PERCENT / 100
+  const totalWithTax = (total * taxMultiplier).toFixed(2)
+  const depositWithTax = (depositAmount * taxMultiplier).toFixed(2)
+  const remainingWithTax = ((total - depositAmount) * taxMultiplier).toFixed(2)
 
   const availableDestinations = LOCATIONS.filter((l) => l !== pickup)
   const availablePickups = LOCATIONS.filter((l) => l !== destination)
@@ -1113,12 +1122,15 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                           <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#B8960C' }}>
                             Estimated Total
                           </p>
+                          <p className="text-xs" style={{ color: '#888888' }}>
+                            ${total} + {FL_TAX_RATE_PERCENT}% FL sales tax
+                          </p>
                           {tripType === 'round-trip' && (
                             <p className="text-xs" style={{ color: '#888888' }}>Round trip included</p>
                           )}
                         </div>
                         <span className="text-4xl font-bold" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
-                          ${total}
+                          ${totalWithTax}
                         </span>
                       </div>
 
@@ -1154,7 +1166,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                               </span>
                             </div>
                             <span className="text-2xl font-bold ml-7" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
-                              ${total}
+                              ${totalWithTax}
                             </span>
                           </button>
 
@@ -1185,7 +1197,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                             </div>
                             <div className="ml-7">
                               <span className="text-2xl font-bold" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
-                                ${depositAmount}
+                                ${depositWithTax}
                               </span>
                               <span className="text-xs ml-2 font-semibold" style={{ color: '#888888' }}>(20%)</span>
                             </div>
@@ -1201,7 +1213,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                             </svg>
                             <p className="text-xs leading-relaxed" style={{ color: '#BBBBBB' }}>
-                              Remaining <strong style={{ color: '#EF9F27' }}>${total - depositAmount}</strong> is due before your trip — payable via secure payment link.
+                              Remaining <strong style={{ color: '#EF9F27' }}>${remainingWithTax}</strong> is due before your trip — payable via secure payment link.
                             </p>
                           </div>
                         )}
@@ -1285,7 +1297,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                           : false 
                             ? 'Confirm Reservation →'
                             : paymentMode === 'deposit'
-                              ? `Pay $${depositAmount} Deposit →`
+                              ? `Pay $${depositWithTax} Deposit →`
                               : 'Proceed to Payment →'
                       }
                     </button>

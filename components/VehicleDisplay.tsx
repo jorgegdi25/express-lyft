@@ -1,5 +1,6 @@
 'use client'
 import Image from 'next/image'
+import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 
 interface VehicleDisplayProps {
   passengers: number
@@ -125,14 +126,14 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
               Base Rate
             </p>
             <p className="text-xs" style={{ color: '#777777' }}>
-              One-way transfer
+              One-way transfer + {FL_TAX_RATE_PERCENT}% FL sales tax
             </p>
           </div>
           <span
             className="text-4xl font-bold"
             style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}
           >
-            ${prices[vehicle.type]}
+            ${(prices[vehicle.type] * (1 + FL_TAX_RATE_PERCENT / 100)).toFixed(2)}
           </span>
         </div>
       ) : (

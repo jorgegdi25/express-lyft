@@ -10,3 +10,8 @@ export function flTaxRateIds(): string[] {
   const id = process.env.STRIPE_TAX_RATE_ID
   return id ? [id] : []
 }
+
+// Plain number (no secrets) so client components can show the tax-inclusive
+// total up front — the customer should see the same number here that Stripe
+// charges them, not a surprise jump at checkout.
+export const FL_TAX_RATE_PERCENT = 7
