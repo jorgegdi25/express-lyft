@@ -15,3 +15,11 @@ export function flTaxRateIds(): string[] {
 // total up front — the customer should see the same number here that Stripe
 // charges them, not a surprise jump at checkout.
 export const FL_TAX_RATE_PERCENT = 7
+
+// Reads the actual tax Stripe charged on a completed Checkout Session, in
+// dollars. Comes straight from Stripe's own total_details — never
+// recalculated locally — so it's exact to the cent and automatically
+// correct if the rate or rounding ever changes.
+export function sessionTaxAmount(session: { total_details?: { amount_tax?: number | null } | null }): number {
+  return (session.total_details?.amount_tax ?? 0) / 100
+}

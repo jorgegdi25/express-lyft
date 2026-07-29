@@ -5,6 +5,7 @@ import { resend, sendOwnerNotification } from '@/lib/resend'
 import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
 import Stripe from 'stripe'
 import { createCalendarEvent } from '@/lib/calendar'
+import { sessionTaxAmount } from '@/lib/tax'
 
 export const dynamic = 'force-dynamic'
 // Sin esto, Vercel usa un timeout bajo (~15s) y en cold start el trabajo
@@ -69,6 +70,16 @@ export async function POST(req: NextRequest) {
         updateFields.amount_paid = totalAmount
         updateFields.amount_remaining = 0
       }
+
+      // Tax actually charged by Stripe on this session, added to whatever
+      // was already collected on this lead — a deposit + its later remaining
+      // balance are two separate sessions, each with its own tax portion.
+      const { data: existingLead } = await supabaseAdmin
+        .from('leads')
+        .select('tax_collected')
+        .eq('id', leadId)
+        .maybeSingle()
+      updateFields.tax_collected = (existingLead?.tax_collected || 0) + sessionTaxAmount(session)
 
       // 1. Update the lead status
       const { data: leadData, error: updateError } = await supabaseAdmin

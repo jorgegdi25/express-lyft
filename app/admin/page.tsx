@@ -36,6 +36,7 @@ interface Booking {
   external_platform?: string | null
   external_reference?: string | null
   paid_at?: string | null
+  tax_collected?: number
 }
 
 interface Driver {
@@ -96,6 +97,7 @@ interface Lead {
   external_platform?: string | null
   external_reference?: string | null
   paid_at?: string | null
+  tax_collected?: number
 }
 
 interface Client {
@@ -480,6 +482,12 @@ export default function AdminPage() {
     let externalTotal = 0
     let cashTotal = 0
     let pendingTotal = 0
+    // Florida sales tax actually charged by Stripe (from tax_collected,
+    // straight from Stripe's own numbers — not our revenue, just what's
+    // owed to the state). Only ever populated on Stripe-processed leads,
+    // and only from when the tax was turned on — older paid leads show $0
+    // here because no tax was actually charged on them.
+    let taxCollectedTotal = 0
 
     bookings.forEach((b) => {
       const source = b.payment_source || 'stripe'
@@ -488,6 +496,7 @@ export default function AdminPage() {
       else if (source === 'cash') cashTotal += amount
       else stripeTotal += amount
       pendingTotal += pending(b)
+      taxCollectedTotal += b.tax_collected || 0
     })
 
     const grossRevenue = stripeTotal + externalTotal + cashTotal
@@ -520,6 +529,7 @@ export default function AdminPage() {
       externalTotal,
       cashTotal,
       pendingTotal,
+      taxCollectedTotal,
       grossRevenue,
       currentMonthRevenue,
       monthlyData: Object.entries(monthlyData).sort((a, b) => a[0].localeCompare(b[0])),
@@ -3345,6 +3355,15 @@ export default function AdminPage() {
                 <p className="text-3xl font-bold" style={{ color: '#FBBF24' }}>${revenueStats.pendingTotal.toLocaleString()}</p>
                 <p className="text-xs uppercase tracking-wider text-[#666]">Saldos de depósitos pendientes</p>
               </div>
+            </section>
+
+            {/* Tax collected — separate from revenue on purpose: this is money owed to the state, not income */}
+            <section className="rounded-xl p-6 flex items-center justify-between" style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)' }}>
+              <div>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Impuesto de Florida Cobrado (7%)</p>
+                <p className="text-xs uppercase tracking-wider text-[#666] mt-1">No es ingreso — es lo que hay que declarar al estado. Solo cuenta reservas desde que se activó el impuesto.</p>
+              </div>
+              <p className="text-3xl font-bold" style={{ color: '#FBBF24' }}>${revenueStats.taxCollectedTotal.toLocaleString()}</p>
             </section>
 
             {/* Monthly Trend */}

@@ -147,7 +147,12 @@ create table if not exists leads (
   payment_source    text default 'stripe',
   external_platform text,
   external_reference text,
-  paid_at           timestamptz
+  paid_at           timestamptz,
+  -- Impuesto de Florida realmente cobrado por Stripe en este lead (viene de
+  -- session.total_details.amount_tax, no se recalcula). Se acumula si el
+  -- lead se paga en dos partes (depósito + saldo). Queda en 0/NULL para
+  -- reservas de antes de activar el impuesto — correcto, ahí no se cobró.
+  tax_collected     numeric default 0
 );
 
 -- ---------- 7. clients (clientes recurrentes) ----------

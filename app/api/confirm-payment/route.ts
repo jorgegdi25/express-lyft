@@ -5,6 +5,7 @@ import { resend, sendOwnerNotification } from '@/lib/resend'
 import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
 import Stripe from 'stripe'
 import { createCalendarEvent } from '@/lib/calendar'
+import { sessionTaxAmount } from '@/lib/tax'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,6 +65,12 @@ export async function POST(req: NextRequest) {
       updateFields.amount_paid = totalAmount
       updateFields.amount_remaining = 0
     }
+
+    // Tax actually charged by Stripe on this session, added to whatever was
+    // already collected on this lead (deposit + later remaining balance are
+    // two separate sessions, each with its own tax portion). `lead` was
+    // already fetched above, before this update.
+    updateFields.tax_collected = (lead.tax_collected || 0) + sessionTaxAmount(session)
 
     // 5. Update the lead
     const { data: updatedLead, error: updateError } = await supabaseAdmin
