@@ -3,6 +3,8 @@
 import Image from 'next/image'
 import { useState, useEffect, useMemo } from 'react'
 import QRCode from 'qrcode'
+import { applyTimeSurcharge, TIME_SLOTS } from '@/lib/pricing'
+import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 
 /* -- Interfaces --------------------------------------- */
 
@@ -433,6 +435,17 @@ export default function AdminPage() {
     [routePrices]
   )
 
+  interface PricingSettings {
+    surcharge_type: 'fixed' | 'percentage';
+    surcharge_amount: number;
+    surcharge_start_hour: number;
+    surcharge_end_hour: number;
+  }
+
+  const [pricingSettings, setPricingSettings] = useState<PricingSettings | null>(null)
+  const [editPricingSettings, setEditPricingSettings] = useState<PricingSettings | null>(null)
+  const [savingPricingSettings, setSavingPricingSettings] = useState(false)
+
   // Looks up the loaded rate for a preset route (airport/port), trying the
   // exact direction first and falling back to the reverse one — same
   // direction-aware logic the server uses in app/api/leads/route.ts, just for
@@ -447,19 +460,27 @@ export default function AdminPage() {
   }
 
   // Auto-suggests the total for preset routes as soon as route/vehicle/trip
-  // type are picked, since those rates are already known. Custom trajectories
-  // (routeMode 'custom') are left alone — the admin types that price by hand.
+  // type/time are picked, since those rates are already known — including the
+  // same time-of-day surcharge the public booking forms and server apply, so
+  // a manually-created reservation never quietly skips it. Each leg is
+  // surcharged by its own pickup time, same as a round trip everywhere else.
+  // Custom trajectories (routeMode 'custom') are left alone — the admin types
+  // that price by hand.
   useEffect(() => {
     if (newLead.routeMode !== 'preset') return
     if (!newLead.pickup || !newLead.destination || !newLead.vehicleType) return
-    const outbound = lookupRoutePrice(newLead.pickup, newLead.destination, newLead.vehicleType, newLead.hotelSlug)
-    if (outbound === null) return
-    const total = newLead.tripType === 'round-trip'
-      ? outbound + (lookupRoutePrice(newLead.destination, newLead.pickup, newLead.vehicleType, newLead.hotelSlug) ?? outbound)
-      : outbound
+    const outboundBase = lookupRoutePrice(newLead.pickup, newLead.destination, newLead.vehicleType, newLead.hotelSlug)
+    if (outboundBase === null) return
+    const outbound = Math.ceil(applyTimeSurcharge(outboundBase, newLead.time, pricingSettings))
+    let total = outbound
+    if (newLead.tripType === 'round-trip') {
+      const returnBase = lookupRoutePrice(newLead.destination, newLead.pickup, newLead.vehicleType, newLead.hotelSlug) ?? outboundBase
+      const returnLeg = Math.ceil(applyTimeSurcharge(returnBase, newLead.returnTime || newLead.time, pricingSettings))
+      total = outbound + returnLeg
+    }
     setNewLead((prev) => (prev.routeMode === 'preset' ? { ...prev, amountUsd: total } : prev))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newLead.routeMode, newLead.pickup, newLead.destination, newLead.vehicleType, newLead.tripType, newLead.hotelSlug, routePrices])
+  }, [newLead.routeMode, newLead.pickup, newLead.destination, newLead.vehicleType, newLead.tripType, newLead.hotelSlug, newLead.time, newLead.returnTime, routePrices, pricingSettings])
 
   // Revenue computations
   const revenueStats = useMemo(() => {
@@ -659,17 +680,6 @@ export default function AdminPage() {
 
   const [basePrices, setBasePrices] = useState<BasePrice[]>([])
   const [editBasePriceData, setEditBasePriceData] = useState<Record<string, { price_usd: number, price_per_mile: number, price_per_minute: number, min_price: number, max_price: number, multiplier: number }>>({})
-
-  interface PricingSettings {
-    surcharge_type: 'fixed' | 'percentage';
-    surcharge_amount: number;
-    surcharge_start_hour: number;
-    surcharge_end_hour: number;
-  }
-
-  const [pricingSettings, setPricingSettings] = useState<PricingSettings | null>(null)
-  const [editPricingSettings, setEditPricingSettings] = useState<PricingSettings | null>(null)
-  const [savingPricingSettings, setSavingPricingSettings] = useState(false)
 
   async function fetchBasePrices(pw: string) {
     const res = await fetch(`/api/admin/prices?t=${Date.now()}`, {
@@ -2768,10 +2778,10 @@ export default function AdminPage() {
                     <label className="text-sm font-semibold text-[#aaa] mb-2 block">Route</label>
                     <div className="flex gap-2 mb-3">
                       <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'preset', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'preset' ? { background: '#B8960C', color: '#0a0a0a' } : { background: '#0a0a0a', color: '#888', border: '1px solid #2a2a2a' }}>
-                        Preestablecida (Aeropuerto / Puerto)
+                        Preset Route (Airport/Port)
                       </button>
                       <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'custom', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'custom' ? { background: '#B8960C', color: '#0a0a0a' } : { background: '#0a0a0a', color: '#888', border: '1px solid #2a2a2a' }}>
-                        Otro Trayecto
+                        Custom Trip
                       </button>
                     </div>
 
@@ -2795,7 +2805,10 @@ export default function AdminPage() {
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-semibold text-[#aaa]">Time</label>
-                      <input type="text" placeholder="e.g. 11:00 AM" value={newLead.time} onChange={(e) => setNewLead({ ...newLead, time: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <select value={newLead.time} onChange={(e) => setNewLead({ ...newLead, time: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                        <option value="">— Select Time —</option>
+                        {TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
+                      </select>
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-semibold text-[#aaa]">Passengers</label>
@@ -2809,7 +2822,10 @@ export default function AdminPage() {
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-sm font-semibold text-[#aaa]">Return Time</label>
-                          <input type="text" placeholder="e.g. 11:00 PM" value={newLead.returnTime} onChange={(e) => setNewLead({ ...newLead, returnTime: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                          <select value={newLead.returnTime} onChange={(e) => setNewLead({ ...newLead, returnTime: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                            <option value="">— Select Time —</option>
+                            {TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
+                          </select>
                         </div>
                       </>
                     )}
@@ -2825,9 +2841,14 @@ export default function AdminPage() {
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-semibold text-[#aaa]">
-                        {newLead.routeMode === 'preset' ? 'Total ($) — sugerido de la tarifa' : 'Total ($)'}
+                        {newLead.routeMode === 'preset' ? 'Total ($) — suggested from rate' : 'Total ($)'}
                       </label>
                       <input type="number" step="0.01" placeholder="0" value={newLead.amountUsd} onChange={(e) => setNewLead({ ...newLead, amountUsd: parseFloat(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      {newLead.paymentSource === 'stripe' && newLead.amountUsd > 0 && (
+                        <p className="text-xs text-[#666]">
+                          Customer pays ${(newLead.amountUsd * (1 + FL_TAX_RATE_PERCENT / 100)).toFixed(2)} (${newLead.amountUsd} + {FL_TAX_RATE_PERCENT}% FL sales tax)
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -2836,39 +2857,39 @@ export default function AdminPage() {
                     <div className="flex gap-2 mb-4">
                       {(['stripe', 'external', 'cash'] as const).map((src) => (
                         <button key={src} type="button" onClick={() => setNewLead({ ...newLead, paymentSource: src })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.paymentSource === src ? { background: '#B8960C', color: '#0a0a0a' } : { background: '#0a0a0a', color: '#888', border: '1px solid #2a2a2a' }}>
-                          {src === 'stripe' ? 'Stripe' : src === 'external' ? 'Plataforma Externa' : 'Efectivo'}
+                          {src === 'stripe' ? 'Stripe' : src === 'external' ? 'External Platform' : 'Cash'}
                         </button>
                       ))}
                     </div>
 
                     {newLead.paymentSource === 'stripe' ? (
-                      <p className="text-xs text-[#666]">Se crea como reserva pendiente — después usa &quot;Generate Payment Link&quot; o &quot;Send Invoice&quot; para cobrarla.</p>
+                      <p className="text-xs text-[#666]">Created as a pending reservation — use &quot;Generate Payment Link&quot; or &quot;Send Invoice&quot; afterward to collect payment.</p>
                     ) : (
                       <div className="flex flex-col gap-4">
                         {newLead.paymentSource === 'external' && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="flex flex-col gap-1.5">
-                              <label className="text-sm font-semibold text-[#aaa]">Plataforma</label>
+                              <label className="text-sm font-semibold text-[#aaa]">Platform</label>
                               <input type="text" placeholder="e.g. GetYourGuide" value={newLead.externalPlatform} onChange={(e) => setNewLead({ ...newLead, externalPlatform: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
                             </div>
                             <div className="flex flex-col gap-1.5">
-                              <label className="text-sm font-semibold text-[#aaa]">Referencia / # de reserva</label>
+                              <label className="text-sm font-semibold text-[#aaa]">Reference / Booking #</label>
                               <input type="text" value={newLead.externalReference} onChange={(e) => setNewLead({ ...newLead, externalReference: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
                             </div>
                           </div>
                         )}
                         <label className="flex items-center gap-2 text-sm text-[#aaa]">
                           <input type="checkbox" checked={newLead.fullyPaid} onChange={(e) => setNewLead({ ...newLead, fullyPaid: e.target.checked })} />
-                          Ya se cobró el total
+                          Already collected in full
                         </label>
                         {!newLead.fullyPaid && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="flex flex-col gap-1.5">
-                              <label className="text-sm font-semibold text-[#aaa]">Monto ya cobrado ($)</label>
+                              <label className="text-sm font-semibold text-[#aaa]">Amount Already Collected ($)</label>
                               <input type="number" step="0.01" placeholder="0" value={newLead.amountPaid} onChange={(e) => setNewLead({ ...newLead, amountPaid: parseFloat(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
                             </div>
                             <div className="flex flex-col gap-1.5">
-                              <label className="text-sm font-semibold text-[#aaa]">Saldo pendiente</label>
+                              <label className="text-sm font-semibold text-[#aaa]">Remaining Balance</label>
                               <input type="text" readOnly value={`$${Math.max(newLead.amountUsd - newLead.amountPaid, 0)}`} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#111] px-4 py-3 text-[#888]" />
                             </div>
                           </div>
@@ -3343,27 +3364,27 @@ export default function AdminPage() {
                 <p className="text-xs uppercase tracking-wider text-[#666]">Direct to bank</p>
               </div>
               <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Plataforma Externa</p>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">External Platform</p>
                 <p className="text-3xl font-bold" style={{ color: '#2dd4bf' }}>${revenueStats.externalTotal.toLocaleString()}</p>
-                <p className="text-xs uppercase tracking-wider text-[#666]">Cobrado en la otra plataforma</p>
+                <p className="text-xs uppercase tracking-wider text-[#666]">Collected on the other platform</p>
               </div>
               <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Efectivo</p>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Cash</p>
                 <p className="text-3xl font-bold" style={{ color: '#c084fc' }}>${revenueStats.cashTotal.toLocaleString()}</p>
-                <p className="text-xs uppercase tracking-wider text-[#666]">Cobrado en persona</p>
+                <p className="text-xs uppercase tracking-wider text-[#666]">Collected in person</p>
               </div>
               <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Por Cobrar</p>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Pending</p>
                 <p className="text-3xl font-bold" style={{ color: '#FBBF24' }}>${revenueStats.pendingTotal.toLocaleString()}</p>
-                <p className="text-xs uppercase tracking-wider text-[#666]">Saldos de depósitos pendientes</p>
+                <p className="text-xs uppercase tracking-wider text-[#666]">Outstanding deposit balances</p>
               </div>
             </section>
 
             {/* Tax collected — separate from revenue on purpose: this is money owed to the state, not income */}
             <section className="rounded-xl p-6 flex items-center justify-between" style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)' }}>
               <div>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Impuesto de Florida Cobrado (7%)</p>
-                <p className="text-xs uppercase tracking-wider text-[#666] mt-1">No es ingreso — es lo que hay que declarar al estado. Solo cuenta reservas desde que se activó el impuesto.</p>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Florida Sales Tax Collected (7%)</p>
+                <p className="text-xs uppercase tracking-wider text-[#666] mt-1">Not revenue — owed to the state. Only counts reservations since the tax went live.</p>
               </div>
               <p className="text-3xl font-bold" style={{ color: '#FBBF24' }}>${revenueStats.taxCollectedTotal.toLocaleString()}</p>
             </section>

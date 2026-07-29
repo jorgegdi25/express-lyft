@@ -3,6 +3,24 @@
 // import here on purpose — this file is safe to import from client
 // components so the price a guest sees matches what the server charges.
 
+// Same 30-minute time slots (5:00 AM through 11:30 PM) used by both booking
+// forms and now the admin CRM's manual reservation form, so every time
+// dropdown in the app offers the exact same options in the exact "h:mm AM/PM"
+// format parseHour12 (below) expects.
+export function generateTimeSlots(): string[] {
+  const slots: string[] = []
+  for (let h = 5; h <= 23; h++) {
+    const hStr = h > 12 ? h - 12 : h
+    const ampm = h >= 12 ? 'PM' : 'AM'
+    const hDisplay = h === 12 ? 12 : hStr
+    slots.push(`${hDisplay}:00 ${ampm}`)
+    slots.push(`${hDisplay}:30 ${ampm}`)
+  }
+  return slots
+}
+
+export const TIME_SLOTS = generateTimeSlots()
+
 export type SurchargeType = 'fixed' | 'percentage'
 
 export interface SurchargeConfig {

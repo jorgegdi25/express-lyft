@@ -6,7 +6,7 @@ import Image from 'next/image'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 import VehicleDisplay from './VehicleDisplay'
-import { applyTimeSurcharge, SurchargeConfig } from '@/lib/pricing'
+import { applyTimeSurcharge, SurchargeConfig, TIME_SLOTS } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 
 interface RoutePrice {
@@ -29,22 +29,6 @@ interface BookingFormProps {
 }
 
 type TripType = 'one-way' | 'round-trip'
-
-function generateTimeSlots() {
-  const slots: string[] = []
-  for (let h = 5; h <= 23; h++) {
-    const hStr = h > 12 ? h - 12 : h
-    // 12 is PM, 24 would be AM but loop goes up to 23
-    const ampm = h >= 12 ? 'PM' : 'AM'
-    const hDisplay = h === 12 ? 12 : hStr
-    slots.push(`${hDisplay}:00 ${ampm}`)
-    // Include the 30-minute slot for all hours up to 23 (11:30 PM)
-    slots.push(`${hDisplay}:30 ${ampm}`)
-  }
-  return slots
-}
-
-const TIME_SLOTS = generateTimeSlots()
 
 type VehicleType = 'sedan_suv' | 'suburban' | 'sprinter' | 'minibus' | 'coachbus'
 
