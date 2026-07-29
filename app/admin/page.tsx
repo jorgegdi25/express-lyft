@@ -1058,8 +1058,8 @@ export default function AdminPage() {
     }
   }
 
-  async function deleteLead(id: string) {
-    if (!confirm('Are you sure you want to delete this lead?')) return
+  async function deleteLead(id: string): Promise<boolean> {
+    if (!confirm('Are you sure you want to delete this lead?')) return false
     try {
       const res = await fetch(`/api/leads?id=${id}`, {
         method: 'DELETE',
@@ -1067,8 +1067,10 @@ export default function AdminPage() {
       })
       if (!res.ok) throw new Error('Failed to delete lead')
       setLeads((prev) => prev.filter((l) => l.id !== id))
+      return true
     } catch (e: any) {
       alert(e.message)
+      return false
     }
   }
 
@@ -3983,7 +3985,7 @@ export default function AdminPage() {
 
                   {/* Actions Footer */}
                   <div className="border-t border-[#222] bg-[#161616] p-6 flex flex-wrap gap-3 justify-end items-center">
-                    <button onClick={() => { deleteLead(viewingLead.id); setViewingLead(null); }} className="px-4 py-2 mr-auto rounded-lg text-sm font-bold border border-red-900/50 bg-red-900/10 text-red-500 hover:bg-red-900/20 transition-colors">
+                    <button onClick={async () => { const deleted = await deleteLead(viewingLead.id); if (deleted) setViewingLead(null); }} className="px-4 py-2 mr-auto rounded-lg text-sm font-bold border border-red-900/50 bg-red-900/10 text-red-500 hover:bg-red-900/20 transition-colors">
                       🗑️ Delete
                     </button>
                     <button onClick={() => { setEditingLead(viewingLead); setViewingLead(null); }} className="px-4 py-2 rounded-lg text-sm font-bold border border-[#333] text-white hover:bg-[#222] transition-colors">
