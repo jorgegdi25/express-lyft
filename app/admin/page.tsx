@@ -975,7 +975,7 @@ export default function AdminPage() {
     setRoutePrices(data)
   }
 
-  async function addLead() {
+  async function addLead(): Promise<boolean> {
     setAddingLead(true)
     try {
       // Reservations paid on Stripe keep the old flow: they're created as a
@@ -1022,16 +1022,19 @@ export default function AdminPage() {
       if (!res.ok) {
         alert(`Error adding lead: ${result.error || 'Unknown error'}`)
         setAddingLead(false)
-        return
+        return false
       }
       const [leadsData, bookingsData] = await Promise.all([fetchLeads(password), fetchBookings(password)])
       setLeads(leadsData)
       setBookings(bookingsData)
       setNewLead({ ...emptyNewLead, hotelSlug: hotelOptions[0] || '' })
+      setAddingLead(false)
+      return true
     } catch (err) {
       alert(`Network error adding lead: ${err}`)
+      setAddingLead(false)
+      return false
     }
-    setAddingLead(false)
   }
 
   async function updateLead(id: string, updates: Partial<Lead>) {
@@ -2800,11 +2803,11 @@ export default function AdminPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Date</label>
+                      <label className="text-sm font-semibold text-[#aaa]">Date *</label>
                       <input type="date" value={newLead.date} onChange={(e) => setNewLead({ ...newLead, date: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Time</label>
+                      <label className="text-sm font-semibold text-[#aaa]">Time *</label>
                       <select value={newLead.time} onChange={(e) => setNewLead({ ...newLead, time: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
                         <option value="">— Select Time —</option>
                         {TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
@@ -2817,11 +2820,11 @@ export default function AdminPage() {
                     {newLead.tripType === 'round-trip' && (
                       <>
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-sm font-semibold text-[#aaa]">Return Date</label>
+                          <label className="text-sm font-semibold text-[#aaa]">Return Date *</label>
                           <input type="date" value={newLead.returnDate} onChange={(e) => setNewLead({ ...newLead, returnDate: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-sm font-semibold text-[#aaa]">Return Time</label>
+                          <label className="text-sm font-semibold text-[#aaa]">Return Time *</label>
                           <select value={newLead.returnTime} onChange={(e) => setNewLead({ ...newLead, returnTime: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
                             <option value="">— Select Time —</option>
                             {TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
@@ -2900,8 +2903,18 @@ export default function AdminPage() {
 
                   <div className="flex gap-4 pt-6 border-t border-[#2a2a2a]">
                     <button
-                      onClick={() => { addLead(); setShowAddLeadModal(false); }}
-                      disabled={addingLead || !newLead.customerName || !newLead.hotelSlug || !newLead.pickup || !newLead.destination || !newLead.amountUsd}
+                      onClick={async () => { const added = await addLead(); if (added) setShowAddLeadModal(false); }}
+                      disabled={
+                        addingLead ||
+                        !newLead.customerName ||
+                        !newLead.hotelSlug ||
+                        !newLead.pickup ||
+                        !newLead.destination ||
+                        !newLead.amountUsd ||
+                        !newLead.date ||
+                        !newLead.time ||
+                        (newLead.tripType === 'round-trip' && (!newLead.returnDate || !newLead.returnTime))
+                      }
                       className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
                       style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
                     >

@@ -265,6 +265,19 @@ export async function POST(req: NextRequest) {
     const authHeader = req.headers.get('authorization')
     const isAdmin = authHeader?.startsWith('Bearer ') && authHeader.split('Bearer ')[1] === process.env.ADMIN_PASSWORD
 
+    // The CRM's "Add Reservation" modal already disables submit without a
+    // date/time, but enforce it here too — a reservation with no date/time
+    // slips through silently (no calendar event gets created, and it's
+    // unclear when the driver is supposed to show up).
+    if (isAdmin) {
+      if (!date || !time) {
+        return NextResponse.json({ error: 'Missing date or time' }, { status: 400 })
+      }
+      if (tripType === 'round-trip' && (!returnDate || !returnTime)) {
+        return NextResponse.json({ error: 'Missing return date or time for round trip' }, { status: 400 })
+      }
+    }
+
     // Determine target price
     const inputTotal = estimatedTotal !== undefined ? estimatedTotal : amountUsd
     let finalAmount = inputTotal
