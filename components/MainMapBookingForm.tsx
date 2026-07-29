@@ -331,6 +331,17 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
   }
 
   const currentPrices = getRoutePrices()
+  // Vehicle-selection step must show the same per-vehicle price the
+  // checkout total will actually charge — currentPrices alone is missing
+  // the time-of-day surcharge, which made the total jump between steps for
+  // any trip booked inside the surcharge window.
+  const surchargedPrices = {
+    sedan_suv: Math.ceil(applyTimeSurcharge(currentPrices.sedan_suv, time, surcharge)),
+    suburban: Math.ceil(applyTimeSurcharge(currentPrices.suburban, time, surcharge)),
+    sprinter: Math.ceil(applyTimeSurcharge(currentPrices.sprinter, time, surcharge)),
+    minibus: currentPrices.minibus,
+    coachbus: currentPrices.coachbus,
+  }
   const basePrice = Math.ceil(applyTimeSurcharge(currentPrices[vehicleType], time, surcharge))
   const meetGreetFee = meetingType === 'meet_greet' ? 25 : 0
   // Round trip: price each direction independently and add them up, instead of
@@ -995,9 +1006,9 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
               {/* Step 2: Vehicle Selection */}
               {step === 2 && (
                 <div className="flex flex-col gap-6">
-                  <VehicleDisplay 
-                    passengers={passengers} 
-                    prices={currentPrices}
+                  <VehicleDisplay
+                    passengers={passengers}
+                    prices={surchargedPrices}
                     selectedVehicleType={vehicleType}
                     onSelectVehicle={(type) => setSelectedVehicleOverride(type)}
                   />
