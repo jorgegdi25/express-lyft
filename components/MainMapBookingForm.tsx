@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic'
 import ErrorBoundary from './ErrorBoundary'
 import { applyTimeSurcharge, calculateDistanceAmount, SurchargeConfig, TIME_SLOTS } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
+import { CalendarDatePicker } from '@/components/CalendarPicker'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 
@@ -486,14 +487,6 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
 
         <div className="max-w-3xl mx-auto">
           {/* ── Booking Form ──────────────────────────────────── */}
-          <style dangerouslySetInnerHTML={{__html: `
-              input[type="date"]::-webkit-calendar-picker-indicator {
-                cursor: pointer;
-                filter: invert(0.8);
-                transform: scale(1.8);
-                padding-left: 10px;
-              }
-            `}} />
 
           {isSuccess ? (
             <div
@@ -658,13 +651,11 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                       <label className={LABEL_CLASS} style={LABEL_COLOR}>
                         Date
                       </label>
-                      <input
-                        type="date"
-                        min={minDateStr}
+                      <CalendarDatePicker
                         value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        required
-                        className={`${INPUT_CLASS} min-h-[50px] text-base px-4 py-3`}
+                        onChange={setDate}
+                        min={minDateStr}
+                        className={`${INPUT_CLASS} min-h-[50px] text-base px-4 py-3 text-left flex items-center justify-between gap-2`}
                         style={INPUT_STYLE}
                       />
                     </div>
@@ -696,13 +687,11 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                         <label className={LABEL_CLASS} style={LABEL_COLOR}>
                           Return Date
                         </label>
-                        <input
-                          type="date"
-                          min={date || minDateStr}
+                        <CalendarDatePicker
                           value={returnDate}
-                          onChange={(e) => setReturnDate(e.target.value)}
-                          required
-                          className={`${INPUT_CLASS} min-h-[50px] text-base px-4 py-3`}
+                          onChange={setReturnDate}
+                          min={date || minDateStr}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base px-4 py-3 text-left flex items-center justify-between gap-2`}
                           style={INPUT_STYLE}
                         />
                       </div>

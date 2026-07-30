@@ -5,6 +5,8 @@ import { useState, useEffect, useMemo } from 'react'
 import QRCode from 'qrcode'
 import { applyTimeSurcharge, TIME_SLOTS } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
+import { formatDateUS, getMonthGridDays } from '@/lib/dateUtils'
+import { CalendarDatePicker, CalendarRangeFilter } from '@/components/CalendarPicker'
 
 /* -- Interfaces --------------------------------------- */
 
@@ -283,146 +285,6 @@ function IconDispatch() {
       <line x1="8" y1="14" x2="16" y2="14" />
       <line x1="8" y1="18" x2="12" y2="18" />
     </svg>
-  )
-}
-
-function formatDateUS(dateStr: string | undefined | null) {
-  if (!dateStr) return '—'
-  if (dateStr.includes('T')) { // ISO Timestamp
-    const d = new Date(dateStr)
-    return `${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(d.getUTCDate()).padStart(2, '0')}/${d.getUTCFullYear()}`
-  }
-  if (dateStr.includes('-')) { // YYYY-MM-DD
-    const parts = dateStr.split('-')
-    if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`
-  }
-  return dateStr
-}
-
-// Builds a 6-week, Sunday-start grid for the given month so the calendar
-// view always shows a fixed 42-cell layout (same shape every month).
-function getMonthGridDays(monthDate: Date) {
-  const year = monthDate.getFullYear()
-  const month = monthDate.getMonth()
-  const firstOfMonth = new Date(year, month, 1)
-  const gridStart = new Date(year, month, 1 - firstOfMonth.getDay())
-  const days: { date: Date; dateStr: string; inMonth: boolean }[] = []
-  for (let i = 0; i < 42; i++) {
-    const d = new Date(gridStart)
-    d.setDate(gridStart.getDate() + i)
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    days.push({ date: d, dateStr, inMonth: d.getMonth() === month })
-  }
-  return days
-}
-
-// Compact popover calendar used by list-filter toolbars (Bookings, Sales
-// Pipeline) as a visual replacement for plain "from/to" date text inputs.
-// Click one day to filter to just that day; click a second day to turn it
-// into a range (order doesn't matter, it sorts them). Clicking the same day
-// twice re-confirms a single-day filter and closes the popover.
-function DateRangeCalendarFilter({ from, to, onChange }: { from: string; to: string; onChange: (from: string, to: string) => void }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [viewMonth, setViewMonth] = useState(() => { const d = from ? new Date(`${from}T00:00:00`) : new Date(); d.setDate(1); return d })
-  const [pendingStart, setPendingStart] = useState<string | null>(null)
-
-  const label = !from && !to
-    ? 'All Dates'
-    : from === to
-    ? formatDateUS(from)
-    : `${formatDateUS(from)} – ${formatDateUS(to)}`
-
-  function open() {
-    setPendingStart(null)
-    const base = from ? new Date(`${from}T00:00:00`) : new Date()
-    base.setDate(1)
-    setViewMonth(base)
-    setIsOpen(true)
-  }
-
-  function handleDayClick(dateStr: string) {
-    if (!pendingStart) {
-      setPendingStart(dateStr)
-      onChange(dateStr, dateStr)
-    } else {
-      const start = pendingStart <= dateStr ? pendingStart : dateStr
-      const end = pendingStart <= dateStr ? dateStr : pendingStart
-      onChange(start, end)
-      setPendingStart(null)
-      setIsOpen(false)
-    }
-  }
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => (isOpen ? setIsOpen(false) : open())}
-        className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors flex items-center gap-2 whitespace-nowrap"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-        {label}
-      </button>
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div
-            className="absolute z-50 mt-2 right-0 w-72 max-w-[90vw] rounded-xl p-3 shadow-2xl"
-            style={{ background: '#161616', border: '1px solid #2a2a2a' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <button
-                onClick={() => { const d = new Date(viewMonth); d.setMonth(d.getMonth() - 1); setViewMonth(d); }}
-                className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#2a2a2a] text-[#aaa] hover:text-white hover:border-[#B8960C] transition-colors"
-              >&larr;</button>
-              <span className="text-xs font-bold text-white" style={{ fontFamily: 'Georgia, serif' }}>
-                {viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </span>
-              <button
-                onClick={() => { const d = new Date(viewMonth); d.setMonth(d.getMonth() + 1); setViewMonth(d); }}
-                className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#2a2a2a] text-[#aaa] hover:text-white hover:border-[#B8960C] transition-colors"
-              >&rarr;</button>
-            </div>
-            <div className="grid grid-cols-7 mb-1">
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                <div key={i} className="text-center text-[9px] uppercase font-bold text-[#666] py-1">{d}</div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-0.5">
-              {getMonthGridDays(viewMonth).map(({ date, dateStr, inMonth }) => {
-                const inRange = !!from && !!to && dateStr >= from && dateStr <= to
-                const isEdge = dateStr === from || dateStr === to
-                const isToday = dateStr === new Date().toLocaleDateString('en-CA')
-                return (
-                  <button
-                    key={dateStr}
-                    onClick={() => handleDayClick(dateStr)}
-                    className="text-[11px] rounded-lg py-1.5 transition-colors hover:brightness-125"
-                    style={{
-                      opacity: inMonth ? 1 : 0.3,
-                      background: isEdge ? '#B8960C' : inRange ? '#B8960C30' : 'transparent',
-                      color: isEdge ? '#0a0a0a' : '#ccc',
-                      fontWeight: isEdge || isToday ? 700 : 400,
-                      boxShadow: isToday && !isEdge ? 'inset 0 0 0 1px #D4AF37' : 'none',
-                    }}
-                  >{date.getDate()}</button>
-                )
-              })}
-            </div>
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#2a2a2a]">
-              <button onClick={() => { onChange('', ''); setPendingStart(null); }} className="text-xs text-[#888] hover:text-red-400 transition-colors">Clear</button>
-              <button onClick={() => setIsOpen(false)} className="text-xs text-[#B8960C] hover:underline font-bold">Done</button>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
   )
 }
 
@@ -2722,7 +2584,7 @@ export default function AdminPage() {
                   <option value="assigned">Driver Assigned</option>
                   <option value="unassigned">Unassigned</option>
                 </select>
-                <DateRangeCalendarFilter
+                <CalendarRangeFilter
                   from={bookingsDateFrom}
                   to={bookingsDateTo}
                   onChange={(f, t) => { setBookingsDateFrom(f); setBookingsDateTo(t); setBookingsPage(1); }}
@@ -2873,7 +2735,7 @@ export default function AdminPage() {
                   <option value="invoice_sent">Invoice Sent</option>
                   <option value="lost">Lost / Cancelled</option>
                 </select>
-                <DateRangeCalendarFilter
+                <CalendarRangeFilter
                   from={leadsDateFrom}
                   to={leadsDateTo}
                   onChange={(f, t) => { setLeadsDateFrom(f); setLeadsDateTo(t); setLeadsPage(1); }}
@@ -2966,7 +2828,11 @@ export default function AdminPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-semibold text-[#aaa]">Date *</label>
-                      <input type="date" value={newLead.date} onChange={(e) => setNewLead({ ...newLead, date: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <CalendarDatePicker
+                        value={newLead.date}
+                        onChange={(v) => setNewLead({ ...newLead, date: v })}
+                        className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors text-left flex items-center justify-between gap-2"
+                      />
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-semibold text-[#aaa]">Time *</label>
@@ -2983,7 +2849,12 @@ export default function AdminPage() {
                       <>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-sm font-semibold text-[#aaa]">Return Date *</label>
-                          <input type="date" value={newLead.returnDate} onChange={(e) => setNewLead({ ...newLead, returnDate: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                          <CalendarDatePicker
+                            value={newLead.returnDate}
+                            onChange={(v) => setNewLead({ ...newLead, returnDate: v })}
+                            min={newLead.date}
+                            className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors text-left flex items-center justify-between gap-2"
+                          />
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-sm font-semibold text-[#aaa]">Return Time *</label>
@@ -3128,7 +2999,11 @@ export default function AdminPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[#aaa]">Date</label>
-                      <input type="date" value={editingLead.date || ''} onChange={(e) => setEditingLead({...editingLead, date: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <CalendarDatePicker
+                        value={editingLead.date || ''}
+                        onChange={(v) => setEditingLead({ ...editingLead, date: v })}
+                        className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors text-left flex items-center justify-between gap-2"
+                      />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[#aaa]">Time</label>
