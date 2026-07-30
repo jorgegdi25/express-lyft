@@ -190,6 +190,8 @@ export async function POST(req: NextRequest) {
             flightNumber: updatedLead.flight_number,
             meetingType: updatedLead.meeting_type,
             carSeatsRequested: updatedLead.car_seats_requested,
+            luggageCount: updatedLead.luggage_count,
+            notes: updatedLead.notes,
             receiptUrl,
             tripType: updatedLead.trip_type,
             returnDate: updatedLead.return_date,

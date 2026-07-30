@@ -3985,6 +3985,24 @@ export default function AdminPage() {
                           <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Passengers</p>
                           <p className="text-sm text-white">{viewingLead.passengers || 1} PAX</p>
                         </div>
+                        {(viewingLead.luggage_count ?? 0) > 0 && (
+                          <div>
+                            <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Luggage</p>
+                            <p className="text-sm text-white">{viewingLead.luggage_count}</p>
+                          </div>
+                        )}
+                        {(viewingLead.car_seats_requested ?? 0) > 0 && (
+                          <div>
+                            <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Car Seats</p>
+                            <p className="text-sm text-white">{viewingLead.car_seats_requested}</p>
+                          </div>
+                        )}
+                        {viewingLead.airline && viewingLead.flight_number && (
+                          <div>
+                            <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Flight</p>
+                            <p className="text-sm text-white">{viewingLead.airline} — {viewingLead.flight_number}</p>
+                          </div>
+                        )}
                         <div>
                           <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Contact</p>
                           <p className="text-sm text-white">{viewingLead.customer_email || 'No email'}</p>
@@ -3993,10 +4011,10 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    {/* Notes */}
+                    {/* Notes — free text the guest typed in (special requests), not admin-only */}
                     {viewingLead.notes && (
                       <div>
-                        <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-2">Internal Notes</p>
+                        <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-2">Special Requests / Notes</p>
                         <div className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] text-sm text-[#ccc] whitespace-pre-wrap">
                           {viewingLead.notes}
                         </div>

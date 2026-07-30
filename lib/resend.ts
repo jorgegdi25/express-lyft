@@ -13,6 +13,18 @@ export const OWNER_EMAIL = process.env.OWNER_EMAIL || 'book@explyft.com';
 // aviso sale desde notifications@ aunque el correo del cliente use book@.
 export const OWNER_NOTIFY_FROM = 'Express Lyft <notifications@explyft.com>';
 
+// Notes/special requests are free text the guest typed in — escape before
+// interpolating into HTML email templates so it can't break the markup or
+// inject content.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /**
  * Envía al dueño una alerta clara de "nueva reserva pagada".
  * Es un correo aparte (no un BCC del correo del cliente), redactado para el
@@ -49,11 +61,16 @@ export async function sendOwnerNotification(
         : ['Trip type', lead.trip_type || 'One way'],
       ['Vehicle', vehicle],
       ['Passengers', lead.passengers],
+      ['Luggage', lead.luggage_count],
+      ['Car Seats', lead.car_seats_requested],
       ['Airline / Flight', [lead.airline, lead.flight_number].filter(Boolean).join(' ')],
       ['Meeting', lead.meeting_type],
       ['Payment', isDeposit ? 'Deposit' : 'Full payment'],
       ['Paid', money(paid)],
       isDeposit ? ['Balance due', money(remaining)] : ['', ''],
+      // Notes go last, own row spanning both columns further down — this
+      // placeholder just keeps it out of the two-column key/value table
+      // since it can run long (e.g. "3 cold Cokes, allergic to peanuts").
     ];
 
     const rowsHtml = rows
@@ -64,11 +81,19 @@ export async function sendOwnerNotification(
       )
       .join('');
 
+    const notesHtml = lead.notes
+      ? `<div style="margin-top:16px;padding:12px;background:#f9f6ee;border:1px solid #eee0b8;border-radius:6px;">
+           <p style="margin:0 0 4px;color:#888;font-size:13px;font-weight:600;">Special Requests / Notes</p>
+           <p style="margin:0;color:#111;font-size:15px;white-space:pre-wrap;">${escapeHtml(String(lead.notes))}</p>
+         </div>`
+      : '';
+
     const html = `
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;">
         <h2 style="color:#111;margin:0 0 4px;">🔔 New Paid Booking</h2>
         <p style="color:#888;margin:0 0 16px;">Booking #${lead.id || ''}</p>
         <table style="border-collapse:collapse;font-size:15px;">${rowsHtml}</table>
+        ${notesHtml}
       </div>`;
 
     await resend.emails.send({

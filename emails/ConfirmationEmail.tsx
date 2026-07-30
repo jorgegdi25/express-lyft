@@ -29,6 +29,8 @@ interface ConfirmationEmailProps {
   flightNumber?: string | null;
   meetingType?: string | null;
   carSeatsRequested?: number | null;
+  luggageCount?: number | null;
+  notes?: string | null;
   receiptUrl?: string | null;
   tripType?: string | null;
   returnDate?: string | null;
@@ -51,6 +53,8 @@ export const ConfirmationEmail = ({
   flightNumber,
   meetingType,
   carSeatsRequested,
+  luggageCount,
+  notes,
   receiptUrl,
   tripType,
   returnDate,
@@ -108,6 +112,11 @@ export const ConfirmationEmail = ({
               <strong>Car Seats Requested:</strong> {carSeatsRequested}
             </Text>
           ) : null}
+          {luggageCount ? (
+            <Text style={detailItem}>
+              <strong>Luggage:</strong> {luggageCount}
+            </Text>
+          ) : null}
           <Text style={detailItem}>
             <strong>Vehicle:</strong> {vehicleType}
           </Text>
@@ -122,6 +131,15 @@ export const ConfirmationEmail = ({
               <Text style={{...detailItem, color: '#D4AF37', fontSize: '13px', marginTop: '12px'}}>
                 ⓘ Remaining balance is due before your trip — payable via secure payment link.
               </Text>
+            </>
+          )}
+          {notes && (
+            <>
+              <Hr style={hr} />
+              <Text style={{ ...detailItem, color: '#B8960C', fontWeight: 'bold' as const }}>
+                Special Requests / Notes
+              </Text>
+              <Text style={{ ...detailItem, whiteSpace: 'pre-wrap' as const }}>{notes}</Text>
             </>
           )}
           {receiptUrl && (
