@@ -23,6 +23,7 @@ interface ConfirmationEmailProps {
   time: string;
   vehicleType: string;
   amount: string;
+  taxAmount?: string;
   paymentType?: 'full' | 'deposit';
   amountRemaining?: string;
   airline?: string | null;
@@ -47,6 +48,7 @@ export const ConfirmationEmail = ({
   time,
   vehicleType,
   amount,
+  taxAmount,
   paymentType = 'full',
   amountRemaining,
   airline,
@@ -121,7 +123,15 @@ export const ConfirmationEmail = ({
             <strong>Vehicle:</strong> {vehicleType}
           </Text>
           <Text style={detailItem}>
-            <strong>{paymentType === 'deposit' ? 'Deposit Paid:' : 'Amount Paid:'}</strong> ${amount} USD
+            <strong>Subtotal:</strong> ${amount} USD
+          </Text>
+          {taxAmount && Number(taxAmount) > 0 && (
+            <Text style={detailItem}>
+              <strong>Sales Tax (7%):</strong> ${Number(taxAmount).toFixed(2)} USD
+            </Text>
+          )}
+          <Text style={detailItem}>
+            <strong>{paymentType === 'deposit' ? 'Total Deposit Charged:' : 'Total Charged:'}</strong> ${(Number(amount) + Number(taxAmount || 0)).toFixed(2)} USD
           </Text>
           {paymentType === 'deposit' && amountRemaining && (
             <>

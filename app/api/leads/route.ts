@@ -360,8 +360,14 @@ export async function POST(req: NextRequest) {
       throw error
     }
 
-    // Create Calendar Event if status warrants it
-    if (data.status === 'hotel_b2b' || data.status === 'paid' || data.status === 'deposit_paid') {
+    // Create Calendar Event if status warrants it. Admin-entered reservations
+    // (CRM "Add Reservation") always get an event immediately, even while
+    // still pending payment ('new') — the admin already committed to a real
+    // date/time for dispatch, and shouldn't have to wait for the guest to pay
+    // online before a driver can see the trip. Public/online leads keep the
+    // old behavior (event only once actually paid) so abandoned carts don't
+    // clutter the calendar.
+    if (isAdmin || data.status === 'hotel_b2b' || data.status === 'paid' || data.status === 'deposit_paid') {
       try {
         let googleEventId = await createCalendarEvent(data);
         let googleReturnEventId = null;

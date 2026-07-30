@@ -70,7 +70,8 @@ export async function POST(req: NextRequest) {
     // already collected on this lead (deposit + later remaining balance are
     // two separate sessions, each with its own tax portion). `lead` was
     // already fetched above, before this update.
-    updateFields.tax_collected = (lead.tax_collected || 0) + sessionTaxAmount(session)
+    const taxAmount = sessionTaxAmount(session)
+    updateFields.tax_collected = (lead.tax_collected || 0) + taxAmount
 
     // 5. Update the lead
     const { data: updatedLead, error: updateError } = await supabaseAdmin
@@ -184,6 +185,7 @@ export async function POST(req: NextRequest) {
             time: updatedLead.time || 'N/A',
             vehicleType: updatedLead.vehicle_type || 'N/A',
             amount: isDeposit && chargeAmount ? chargeAmount.toString() : (updatedLead.amount_usd?.toString() || 'TBD'),
+            taxAmount: taxAmount.toString(),
             paymentType: isDeposit ? 'deposit' : 'full',
             amountRemaining: isDeposit && totalAmount && chargeAmount ? (totalAmount - chargeAmount).toString() : undefined,
             airline: updatedLead.airline,

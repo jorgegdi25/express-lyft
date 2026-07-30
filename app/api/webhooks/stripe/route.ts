@@ -79,7 +79,8 @@ export async function POST(req: NextRequest) {
         .select('tax_collected')
         .eq('id', leadId)
         .maybeSingle()
-      updateFields.tax_collected = (existingLead?.tax_collected || 0) + sessionTaxAmount(session)
+      const taxAmount = sessionTaxAmount(session)
+      updateFields.tax_collected = (existingLead?.tax_collected || 0) + taxAmount
 
       // 1. Update the lead status
       const { data: leadData, error: updateError } = await supabaseAdmin
@@ -199,6 +200,7 @@ export async function POST(req: NextRequest) {
               time: leadData.time || 'N/A',
               vehicleType: leadData.vehicle_type || 'N/A',
               amount: String(amountPaid),
+              taxAmount: String(taxAmount),
               paymentType: isDeposit ? 'deposit' : 'full',
               amountRemaining: isDeposit && totalAmount ? String(totalAmount - amountPaid) : undefined,
               airline: leadData.airline,

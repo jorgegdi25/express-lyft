@@ -326,6 +326,7 @@ export default function AdminPage() {
   const [sendingInvoice, setSendingInvoice] = useState<string | null>(null)
   const [sendingReview, setSendingReview] = useState<string | null>(null)
   const [viewingLead, setViewingLead] = useState<Lead | null>(null)
+  const [viewingDay, setViewingDay] = useState<string | null>(null)
   const [generatedLink, setGeneratedLink] = useState<string | null>(null)
   const emptyNewLead = {
     hotelSlug: '',
@@ -3700,7 +3701,10 @@ export default function AdminPage() {
                           )
                         })}
                         {dayLeads.length > 3 && (
-                          <span className="text-[9px] text-[#666] px-1.5">+{dayLeads.length - 3} more</span>
+                          <button
+                            onClick={() => setViewingDay(dateStr)}
+                            className="text-left text-[9px] text-[#666] px-1.5 hover:text-[#D4AF37] transition-colors"
+                          >+{dayLeads.length - 3} more</button>
                         )}
                       </div>
                     </div>
@@ -3891,6 +3895,46 @@ export default function AdminPage() {
             </section>
           </div>
         )}
+
+      {/* DAY RESERVATIONS MODAL — opened from the "+N more" link on a crowded calendar day */}
+            {viewingDay && (() => {
+              const dayLeads = leads.filter(l =>
+                (l.date === viewingDay || (l.trip_type === 'round-trip' && l.return_date === viewingDay)) &&
+                (l.status === 'paid' || l.status === 'deposit_paid' || l.status === 'hotel_b2b')
+              )
+              const STATUS_DOT: Record<string, string> = { paid: '#4ade80', deposit_paid: '#FBBF24', hotel_b2b: '#2dd4bf' }
+              return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setViewingDay(null)}>
+                  <div className="bg-[#111] border border-[#333] rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between p-5 border-b border-[#222] bg-[#161616]">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-[#B8960C] font-bold mb-1">Reservations</p>
+                        <h2 className="text-lg font-bold text-white">{formatDateUS(viewingDay)}</h2>
+                      </div>
+                      <button onClick={() => setViewingDay(null)} className="text-sm text-[#aaa] hover:text-red-400 px-3 py-1 rounded-lg border border-[#333] hover:border-red-400 transition-all">x Close</button>
+                    </div>
+                    <div className="flex flex-col gap-2 p-4 overflow-y-auto">
+                      {dayLeads.map(l => {
+                        const isReturnLeg = l.date !== viewingDay
+                        return (
+                          <button
+                            key={l.id + (isReturnLeg ? '-return' : '')}
+                            onClick={() => { setViewingLead(l); setViewingDay(null); }}
+                            className="text-left px-3 py-2.5 rounded-lg hover:brightness-125 transition-all"
+                            style={{ background: `${STATUS_DOT[l.status || '']}15`, borderLeft: `2px solid ${STATUS_DOT[l.status || '']}` }}
+                          >
+                            <p className="text-sm font-bold text-white truncate">
+                              {isReturnLeg ? '↩ ' : ''}{l.time || l.return_time} — {l.customer_name}
+                            </p>
+                            <p className="text-xs text-[#888] truncate">{l.pickup} → {l.destination}</p>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
 
       {/* FULL DETAILS MODAL */}
             {viewingLead && (

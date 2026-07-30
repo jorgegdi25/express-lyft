@@ -67,6 +67,7 @@ export async function sendOwnerNotification(
       ['Meeting', lead.meeting_type],
       ['Payment', isDeposit ? 'Deposit' : 'Full payment'],
       ['Paid', money(paid)],
+      ['Sales Tax Collected', money(lead.tax_collected)],
       isDeposit ? ['Balance due', money(remaining)] : ['', ''],
       // Notes go last, own row spanning both columns further down — this
       // placeholder just keeps it out of the two-column key/value table
