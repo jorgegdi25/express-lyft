@@ -427,6 +427,8 @@ export default function AdminPage() {
   const [leadsPage, setLeadsPage] = useState(1)
   const [leadsSearch, setLeadsSearch] = useState('')
   const [leadsStatusFilter, setLeadsStatusFilter] = useState('all')
+  const [leadsDateFrom, setLeadsDateFrom] = useState('')
+  const [leadsDateTo, setLeadsDateTo] = useState('')
   const [leadsSortBy, setLeadsSortBy] = useState('newest')
   const [showAddLeadModal, setShowAddLeadModal] = useState(false)
   const leadsPerPage = 15
@@ -1572,7 +1574,12 @@ export default function AdminPage() {
         (l.status || '').toLowerCase().includes(term)
       )
       const matchesStatus = leadsStatusFilter === 'all' || l.status === leadsStatusFilter
-      return matchesSearch && matchesStatus
+      let matchesDate = true
+      if (leadsDateFrom || leadsDateTo) {
+        const legDates = [l.date, l.trip_type === 'round-trip' ? l.return_date : null].filter(Boolean) as string[]
+        matchesDate = legDates.some(d => (!leadsDateFrom || d >= leadsDateFrom) && (!leadsDateTo || d <= leadsDateTo))
+      }
+      return matchesSearch && matchesStatus && matchesDate
     })
     .sort((a, b) => {
       if (leadsSortBy === 'newest') {
@@ -2776,6 +2783,30 @@ export default function AdminPage() {
                   <option value="invoice_sent">Invoice Sent</option>
                   <option value="lost">Lost / Cancelled</option>
                 </select>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="date"
+                    aria-label="From date"
+                    value={leadsDateFrom}
+                    onChange={(e) => { setLeadsDateFrom(e.target.value); setLeadsPage(1); }}
+                    className="rounded-xl px-3 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors"
+                  />
+                  <span className="text-xs text-[#666]">to</span>
+                  <input
+                    type="date"
+                    aria-label="To date"
+                    value={leadsDateTo}
+                    onChange={(e) => { setLeadsDateTo(e.target.value); setLeadsPage(1); }}
+                    className="rounded-xl px-3 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors"
+                  />
+                  {(leadsDateFrom || leadsDateTo) && (
+                    <button
+                      onClick={() => { setLeadsDateFrom(''); setLeadsDateTo(''); setLeadsPage(1); }}
+                      title="Clear date filter"
+                      className="text-xs text-[#888] hover:text-[#D4AF37] px-1"
+                    >x</button>
+                  )}
+                </div>
                 <select
                   value={leadsSortBy}
                   onChange={(e) => { setLeadsSortBy(e.target.value); setLeadsPage(1); }}
