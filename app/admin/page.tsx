@@ -16,6 +16,7 @@ interface Booking {
   amount_usd: number
   status: string
   date: string
+  return_date?: string | null
   created_at: string
   pickup: string
   destination: string
@@ -415,6 +416,10 @@ export default function AdminPage() {
   // Bookings pagination & search
   const [bookingsSearch, setBookingsSearch] = useState('')
   const [bookingsStatusFilter, setBookingsStatusFilter] = useState('all')
+  const [bookingsDateFrom, setBookingsDateFrom] = useState('')
+  const [bookingsDateTo, setBookingsDateTo] = useState('')
+  const [bookingsVehicleFilter, setBookingsVehicleFilter] = useState('all')
+  const [bookingsDriverFilter, setBookingsDriverFilter] = useState('all')
   const [bookingsPage, setBookingsPage] = useState(1)
   const bookingsPerPage = 15
 
@@ -1523,6 +1528,17 @@ export default function AdminPage() {
   // Filter & paginate bookings
   const filteredBookings = bookings.filter((b) => {
     if (bookingsStatusFilter !== 'all' && b.status !== bookingsStatusFilter) return false;
+    // Matches if EITHER leg (pickup or, for round trips, the return) falls
+    // inside the range, so a round-trip still shows up when filtering by its
+    // drop-off day even though its pickup day is outside the range.
+    if (bookingsDateFrom || bookingsDateTo) {
+      const legDates = [b.date, b.trip_type === 'round-trip' ? b.return_date : null].filter(Boolean) as string[]
+      const inRange = legDates.some(d => (!bookingsDateFrom || d >= bookingsDateFrom) && (!bookingsDateTo || d <= bookingsDateTo))
+      if (!inRange) return false
+    }
+    if (bookingsVehicleFilter !== 'all' && b.vehicle_type !== bookingsVehicleFilter) return false;
+    if (bookingsDriverFilter === 'assigned' && !b.assigned_driver_id) return false;
+    if (bookingsDriverFilter === 'unassigned' && b.assigned_driver_id) return false;
     const term = bookingsSearch.toLowerCase()
     return (
       (b.customer_name || '').toLowerCase().includes(term) ||
@@ -2571,6 +2587,49 @@ export default function AdminPage() {
                   <option value="deposit_paid">Deposit Paid</option>
                   <option value="hotel_b2b">Hotel B2B</option>
                 </select>
+                <select
+                  value={bookingsVehicleFilter}
+                  onChange={(e) => { setBookingsVehicleFilter(e.target.value); setBookingsPage(1); }}
+                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors"
+                >
+                  <option value="all">All Vehicles</option>
+                  {Object.entries(VEHICLE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+                <select
+                  value={bookingsDriverFilter}
+                  onChange={(e) => { setBookingsDriverFilter(e.target.value); setBookingsPage(1); }}
+                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors"
+                >
+                  <option value="all">All Drivers</option>
+                  <option value="assigned">Driver Assigned</option>
+                  <option value="unassigned">Unassigned</option>
+                </select>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="date"
+                    aria-label="From date"
+                    value={bookingsDateFrom}
+                    onChange={(e) => { setBookingsDateFrom(e.target.value); setBookingsPage(1); }}
+                    className="rounded-xl px-3 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors"
+                  />
+                  <span className="text-xs text-[#666]">to</span>
+                  <input
+                    type="date"
+                    aria-label="To date"
+                    value={bookingsDateTo}
+                    onChange={(e) => { setBookingsDateTo(e.target.value); setBookingsPage(1); }}
+                    className="rounded-xl px-3 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors"
+                  />
+                  {(bookingsDateFrom || bookingsDateTo) && (
+                    <button
+                      onClick={() => { setBookingsDateFrom(''); setBookingsDateTo(''); setBookingsPage(1); }}
+                      title="Clear date filter"
+                      className="text-xs text-[#888] hover:text-[#D4AF37] px-1"
+                    >x</button>
+                  )}
+                </div>
                 <input
                   type="text"
                   placeholder="Search bookings..."
