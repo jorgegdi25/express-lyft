@@ -99,6 +99,9 @@ interface Lead {
   wait_time_minutes?: number
   wait_time_fee?: number
   reminder_sent_at?: string | null
+  trip_reminder_sent_at?: string | null
+  trip_reminder_status?: string | null
+  trip_reminder_status_at?: string | null
   payment_source?: string
   external_platform?: string | null
   external_reference?: string | null
@@ -4132,6 +4135,30 @@ export default function AdminPage() {
                           <p className="text-sm text-white">{viewingLead.customer_email || 'No email'}</p>
                           <p className="text-sm text-[#888]">{viewingLead.customer_phone || 'No phone'}</p>
                         </div>
+                        {viewingLead.trip_reminder_sent_at && (
+                          <div>
+                            <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Pickup Reminder Email</p>
+                            {(() => {
+                              const s = viewingLead.trip_reminder_status
+                              const label = s === 'delivered' ? 'Delivered'
+                                : s === 'opened' ? 'Delivered & Opened'
+                                : s === 'bounced' ? 'Bounced — bad email address'
+                                : s === 'failed' ? 'Failed to send'
+                                : s === 'complained' ? 'Marked as spam'
+                                : s === 'delivery_delayed' ? 'Delivery delayed'
+                                : 'Sent — awaiting delivery confirmation'
+                              const color = s === 'delivered' || s === 'opened' ? '#4ade80'
+                                : s === 'bounced' || s === 'failed' || s === 'complained' ? '#f87171'
+                                : s === 'delivery_delayed' ? '#FBBF24'
+                                : '#888'
+                              return (
+                                <p className="text-sm font-medium" style={{ color }}>
+                                  ● {label}
+                                </p>
+                              )
+                            })()}
+                          </div>
+                        )}
                       </div>
                     </div>
 

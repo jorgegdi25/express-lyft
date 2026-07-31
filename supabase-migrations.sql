@@ -177,3 +177,10 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS google_return_event_id text;
 -- reminder_sent_at, which tracks the 12h-before payment reminder).
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_reminder_sent_at timestamptz;
 
+-- Delivery tracking for that reminder: the Resend message id (to match
+-- incoming webhook events back to this lead) and the latest status Resend
+-- has reported for it (sent/delivered/opened/bounced/etc).
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_reminder_email_id text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_reminder_status text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_reminder_status_at timestamptz;
+

@@ -43,8 +43,9 @@ export async function GET(req: NextRequest) {
 
   for (const lead of dueLeads) {
     try {
+      let emailId: string | null = null
       if (resend && lead.customer_email) {
-        await resend.emails.send({
+        const { data, error: sendError } = await resend.emails.send({
           from: 'Express Lyft <book@explyft.com>',
           to: [lead.customer_email],
           subject: 'Your Express Lyft Pickup Is Tomorrow — Instructions Inside',
@@ -66,13 +67,22 @@ export async function GET(req: NextRequest) {
             returnTime: lead.return_time,
           }),
         })
+        if (sendError) throw new Error(sendError.message)
+        emailId = data?.id || null
       }
 
       await sendTripReminderSentNotification(lead)
 
+      // The Resend message id lets the /api/webhooks/resend endpoint match
+      // delivered/opened/bounced events back to this lead later.
       const { error: markErr } = await supabaseAdmin
         .from('leads')
-        .update({ trip_reminder_sent_at: new Date().toISOString() })
+        .update({
+          trip_reminder_sent_at: new Date().toISOString(),
+          trip_reminder_email_id: emailId,
+          trip_reminder_status: emailId ? 'sent' : null,
+          trip_reminder_status_at: emailId ? new Date().toISOString() : null,
+        })
         .eq('id', lead.id)
 
       if (markErr) {
