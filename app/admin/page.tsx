@@ -350,6 +350,12 @@ export default function AdminPage() {
     returnTime: '',
     amountUsd: 0,
     tripType: 'one-way' as 'one-way' | 'round-trip',
+    airline: '',
+    flightNumber: '',
+    meetingType: 'curbside' as 'curbside' | 'meet_greet',
+    meetGreetFee: 0,
+    carSeatsRequested: 0,
+    luggageCount: 0,
     paymentSource: 'stripe' as 'stripe' | 'external' | 'cash',
     externalPlatform: '',
     externalReference: '',
@@ -2888,6 +2894,36 @@ export default function AdminPage() {
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5 pt-5 border-t border-[#2a2a2a]">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-semibold text-[#aaa]">Airline</label>
+                      <input type="text" placeholder="e.g. Delta" value={newLead.airline} onChange={(e) => setNewLead({ ...newLead, airline: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-semibold text-[#aaa]">Flight Number</label>
+                      <input type="text" placeholder="e.g. DL123" value={newLead.flightNumber} onChange={(e) => setNewLead({ ...newLead, flightNumber: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-semibold text-[#aaa]">Meeting Type</label>
+                      <select value={newLead.meetingType} onChange={(e) => { const meetingType = e.target.value as any; setNewLead({ ...newLead, meetingType, meetGreetFee: meetingType === 'meet_greet' ? 25 : 0 }); }} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                        <option value="curbside">Curbside</option>
+                        <option value="meet_greet">Meet & Greet (+$25)</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-semibold text-[#aaa]">Luggage Count</label>
+                      <input type="number" min={0} value={newLead.luggageCount} onChange={(e) => setNewLead({ ...newLead, luggageCount: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-semibold text-[#aaa]">Car Seats</label>
+                      <input type="number" min={0} value={newLead.carSeatsRequested} onChange={(e) => setNewLead({ ...newLead, carSeatsRequested: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-1.5 md:col-span-3">
+                      <label className="text-sm font-semibold text-[#aaa]">Special Requests / Notes</label>
+                      <textarea rows={2} placeholder="e.g. 3 cold Cokes, needs extra time, allergic to peanuts" value={newLead.notes} onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors resize-none" />
+                    </div>
+                  </div>
+
                   <div className="mb-5 pt-5 border-t border-[#2a2a2a]">
                     <label className="text-sm font-semibold text-[#aaa] mb-2 block">Payment Source</label>
                     <div className="flex gap-2 mb-4">
@@ -3728,7 +3764,12 @@ export default function AdminPage() {
                             <button
                               key={l.id + (isReturnLeg ? '-return' : '')}
                               onClick={() => setViewingLead(l)}
-                              title={`${l.customer_name} • ${l.pickup} → ${l.destination}`}
+                              title={[
+                                `${l.customer_name} • ${l.pickup} → ${l.destination}`,
+                                (l.airline || l.flight_number) ? `Flight: ${[l.airline, l.flight_number].filter(Boolean).join(' ')}` : null,
+                                (l.car_seats_requested ?? 0) > 0 ? `${l.car_seats_requested} car seat(s)` : null,
+                                (l.luggage_count ?? 0) > 0 ? `${l.luggage_count} bag(s)` : null,
+                              ].filter(Boolean).join(' • ')}
                               className="text-left text-[10px] px-1.5 py-0.5 rounded truncate hover:brightness-125 transition-all"
                               style={{ background: `${STATUS_DOT[l.status || '']}20`, color: STATUS_DOT[l.status || ''] || '#999', borderLeft: `2px solid ${STATUS_DOT[l.status || '']}` }}
                             >
@@ -3963,6 +4004,15 @@ export default function AdminPage() {
                               {isReturnLeg ? '↩ ' : ''}{l.time || l.return_time} — {l.customer_name}
                             </p>
                             <p className="text-xs text-[#888] truncate">{l.pickup} → {l.destination}</p>
+                            {(l.airline || l.flight_number || (l.car_seats_requested ?? 0) > 0 || (l.luggage_count ?? 0) > 0) && (
+                              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-[#B8960C]">
+                                {(l.airline || l.flight_number) && (
+                                  <span>✈ {[l.airline, l.flight_number].filter(Boolean).join(' ')}</span>
+                                )}
+                                {(l.car_seats_requested ?? 0) > 0 && <span>🪑 {l.car_seats_requested} car seat{l.car_seats_requested === 1 ? '' : 's'}</span>}
+                                {(l.luggage_count ?? 0) > 0 && <span>🧳 {l.luggage_count} bag{l.luggage_count === 1 ? '' : 's'}</span>}
+                              </div>
+                            )}
                           </button>
                         )
                       })}
