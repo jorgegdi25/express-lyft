@@ -4,41 +4,12 @@ import { stripe } from '@/lib/stripe'
 import { resend, sendReminderSentNotification } from '@/lib/resend'
 import { PaymentReminderEmail } from '@/emails/PaymentReminderEmail'
 import { flTaxRateIds } from '@/lib/tax'
+import { leadPickupToUTC } from '@/lib/tripTime'
 
 export const dynamic = 'force-dynamic'
 
 const REMINDER_WINDOW_MIN_HOURS = 11
 const REMINDER_WINDOW_MAX_HOURS = 13
-
-// Returns the UTC offset (in hours, negative) that America/New_York has on
-// the given calendar date, so DST is handled correctly without adding a
-// timezone library — trips are always Florida-local time.
-function getNYOffsetHours(dateStr: string): number {
-  const probe = new Date(`${dateStr}T12:00:00Z`)
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    timeZoneName: 'shortOffset',
-  }).formatToParts(probe)
-  const offsetPart = parts.find(p => p.type === 'timeZoneName')?.value || 'GMT-5'
-  const match = offsetPart.match(/GMT([+-]\d+)/)
-  return match ? parseInt(match[1], 10) : -5
-}
-
-// Combines the lead's separate date ("YYYY-MM-DD") and time ("h:mm AM/PM")
-// fields — both stored as America/New_York wall-clock — into a real UTC Date.
-function leadPickupToUTC(dateStr: string, timeStr: string): Date | null {
-  if (!dateStr || !timeStr) return null
-  const [time, ampm] = timeStr.split(' ')
-  if (!time || !ampm) return null
-  let [hours, minutes] = time.split(':').map(Number)
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null
-  if (ampm === 'PM' && hours < 12) hours += 12
-  if (ampm === 'AM' && hours === 12) hours = 0
-
-  const [year, month, day] = dateStr.split('-').map(Number)
-  const offset = getNYOffsetHours(dateStr)
-  return new Date(Date.UTC(year, month - 1, day, hours - offset, minutes))
-}
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')

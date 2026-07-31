@@ -173,3 +173,7 @@ ALTER TABLE bookings ADD COLUMN IF NOT EXISTS duration_minutes numeric(10,2) DEF
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS google_event_id text;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS google_return_event_id text;
 
+-- 24h-before-pickup "guest pickup instructions" reminder (separate from
+-- reminder_sent_at, which tracks the 12h-before payment reminder).
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_reminder_sent_at timestamptz;
+

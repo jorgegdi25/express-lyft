@@ -145,6 +145,40 @@ export async function sendReminderSentNotification(lead: any, amountRemaining: n
 }
 
 /**
+ * Avisa al dueño que se le mandaron al huésped las instrucciones de pickup
+ * (24h antes del viaje). Igual que las demás notificaciones, nunca lanza
+ * error: si falla, solo lo registra en consola.
+ */
+export async function sendTripReminderSentNotification(lead: any) {
+  if (!resend || !lead) return;
+
+  try {
+    const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;">
+        <h2 style="color:#111;margin:0 0 4px;">🚗 Pickup Instructions Sent</h2>
+        <p style="color:#888;margin:0 0 16px;">Booking #${lead.id || ''}</p>
+        <table style="border-collapse:collapse;font-size:15px;">
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Customer</td><td style="padding:6px 0;font-weight:600;color:#111;">${lead.customer_name || ''}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Email</td><td style="padding:6px 0;font-weight:600;color:#111;">${lead.customer_email || ''}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Pickup</td><td style="padding:6px 0;font-weight:600;color:#111;">${lead.date} ${lead.time}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888;">Route</td><td style="padding:6px 0;font-weight:600;color:#111;">${lead.pickup || ''} → ${lead.destination || ''}</td></tr>
+        </table>
+        <p style="color:#888;margin-top:16px;">The guest was emailed their pickup instructions ahead of tomorrow's trip.</p>
+      </div>`;
+
+    await resend.emails.send({
+      from: OWNER_NOTIFY_FROM,
+      to: [OWNER_EMAIL],
+      subject: `🚗 Pickup reminder sent — ${lead.customer_name || 'Customer'} (${lead.date} ${lead.time})`,
+      html,
+    });
+    console.log(`[trip-reminder-notification] Enviado a ${OWNER_EMAIL} para lead ${lead.id}`);
+  } catch (e) {
+    console.error('[trip-reminder-notification] Falló el envío:', e);
+  }
+}
+
+/**
  * Avisa de inmediato al dueño cuando llega una reseña negativa (no
  * recomienda). Nunca se publica sola en la web — queda en el CRM para que
  * el equipo la vea y pueda contactar al cliente. Nunca lanza error.

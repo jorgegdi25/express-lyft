@@ -6,6 +6,7 @@ import QRCode from 'qrcode'
 import { applyTimeSurcharge, TIME_SLOTS } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { formatDateUS, getMonthGridDays } from '@/lib/dateUtils'
+import { VEHICLE_LABELS } from '@/lib/vehicles'
 import { CalendarDatePicker, CalendarRangeFilter } from '@/components/CalendarPicker'
 
 /* -- Interfaces --------------------------------------- */
@@ -135,13 +136,6 @@ interface Review {
   created_at: string
 }
 
-const VEHICLE_LABELS: Record<string, string> = {
-  sedan_suv: 'Sedan & SUV',
-  suburban: 'Chevy Suburban',
-  sprinter: 'Mercedes-Benz Sprinter',
-  minibus: '31 Passenger Mini Bus',
-  coachbus: '55 Passenger Bus',
-}
 
 type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites' | 'reviews'
 
