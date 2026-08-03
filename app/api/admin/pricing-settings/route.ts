@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { surcharge_type, surcharge_amount, surcharge_start_hour, surcharge_end_hour } = await req.json()
+  const { surcharge_type, surcharge_amount, surcharge_start_hour, surcharge_end_hour, deposits_enabled } = await req.json()
 
   if (surcharge_type !== 'fixed' && surcharge_type !== 'percentage') {
     return NextResponse.json({ error: 'surcharge_type must be "fixed" or "percentage"' }, { status: 400 })
@@ -49,6 +49,7 @@ export async function PUT(req: NextRequest) {
       surcharge_amount,
       surcharge_start_hour,
       surcharge_end_hour,
+      deposits_enabled: deposits_enabled ?? true,
       updated_at: new Date().toISOString(),
     })
     .eq('id', 1)

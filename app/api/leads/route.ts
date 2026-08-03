@@ -285,6 +285,19 @@ export async function POST(req: NextRequest) {
     let leadStatus = isAdmin ? (status || 'new') : 'pending_payment'
     let isDeposit = paymentMode === 'deposit' && !isAdmin
 
+    // Re-check the global deposits toggle server-side so a stale client (or a
+    // direct API call) can't request a deposit while the owner has it turned off.
+    if (isDeposit) {
+      const { data: settings } = await supabaseAdmin
+        .from('pricing_settings')
+        .select('*')
+        .eq('id', 1)
+        .maybeSingle()
+      if (settings?.deposits_enabled === false) {
+        isDeposit = false
+      }
+    }
+
     if (paymentMode === 'quote') {
       leadStatus = 'quote_requested'
       finalAmount = 0

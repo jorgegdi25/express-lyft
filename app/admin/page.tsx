@@ -453,6 +453,7 @@ export default function AdminPage() {
     surcharge_amount: number;
     surcharge_start_hour: number;
     surcharge_end_hour: number;
+    deposits_enabled: boolean;
   }
 
   const [pricingSettings, setPricingSettings] = useState<PricingSettings | null>(null)
@@ -2262,6 +2263,45 @@ export default function AdminPage() {
                     onClick={updatePricingSettings}
                     disabled={savingPricingSettings}
                     className="px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                  >
+                    {savingPricingSettings ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif' }}>Online Deposit Payments</h2>
+              </div>
+              <p className="text-xs mb-4" style={{ color: '#888' }}>
+                When off, the public booking forms only offer &quot;Pay Full Amount&quot; — the &quot;Reserve with Deposit&quot; option is hidden for every guest.
+              </p>
+              {!editPricingSettings ? (
+                <p className="text-sm italic" style={{ color: '#888' }}>Loading…</p>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={editPricingSettings.deposits_enabled}
+                    onClick={() => setEditPricingSettings(prev => prev && ({ ...prev, deposits_enabled: !prev.deposits_enabled }))}
+                    className="relative w-14 h-8 rounded-full transition-colors shrink-0"
+                    style={{ background: editPricingSettings.deposits_enabled ? '#B8960C' : '#333' }}
+                  >
+                    <span
+                      className="absolute top-1 w-6 h-6 rounded-full bg-white transition-transform"
+                      style={{ transform: editPricingSettings.deposits_enabled ? 'translateX(1.75rem)' : 'translateX(0.25rem)' }}
+                    />
+                  </button>
+                  <span className="text-sm font-bold" style={{ color: editPricingSettings.deposits_enabled ? '#D4AF37' : '#888' }}>
+                    {editPricingSettings.deposits_enabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                  <button
+                    onClick={updatePricingSettings}
+                    disabled={savingPricingSettings}
+                    className="ml-auto px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-50"
                     style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
                   >
                     {savingPricingSettings ? 'Saving...' : 'Save'}

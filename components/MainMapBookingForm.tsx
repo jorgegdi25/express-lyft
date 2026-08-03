@@ -56,6 +56,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
   // Live data fetched client-side to bypass Next.js server cache
   const [livePrices, setLivePrices] = useState(serverPrices)
   const [surcharge, setSurcharge] = useState<SurchargeConfig | null>(null)
+  const [depositsEnabled, setDepositsEnabled] = useState<boolean>(true)
   const [distanceMiles, setDistanceMiles] = useState(0);
   const [durationMinutes, setDurationMinutes] = useState(0);
   const [minDateStr, setMinDateStr] = useState<string>('')
@@ -77,6 +78,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
           const data = await res.json()
           if (data.prices) setLivePrices(data.prices)
           if (data.surcharge) setSurcharge(data.surcharge)
+          if (typeof data.depositsEnabled === 'boolean') setDepositsEnabled(data.depositsEnabled)
         }
       } catch (err) {
         console.error('Failed to fetch fresh prices:', err)
@@ -134,6 +136,14 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
   const [selectedVehicleOverride, setSelectedVehicleOverride] = useState<VehicleType | null>(null)
   const [step, setStep] = useState<number>(1)
   const [paymentMode, setPaymentMode] = useState<'full' | 'deposit'>('full')
+
+  // If the owner turns deposits off after the guest already picked that
+  // option, fall back to full payment instead of submitting a stale choice.
+  useEffect(() => {
+    if (!depositsEnabled && paymentMode === 'deposit') {
+      setPaymentMode('full')
+    }
+  }, [depositsEnabled, paymentMode])
 
   const getAvailableTimeSlots = (dateString: string) => {
     if (!dateString) return TIME_SLOTS;
@@ -1125,7 +1135,8 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                         </span>
                       </div>
 
-                      {/* Payment Mode Selector */}
+                      {/* Payment Mode Selector — only worth showing when there's an actual choice */}
+                      {depositsEnabled && (
                       <div>
                         <label className={LABEL_CLASS} style={LABEL_COLOR}>
                           How would you like to pay?
@@ -1209,6 +1220,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                           </div>
                         )}
                       </div>
+                      )}
                     </>
                   )}
 

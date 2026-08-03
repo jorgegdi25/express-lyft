@@ -184,3 +184,6 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_reminder_email_id text;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_reminder_status text;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_reminder_status_at timestamptz;
 
+-- Global on/off switch for the "Reserve with Deposit" option on the public
+-- booking forms. Defaults to on (existing behavior unchanged).
+ALTER TABLE pricing_settings ADD COLUMN IF NOT EXISTS deposits_enabled boolean DEFAULT true;
