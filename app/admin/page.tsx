@@ -8,6 +8,8 @@ import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { formatDateUS, getMonthGridDays } from '@/lib/dateUtils'
 import { VEHICLE_LABELS } from '@/lib/vehicles'
 import { CalendarDatePicker, CalendarRangeFilter } from '@/components/CalendarPicker'
+import { parsePhoneNumberFromString } from 'libphonenumber-js'
+import countryNames from 'react-phone-number-input/locale/en.json'
 
 /* -- Interfaces --------------------------------------- */
 
@@ -447,6 +449,27 @@ export default function AdminPage() {
     () => Array.from(new Set(routePrices.map((r) => r.hotel_slug))).filter(Boolean),
     [routePrices]
   )
+
+  // Route dropdown for the "Add Reservation" modal — offers both directions of
+  // every saved route, not just however it happened to be entered. Whichever
+  // direction wasn't explicitly saved reads its price from the other one via
+  // lookupRoutePrice's exact-then-reverse fallback, so there's a single source
+  // of truth: editing one direction's rate in Routes & Pricing updates the
+  // suggested total for both, instead of two rows silently drifting apart.
+  const routeDropdownOptions = useMemo(() => {
+    const hotelRoutes = routePrices.filter((r) => !newLead.hotelSlug || r.hotel_slug === newLead.hotelSlug)
+    const seen = new Set<string>()
+    const options: { pickup: string; destination: string }[] = []
+    for (const r of hotelRoutes) {
+      const key = `${r.pickup}|||${r.destination}`
+      if (!seen.has(key)) { seen.add(key); options.push({ pickup: r.pickup, destination: r.destination }) }
+    }
+    for (const r of hotelRoutes) {
+      const key = `${r.destination}|||${r.pickup}`
+      if (!seen.has(key)) { seen.add(key); options.push({ pickup: r.destination, destination: r.pickup }) }
+    }
+    return options
+  }, [routePrices, newLead.hotelSlug])
 
   interface PricingSettings {
     surcharge_type: 'fixed' | 'percentage';
@@ -2822,7 +2845,20 @@ export default function AdminPage() {
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-semibold text-[#aaa]">Phone</label>
-                      <input type="tel" placeholder="+1 (555) 123-4567" value={newLead.customerPhone} onChange={(e) => setNewLead({ ...newLead, customerPhone: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <input
+                        type="tel"
+                        placeholder="+1 (555) 123-4567"
+                        value={newLead.customerPhone}
+                        onChange={(e) => {
+                          const phone = e.target.value
+                          // Auto-fill Country from the dial code (+1, +57, ...) as the admin types,
+                          // same way the public booking form's phone picker infers it.
+                          const detectedCountry = parsePhoneNumberFromString(phone)?.country
+                          const countryName = detectedCountry ? (countryNames as Record<string, string>)[detectedCountry] : undefined
+                          setNewLead({ ...newLead, customerPhone: phone, ...(countryName ? { customerCountry: countryName } : {}) })
+                        }}
+                        className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors"
+                      />
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-semibold text-[#aaa]">Country</label>
@@ -2858,7 +2894,7 @@ export default function AdminPage() {
                     {newLead.routeMode === 'preset' ? (
                       <select value={`${newLead.pickup}|||${newLead.destination}`} onChange={(e) => { const [p, d] = e.target.value.split('|||'); setNewLead({ ...newLead, pickup: p || '', destination: d || '' }); }} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
                         <option value="|||">— Select Route —</option>
-                        {routePrices.filter((r) => !newLead.hotelSlug || r.hotel_slug === newLead.hotelSlug).map((r) => (<option key={r.id} value={`${r.pickup}|||${r.destination}`}>{r.pickup} → {r.destination}</option>))}
+                        {routeDropdownOptions.map((r) => (<option key={`${r.pickup}|||${r.destination}`} value={`${r.pickup}|||${r.destination}`}>{r.pickup} → {r.destination}</option>))}
                       </select>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
