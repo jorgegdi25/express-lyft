@@ -233,7 +233,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
   const handleNextStep2 = () => {
     setError(null)
-    const maxLuggage = vehicleType === 'sedan_suv' || vehicleType === 'suburban' ? 4 : vehicleType === 'sprinter' ? 14 : vehicleType === 'minibus' ? 30 : 60;
+    const maxLuggage = vehicleType === 'sedan_suv' ? 4 : vehicleType === 'suburban' ? 6 : vehicleType === 'sprinter' ? 14 : vehicleType === 'minibus' ? 30 : 60;
     if (luggageCount > maxLuggage) {
       setError(`The selected vehicle allows a maximum of ${maxLuggage} bags. Please reduce your luggage or choose a larger vehicle.`)
       return
@@ -386,7 +386,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     }
 
     // Final luggage check just in case
-    const maxLuggage = vehicleType === 'sedan_suv' || vehicleType === 'suburban' ? 4 : vehicleType === 'sprinter' ? 14 : vehicleType === 'minibus' ? 30 : 60;
+    const maxLuggage = vehicleType === 'sedan_suv' ? 4 : vehicleType === 'suburban' ? 6 : vehicleType === 'sprinter' ? 14 : vehicleType === 'minibus' ? 30 : 60;
     if (luggageCount > maxLuggage) {
       setError(`The selected vehicle allows a maximum of ${maxLuggage} bags.`)
       setStep(2)
@@ -987,7 +987,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     />
                   </div>
                   <p className="text-[11px] text-[#888] mt-0">
-                    Sedan/Suburban: Max 4 bags. Sprinter: Max 14. Minibus: Max 30. Coach: Max 60. Complimentary car seats available.
+                    Sedan: Max 4 bags. Suburban: Max 6 bags. Sprinter: Max 14. Minibus: Max 30. Coach: Max 60. Complimentary car seats available.
                   </p>
 
                   {error && !isUrgentRequest && (
@@ -1050,6 +1050,13 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     selectedVehicleType={vehicleType}
                     onSelectVehicle={(type) => setSelectedVehicleOverride(type)}
                   />
+
+                  {error && (
+                    <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
+                      <p className="text-sm font-medium" style={{ color: '#f87171' }}>{error}</p>
+                    </div>
+                  )}
+
                   <div className="flex gap-4">
                     <button
                       type="button"

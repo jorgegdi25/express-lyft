@@ -49,3 +49,4 @@ test_*.js
 
 # carpeta de archivo de la limpieza (local, no subir)
 _archive_limpieza/
+.env*

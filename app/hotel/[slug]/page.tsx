@@ -542,7 +542,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                         </svg>
                       </summary>
                       <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        Sedans and Suburbans can comfortably accommodate up to 4 standard pieces of luggage. For larger groups, our Sprinter Vans, Minibuses, and Coach Buses can hold up to 20 pieces.
+                        Sedans can comfortably accommodate up to 4 standard pieces of luggage, and Suburbans up to 6. For larger groups, our Sprinter Vans, Minibuses, and Coach Buses can hold up to 20 pieces.
                       </div>
                     </details>
 
