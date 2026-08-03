@@ -23,6 +23,16 @@ const nextConfig = {
           ],
           destination: '/hotel/bocean-resort',
         },
+        {
+          source: '/',
+          has: [
+            {
+              type: 'host',
+              value: 'stay.explyft.com',
+            },
+          ],
+          destination: '/stay',
+        },
 
       ]
     };

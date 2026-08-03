@@ -179,6 +179,68 @@ export async function sendTripReminderSentNotification(lead: any) {
 }
 
 /**
+ * Avisa al dueño de una nueva reserva de Stay (habitación + transporte).
+ * Igual que sendOwnerNotification: correo aparte, nunca lanza error.
+ */
+export async function sendStayOwnerNotification(
+  booking: any,
+  opts?: { overbooked?: boolean }
+) {
+  if (!resend || !booking) return;
+
+  try {
+    const roomLabel = booking.room_type === '2_beds' ? '2 Beds' : '1 Bed';
+
+    const rows: Array<[string, any]> = [
+      ['Guest', booking.guest_name],
+      ['Phone', booking.guest_phone],
+      ['Email', booking.guest_email],
+      ['Guests', booking.guest_count],
+      ['Hotel', booking.hotel_name],
+      ['Room', `${booking.room_qty}x ${roomLabel}`],
+      ['Nights', booking.nights],
+      ['Check-in', booking.check_in_date],
+      ['Airport pickup time', booking.pickup_time],
+      ['Airline / Flight', [booking.airline, booking.flight_number].filter(Boolean).join(' ')],
+      ['Room charge', `$${booking.room_amount}`],
+      ['Transport charge', `$${booking.transport_amount}`],
+    ];
+
+    const rowsHtml = rows
+      .filter(([label, value]) => label && value !== null && value !== undefined && value !== '')
+      .map(
+        ([label, value]) =>
+          `<tr><td style="padding:6px 16px 6px 0;color:#888;white-space:nowrap;">${label}</td><td style="padding:6px 0;font-weight:600;color:#111;">${value}</td></tr>`
+      )
+      .join('');
+
+    const overbookedBanner = opts?.overbooked
+      ? `<div style="margin-bottom:16px;padding:12px;background:#fdecea;border:1px solid #f5b7b1;border-radius:6px;">
+           <p style="margin:0;color:#c0392b;font-weight:700;">⚠️ Paid but no rooms were left in inventory. Call the guest to confirm a room or issue a refund.</p>
+         </div>`
+      : '';
+
+    const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;">
+        <h2 style="color:#111;margin:0 0 4px;">🏨 New Stay Booking</h2>
+        <p style="color:#888;margin:0 0 16px;">Booking #${booking.id || ''}</p>
+        ${overbookedBanner}
+        <table style="border-collapse:collapse;font-size:15px;">${rowsHtml}</table>
+      </div>`;
+
+    await resend.emails.send({
+      from: OWNER_NOTIFY_FROM,
+      to: [OWNER_EMAIL],
+      subject: `${opts?.overbooked ? '⚠️ OVERBOOKED — ' : '🏨 '}New Stay booking — ${booking.guest_name || 'Guest'} at ${booking.hotel_name || ''}`,
+      html,
+    });
+    console.log(`[stay-owner-notification] Enviado a ${OWNER_EMAIL} para booking ${booking.id}`);
+  } catch (e) {
+    console.error('[stay-owner-notification] Falló el envío:', e);
+  }
+}
+
+/**
  * Avisa de inmediato al dueño cuando llega una reseña negativa (no
  * recomienda). Nunca se publica sola en la web — queda en el CRM para que
  * el equipo la vea y pueda contactar al cliente. Nunca lanza error.

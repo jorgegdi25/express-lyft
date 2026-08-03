@@ -142,7 +142,7 @@ interface Review {
 }
 
 
-type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites' | 'reviews'
+type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites' | 'reviews' | 'stay'
 
 type SidebarItem = { key: TabKey; label: string; icon: React.ReactNode; getBadge?: () => number }
 
@@ -673,6 +673,89 @@ export default function AdminPage() {
     return res.json() as Promise<Driver[]>
   }
 
+  interface StayHotelAdmin {
+    id: string
+    name: string
+    photo_url: string | null
+    price: number
+    transport_amount: number
+    rooms_available: number
+    active: boolean
+    sort_order: number
+  }
+
+  interface StayBookingAdmin {
+    id: string
+    hotel_name: string
+    room_type: string
+    room_qty: number
+    nights: number
+    check_in_date: string
+    guest_name: string
+    guest_email: string
+    guest_phone: string
+    guest_count: number
+    direction: string
+    pickup_time: string
+    return_pickup_time: string | null
+    room_amount: number
+    transport_amount: number
+    status: string
+    created_at: string
+  }
+
+  const [stayHotels, setStayHotels] = useState<StayHotelAdmin[]>([])
+  const [stayBookings, setStayBookings] = useState<StayBookingAdmin[]>([])
+  const [editingStayHotel, setEditingStayHotel] = useState<StayHotelAdmin | null>(null)
+  const [addingStayHotel, setAddingStayHotel] = useState(false)
+  const [savingStayHotel, setSavingStayHotel] = useState(false)
+  const emptyStayHotel = { name: '', photo_url: '', price: 189, transport_amount: 45, rooms_available: 5, active: true, sort_order: 100 }
+  const [newStayHotel, setNewStayHotel] = useState(emptyStayHotel)
+
+  async function fetchStayData(pw: string) {
+    const res = await fetch(`/api/admin/stay-hotels?t=${Date.now()}`, {
+      headers: { authorization: `Bearer ${pw}` },
+      cache: 'no-store'
+    })
+    if (!res.ok) return { hotels: [] as StayHotelAdmin[], bookings: [] as StayBookingAdmin[] }
+    return res.json() as Promise<{ hotels: StayHotelAdmin[], bookings: StayBookingAdmin[] }>
+  }
+
+  async function refreshStayData() {
+    const data = await fetchStayData(password)
+    setStayHotels(data.hotels)
+    setStayBookings(data.bookings)
+  }
+
+  async function saveStayHotel(hotel: Partial<StayHotelAdmin> & { id?: string }) {
+    setSavingStayHotel(true)
+    try {
+      const isEdit = !!hotel.id
+      const res = await fetch('/api/admin/stay-hotels', {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
+        body: JSON.stringify(hotel),
+      })
+      if (res.ok) {
+        await refreshStayData()
+        setEditingStayHotel(null)
+        setAddingStayHotel(false)
+        setNewStayHotel(emptyStayHotel)
+      }
+    } finally {
+      setSavingStayHotel(false)
+    }
+  }
+
+  async function deleteStayHotel(id: string) {
+    if (!confirm('Delete this Stay hotel? This cannot be undone.')) return
+    const res = await fetch(`/api/admin/stay-hotels?id=${id}`, {
+      method: 'DELETE',
+      headers: { authorization: `Bearer ${password}` },
+    })
+    if (res.ok) await refreshStayData()
+  }
+
   interface BasePrice {
     id?: string;
     vehicle_type: string;
@@ -767,7 +850,7 @@ export default function AdminPage() {
     let bp: BasePrice[] = []
 
     try {
-      const [bData, rData, lData, cData, dData, bpData, psData, rvData] = await Promise.all([
+      const [bData, rData, lData, cData, dData, bpData, psData, rvData, stayData] = await Promise.all([
         fetchBookings(pw),
         fetchRoutes(pw),
         fetchLeads(pw),
@@ -775,7 +858,8 @@ export default function AdminPage() {
         fetchDrivers(pw),
         fetchBasePrices(pw),
         fetchPricingSettings(pw),
-        fetchReviews(pw)
+        fetchReviews(pw),
+        fetchStayData(pw)
       ])
 
       setBookings(bData)
@@ -786,6 +870,8 @@ export default function AdminPage() {
       setBasePrices(bpData)
       if (psData) { setPricingSettings(psData); setEditPricingSettings(psData) }
       setReviews(rvData)
+      setStayHotels(stayData.hotels)
+      setStayBookings(stayData.bookings)
       bk = bData
       rt = rData
       ld = lData
@@ -1447,6 +1533,12 @@ export default function AdminPage() {
         { key: 'bookings', label: 'Reservations', icon: <IconBookings /> },
         { key: 'dispatch', label: 'Dispatch', icon: <IconDispatch /> },
         { key: 'drivers', label: 'Drivers', icon: <IconDrivers /> },
+      ] as SidebarItem[]
+    },
+    {
+      group: 'Stay',
+      items: [
+        { key: 'stay', label: 'Stay (Hotels)', icon: <IconHotel />, getBadge: () => stayBookings.filter(b => b.status === 'paid').length },
       ] as SidebarItem[]
     },
     {
@@ -2167,6 +2259,144 @@ export default function AdminPage() {
         )}
 
         {/* ------- WEBSITES & DOMAINS TAB ------- */}
+        {activeTab === 'stay' && (
+          <div className="flex flex-col gap-8">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Stay</h1>
+                <p className="text-sm" style={{ color: '#888' }}>Hotels sold through stay.explyft.com — price, photo, inventory, and order shown to guests.</p>
+              </div>
+              <button
+                onClick={() => setAddingStayHotel(true)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider"
+                style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+              >
+                + Add Hotel
+              </button>
+            </div>
+
+            {addingStayHotel && (
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #B8960C' }}>
+                <h3 className="text-sm font-bold text-[#D4AF37] uppercase tracking-wider">New Stay Hotel</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input placeholder="Name" value={newStayHotel.name} onChange={e => setNewStayHotel({ ...newStayHotel, name: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                  <input placeholder="Photo URL" value={newStayHotel.photo_url} onChange={e => setNewStayHotel({ ...newStayHotel, photo_url: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                  <input type="number" placeholder="Price per room/night ($)" value={newStayHotel.price} onChange={e => setNewStayHotel({ ...newStayHotel, price: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                  <input type="number" placeholder="Transport portion ($)" value={newStayHotel.transport_amount} onChange={e => setNewStayHotel({ ...newStayHotel, transport_amount: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                  <input type="number" placeholder="Rooms available" value={newStayHotel.rooms_available} onChange={e => setNewStayHotel({ ...newStayHotel, rooms_available: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                  <input type="number" placeholder="Sort order (0 = first)" value={newStayHotel.sort_order} onChange={e => setNewStayHotel({ ...newStayHotel, sort_order: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                </div>
+                <div className="flex gap-3 mt-2">
+                  <button disabled={savingStayHotel} onClick={() => saveStayHotel(newStayHotel)} className="px-4 py-2 rounded-lg text-xs font-bold uppercase" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>Save</button>
+                  <button onClick={() => { setAddingStayHotel(false); setNewStayHotel(emptyStayHotel) }} className="px-4 py-2 rounded-lg text-xs font-bold uppercase text-[#888]">Cancel</button>
+                </div>
+              </div>
+            )}
+
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {stayHotels.map(hotel => {
+                const isEditing = editingStayHotel?.id === hotel.id
+                const edit = isEditing ? editingStayHotel : hotel
+                return (
+                  <div key={hotel.id} className="rounded-xl p-5 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: '#D4AF37' }}>{hotel.name}</h3>
+                      <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ background: hotel.active ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.08)', color: hotel.active ? '#4ade80' : '#888' }}>
+                        {hotel.active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+
+                    {isEditing ? (
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <label className="flex flex-col gap-1 col-span-2">Name
+                          <input value={edit.name} onChange={e => setEditingStayHotel({ ...edit, name: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                        </label>
+                        <label className="flex flex-col gap-1 col-span-2">Photo URL
+                          <input value={edit.photo_url || ''} onChange={e => setEditingStayHotel({ ...edit, photo_url: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                        </label>
+                        <label className="flex flex-col gap-1">Price/night ($)
+                          <input type="number" value={edit.price} onChange={e => setEditingStayHotel({ ...edit, price: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                        </label>
+                        <label className="flex flex-col gap-1">Transport portion ($)
+                          <input type="number" value={edit.transport_amount} onChange={e => setEditingStayHotel({ ...edit, transport_amount: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                        </label>
+                        <label className="flex flex-col gap-1">Rooms available
+                          <input type="number" value={edit.rooms_available} onChange={e => setEditingStayHotel({ ...edit, rooms_available: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                        </label>
+                        <label className="flex flex-col gap-1">Sort order
+                          <input type="number" value={edit.sort_order} onChange={e => setEditingStayHotel({ ...edit, sort_order: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                        </label>
+                        <label className="flex items-center gap-2 col-span-2 mt-1">
+                          <input type="checkbox" checked={edit.active} onChange={e => setEditingStayHotel({ ...edit, active: e.target.checked })} />
+                          Active (visible on stay.explyft.com)
+                        </label>
+                        <div className="col-span-2 flex gap-2 mt-2">
+                          <button disabled={savingStayHotel} onClick={() => saveStayHotel(edit)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>Save</button>
+                          <button onClick={() => setEditingStayHotel(null)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[#888]">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div><p className="text-[#666] text-xs">Price/night</p><p className="text-white font-semibold">${hotel.price}</p></div>
+                          <div><p className="text-[#666] text-xs">Rooms left</p><p className="text-white font-semibold">{hotel.rooms_available}</p></div>
+                          <div><p className="text-[#666] text-xs">Transport portion</p><p className="text-white font-semibold">${hotel.transport_amount}</p></div>
+                          <div><p className="text-[#666] text-xs">Order</p><p className="text-white font-semibold">{hotel.sort_order}</p></div>
+                        </div>
+                        <div className="flex gap-2 mt-1">
+                          <button onClick={() => setEditingStayHotel(hotel)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[#D4AF37] border border-[#B8960C]/40">Edit</button>
+                          <button onClick={() => saveStayHotel({ id: hotel.id, active: !hotel.active })} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[#888] border border-[#2a2a2a]">{hotel.active ? 'Deactivate' : 'Activate'}</button>
+                          <button onClick={() => deleteStayHotel(hotel.id)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-red-400 border border-red-900/40">Delete</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+              {stayHotels.length === 0 && !addingStayHotel && (
+                <p className="text-sm text-[#555] italic">No Stay hotels yet — click "+ Add Hotel" to create one.</p>
+              )}
+            </section>
+
+            <div>
+              <h2 className="text-lg font-bold mb-3" style={{ fontFamily: 'Georgia, serif' }}>Recent Stay Bookings</h2>
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1a1a1a' }}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ background: '#161616' }}>
+                      {['Guest', 'Hotel', 'Room', 'Nights', 'Check-in', 'Transport', 'Total', 'Status'].map(h => (
+                        <th key={h} className="text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[#888]">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stayBookings.map(b => (
+                      <tr key={b.id} style={{ borderTop: '1px solid #1a1a1a' }}>
+                        <td className="px-4 py-2.5 text-white">{b.guest_name}<br /><span className="text-xs text-[#666]">{b.guest_phone}</span></td>
+                        <td className="px-4 py-2.5 text-[#ccc]">{b.hotel_name}</td>
+                        <td className="px-4 py-2.5 text-[#ccc]">{b.room_qty}x {b.room_type === '2_beds' ? '2 Beds' : '1 Bed'}</td>
+                        <td className="px-4 py-2.5 text-[#ccc]">{b.nights}</td>
+                        <td className="px-4 py-2.5 text-[#ccc]">{b.check_in_date}</td>
+                        <td className="px-4 py-2.5 text-[#ccc]">Airport pickup · {b.pickup_time}</td>
+                        <td className="px-4 py-2.5 text-white font-semibold">${(b.room_amount + b.transport_amount).toFixed(2)}</td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-xs font-bold px-2 py-1 rounded-full" style={{
+                            background: b.status === 'paid' ? 'rgba(74,222,128,0.15)' : b.status === 'paid_overbooked' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.08)',
+                            color: b.status === 'paid' ? '#4ade80' : b.status === 'paid_overbooked' ? '#ef4444' : '#888',
+                          }}>{b.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {stayBookings.length === 0 && (
+                      <tr><td colSpan={8} className="px-4 py-6 text-center text-[#555] italic">No Stay bookings yet.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'websites' && (
           <div className="flex flex-col gap-8">
             <div>
@@ -2199,6 +2429,17 @@ export default function AdminPage() {
                   {Array.from(new Set(routePrices.map(r => r.hotel_slug))).filter(Boolean).length === 0 && (
                     <p className="text-xs text-[#555] italic">No hotels found in pricing.</p>
                   )}
+                </div>
+              </div>
+
+              {/* Stay */}
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: '#D4AF37' }}>Stay</h2>
+                <p className="text-xs text-[#888]">Hotel + transportation for guests needing a room tonight.</p>
+                <div className="mt-auto pt-4">
+                  <a href="/stay" target="_blank" className="text-sm text-[#4ade80] hover:underline flex items-center gap-2">
+                    Open Stay ↗
+                  </a>
                 </div>
               </div>
 
