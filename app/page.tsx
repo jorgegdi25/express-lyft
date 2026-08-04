@@ -237,9 +237,6 @@ export default async function HomePage({ searchParams }: { searchParams: { succe
         <MainMapBookingForm prices={prices} />
       )}
 
-      {/* ── Official Partner Banner ──────────────────────────────── */}
-      
-
       {/* ── Fixed Pricing Section ─────────────────────────────────────────── */}
       <section className="w-full py-16" style={{ background: '#0d0d0d', borderRadius: '1rem', border: '1px solid #252525' }}>
                 <div className="max-w-7xl mx-auto px-4 md:px-6">

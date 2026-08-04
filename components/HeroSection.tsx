@@ -90,6 +90,15 @@ export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroS
             >
               {hotelSlug ? "Book Now" : "WhatsApp Us"}
             </a>
+            <a
+              href="https://www.sixt.com/partners/expresslyft2371/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-10 py-4 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 shadow-2xl text-center w-full sm:w-auto"
+              style={{ background: 'transparent', border: '1px solid #D4AF37', color: '#D4AF37' }}
+            >
+              Rent with Sixt
+            </a>
           </div>
 
         </div>
