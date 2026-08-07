@@ -9,7 +9,11 @@ export async function GET(req: NextRequest) {
   const state = req.nextUrl.searchParams.get('state')
   const expectedState = req.cookies.get('qb_oauth_state')?.value
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin
+  // Prefer the actual request origin over NEXT_PUBLIC_BASE_URL: that env var
+  // is the same across Preview and Production, so relying on it here would
+  // always bounce back to production even when the OAuth flow ran on a
+  // preview deployment (e.g. pruebas.explyft.com).
+  const baseUrl = req.nextUrl.origin || process.env.NEXT_PUBLIC_BASE_URL
 
   if (!code || !realmId) {
     return NextResponse.redirect(`${baseUrl}/admin?quickbooks=error&reason=missing_params`)
