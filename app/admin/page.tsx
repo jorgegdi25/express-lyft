@@ -326,6 +326,8 @@ export default function AdminPage() {
   const [addingLead, setAddingLead] = useState(false)
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
   const [sendingInvoice, setSendingInvoice] = useState<string | null>(null)
+  const [sendingQuickBooksInvoice, setSendingQuickBooksInvoice] = useState<string | null>(null)
+  const [qbConnected, setQbConnected] = useState<boolean | null>(null)
   const [sendingReview, setSendingReview] = useState<string | null>(null)
   const [viewingLead, setViewingLead] = useState<Lead | null>(null)
   const [viewingDay, setViewingDay] = useState<string | null>(null)
@@ -937,6 +939,21 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!authed) return
+    fetchQuickBooksStatus(password)
+
+    const params = new URLSearchParams(window.location.search)
+    const qbResult = params.get('quickbooks')
+    if (qbResult === 'connected') {
+      alert('QuickBooks connected successfully!')
+      window.history.replaceState({}, '', window.location.pathname)
+    } else if (qbResult === 'error') {
+      alert('QuickBooks connection failed (' + (params.get('reason') || 'unknown') + '). Please try again.')
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [authed, password])
+
+  useEffect(() => {
+    if (!authed) return
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
         refreshData(password)
@@ -1199,6 +1216,42 @@ export default function AdminPage() {
       alert('Error: ' + e.message)
     } finally {
       setSendingInvoice(null)
+    }
+  }
+
+  async function sendQuickBooksInvoice(leadId: string) {
+    if (!confirm('Are you sure you want to send this invoice via QuickBooks?')) return
+    setSendingQuickBooksInvoice(leadId)
+    try {
+      const res = await fetch('/api/admin/quickbooks-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${password}` },
+        body: JSON.stringify({ leadId })
+      })
+      const data = await res.json()
+      if (data.success) {
+        if (data.invoiceLink) setGeneratedLink(data.invoiceLink)
+        alert(data.emailSent ? 'QuickBooks invoice sent successfully!' : 'Invoice created in QuickBooks, but the automatic email failed to send — use the payment link below instead, or resend it from QuickBooks directly.')
+        updateLead(leadId, { status: 'invoice_sent' })
+      } else {
+        alert('Error: ' + data.error)
+      }
+    } catch (e: any) {
+      alert('Error: ' + e.message)
+    } finally {
+      setSendingQuickBooksInvoice(null)
+    }
+  }
+
+  async function fetchQuickBooksStatus(pw: string) {
+    try {
+      const res = await fetch('/api/quickbooks/status', {
+        headers: { Authorization: `Bearer ${pw}` },
+      })
+      const data = await res.json()
+      setQbConnected(!!data.connected)
+    } catch {
+      setQbConnected(false)
     }
   }
 
@@ -1708,7 +1761,7 @@ export default function AdminPage() {
 
       {/* -- Sidebar -- */}
       <aside
-        className={`w-[240px] min-h-screen flex flex-col py-6 px-4 fixed left-0 top-0 z-50 transition-transform duration-300 lg:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`w-[240px] h-screen flex flex-col py-6 px-4 fixed left-0 top-0 z-50 transition-transform duration-300 lg:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ background: '#0f0f0f', borderRight: '1px solid #1a1a1a' }}
       >
         {/* Brand */}
@@ -1810,9 +1863,28 @@ export default function AdminPage() {
           </div>
         </nav>
 
+        {/* QuickBooks connection status */}
+        <div className="mt-auto pt-3 px-2">
+          {qbConnected ? (
+            <div className="flex items-center gap-2 px-2 py-2 rounded-xl text-[11px]" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', color: '#10B981' }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#10B981' }} />
+              <span className="font-semibold tracking-wide">QuickBooks Connected</span>
+            </div>
+          ) : (
+            <a
+              href={`/api/quickbooks/connect?key=${encodeURIComponent(password)}`}
+              className="flex items-center gap-2 px-2 py-2 rounded-xl text-[11px] transition-colors hover:bg-[#1a1a1a]"
+              style={{ border: '1px solid #333', color: '#999' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#555' }} />
+              <span className="font-semibold tracking-wide">Connect QuickBooks</span>
+            </a>
+          )}
+        </div>
+
         {/* User / Logout */}
         <div
-          className="mt-auto pt-4 px-2"
+          className="pt-4 px-2"
           style={{ borderTop: '1px solid #1a1a1a' }}
         >
           <div className="flex items-center justify-between">
@@ -4512,8 +4584,13 @@ export default function AdminPage() {
                       Edit
                     </button>
                     {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
-                      <button onClick={() => sendInvoice(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/50 hover:bg-[#10B981]/20 transition-colors flex items-center gap-2">
-                        📧 Send Invoice
+                      <button onClick={() => sendInvoice(viewingLead.id)} disabled={sendingInvoice === viewingLead.id} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/50 hover:bg-[#10B981]/20 transition-colors flex items-center gap-2 disabled:opacity-50">
+                        📧 {sendingInvoice === viewingLead.id ? 'Sending...' : 'Send Invoice (Stripe)'}
+                      </button>
+                    )}
+                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && qbConnected && (
+                      <button onClick={() => sendQuickBooksInvoice(viewingLead.id)} disabled={sendingQuickBooksInvoice === viewingLead.id} className="px-4 py-2 rounded-lg text-sm font-bold bg-blue-500/10 text-blue-400 border border-blue-500/50 hover:bg-blue-500/20 transition-colors flex items-center gap-2 disabled:opacity-50">
+                        🧾 {sendingQuickBooksInvoice === viewingLead.id ? 'Sending...' : 'Send via QuickBooks'}
                       </button>
                     )}
                     {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (

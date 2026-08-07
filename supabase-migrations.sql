@@ -187,3 +187,24 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_reminder_status_at timestamptz;
 -- Global on/off switch for the "Reserve with Deposit" option on the public
 -- booking forms. Defaults to on (existing behavior unchanged).
 ALTER TABLE pricing_settings ADD COLUMN IF NOT EXISTS deposits_enabled boolean DEFAULT true;
+
+-- QuickBooks OAuth connection (single-row table: one QuickBooks company
+-- connected at a time). Tokens are refreshed by the app and updated in place.
+create table if not exists quickbooks_connection (
+  id uuid primary key default gen_random_uuid(),
+  realm_id text not null,
+  access_token text not null,
+  refresh_token text not null,
+  access_token_expires_at timestamptz not null,
+  refresh_token_expires_at timestamptz not null,
+  updated_at timestamptz default now()
+);
+
+alter table quickbooks_connection enable row level security;
+
+drop policy if exists "Service role only quickbooks_connection" on quickbooks_connection;
+create policy "Service role only quickbooks_connection" on quickbooks_connection for all using (auth.role() = 'service_role');
+
+-- Track which lead maps to which QuickBooks invoice, and its paid status.
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS quickbooks_invoice_id text;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS quickbooks_invoice_status text;
