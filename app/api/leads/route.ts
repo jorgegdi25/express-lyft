@@ -3,7 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/calendar'
 import { calculateDistanceAmount, applyTimeSurcharge, SurchargeConfig } from '@/lib/pricing'
-import { flTaxRateIds } from '@/lib/tax'
+import { flTaxRateIds, FL_TAX_RATE_PERCENT } from '@/lib/tax'
+import { createAndSendInvoice } from '@/lib/quickbooks'
 
 export const dynamic = 'force-dynamic'
 
@@ -417,6 +418,41 @@ export async function POST(req: NextRequest) {
     const productDesc = isDeposit
       ? `${date} at ${time} | ${vehicleType} | ${passengers} passengers | Deposit: $${chargeAmount} of $${finalAmount} total`
       : `${date} at ${time} | ${vehicleType} | ${passengers} passengers`
+
+    const { data: paymentSettings } = await supabaseAdmin
+      .from('pricing_settings')
+      .select('payment_provider')
+      .eq('id', 1)
+      .maybeSingle()
+
+    if (paymentSettings?.payment_provider === 'quickbooks') {
+      try {
+        const invoice = await createAndSendInvoice({
+          customerName: customerName || customerEmail,
+          customerEmail,
+          customerPhone,
+          amount: chargeAmount,
+          description: `${productName} | ${productDesc}`,
+          taxAmount: chargeAmount * (FL_TAX_RATE_PERCENT / 100),
+        })
+
+        await supabaseAdmin
+          .from('leads')
+          .update({ quickbooks_invoice_id: invoice.Id, quickbooks_invoice_status: 'sent' })
+          .eq('id', data.id)
+
+        if (!invoice.invoiceLink) {
+          console.error('[leads] QuickBooks invoice created but no payment link returned for lead', data.id)
+          return NextResponse.json({ error: 'Failed to generate a QuickBooks payment link' }, { status: 500 })
+        }
+
+        return NextResponse.json({ success: true, url: invoice.invoiceLink })
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : JSON.stringify(err)
+        console.error('[leads] QuickBooks invoice creation failed for lead', data.id, errorMsg)
+        return NextResponse.json({ error: 'Failed to create QuickBooks invoice: ' + errorMsg }, { status: 500 })
+      }
+    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],

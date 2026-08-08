@@ -208,12 +208,53 @@ async function getOrCreateServiceItem(realmId: string, accessToken: string) {
   return createServiceItem(realmId, accessToken)
 }
 
+const TAX_ITEM_NAME = 'Florida Sales Tax (7%)'
+
+async function findTaxItem(realmId: string, accessToken: string) {
+  const query = `select * from Item where Name = '${escapeQb(TAX_ITEM_NAME)}'`
+  const data = await qbFetch(realmId, accessToken, `/query?query=${encodeURIComponent(query)}`)
+  return data.QueryResponse?.Item?.[0] || null
+}
+
+async function createTaxItem(realmId: string, accessToken: string) {
+  const accountsData = await qbFetch(
+    realmId,
+    accessToken,
+    `/query?query=${encodeURIComponent("select * from Account where AccountType = 'Income' maxresults 1")}`
+  )
+  const incomeAccount = accountsData.QueryResponse?.Account?.[0]
+  if (!incomeAccount) {
+    throw new Error('No se encontró una cuenta de ingresos en QuickBooks para asociar el impuesto')
+  }
+
+  const data = await qbFetch(realmId, accessToken, '/item', {
+    method: 'POST',
+    body: JSON.stringify({
+      Name: TAX_ITEM_NAME,
+      Type: 'Service',
+      IncomeAccountRef: { value: incomeAccount.Id },
+    }),
+  })
+  return data.Item
+}
+
+// A plain line item for the tax amount, added at a flat 7% — same approach
+// already used for Stripe (lib/tax.ts), instead of relying on QuickBooks'
+// Automated Sales Tax engine, which needs per-item tax categories and nexus
+// setup we don't have configured.
+async function getOrCreateTaxItem(realmId: string, accessToken: string) {
+  const existing = await findTaxItem(realmId, accessToken)
+  if (existing) return existing
+  return createTaxItem(realmId, accessToken)
+}
+
 export async function createAndSendInvoice(params: {
   customerName: string
   customerEmail: string
   customerPhone?: string
   amount: number
   description: string
+  taxAmount?: number
 }) {
   const { accessToken, realmId } = await getValidConnection()
 
@@ -225,19 +266,31 @@ export async function createAndSendInvoice(params: {
 
   const item = await getOrCreateServiceItem(realmId, accessToken)
 
+  const lines: any[] = [
+    {
+      Amount: params.amount,
+      DetailType: 'SalesItemLineDetail',
+      SalesItemLineDetail: { ItemRef: { value: item.Id } },
+      Description: params.description,
+    },
+  ]
+
+  if (params.taxAmount && params.taxAmount > 0) {
+    const taxItem = await getOrCreateTaxItem(realmId, accessToken)
+    lines.push({
+      Amount: Math.round(params.taxAmount * 100) / 100,
+      DetailType: 'SalesItemLineDetail',
+      SalesItemLineDetail: { ItemRef: { value: taxItem.Id } },
+      Description: 'Florida Sales Tax (7%)',
+    })
+  }
+
   const invoiceData = await qbFetch(realmId, accessToken, '/invoice', {
     method: 'POST',
     body: JSON.stringify({
       CustomerRef: { value: customer.Id },
       BillEmail: { Address: params.customerEmail },
-      Line: [
-        {
-          Amount: params.amount,
-          DetailType: 'SalesItemLineDetail',
-          SalesItemLineDetail: { ItemRef: { value: item.Id } },
-          Description: params.description,
-        },
-      ],
+      Line: lines,
     }),
   })
 

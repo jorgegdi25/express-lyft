@@ -208,3 +208,8 @@ create policy "Service role only quickbooks_connection" on quickbooks_connection
 -- Track which lead maps to which QuickBooks invoice, and its paid status.
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS quickbooks_invoice_id text;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS quickbooks_invoice_status text;
+
+-- Which processor the public booking forms use to collect payment. Switching
+-- this does not affect the admin's manual "Send via QuickBooks" button on
+-- existing leads, which is independent of this setting.
+ALTER TABLE pricing_settings ADD COLUMN IF NOT EXISTS payment_provider text DEFAULT 'stripe';

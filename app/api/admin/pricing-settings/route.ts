@@ -27,10 +27,13 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { surcharge_type, surcharge_amount, surcharge_start_hour, surcharge_end_hour, deposits_enabled } = await req.json()
+  const { surcharge_type, surcharge_amount, surcharge_start_hour, surcharge_end_hour, deposits_enabled, payment_provider } = await req.json()
 
   if (surcharge_type !== 'fixed' && surcharge_type !== 'percentage') {
     return NextResponse.json({ error: 'surcharge_type must be "fixed" or "percentage"' }, { status: 400 })
+  }
+  if (payment_provider !== undefined && payment_provider !== 'stripe' && payment_provider !== 'quickbooks') {
+    return NextResponse.json({ error: 'payment_provider must be "stripe" or "quickbooks"' }, { status: 400 })
   }
   if (
     surcharge_amount === undefined ||
@@ -50,6 +53,7 @@ export async function PUT(req: NextRequest) {
       surcharge_start_hour,
       surcharge_end_hour,
       deposits_enabled: deposits_enabled ?? true,
+      payment_provider: payment_provider ?? 'stripe',
       updated_at: new Date().toISOString(),
     })
     .eq('id', 1)

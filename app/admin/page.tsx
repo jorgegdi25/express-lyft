@@ -479,6 +479,7 @@ export default function AdminPage() {
     surcharge_start_hour: number;
     surcharge_end_hour: number;
     deposits_enabled: boolean;
+    payment_provider: 'stripe' | 'quickbooks';
   }
 
   const [pricingSettings, setPricingSettings] = useState<PricingSettings | null>(null)
@@ -2634,6 +2635,58 @@ export default function AdminPage() {
                   <span className="text-sm font-bold" style={{ color: editPricingSettings.deposits_enabled ? '#D4AF37' : '#888' }}>
                     {editPricingSettings.deposits_enabled ? 'Enabled' : 'Disabled'}
                   </span>
+                  <button
+                    onClick={updatePricingSettings}
+                    disabled={savingPricingSettings}
+                    className="ml-auto px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                  >
+                    {savingPricingSettings ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif' }}>Payment Provider</h2>
+              </div>
+              <p className="text-xs mb-4" style={{ color: '#888' }}>
+                Which processor the public booking forms use to collect payment. Switching this doesn&apos;t affect the &quot;Send via QuickBooks&quot; button on individual leads in Sales Pipeline.
+              </p>
+              {!editPricingSettings ? (
+                <p className="text-sm italic" style={{ color: '#888' }}>Loading…</p>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: '#333' }}>
+                    <button
+                      type="button"
+                      onClick={() => setEditPricingSettings(prev => prev && ({ ...prev, payment_provider: 'stripe' }))}
+                      className="px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors"
+                      style={{
+                        background: editPricingSettings.payment_provider === 'stripe' ? '#B8960C' : 'transparent',
+                        color: editPricingSettings.payment_provider === 'stripe' ? '#0a0a0a' : '#888',
+                      }}
+                    >
+                      Stripe
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditPricingSettings(prev => prev && ({ ...prev, payment_provider: 'quickbooks' }))}
+                      className="px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors"
+                      style={{
+                        background: editPricingSettings.payment_provider === 'quickbooks' ? '#B8960C' : 'transparent',
+                        color: editPricingSettings.payment_provider === 'quickbooks' ? '#0a0a0a' : '#888',
+                      }}
+                    >
+                      QuickBooks
+                    </button>
+                  </div>
+                  {editPricingSettings.payment_provider === 'quickbooks' && !qbConnected && (
+                    <span className="text-xs font-bold" style={{ color: '#f87171' }}>
+                      ⚠️ QuickBooks isn&apos;t connected yet — connect it first (sidebar) or bookings will fail to check out.
+                    </span>
+                  )}
                   <button
                     onClick={updatePricingSettings}
                     disabled={savingPricingSettings}
