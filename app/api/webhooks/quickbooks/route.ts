@@ -145,7 +145,10 @@ export async function POST(req: NextRequest) {
     try {
       const invoice = await getInvoice(invoiceId)
       const totalAmt = invoice.TotalAmt ?? 0
-      const balance = invoice.Balance ?? totalAmt
+      // QuickBooks omits the Balance field entirely once an invoice is fully
+      // paid, instead of returning 0 — so a MISSING Balance means paid, not
+      // "unknown, assume the full amount is still owed".
+      const balance = invoice.Balance ?? 0
       const isPaid = balance === 0
       const isPartiallyPaid = balance > 0 && balance < totalAmt
 
