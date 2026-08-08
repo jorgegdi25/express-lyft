@@ -274,3 +274,9 @@ export async function createAndSendInvoice(params: {
 
   return { ...invoice, emailSent, invoiceLink }
 }
+
+export async function getInvoice(invoiceId: string) {
+  const { accessToken, realmId } = await getValidConnection()
+  const data = await qbFetch(realmId, accessToken, `/invoice/${invoiceId}`)
+  return data.Invoice
+}
