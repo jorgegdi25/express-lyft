@@ -13,7 +13,8 @@ import { useConfirm } from '@/components/ui/ConfirmDialog'
 import {
   StickyNote, AlertTriangle, Sparkles, Star, CheckCircle2, XCircle,
   Plane, Armchair, Luggage, X, Trash2, Mail, Receipt, CreditCard, Check,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Search, DollarSign,
+  CalendarCheck, ListTodo,
 } from 'lucide-react'
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import countryNames from 'react-phone-number-input/locale/en.json'
@@ -291,6 +292,50 @@ function IconDispatch() {
       <line x1="8" y1="14" x2="16" y2="14" />
       <line x1="8" y1="18" x2="12" y2="18" />
     </svg>
+  )
+}
+
+function StatCard({
+  icon, iconColor, label, value, trendPct, caption,
+}: {
+  icon: React.ReactNode
+  iconColor: string
+  label: string
+  value: React.ReactNode
+  trendPct?: number | null
+  caption?: string
+}) {
+  return (
+    <div
+      className="rounded-2xl p-5 flex flex-col gap-4"
+      style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}
+    >
+      <div className="flex items-center justify-between">
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{ background: `${iconColor}1A`, color: iconColor }}
+        >
+          {icon}
+        </div>
+        {trendPct != null && (
+          <span
+            className="flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full"
+            style={{
+              background: trendPct >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+              color: trendPct >= 0 ? '#10B981' : '#f87171',
+            }}
+          >
+            {trendPct >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+            {trendPct >= 0 ? '+' : ''}{trendPct}%
+          </span>
+        )}
+      </div>
+      <div>
+        <p className="text-3xl font-bold" style={{ color: 'var(--text)' }}>{value}</p>
+        <p className="text-xs font-bold uppercase tracking-widest mt-1.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      </div>
+      {caption && <p className="text-xs" style={{ color: 'var(--text-faint)' }}>{caption}</p>}
+    </div>
   )
 }
 
@@ -580,6 +625,19 @@ export default function AdminPage() {
     })
     const currentMonth = new Date().toISOString().substring(0, 7)
     const currentMonthRevenue = monthlyData[currentMonth] || 0
+    const lastMonthDate = new Date()
+    lastMonthDate.setMonth(lastMonthDate.getMonth() - 1)
+    const lastMonth = lastMonthDate.toISOString().substring(0, 7)
+    const lastMonthRevenue = monthlyData[lastMonth] || 0
+    const revenueTrendPct = lastMonthRevenue > 0
+      ? Math.round(((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100)
+      : null
+
+    const currentMonthBookings = bookings.filter(b => (b.date || '').substring(0, 7) === currentMonth).length
+    const lastMonthBookings = bookings.filter(b => (b.date || '').substring(0, 7) === lastMonth).length
+    const bookingsTrendPct = lastMonthBookings > 0
+      ? Math.round(((currentMonthBookings - lastMonthBookings) / lastMonthBookings) * 100)
+      : null
 
     // Top Routes (by collected revenue)
     const routesData: Record<string, { count: number; revenue: number }> = {}
@@ -602,6 +660,9 @@ export default function AdminPage() {
       taxCollectedTotal,
       grossRevenue,
       currentMonthRevenue,
+      revenueTrendPct,
+      currentMonthBookings,
+      bookingsTrendPct,
       monthlyData: Object.entries(monthlyData).sort((a, b) => a[0].localeCompare(b[0])),
       topRoutes
     }
@@ -1987,41 +2048,29 @@ export default function AdminPage() {
 
             {/* TOP SECTION: High-Level Metrics */}
             <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* Monthly Revenue (collected so far this calendar month) */}
-              <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Monthly Revenue</p>
-                  <IconRevenue />
-                </div>
-                <p className="text-3xl font-bold text-green-400 mt-2">
-                  ${revenueStats.currentMonthRevenue.toLocaleString()}
-                </p>
-                <p className="text-xs text-[var(--text-faint)]">Collected this month (Stripe + External + Cash)</p>
-              </div>
-
-              {/* Total Bookings */}
-              <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Total Bookings</p>
-                  <IconBookings />
-                </div>
-                <p className="text-3xl font-bold text-blue-400 mt-2">
-                  {bookings.length}
-                </p>
-                <p className="text-xs text-[var(--text-faint)]">Confirmed and active trips</p>
-              </div>
-
-              {/* Pending Actions */}
-              <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: '#B8960C10', border: '1px solid #B8960C50' }}>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[var(--gold)]">Pending Actions</p>
-                  <IconDashboard />
-                </div>
-                <p className="text-3xl font-bold text-[var(--gold-light)] mt-2">
-                  {leads.filter(l => ['pending_payment', 'new'].includes(l.status || '')).length}
-                </p>
-                <p className="text-xs text-[var(--gold)] opacity-80">Requires immediate attention</p>
-              </div>
+              <StatCard
+                icon={<DollarSign size={20} />}
+                iconColor="#10B981"
+                label="Monthly Revenue"
+                value={`$${revenueStats.currentMonthRevenue.toLocaleString()}`}
+                trendPct={revenueStats.revenueTrendPct}
+                caption="Collected this month (Stripe + External + Cash)"
+              />
+              <StatCard
+                icon={<CalendarCheck size={20} />}
+                iconColor="#60a5fa"
+                label="Total Bookings"
+                value={bookings.length}
+                trendPct={revenueStats.bookingsTrendPct}
+                caption={`${revenueStats.currentMonthBookings} this month`}
+              />
+              <StatCard
+                icon={<ListTodo size={20} />}
+                iconColor="var(--gold-light)"
+                label="Pending Actions"
+                value={leads.filter(l => ['pending_payment', 'new'].includes(l.status || '')).length}
+                caption="Requires immediate attention"
+              />
             </section>
 
             {/* ACTION CENTER */}
@@ -2998,48 +3047,53 @@ export default function AdminPage() {
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Bookings</h1>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Fully paid and confirmed trips. {filteredBookings.length} found ({bookings.length} total)</p>
               </div>
-              <div className="flex items-center gap-3">
-                <select
-                  value={bookingsStatusFilter}
-                  onChange={(e) => { setBookingsStatusFilter(e.target.value); setBookingsPage(1); }}
-                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="paid">Paid</option>
-                  <option value="deposit_paid">Deposit Paid</option>
-                  <option value="hotel_b2b">Hotel B2B</option>
-                </select>
-                <select
-                  value={bookingsVehicleFilter}
-                  onChange={(e) => { setBookingsVehicleFilter(e.target.value); setBookingsPage(1); }}
-                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors"
-                >
-                  <option value="all">All Vehicles</option>
-                  {Object.entries(VEHICLE_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-                <select
-                  value={bookingsDriverFilter}
-                  onChange={(e) => { setBookingsDriverFilter(e.target.value); setBookingsPage(1); }}
-                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors"
-                >
-                  <option value="all">All Drivers</option>
-                  <option value="assigned">Driver Assigned</option>
-                  <option value="unassigned">Unassigned</option>
-                </select>
-                <CalendarRangeFilter
-                  from={bookingsDateFrom}
-                  to={bookingsDateTo}
-                  onChange={(f, t) => { setBookingsDateFrom(f); setBookingsDateTo(t); setBookingsPage(1); }}
-                />
-                <input
-                  type="text"
-                  placeholder="Search bookings..."
-                  value={bookingsSearch}
-                  onChange={(e) => { setBookingsSearch(e.target.value); setBookingsPage(1); }}
-                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors w-full md:max-w-xs"
-                />
+              <div className="flex flex-col gap-3 w-full lg:w-auto">
+                <div className="relative w-full">
+                  <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-faint)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search bookings by name, email, route…"
+                    value={bookingsSearch}
+                    onChange={(e) => { setBookingsSearch(e.target.value); setBookingsPage(1); }}
+                    className="rounded-xl pl-9 pr-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors w-full"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <select
+                    value={bookingsStatusFilter}
+                    onChange={(e) => { setBookingsStatusFilter(e.target.value); setBookingsPage(1); }}
+                    className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="paid">Paid</option>
+                    <option value="deposit_paid">Deposit Paid</option>
+                    <option value="hotel_b2b">Hotel B2B</option>
+                  </select>
+                  <select
+                    value={bookingsVehicleFilter}
+                    onChange={(e) => { setBookingsVehicleFilter(e.target.value); setBookingsPage(1); }}
+                    className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors"
+                  >
+                    <option value="all">All Vehicles</option>
+                    {Object.entries(VEHICLE_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={bookingsDriverFilter}
+                    onChange={(e) => { setBookingsDriverFilter(e.target.value); setBookingsPage(1); }}
+                    className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors"
+                  >
+                    <option value="all">All Drivers</option>
+                    <option value="assigned">Driver Assigned</option>
+                    <option value="unassigned">Unassigned</option>
+                  </select>
+                  <CalendarRangeFilter
+                    from={bookingsDateFrom}
+                    to={bookingsDateTo}
+                    onChange={(f, t) => { setBookingsDateFrom(f); setBookingsDateTo(t); setBookingsPage(1); }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -3158,49 +3212,56 @@ export default function AdminPage() {
                     : 'Manage leads, follow-ups, and track conversions.'}
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => { setNewLead({ ...emptyNewLead, hotelSlug: hotelOptions[0] || '' }); setShowAddLeadModal(true); }}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
-                  style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
-                >
-                  + New Reservation
-                </button>
-                <select
-                  value={leadsStatusFilter}
-                  onChange={(e) => { setLeadsStatusFilter(e.target.value); setLeadsPage(1); }}
-                  className="rounded-xl px-3 py-2.5 text-sm outline-none bg-[var(--bg)] border border-[var(--border)] text-white focus:border-[var(--gold)] transition-colors"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="pending_payment">Abandoned Carts</option>
-                  <option value="new">Manual Leads</option>
-                  <option value="deposit_paid">Deposit Paid</option>
-                  <option value="paid">Paid Bookings</option>
-                  <option value="invoice_sent">Invoice Sent</option>
-                  <option value="lost">Lost / Cancelled</option>
-                </select>
-                <CalendarRangeFilter
-                  from={leadsDateFrom}
-                  to={leadsDateTo}
-                  onChange={(f, t) => { setLeadsDateFrom(f); setLeadsDateTo(t); setLeadsPage(1); }}
-                />
-                <select
-                  value={leadsSortBy}
-                  onChange={(e) => { setLeadsSortBy(e.target.value); setLeadsPage(1); }}
-                  className="rounded-xl px-3 py-2.5 text-sm outline-none bg-[var(--bg)] border border-[var(--border)] text-[var(--text-muted)] focus:border-[var(--gold)] transition-colors"
-                >
-                  <option value="newest">Sort: Newest First</option>
-                  <option value="oldest">Sort: Oldest First</option>
-                  <option value="amount_high">Sort: Amount (High to Low)</option>
-                  <option value="amount_low">Sort: Amount (Low to High)</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={leadsSearch}
-                  onChange={(e) => { setLeadsSearch(e.target.value); setLeadsPage(1); }}
-                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors w-full sm:w-48"
-                />
+              <div className="flex flex-col gap-3 w-full lg:w-auto">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative flex-1 min-w-[220px]">
+                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-faint)' }} />
+                    <input
+                      type="text"
+                      placeholder="Search name, email, phone…"
+                      value={leadsSearch}
+                      onChange={(e) => { setLeadsSearch(e.target.value); setLeadsPage(1); }}
+                      className="rounded-xl pl-9 pr-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors w-full"
+                    />
+                  </div>
+                  <button
+                    onClick={() => { setNewLead({ ...emptyNewLead, hotelSlug: hotelOptions[0] || '' }); setShowAddLeadModal(true); }}
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 shrink-0"
+                    style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+                  >
+                    + New Reservation
+                  </button>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <select
+                    value={leadsStatusFilter}
+                    onChange={(e) => { setLeadsStatusFilter(e.target.value); setLeadsPage(1); }}
+                    className="rounded-xl px-3 py-2.5 text-sm outline-none bg-[var(--bg)] border border-[var(--border)] text-white focus:border-[var(--gold)] transition-colors"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="pending_payment">Abandoned Carts</option>
+                    <option value="new">Manual Leads</option>
+                    <option value="deposit_paid">Deposit Paid</option>
+                    <option value="paid">Paid Bookings</option>
+                    <option value="invoice_sent">Invoice Sent</option>
+                    <option value="lost">Lost / Cancelled</option>
+                  </select>
+                  <CalendarRangeFilter
+                    from={leadsDateFrom}
+                    to={leadsDateTo}
+                    onChange={(f, t) => { setLeadsDateFrom(f); setLeadsDateTo(t); setLeadsPage(1); }}
+                  />
+                  <select
+                    value={leadsSortBy}
+                    onChange={(e) => { setLeadsSortBy(e.target.value); setLeadsPage(1); }}
+                    className="rounded-xl px-3 py-2.5 text-sm outline-none bg-[var(--bg)] border border-[var(--border)] text-[var(--text-muted)] focus:border-[var(--gold)] transition-colors"
+                  >
+                    <option value="newest">Sort: Newest First</option>
+                    <option value="oldest">Sort: Oldest First</option>
+                    <option value="amount_high">Sort: Amount (High to Low)</option>
+                    <option value="amount_low">Sort: Amount (Low to High)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
