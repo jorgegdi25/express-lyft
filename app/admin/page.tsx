@@ -3199,38 +3199,38 @@ export default function AdminPage() {
         {/* ------- LEADS & QUOTES TAB ------- */}
         {(activeTab === 'leads' || activeTab === 'quotes' || activeTab === 'hotel_bookings') && (
           <div className="flex flex-col gap-8">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>
-                  {activeTab === 'quotes' ? 'Manual Quotes (Buses)' : activeTab === 'hotel_bookings' ? 'Hotel Partner Bookings' : 'Sales Pipeline & Leads'}
-                </h1>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  {activeTab === 'quotes' 
-                    ? 'High priority requests that need manual pricing and availability verification.' 
-                    : activeTab === 'hotel_bookings'
-                    ? 'Manage bookings originating from B2B hotel partners (invoiced monthly).'
-                    : 'Manage leads, follow-ups, and track conversions.'}
-                </p>
+            <div className="flex flex-col gap-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>
+                    {activeTab === 'quotes' ? 'Manual Quotes (Buses)' : activeTab === 'hotel_bookings' ? 'Hotel Partner Bookings' : 'Sales Pipeline & Leads'}
+                  </h1>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    {activeTab === 'quotes'
+                      ? 'High priority requests that need manual pricing and availability verification.'
+                      : activeTab === 'hotel_bookings'
+                      ? 'Manage bookings originating from B2B hotel partners (invoiced monthly).'
+                      : 'Manage leads, follow-ups, and track conversions.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setNewLead({ ...emptyNewLead, hotelSlug: hotelOptions[0] || '' }); setShowAddLeadModal(true); }}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 shrink-0 shadow-lg"
+                  style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)', boxShadow: '0 4px 16px -4px rgba(184,150,12,0.4)' }}
+                >
+                  + New Reservation
+                </button>
               </div>
-              <div className="flex flex-col gap-3 w-full lg:w-auto">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="relative flex-1 min-w-[220px]">
-                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-faint)' }} />
-                    <input
-                      type="text"
-                      placeholder="Search name, email, phone…"
-                      value={leadsSearch}
-                      onChange={(e) => { setLeadsSearch(e.target.value); setLeadsPage(1); }}
-                      className="rounded-xl pl-9 pr-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors w-full"
-                    />
-                  </div>
-                  <button
-                    onClick={() => { setNewLead({ ...emptyNewLead, hotelSlug: hotelOptions[0] || '' }); setShowAddLeadModal(true); }}
-                    className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 shrink-0"
-                    style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
-                  >
-                    + New Reservation
-                  </button>
+              <div className="flex flex-col gap-3">
+                <div className="relative w-full">
+                  <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-faint)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search name, email, phone…"
+                    value={leadsSearch}
+                    onChange={(e) => { setLeadsSearch(e.target.value); setLeadsPage(1); }}
+                    className="rounded-xl pl-9 pr-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors w-full"
+                  />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <select
