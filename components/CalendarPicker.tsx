@@ -15,11 +15,11 @@ const CalendarIcon = () => (
 function MonthNav({ viewMonth, onPrev, onNext }: { viewMonth: Date; onPrev: () => void; onNext: () => void }) {
   return (
     <div className="flex items-center justify-between mb-2">
-      <button type="button" onClick={onPrev} className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#2a2a2a] text-[#aaa] hover:text-white hover:border-[#B8960C] transition-colors">&larr;</button>
+      <button type="button" onClick={onPrev} className="w-7 h-7 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors">&larr;</button>
       <span className="text-xs font-bold text-white" style={{ fontFamily: 'Georgia, serif' }}>
         {viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
       </span>
-      <button type="button" onClick={onNext} className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#2a2a2a] text-[#aaa] hover:text-white hover:border-[#B8960C] transition-colors">&rarr;</button>
+      <button type="button" onClick={onNext} className="w-7 h-7 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors">&rarr;</button>
     </div>
   )
 }
@@ -28,7 +28,7 @@ function WeekdayHeader() {
   return (
     <div className="grid grid-cols-7 mb-1">
       {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-        <div key={i} className="text-center text-[9px] uppercase font-bold text-[#666] py-1">{d}</div>
+        <div key={i} className="text-center text-[9px] uppercase font-bold text-[var(--text-faint)] py-1">{d}</div>
       ))}
     </div>
   )
@@ -78,8 +78,8 @@ export function CalendarDatePicker({
       <button
         type="button"
         onClick={() => (isOpen ? setIsOpen(false) : open())}
-        className={className || 'w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[#B8960C] text-left flex items-center justify-between gap-2'}
-        style={style || { background: '#0e0e0e', border: '1px solid #333333', color: value ? '#FFFFFF' : '#777777' }}
+        className={className || 'w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)] text-left flex items-center justify-between gap-2'}
+        style={style || { background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: value ? 'var(--text)' : '#777777' }}
       >
         <span>{value ? formatDateUS(value) : placeholder}</span>
         <CalendarIcon />
@@ -89,7 +89,7 @@ export function CalendarDatePicker({
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div
             className="absolute z-50 mt-2 left-0 w-72 max-w-[90vw] rounded-xl p-3 shadow-2xl"
-            style={{ background: '#161616', border: '1px solid #2a2a2a' }}
+            style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <MonthNav
@@ -112,10 +112,10 @@ export function CalendarDatePicker({
                     className="text-[11px] rounded-lg py-1.5 transition-colors hover:brightness-125 disabled:hover:brightness-100 disabled:cursor-not-allowed"
                     style={{
                       opacity: isDisabled ? 0.25 : inMonth ? 1 : 0.3,
-                      background: isSelected ? '#B8960C' : 'transparent',
-                      color: isSelected ? '#0a0a0a' : '#ccc',
+                      background: isSelected ? 'var(--gold)' : 'transparent',
+                      color: isSelected ? 'var(--bg-deep)' : '#ccc',
                       fontWeight: isSelected || isToday ? 700 : 400,
-                      boxShadow: isToday && !isSelected ? 'inset 0 0 0 1px #D4AF37' : 'none',
+                      boxShadow: isToday && !isSelected ? 'inset 0 0 0 1px var(--gold-light)' : 'none',
                     }}
                   >{date.getDate()}</button>
                 )
@@ -167,7 +167,7 @@ export function CalendarRangeFilter({ from, to, onChange }: { from: string; to: 
       <button
         type="button"
         onClick={() => (isOpen ? setIsOpen(false) : open())}
-        className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors flex items-center gap-2 whitespace-nowrap"
+        className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors flex items-center gap-2 whitespace-nowrap"
       >
         <CalendarIcon />
         {label}
@@ -177,7 +177,7 @@ export function CalendarRangeFilter({ from, to, onChange }: { from: string; to: 
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div
             className="absolute z-50 mt-2 right-0 w-72 max-w-[90vw] rounded-xl p-3 shadow-2xl"
-            style={{ background: '#161616', border: '1px solid #2a2a2a' }}
+            style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <MonthNav
@@ -199,18 +199,18 @@ export function CalendarRangeFilter({ from, to, onChange }: { from: string; to: 
                     className="text-[11px] rounded-lg py-1.5 transition-colors hover:brightness-125"
                     style={{
                       opacity: inMonth ? 1 : 0.3,
-                      background: isEdge ? '#B8960C' : inRange ? '#B8960C30' : 'transparent',
-                      color: isEdge ? '#0a0a0a' : '#ccc',
+                      background: isEdge ? 'var(--gold)' : inRange ? '#B8960C30' : 'transparent',
+                      color: isEdge ? 'var(--bg-deep)' : '#ccc',
                       fontWeight: isEdge || isToday ? 700 : 400,
-                      boxShadow: isToday && !isEdge ? 'inset 0 0 0 1px #D4AF37' : 'none',
+                      boxShadow: isToday && !isEdge ? 'inset 0 0 0 1px var(--gold-light)' : 'none',
                     }}
                   >{date.getDate()}</button>
                 )
               })}
             </div>
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#2a2a2a]">
-              <button type="button" onClick={() => { onChange('', ''); setPendingStart(null); }} className="text-xs text-[#888] hover:text-red-400 transition-colors">Clear</button>
-              <button type="button" onClick={() => setIsOpen(false)} className="text-xs text-[#B8960C] hover:underline font-bold">Done</button>
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--border)]">
+              <button type="button" onClick={() => { onChange('', ''); setPendingStart(null); }} className="text-xs text-[var(--text-muted)] hover:text-red-400 transition-colors">Clear</button>
+              <button type="button" onClick={() => setIsOpen(false)} className="text-xs text-[var(--gold)] hover:underline font-bold">Done</button>
             </div>
           </div>
         </>

@@ -38,17 +38,17 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
     <div
       className="rounded-2xl p-7 md:p-10 flex flex-col gap-6"
       style={{
-        background: '#161616',
-        border: '1px solid #2a2a2a',
+        background: 'var(--surface-raised)',
+        border: '1px solid var(--border)',
         boxShadow: '0 24px 60px rgba(0,0,0,0.4)',
       }}
     >
       {/* Header */}
       <div>
-        <h3 className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
+        <h3 className="text-lg font-bold" style={{ color: 'var(--text)' }}>
           2. Select Your Vehicle
         </h3>
-        <p className="text-sm mt-1" style={{ color: '#888888' }}>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
           Select your preferred vehicle class
         </p>
       </div>
@@ -56,7 +56,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
       {/* Vehicle image */}
       <div
         className="relative w-full rounded-xl overflow-hidden"
-        style={{ aspectRatio: '16/9', background: '#0e0e0e' }}
+        style={{ aspectRatio: '16/9', background: 'var(--bg-alt)' }}
       >
         <Image
           src={`/vehicles/${vehicle.type}.png`}
@@ -70,7 +70,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
       <div className="flex flex-col gap-2">
         <h3
           className="text-2xl md:text-3xl font-bold"
-          style={{ color: '#B8960C', fontFamily: "'Playfair Display', Georgia, serif" }}
+          style={{ color: 'var(--gold)', fontFamily: "'Playfair Display', Georgia, serif" }}
         >
           {vehicle.label}
         </h3>
@@ -97,14 +97,14 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
               className="px-3 py-2 rounded-lg text-xs font-semibold transition-all flex flex-col items-center gap-1"
               style={{
                 background: isSelected ? 'rgba(184,150,12,0.15)' : 'transparent',
-                border: `1px solid ${isSelected ? '#B8960C' : '#2a2a2a'}`,
-                color: isSelected ? '#D4AF37' : (isDisabled ? '#444444' : '#888888'),
+                border: `1px solid ${isSelected ? 'var(--gold)' : 'var(--border)'}`,
+                color: isSelected ? 'var(--gold-light)' : (isDisabled ? '#444444' : 'var(--text-muted)'),
                 cursor: isDisabled ? 'not-allowed' : 'pointer',
                 opacity: isDisabled ? 0.5 : 1
               }}
             >
               <span>{v.shortLabel}</span>
-              <span style={{ fontSize: '0.7rem', color: isSelected ? '#EF9F27' : (isDisabled ? '#333333' : '#666666') }}>
+              <span style={{ fontSize: '0.7rem', color: isSelected ? 'var(--gold-accent)' : (isDisabled ? 'var(--border-soft)' : 'var(--text-faint)') }}>
                 {v.type === 'coachbus' || v.type === 'minibus' ? 'Quote' : `$${prices[v.type]}`}
               </span>
             </button>
@@ -122,7 +122,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
           }}
         >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#B8960C' }}>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'var(--gold)' }}>
               Base Rate
             </p>
             <p className="text-xs" style={{ color: '#777777' }}>
@@ -131,7 +131,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
           </div>
           <span
             className="text-4xl font-bold"
-            style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}
+            style={{ color: 'var(--gold-accent)', fontFamily: "'Playfair Display', Georgia, serif" }}
           >
             ${(prices[vehicle.type] * (1 + FL_TAX_RATE_PERCENT / 100)).toFixed(2)}
           </span>
@@ -145,7 +145,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
           }}
         >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#B8960C' }}>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'var(--gold)' }}>
               Custom Rate
             </p>
             <p className="text-xs" style={{ color: '#777777' }}>
@@ -154,7 +154,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
           </div>
           <span
             className="text-2xl font-bold"
-            style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}
+            style={{ color: 'var(--gold-accent)', fontFamily: "'Playfair Display', Georgia, serif" }}
           >
             Quote Required
           </span>
@@ -163,11 +163,11 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
 
       {/* Trust note */}
       <div className="flex items-start gap-3 pt-2" style={{ borderTop: '1px solid #222222' }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B8960C" strokeWidth="2" className="shrink-0 mt-0.5">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" className="shrink-0 mt-0.5">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           <path d="M9 12l2 2 4-4" />
         </svg>
-        <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           All vehicles are professional-grade, fully insured, and operated by certified chauffeurs.
         </p>
       </div>

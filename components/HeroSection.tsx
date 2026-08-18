@@ -58,7 +58,7 @@ export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroS
           {/* Overline tag */}
           <span
             className="text-sm font-bold tracking-[4px] uppercase"
-            style={{ color: '#D4AF37', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
+            style={{ color: 'var(--gold-light)', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
           >
             WELCOME GUESTS
           </span>
@@ -66,7 +66,7 @@ export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroS
           {/* H1 */}
           <h1
             className="text-4xl md:text-5xl lg:text-7xl font-bold leading-[1.15]"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#FFFFFF', textShadow: '0 4px 12px rgba(0,0,0,0.6)' }}
+            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--text)', textShadow: '0 4px 12px rgba(0,0,0,0.6)' }}
           >
             Exclusive private transportation South Florida
           </h1>
@@ -86,7 +86,7 @@ export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroS
               target={hotelSlug ? undefined : "_blank"}
               rel={hotelSlug ? undefined : "noopener noreferrer"}
               className="px-10 py-4 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 shadow-2xl text-center w-full sm:w-auto"
-              style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+              style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
             >
               {hotelSlug ? "Book Now" : "WhatsApp Us"}
             </a>
@@ -95,7 +95,7 @@ export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroS
               target="_blank"
               rel="noopener noreferrer"
               className="px-10 py-4 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 shadow-2xl text-center w-full sm:w-auto"
-              style={{ background: 'transparent', border: '1px solid #D4AF37', color: '#D4AF37' }}
+              style={{ background: 'transparent', border: '1px solid var(--gold-light)', color: 'var(--gold-light)' }}
             >
               Rent a Car with Sixt
             </a>

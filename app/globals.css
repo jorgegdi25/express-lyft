@@ -5,14 +5,31 @@
 @tailwind utilities;
 
 :root {
+  /* Brand */
   --gold: #B8960C;
   --gold-light: #D4AF37;
   --gold-accent: #EF9F27;
-  --black: #111111;
-  --card-bg: #1a1a1a;
+
+  /* Backgrounds, darkest to lightest */
+  --bg-deep: #0a0a0a;
+  --bg-alt: #0e0e0e;
+  --bg-alt-2: #0d0d0d;
+  --bg: #111111;
+  --surface: #1a1a1a;
+  --surface-alt: #1e1e1e;
+  --surface-raised: #161616;
+
+  /* Borders */
   --border: #2a2a2a;
-  --muted: #999999;
-  --muted-dark: #666666;
+  --border-soft: #333333;
+  --border-faint: #252525;
+
+  /* Text */
+  --text: #FFFFFF;
+  --text-muted: #888888;
+  --text-subtle: #AAAAAA;
+  --text-faint: #666666;
+  --text-dim: #999999;
 }
 
 html {
@@ -70,6 +87,16 @@ select option {
 }
 .animate-bounce-subtle {
   animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+/* Toast / confirm dialog entrance */
+@keyframes toast-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes dialog-in {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 /* Phone Input Overrides */

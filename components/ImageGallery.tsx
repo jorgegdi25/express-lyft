@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface GalleryItem {
   src: string
@@ -67,12 +68,12 @@ export default function ImageGallery() {
     <div className="w-full mt-24 flex flex-col items-center">
       {/* Section Header */}
       <div className="text-center mb-12">
-        <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: '#B8960C' }}>
+        <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: 'var(--gold)' }}>
           Our Fleet
         </p>
         <h2
           className="text-2xl md:text-3xl font-bold"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#FFFFFF' }}
+          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--text)' }}
         >
           A curated selection of premium vehicles designed for absolute comfort.
         </h2>
@@ -88,9 +89,9 @@ export default function ImageGallery() {
               onClick={() => setActiveCategory(cat.id)}
               className="px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all"
               style={{
-                background: isActive ? 'rgba(184,150,12,0.15)' : '#161616',
-                border: `1px solid ${isActive ? '#B8960C' : '#252525'}`,
-                color: isActive ? '#D4AF37' : '#888888',
+                background: isActive ? 'rgba(184,150,12,0.15)' : 'var(--surface-raised)',
+                border: `1px solid ${isActive ? 'var(--gold)' : 'var(--border-faint)'}`,
+                color: isActive ? 'var(--gold-light)' : 'var(--text-muted)',
                 cursor: 'pointer',
               }}
             >
@@ -109,8 +110,8 @@ export default function ImageGallery() {
             className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 hover:shadow-xl hover:shadow-[#B8960C08] shrink-0 w-[85vw] sm:w-auto snap-center"
             style={{
               aspectRatio: '4/3',
-              background: '#161616',
-              border: '1px solid #252525',
+              background: 'var(--surface-raised)',
+              border: '1px solid var(--border-faint)',
             }}
           >
             <Image
@@ -127,13 +128,13 @@ export default function ImageGallery() {
                 background: 'linear-gradient(to top, rgba(10,10,10,0.95), rgba(10,10,10,0.4), transparent)',
               }}
             >
-              <span className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: '#B8960C' }}>
+              <span className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: 'var(--gold)' }}>
                 {item.category === 'sedan_suv' ? 'Sedan & SUV' : item.category === 'van_coach' ? 'Vans & Coaches' : 'Miami Experience'}
               </span>
               <h3 className="text-lg font-bold text-white mb-0.5">
                 {item.title}
               </h3>
-              <p className="text-xs" style={{ color: '#AAAAAA' }}>
+              <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
                 {item.subtitle}
               </p>
             </div>
@@ -151,27 +152,27 @@ export default function ImageGallery() {
           {/* Close button */}
           <button
             onClick={() => setLightboxIndex(null)}
-            className="absolute top-6 right-6 text-white text-3xl font-light hover:text-[#B8960C] transition-colors"
+            className="absolute top-6 right-6 text-white hover:text-[var(--gold)] transition-colors"
             aria-label="Close lightbox"
           >
-            ✕
+            <X size={28} strokeWidth={1.5} />
           </button>
 
           {/* Navigation arrows */}
           <button
             onClick={handlePrev}
-            className="absolute left-4 md:left-8 w-12 h-12 rounded-full border border-neutral-800 flex items-center justify-center text-white hover:border-[#B8960C] hover:text-[#B8960C] transition-all bg-black/40"
+            className="absolute left-4 md:left-8 w-12 h-12 rounded-full border border-neutral-800 flex items-center justify-center text-white hover:border-[var(--gold)] hover:text-[var(--gold)] transition-all bg-black/40"
             aria-label="Previous image"
           >
-            ❮
+            <ChevronLeft size={22} />
           </button>
           
           <button
             onClick={handleNext}
-            className="absolute right-4 md:right-8 w-12 h-12 rounded-full border border-neutral-800 flex items-center justify-center text-white hover:border-[#B8960C] hover:text-[#B8960C] transition-all bg-black/40"
+            className="absolute right-4 md:right-8 w-12 h-12 rounded-full border border-neutral-800 flex items-center justify-center text-white hover:border-[var(--gold)] hover:text-[var(--gold)] transition-all bg-black/40"
             aria-label="Next image"
           >
-            ❯
+            <ChevronRight size={22} />
           </button>
 
           {/* Image display */}
@@ -192,7 +193,7 @@ export default function ImageGallery() {
               <h3 className="text-xl font-bold text-white mb-1">
                 {filteredItems[lightboxIndex].title}
               </h3>
-              <p className="text-sm" style={{ color: '#888888' }}>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                 {filteredItems[lightboxIndex].subtitle}
               </p>
             </div>
