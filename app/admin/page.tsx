@@ -10,11 +10,14 @@ import { VEHICLE_LABELS } from '@/lib/vehicles'
 import { CalendarDatePicker, CalendarRangeFilter } from '@/components/CalendarPicker'
 import { useToast } from '@/components/ui/Toast'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
+import Select from '@/components/ui/Select'
+import Button from '@/components/ui/Button'
+import SearchInput from '@/components/ui/SearchInput'
 import {
   StickyNote, AlertTriangle, Sparkles, Star, CheckCircle2, XCircle,
   Plane, Armchair, Luggage, X, Trash2, Mail, Receipt, CreditCard, Check,
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Search, DollarSign,
-  CalendarCheck, ListTodo, ArrowRight,
+  CalendarCheck, ListTodo, ArrowRight, Plus, ArrowUpDown,
 } from 'lucide-react'
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import countryNames from 'react-phone-number-input/locale/en.json'
@@ -294,6 +297,28 @@ function IconDispatch() {
     </svg>
   )
 }
+
+/** Pill colors per lead status — bg / text / border, shared by the card chip
+ *  and the status filter dots so both stay in sync. */
+const STATUS_TONES: Record<string, { bg: string; fg: string; border: string }> = {
+  invoice_sent:    { bg: '#1e3a8a30', fg: '#60a5fa',            border: '#1e3a8a80' },
+  lost:            { bg: '#33161630', fg: '#F44336',            border: '#33161680' },
+  pending_payment: { bg: '#7f1d1d30', fg: '#f87171',            border: '#7f1d1d80' },
+  deposit_paid:    { bg: '#B8960C30', fg: '#FBBF24',            border: '#B8960C80' },
+  paid:            { bg: '#065f4630', fg: '#34d399',            border: '#065f4680' },
+  quote_requested: { bg: '#EF9F2730', fg: 'var(--gold-accent)', border: '#EF9F2780' },
+}
+const DEFAULT_STATUS_TONE = { bg: 'var(--surface)', fg: 'var(--text)', border: 'var(--border-soft)' }
+
+const LEAD_STATUS_OPTIONS = [
+  { value: 'new',             label: 'Manual (New)',    color: '#888888' },
+  { value: 'quote_requested', label: 'Quote Requested', color: '#EF9F27' },
+  { value: 'pending_payment', label: 'Abandoned',       color: '#f87171' },
+  { value: 'invoice_sent',    label: 'Invoice Sent',    color: '#60a5fa' },
+  { value: 'deposit_paid',    label: 'Deposit Paid',    color: '#FBBF24' },
+  { value: 'paid',            label: 'Paid',            color: '#34d399' },
+  { value: 'lost',            label: 'Lost/Cancel',     color: '#F44336' },
+]
 
 function StatCard({
   icon, iconColor, label, value, trendPct, caption,
@@ -3213,54 +3238,61 @@ export default function AdminPage() {
                       : 'Manage leads, follow-ups, and track conversions.'}
                   </p>
                 </div>
-                <button
+                <Button
+                  variant="primary"
+                  icon={<Plus size={14} />}
                   onClick={() => { setNewLead({ ...emptyNewLead, hotelSlug: hotelOptions[0] || '' }); setShowAddLeadModal(true); }}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 shrink-0 shadow-lg"
-                  style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)', boxShadow: '0 4px 16px -4px rgba(184,150,12,0.4)' }}
+                  className="shrink-0"
                 >
-                  + New Reservation
-                </button>
+                  New Reservation
+                </Button>
               </div>
-              <div className="flex flex-col gap-3">
-                <div className="relative w-full">
-                  <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-faint)' }} />
-                  <input
-                    type="text"
-                    placeholder="Search name, email, phone…"
-                    value={leadsSearch}
-                    onChange={(e) => { setLeadsSearch(e.target.value); setLeadsPage(1); }}
-                    className="rounded-xl pl-9 pr-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors w-full"
-                  />
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <select
+
+              {/* Toolbar: search + filters, visually grouped as one surface */}
+              <div
+                className="flex flex-col md:flex-row md:items-center gap-3 rounded-2xl p-3"
+                style={{ background: 'var(--bg)', border: '1px solid var(--border-faint)' }}
+              >
+                <SearchInput
+                  value={leadsSearch}
+                  onChange={(v) => { setLeadsSearch(v); setLeadsPage(1); }}
+                  placeholder="Search name, email, phone…"
+                  className="flex-1 min-w-0"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select
+                    ariaLabel="Filter by status"
                     value={leadsStatusFilter}
-                    onChange={(e) => { setLeadsStatusFilter(e.target.value); setLeadsPage(1); }}
-                    className="rounded-xl px-3 py-2.5 text-sm outline-none bg-[var(--bg)] border border-[var(--border)] text-white focus:border-[var(--gold)] transition-colors"
-                  >
-                    <option value="all">All Statuses</option>
-                    <option value="pending_payment">Abandoned Carts</option>
-                    <option value="new">Manual Leads</option>
-                    <option value="deposit_paid">Deposit Paid</option>
-                    <option value="paid">Paid Bookings</option>
-                    <option value="invoice_sent">Invoice Sent</option>
-                    <option value="lost">Lost / Cancelled</option>
-                  </select>
+                    onChange={(v) => { setLeadsStatusFilter(v); setLeadsPage(1); }}
+                    options={[
+                      { value: 'all', label: 'All Statuses' },
+                      { value: 'pending_payment', label: 'Abandoned Carts', color: '#f87171' },
+                      { value: 'new', label: 'Manual Leads', color: '#888888' },
+                      { value: 'deposit_paid', label: 'Deposit Paid', color: '#FBBF24' },
+                      { value: 'paid', label: 'Paid Bookings', color: '#34d399' },
+                      { value: 'invoice_sent', label: 'Invoice Sent', color: '#60a5fa' },
+                      { value: 'lost', label: 'Lost / Cancelled', color: '#F44336' },
+                    ]}
+                    className="w-[170px]"
+                  />
                   <CalendarRangeFilter
                     from={leadsDateFrom}
                     to={leadsDateTo}
                     onChange={(f, t) => { setLeadsDateFrom(f); setLeadsDateTo(t); setLeadsPage(1); }}
                   />
-                  <select
+                  <Select
+                    ariaLabel="Sort reservations"
+                    icon={<ArrowUpDown size={14} />}
                     value={leadsSortBy}
-                    onChange={(e) => { setLeadsSortBy(e.target.value); setLeadsPage(1); }}
-                    className="rounded-xl px-3 py-2.5 text-sm outline-none bg-[var(--bg)] border border-[var(--border)] text-[var(--text-muted)] focus:border-[var(--gold)] transition-colors"
-                  >
-                    <option value="newest">Sort: Newest First</option>
-                    <option value="oldest">Sort: Oldest First</option>
-                    <option value="amount_high">Sort: Amount (High to Low)</option>
-                    <option value="amount_low">Sort: Amount (Low to High)</option>
-                  </select>
+                    onChange={(v) => { setLeadsSortBy(v); setLeadsPage(1); }}
+                    options={[
+                      { value: 'newest', label: 'Newest First' },
+                      { value: 'oldest', label: 'Oldest First' },
+                      { value: 'amount_high', label: 'Amount: High to Low' },
+                      { value: 'amount_low', label: 'Amount: Low to High' },
+                    ]}
+                    className="w-[180px]"
+                  />
                 </div>
               </div>
             </div>
@@ -3694,9 +3726,13 @@ export default function AdminPage() {
                   {l.customer_phone && (
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-[var(--text-faint)] font-mono">{l.customer_phone}</span>
-                      <button onClick={(e) => { e.stopPropagation(); openWhatsApp(l.customer_phone!, `Hi ${l.customer_name || 'Guest'}, this is Express Lyft. I saw you were looking for a transfer from ${l.pickup} to ${l.destination}. Would you like to complete your reservation?`); }} className="text-[10px] bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-1 font-semibold">
+                      <Button
+                        variant="success"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); openWhatsApp(l.customer_phone!, `Hi ${l.customer_name || 'Guest'}, this is Express Lyft. I saw you were looking for a transfer from ${l.pickup} to ${l.destination}. Would you like to complete your reservation?`); }}
+                      >
                         WhatsApp
-                      </button>
+                      </Button>
                     </div>
                   )}
 
@@ -3721,65 +3757,55 @@ export default function AdminPage() {
                     </div>
 
                     <div onClick={(e) => e.stopPropagation()} className="flex flex-col items-end gap-1.5">
-                      <div className="relative inline-block">
-                        <select
-                          value={l.status || 'new'}
-                          onChange={(e) => updateLead(l.id, { status: e.target.value })}
-                          className="appearance-none pr-7 pl-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer border hover:brightness-110 transition-all text-right"
-                          style={{
-                            backgroundColor: l.status === 'invoice_sent' ? '#1e3a8a30' : l.status === 'lost' ? '#33161630' : l.status === 'pending_payment' ? '#7f1d1d30' : l.status === 'deposit_paid' ? '#B8960C30' : l.status === 'paid' ? '#065f4630' : l.status === 'quote_requested' ? '#EF9F2730' : 'var(--surface)',
-                            color: l.status === 'invoice_sent' ? '#60a5fa' : l.status === 'lost' ? '#F44336' : l.status === 'pending_payment' ? '#f87171' : l.status === 'deposit_paid' ? '#FBBF24' : l.status === 'paid' ? '#34d399' : l.status === 'quote_requested' ? 'var(--gold-accent)' : 'var(--text)',
-                            borderColor: l.status === 'invoice_sent' ? '#1e3a8a80' : l.status === 'lost' ? '#33161680' : l.status === 'pending_payment' ? '#7f1d1d80' : l.status === 'deposit_paid' ? '#B8960C80' : l.status === 'paid' ? '#065f4680' : l.status === 'quote_requested' ? '#EF9F2780' : 'var(--border-soft)'
-                          }}
-                        >
-                          <option value="new" style={{color: 'var(--text)', background: 'var(--bg)'}}>Manual (New)</option>
-                          <option value="quote_requested" style={{color: 'var(--text)', background: 'var(--bg)'}}>Quote Requested</option>
-                          <option value="pending_payment" style={{color: 'var(--text)', background: 'var(--bg)'}}>Abandoned</option>
-                          <option value="invoice_sent" style={{color: 'var(--text)', background: 'var(--bg)'}}>Invoice Sent</option>
-                          <option value="deposit_paid" style={{color: 'var(--text)', background: 'var(--bg)'}}>Deposit Paid</option>
-                          <option value="paid" style={{color: 'var(--text)', background: 'var(--bg)'}}>Paid</option>
-                          <option value="lost" style={{color: 'var(--text)', background: 'var(--bg)'}}>Lost/Cancel</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-current opacity-70">
-                          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                      </div>
+                      <Select
+                        ariaLabel="Lead status"
+                        size="sm"
+                        value={l.status || 'new'}
+                        onChange={(v) => updateLead(l.id, { status: v })}
+                        options={LEAD_STATUS_OPTIONS}
+                        tone={STATUS_TONES[l.status || ''] ?? DEFAULT_STATUS_TONE}
+                        className="w-[150px]"
+                      />
 
-                      <div className="relative inline-block">
-                        <select
-                          value={l.assigned_driver_id || ''}
-                          onChange={(e) => updateLead(l.id, { assigned_driver_id: e.target.value || null })}
-                          className="appearance-none pr-7 pl-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer border hover:brightness-110 transition-all text-right"
-                          style={{
-                            backgroundColor: l.assigned_driver_id ? '#B8960C15' : 'var(--surface)',
-                            color: l.assigned_driver_id ? 'var(--gold-light)' : 'var(--text-muted)',
-                            borderColor: l.assigned_driver_id ? '#B8960C40' : 'var(--border-soft)'
-                          }}
-                        >
-                          <option value="" style={{color: 'var(--text-muted)', background: 'var(--bg)'}}>Unassigned</option>
-                          {drivers.map(d => (
-                            <option key={d.id} value={d.id} style={{color: 'var(--text)', background: 'var(--bg)'}}>{d.name}</option>
-                          ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-current opacity-70">
-                          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                      </div>
+                      <Select
+                        ariaLabel="Assigned driver"
+                        size="sm"
+                        value={l.assigned_driver_id || ''}
+                        onChange={(v) => updateLead(l.id, { assigned_driver_id: v || null })}
+                        options={[
+                          { value: '', label: 'Unassigned' },
+                          ...drivers.map((d) => ({ value: d.id, label: d.name })),
+                        ]}
+                        tone={
+                          l.assigned_driver_id
+                            ? { bg: '#B8960C15', fg: 'var(--gold-light)', border: '#B8960C40' }
+                            : DEFAULT_STATUS_TONE
+                        }
+                        className="w-[150px]"
+                      />
 
                       <div className="flex items-center gap-2 mt-0.5">
                         {l.assigned_driver_id && drivers.find(d => d.id === l.assigned_driver_id)?.phone && (
-                          <button onClick={() => {
-                            const driver = drivers.find(d => d.id === l.assigned_driver_id);
-                            if(driver) {
-                              openWhatsApp(driver.phone, `Hi ${driver.name}, you have a new trip assigned:\n\nPassenger: ${l.customer_name}\nDate: ${formatDateUS(l.date)}\nTime: ${l.time}\nPickup: ${l.pickup}\nDropoff: ${l.destination}\nVehicle: ${VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}`);
-                            }
-                          }} className="text-[10px] bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-1 font-semibold">
+                          <Button
+                            variant="success"
+                            size="sm"
+                            onClick={() => {
+                              const driver = drivers.find(d => d.id === l.assigned_driver_id);
+                              if (driver) {
+                                openWhatsApp(driver.phone, `Hi ${driver.name}, you have a new trip assigned:\n\nPassenger: ${l.customer_name}\nDate: ${formatDateUS(l.date)}\nTime: ${l.time}\nPickup: ${l.pickup}\nDropoff: ${l.destination}\nVehicle: ${VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}`);
+                              }
+                            }}
+                          >
                             Notify Driver
-                          </button>
+                          </Button>
                         )}
-                        <button onClick={() => setExpandedNotes(prev => prev.includes(l.id) ? prev.filter(id => id !== l.id) : [...prev, l.id])} className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--gold-light)] transition-colors">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setExpandedNotes(prev => prev.includes(l.id) ? prev.filter(id => id !== l.id) : [...prev, l.id])}
+                        >
                           {l.notes ? (expandedNotes.includes(l.id) ? 'Hide Notes' : 'View Notes') : '+ Add Note'}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
