@@ -8,6 +8,8 @@ import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { formatDateUS, getMonthGridDays } from '@/lib/dateUtils'
 import { VEHICLE_LABELS } from '@/lib/vehicles'
 import { CalendarDatePicker, CalendarRangeFilter } from '@/components/CalendarPicker'
+import { useToast } from '@/components/ui/Toast'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import countryNames from 'react-phone-number-input/locale/en.json'
 
@@ -290,6 +292,8 @@ function IconDispatch() {
 /* -- Main Admin Page ---------------------------------- */
 
 export default function AdminPage() {
+  const toast = useToast()
+  const confirmDialog = useConfirm()
   const [password, setPassword] = useState('')
   const [authed, setAuthed] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
@@ -751,7 +755,7 @@ export default function AdminPage() {
   }
 
   async function deleteStayHotel(id: string) {
-    if (!confirm('Delete this Stay hotel? This cannot be undone.')) return
+    if (!(await confirmDialog('Delete this Stay hotel? This cannot be undone.', { danger: true }))) return
     const res = await fetch(`/api/admin/stay-hotels?id=${id}`, {
       method: 'DELETE',
       headers: { authorization: `Bearer ${password}` },
@@ -945,10 +949,10 @@ export default function AdminPage() {
     const params = new URLSearchParams(window.location.search)
     const qbResult = params.get('quickbooks')
     if (qbResult === 'connected') {
-      alert('QuickBooks connected successfully!')
+      toast('QuickBooks connected successfully!', 'success')
       window.history.replaceState({}, '', window.location.pathname)
     } else if (qbResult === 'error') {
-      alert('QuickBooks connection failed (' + (params.get('reason') || 'unknown') + '). Please try again.')
+      toast('QuickBooks connection failed (' + (params.get('reason') || 'unknown') + '). Please try again.', 'error')
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [authed, password])
@@ -1013,7 +1017,7 @@ export default function AdminPage() {
         )
       )
     } catch (e: any) {
-      alert(e.message)
+      toast(e.message, 'error')
     }
     setSavingBasePrice(null)
   }
@@ -1054,7 +1058,7 @@ export default function AdminPage() {
       })
       const result = await res.json()
       if (!res.ok) {
-        alert(`Error adding route: ${result.error || 'Unknown error'}`)
+        toast(`Error adding route: ${result.error || 'Unknown error'}`, 'error')
         setAddingRoute(false)
         return
       }
@@ -1070,13 +1074,13 @@ export default function AdminPage() {
       )
       setNewRoute((prev) => ({ ...prev, pickup: '', destination: '' }))
     } catch (err) {
-      alert(`Network error adding route: ${err}`)
+      toast(`Network error adding route: ${err}`, 'error')
     }
     setAddingRoute(false)
   }
 
   async function deleteRoute(id: string) {
-    if (!confirm('⚠️ Are you sure you want to PERMANENTLY DELETE this route?')) return
+    if (!(await confirmDialog('Are you sure you want to permanently delete this route?', { danger: true }))) return
     await fetch(`/api/admin/routes?id=${id}`, {
       method: 'DELETE',
       headers: { authorization: `Bearer ${password}` },
@@ -1130,7 +1134,7 @@ export default function AdminPage() {
       })
       const result = await res.json()
       if (!res.ok) {
-        alert(`Error adding lead: ${result.error || 'Unknown error'}`)
+        toast(`Error adding lead: ${result.error || 'Unknown error'}`, 'error')
         setAddingLead(false)
         return false
       }
@@ -1141,7 +1145,7 @@ export default function AdminPage() {
       setAddingLead(false)
       return true
     } catch (err) {
-      alert(`Network error adding lead: ${err}`)
+      toast(`Network error adding lead: ${err}`, 'error')
       setAddingLead(false)
       return false
     }
@@ -1171,18 +1175,18 @@ export default function AdminPage() {
       })
       const result = await res.json()
       if (!res.ok) {
-        alert(`Error updating lead: ${result.error || 'Unknown error'}`)
+        toast(`Error updating lead: ${result.error || 'Unknown error'}`, 'error')
         // Revert UI optimistic update by refreshing from server
         fetchLeads(password).then(setLeads)
       }
     } catch (e) {
-      alert(`Network error updating lead: ${e}`)
+      toast(`Network error updating lead: ${e}`, 'error')
       fetchLeads(password).then(setLeads)
     }
   }
 
   async function deleteLead(id: string): Promise<boolean> {
-    if (!confirm('Are you sure you want to delete this lead?')) return false
+    if (!(await confirmDialog('Are you sure you want to delete this lead?', { danger: true }))) return false
     try {
       const res = await fetch(`/api/leads?id=${id}`, {
         method: 'DELETE',
@@ -1192,13 +1196,13 @@ export default function AdminPage() {
       setLeads((prev) => prev.filter((l) => l.id !== id))
       return true
     } catch (e: any) {
-      alert(e.message)
+      toast(e.message, 'error')
       return false
     }
   }
 
   async function sendInvoice(leadId: string) {
-    if (!confirm('Are you sure you want to send an invoice via email to this customer?')) return
+    if (!(await confirmDialog('Are you sure you want to send an invoice via email to this customer?'))) return
     setSendingInvoice(leadId)
     try {
       const res = await fetch('/api/admin/invoices', {
@@ -1208,20 +1212,20 @@ export default function AdminPage() {
       })
       const data = await res.json()
       if (data.success) {
-        alert('Invoice sent successfully!')
+        toast('Invoice sent successfully!', 'success')
         updateLead(leadId, { status: 'invoice_sent' })
       } else {
-        alert('Error: ' + data.error)
+        toast('Error: ' + data.error, 'error')
       }
     } catch (e: any) {
-      alert('Error: ' + e.message)
+      toast('Error: ' + e.message, 'error')
     } finally {
       setSendingInvoice(null)
     }
   }
 
   async function sendQuickBooksInvoice(leadId: string) {
-    if (!confirm('Are you sure you want to send this invoice via QuickBooks?')) return
+    if (!(await confirmDialog('Are you sure you want to send this invoice via QuickBooks?'))) return
     setSendingQuickBooksInvoice(leadId)
     try {
       const res = await fetch('/api/admin/quickbooks-invoice', {
@@ -1232,13 +1236,16 @@ export default function AdminPage() {
       const data = await res.json()
       if (data.success) {
         if (data.invoiceLink) setGeneratedLink(data.invoiceLink)
-        alert(data.emailSent ? 'QuickBooks invoice sent successfully!' : 'Invoice created in QuickBooks, but the automatic email failed to send — use the payment link below instead, or resend it from QuickBooks directly.')
+        toast(
+          data.emailSent ? 'QuickBooks invoice sent successfully!' : 'Invoice created in QuickBooks, but the automatic email failed to send — use the payment link below instead, or resend it from QuickBooks directly.',
+          data.emailSent ? 'success' : 'error'
+        )
         updateLead(leadId, { status: 'invoice_sent' })
       } else {
-        alert('Error: ' + data.error)
+        toast('Error: ' + data.error, 'error')
       }
     } catch (e: any) {
-      alert('Error: ' + e.message)
+      toast('Error: ' + e.message, 'error')
     } finally {
       setSendingQuickBooksInvoice(null)
     }
@@ -1268,10 +1275,10 @@ export default function AdminPage() {
       if (data.success) {
         setReviews(prev => prev.map(r => r.id === id ? { ...r, status, reviewed_at: new Date().toISOString() } : r))
       } else {
-        alert('Error: ' + data.error)
+        toast('Error: ' + data.error, 'error')
       }
     } catch (e: any) {
-      alert('Error: ' + e.message)
+      toast('Error: ' + e.message, 'error')
     } finally {
       setReviewActionId(null)
     }
@@ -1287,12 +1294,12 @@ export default function AdminPage() {
       })
       const data = await res.json()
       if (data.success) {
-        alert('Review request sent!')
+        toast('Review request sent!', 'success')
       } else {
-        alert('Error: ' + data.error)
+        toast('Error: ' + data.error, 'error')
       }
     } catch (e: any) {
-      alert('Error: ' + e.message)
+      toast('Error: ' + e.message, 'error')
     } finally {
       setSendingReview(null)
     }
@@ -1312,10 +1319,10 @@ export default function AdminPage() {
         try { await navigator.clipboard.writeText(data.url) } catch(e) {} // Fallback silent copy
         fetchLeads(password).then(setLeads)
       } else {
-        alert('Failed to generate Stripe link: ' + (data.error || 'Unknown error'))
+        toast('Failed to generate Stripe link: ' + (data.error || 'Unknown error'), 'error')
       }
     } catch (e: any) {
-      alert('Error: ' + e.message)
+      toast('Error: ' + e.message, 'error')
     } finally {
       setGeneratingLink(null)
     }
@@ -1334,10 +1341,10 @@ export default function AdminPage() {
         setGeneratedLink(data.url)
         try { await navigator.clipboard.writeText(data.url) } catch(e) {} // Fallback silent copy
       } else {
-        alert('Failed to generate Stripe link: ' + (data.error || 'Unknown error'))
+        toast('Failed to generate Stripe link: ' + (data.error || 'Unknown error'), 'error')
       }
     } catch (e: any) {
-      alert('Error: ' + e.message)
+      toast('Error: ' + e.message, 'error')
     } finally {
       setGeneratingLink(null)
     }
@@ -1438,7 +1445,7 @@ export default function AdminPage() {
   }
 
   async function handleDeleteClient(id: string) {
-    if (!confirm('Are you sure you want to remove this client?')) return
+    if (!(await confirmDialog('Are you sure you want to remove this client?', { danger: true }))) return
     setLoadingClients(true)
     try {
       const res = await fetch(`/api/admin/clients?id=${id}`, {
@@ -1524,7 +1531,7 @@ export default function AdminPage() {
   }
 
   async function handleDeleteDriver(id: string) {
-    if (!confirm('Are you sure you want to remove this driver?')) return
+    if (!(await confirmDialog('Are you sure you want to remove this driver?', { danger: true }))) return
     setSavingDriver(true)
     try {
       const res = await fetch(`/api/admin/drivers?id=${id}`, {
@@ -4338,10 +4345,10 @@ export default function AdminPage() {
                         <div className="flex items-center gap-2">
                           <select 
                             className="bg-[var(--bg-deep)] border border-[var(--border-soft)] text-white text-sm rounded-lg px-3 py-2.5 flex-1 outline-none focus:border-[var(--gold)]"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const driverId = e.target.value;
                               if (driverId) {
-                                if (confirm('Are you sure you want to assign this driver? The trip will be moved to Confirmed Trips.')) {
+                                if (await confirmDialog('Are you sure you want to assign this driver? The trip will be moved to Confirmed Trips.')) {
                                   updateLead(lead.id, { assigned_driver_id: driverId, status: 'paid' });
                                 }
                                 e.target.value = ""; // Reset
@@ -4621,7 +4628,7 @@ export default function AdminPage() {
                         <p className="text-xs uppercase text-green-400 font-bold tracking-widest">✅ Payment Link Generated</p>
                         <div className="flex items-center gap-2">
                           <input type="text" readOnly value={generatedLink} className="bg-black text-green-400 p-3 rounded-lg w-full text-xs outline-none border border-green-900/50 font-mono" />
-                          <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Copied!'); }} className="text-xs font-bold uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white px-4 py-3 rounded-lg transition-colors">Copy</button>
+                          <button onClick={() => { navigator.clipboard.writeText(generatedLink); toast('Copied!', 'success'); }} className="text-xs font-bold uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white px-4 py-3 rounded-lg transition-colors">Copy</button>
                           <a href={generatedLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-widest bg-[#222] hover:bg-[var(--border-soft)] border border-[#444] text-white px-4 py-3 rounded-lg whitespace-nowrap transition-colors">Open</a>
                         </div>
                       </div>
@@ -4652,8 +4659,8 @@ export default function AdminPage() {
                       </button>
                     )}
                     {viewingLead.status === 'deposit_paid' && (
-                      <button onClick={() => { 
-                        if(confirm(`Mark remaining balance as collected manually?`)) { updateLead(viewingLead.id, { status: 'paid', amount_paid: viewingLead.amount_usd, amount_remaining: 0 } as any); setViewingLead(null); }
+                      <button onClick={async () => {
+                        if (await confirmDialog('Mark remaining balance as collected manually?')) { updateLead(viewingLead.id, { status: 'paid', amount_paid: viewingLead.amount_usd, amount_remaining: 0 } as any); setViewingLead(null); }
                       }} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#FBBF24]/10 text-[#FBBF24] border border-[#FBBF24]/50 hover:bg-[#FBBF24]/20 transition-colors flex items-center gap-2">
                         ✅ Mark Paid (Manual)
                       </button>
