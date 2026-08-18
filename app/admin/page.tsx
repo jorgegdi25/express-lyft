@@ -14,7 +14,7 @@ import {
   StickyNote, AlertTriangle, Sparkles, Star, CheckCircle2, XCircle,
   Plane, Armchair, Luggage, X, Trash2, Mail, Receipt, CreditCard, Check,
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Search, DollarSign,
-  CalendarCheck, ListTodo,
+  CalendarCheck, ListTodo, ArrowRight,
 } from 'lucide-react'
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import countryNames from 'react-phone-number-input/locale/en.json'
@@ -3650,100 +3650,83 @@ export default function AdminPage() {
                 </div>
               )}
               {paginatedLeads.map((l) => (
-                <div key={l.id} onClick={() => setViewingLead(l)} className="rounded-xl p-6 relative flex flex-col justify-between gap-5 border border-[var(--border)] bg-[var(--bg)] shadow-2xl hover:border-[var(--gold)] transition-all cursor-pointer">
-                  
-                  {/* Top Bar: Time Ago & Actions */}
-                  <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{timeAgo(l.created_at)}</span>
+                <div key={l.id} onClick={() => setViewingLead(l)} className="rounded-xl p-5 flex flex-col gap-3.5 border border-[var(--border)] bg-[var(--bg)] hover:border-[var(--gold)] transition-all cursor-pointer">
+
+                  {/* Name, country, time ago */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-white truncate">{l.customer_name || 'Anonymous'}</h3>
+                        {l.customer_country && <span className="text-[10px] bg-blue-900/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-800/30 font-bold shrink-0">{l.customer_country}</span>}
+                      </div>
+                      <p className="text-xs text-[var(--text-dim)] truncate">{l.customer_email || 'No email'}</p>
+                    </div>
+                    <span className="text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-wider shrink-0 mt-0.5">{timeAgo(l.created_at)}</span>
                   </div>
 
-                  {/* Customer Info */}
-                  <div className="flex flex-col gap-1 -mt-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-white truncate">{l.customer_name || 'Anonymous'}</h3>
-                      {l.customer_country && <span className="text-[10px] bg-blue-900/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-800/30 font-bold">{l.customer_country}</span>}
-                    </div>
-                    <p className="text-xs text-[var(--text-dim)] truncate">{l.customer_email || 'No email'}</p>
-                    {l.customer_phone && (
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="text-xs text-[var(--text-faint)] font-mono">{l.customer_phone}</span>
-                        <button onClick={(e) => { e.stopPropagation(); openWhatsApp(l.customer_phone!, `Hi ${l.customer_name || 'Guest'}, this is Express Lyft. I saw you were looking for a transfer from ${l.pickup} to ${l.destination}. Would you like to complete your reservation?`); }} className="text-[10px] bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-1 font-semibold">
-                          WhatsApp
-                        </button>
-                      </div>
+                  {/* Route, compact single line */}
+                  <div className="flex items-center gap-2 text-sm text-white pt-3.5 border-t border-[#222]">
+                    <span className="truncate">{l.pickup}</span>
+                    <ArrowRight size={13} className="shrink-0" style={{ color: 'var(--text-faint)' }} />
+                    <span className="truncate">{l.destination}</span>
+                    <span className="ml-auto shrink-0 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded" style={{ background: l.trip_type === 'round-trip' ? '#B8960C20' : '#33333340', color: l.trip_type === 'round-trip' ? 'var(--gold)' : 'var(--text-muted)' }}>
+                      {l.trip_type === 'round-trip' ? 'Round Trip' : 'One Way'}
+                    </span>
+                  </div>
+
+                  {/* Date / vehicle meta row */}
+                  <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <span>{formatDateUS(l.date)} · {l.time || '—'}</span>
+                    {l.trip_type === 'round-trip' && l.return_date && (
+                      <span style={{ color: 'var(--gold)' }}>Return {formatDateUS(l.return_date)} · {l.return_time || '—'}</span>
                     )}
+                    <span>{l.passengers || 1} PAX · <span className="font-bold" style={{ color: 'var(--gold-light)' }}>{VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}</span></span>
                   </div>
 
-                  {/* Route & Date */}
-                  <div className="bg-[#151515] rounded-xl p-4 border border-[var(--surface)] flex flex-col gap-3">
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest font-bold mb-1">Route</span>
-                        <p className="text-sm text-white font-medium leading-tight">{l.pickup} <br/><span className="text-[var(--text-muted)]">↓</span><br/> {l.destination}</p>
-                      </div>
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded" style={{ background: l.trip_type === 'round-trip' ? '#B8960C20' : '#33333340', color: l.trip_type === 'round-trip' ? 'var(--gold)' : 'var(--text-muted)' }}>
-                        {l.trip_type === 'round-trip' ? 'Round Trip' : 'One Way'}
-                      </span>
-                    </div>
-                    {/* Meet & Greet Badge */}
-                    {l.meeting_type === 'meet_greet' && (
-                      <div className="flex items-center gap-2 pt-2 pb-1 border-t border-[#222]">
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1" style={{ background: '#B8960C20', color: 'var(--gold-light)', border: '1px solid #B8960C50' }}>
-                          <Sparkles size={11} /> VIP Meet &amp; Greet
-                        </span>
-                        <span className="text-xs font-bold" style={{ color: '#4ade80' }}>+${l.meet_greet_fee || 25}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center pt-3 border-t border-[#222]">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest font-bold mb-0.5">
-                          {l.trip_type === 'round-trip' ? 'Pick up Date' : 'Date & Time'}
-                        </span>
-                        <p className="text-xs text-white font-bold">{formatDateUS(l.date)}</p>
-                        <p className="text-xs text-[var(--text-muted)]">{l.time || '—'}</p>
-                      </div>
-                      {l.trip_type === 'round-trip' && l.return_date && (
-                        <div className="flex flex-col text-center px-2">
-                          <span className="text-[10px] text-[var(--gold)] uppercase tracking-widest font-bold mb-0.5">Drop off Date</span>
-                          <p className="text-xs text-white font-bold">{formatDateUS(l.return_date)}</p>
-                          <p className="text-xs text-[var(--text-muted)]">{l.return_time || '—'}</p>
-                        </div>
-                      )}
-                      <div className="flex flex-col items-end">
-                        <span className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest font-bold mb-0.5">Vehicle</span>
-                        <p className="text-xs font-bold text-white">{l.passengers || 1} PAX</p>
-                        <p className="text-[10px] uppercase font-bold text-[var(--gold-light)]">{VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}</p>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Meet & Greet badge, only if present */}
+                  {l.meeting_type === 'meet_greet' && (
+                    <span className="self-start text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1" style={{ background: '#B8960C20', color: 'var(--gold-light)', border: '1px solid #B8960C50' }}>
+                      <Sparkles size={11} /> VIP Meet &amp; Greet <span style={{ color: '#4ade80' }}>+${l.meet_greet_fee || 25}</span>
+                    </span>
+                  )}
 
-                  {/* Payment & Status */}
-                  <div className="flex items-center justify-between mt-1">
-                    <div className="flex flex-col gap-0.5 w-1/3">
-                      <span className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest font-bold">
+                  {/* Phone / WhatsApp */}
+                  {l.customer_phone && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-[var(--text-faint)] font-mono">{l.customer_phone}</span>
+                      <button onClick={(e) => { e.stopPropagation(); openWhatsApp(l.customer_phone!, `Hi ${l.customer_name || 'Guest'}, this is Express Lyft. I saw you were looking for a transfer from ${l.pickup} to ${l.destination}. Would you like to complete your reservation?`); }} className="text-[10px] bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-1 font-semibold">
+                        WhatsApp
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Price + quick-action selects */}
+                  <div className="flex items-center justify-between gap-3 pt-3.5 border-t border-[#222]">
+                    <div>
+                      <span className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest font-bold block">
                         {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? 'Custom Quote' : activeTab === 'hotel_bookings' ? 'Hotel Billable' : 'Est. Total'}
                       </span>
                       {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? (
-                        <p className="text-sm font-bold mt-1" style={{ color: 'var(--gold-accent)' }}>Pending</p>
+                        <p className="text-base font-bold" style={{ color: 'var(--gold-accent)' }}>Pending</p>
                       ) : (
-                        <p className="text-xl font-bold" style={{ color: activeTab === 'hotel_bookings' ? '#2dd4bf' : '#4ade80' }}>
+                        <p className="text-lg font-bold" style={{ color: activeTab === 'hotel_bookings' ? '#2dd4bf' : '#4ade80' }}>
                           {activeTab === 'hotel_bookings' && !l.amount_usd ? 'TBD' : `$${l.amount_usd || 0}`}
                         </p>
                       )}
                       {l.status === 'deposit_paid' && (
-                        <div className="w-full bg-[var(--border)] rounded-full h-1 mt-1" title="20% Deposit Paid">
+                        <div className="w-16 bg-[var(--border)] rounded-full h-1 mt-1" title="20% Deposit Paid">
                           <div className="bg-[#FBBF24] h-1 rounded-full" style={{ width: '20%' }}></div>
                         </div>
                       )}
                     </div>
-                    
-                    <div className="flex flex-col items-end gap-2 w-2/3">
+
+                    <div onClick={(e) => e.stopPropagation()} className="flex flex-col items-end gap-1.5">
                       <div className="relative inline-block">
-                        <select 
-                          value={l.status || 'new'} 
+                        <select
+                          value={l.status || 'new'}
                           onChange={(e) => updateLead(l.id, { status: e.target.value })}
-                          className="appearance-none pr-8 pl-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer border hover:brightness-110 transition-all text-right w-full"
-                          style={{ 
+                          className="appearance-none pr-7 pl-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer border hover:brightness-110 transition-all text-right"
+                          style={{
                             backgroundColor: l.status === 'invoice_sent' ? '#1e3a8a30' : l.status === 'lost' ? '#33161630' : l.status === 'pending_payment' ? '#7f1d1d30' : l.status === 'deposit_paid' ? '#B8960C30' : l.status === 'paid' ? '#065f4630' : l.status === 'quote_requested' ? '#EF9F2730' : 'var(--surface)',
                             color: l.status === 'invoice_sent' ? '#60a5fa' : l.status === 'lost' ? '#F44336' : l.status === 'pending_payment' ? '#f87171' : l.status === 'deposit_paid' ? '#FBBF24' : l.status === 'paid' ? '#34d399' : l.status === 'quote_requested' ? 'var(--gold-accent)' : 'var(--text)',
                             borderColor: l.status === 'invoice_sent' ? '#1e3a8a80' : l.status === 'lost' ? '#33161680' : l.status === 'pending_payment' ? '#7f1d1d80' : l.status === 'deposit_paid' ? '#B8960C80' : l.status === 'paid' ? '#065f4680' : l.status === 'quote_requested' ? '#EF9F2780' : 'var(--border-soft)'
@@ -3758,17 +3741,16 @@ export default function AdminPage() {
                           <option value="lost" style={{color: 'var(--text)', background: 'var(--bg)'}}>Lost/Cancel</option>
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-current opacity-70">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                       </div>
 
-                      {/* Driver Assignment */}
-                      <div className="relative inline-block w-full mt-2">
-                        <select 
-                          value={l.assigned_driver_id || ''} 
+                      <div className="relative inline-block">
+                        <select
+                          value={l.assigned_driver_id || ''}
                           onChange={(e) => updateLead(l.id, { assigned_driver_id: e.target.value || null })}
-                          className="appearance-none pr-8 pl-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer border hover:brightness-110 transition-all text-right w-full"
-                          style={{ 
+                          className="appearance-none pr-7 pl-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer border hover:brightness-110 transition-all text-right"
+                          style={{
                             backgroundColor: l.assigned_driver_id ? '#B8960C15' : 'var(--surface)',
                             color: l.assigned_driver_id ? 'var(--gold-light)' : 'var(--text-muted)',
                             borderColor: l.assigned_driver_id ? '#B8960C40' : 'var(--border-soft)'
@@ -3780,12 +3762,12 @@ export default function AdminPage() {
                           ))}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-current opacity-70">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                       </div>
-                      
-                      {l.assigned_driver_id && drivers.find(d => d.id === l.assigned_driver_id)?.phone && (
-                        <div className="w-full flex justify-end mt-1">
+
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {l.assigned_driver_id && drivers.find(d => d.id === l.assigned_driver_id)?.phone && (
                           <button onClick={() => {
                             const driver = drivers.find(d => d.id === l.assigned_driver_id);
                             if(driver) {
@@ -3794,12 +3776,8 @@ export default function AdminPage() {
                           }} className="text-[10px] bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-1 font-semibold">
                             Notify Driver
                           </button>
-                        </div>
-                      )}
-
-                      {/* Notes toggle inline */}
-                      <div className="flex flex-col items-end w-full">
-                        <button onClick={() => setExpandedNotes(prev => prev.includes(l.id) ? prev.filter(id => id !== l.id) : [...prev, l.id])} className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--gold-light)] transition-colors flex items-center gap-1">
+                        )}
+                        <button onClick={() => setExpandedNotes(prev => prev.includes(l.id) ? prev.filter(id => id !== l.id) : [...prev, l.id])} className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--gold-light)] transition-colors">
                           {l.notes ? (expandedNotes.includes(l.id) ? 'Hide Notes' : 'View Notes') : '+ Add Note'}
                         </button>
                       </div>
@@ -3808,8 +3786,8 @@ export default function AdminPage() {
 
                   {/* Expanded Notes Section */}
                   {expandedNotes.includes(l.id) && (
-                    <div className="mt-2 border-t border-[#222] pt-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <textarea 
+                    <div onClick={(e) => e.stopPropagation()} className="border-t border-[#222] pt-3">
+                      <textarea
                         rows={3}
                         defaultValue={l.notes}
                         placeholder="Type notes here..."
@@ -3821,7 +3799,7 @@ export default function AdminPage() {
                       />
                     </div>
                   )}
-                  
+
                 </div>
               ))}
             </div>
