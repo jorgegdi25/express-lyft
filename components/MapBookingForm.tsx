@@ -108,7 +108,7 @@ export default function MapBookingForm() {
         />
         
         {/* Overlay gradient to blend map edges softly */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg)]/80 via-transparent to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#111111]/80 via-transparent to-transparent pointer-events-none"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg)] via-transparent to-transparent lg:hidden pointer-events-none"></div>
         
         {/* Fake Luxury Pin on the map */}

@@ -2503,7 +2503,7 @@ export default function AdminPage() {
                           <div><p className="text-[var(--text-faint)] text-xs">Order</p><p className="text-white font-semibold">{hotel.sort_order}</p></div>
                         </div>
                         <div className="flex gap-2 mt-1">
-                          <button onClick={() => setEditingStayHotel(hotel)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[var(--gold-light)] border border-[var(--gold)]/40">Edit</button>
+                          <button onClick={() => setEditingStayHotel(hotel)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[var(--gold-light)] border border-[#B8960C]/40">Edit</button>
                           <button onClick={() => saveStayHotel({ id: hotel.id, active: !hotel.active })} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[var(--text-muted)] border border-[var(--border)]">{hotel.active ? 'Deactivate' : 'Activate'}</button>
                           <button onClick={() => deleteStayHotel(hotel.id)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-red-400 border border-red-900/40">Delete</button>
                         </div>
@@ -3182,7 +3182,7 @@ export default function AdminPage() {
                               <button
                                 onClick={() => sendReviewRequest(b.id)}
                                 disabled={sendingReview === b.id}
-                                className="text-[11px] bg-[var(--gold)]/10 text-[var(--gold-light)] px-2.5 py-1.5 rounded-lg border border-[var(--gold)]/30 hover:bg-[var(--gold)]/20 transition-all flex items-center gap-1.5 font-bold uppercase tracking-wider disabled:opacity-50"
+                                className="text-[11px] bg-[#B8960C]/10 text-[var(--gold-light)] px-2.5 py-1.5 rounded-lg border border-[#B8960C]/30 hover:bg-[#B8960C]/20 transition-all flex items-center gap-1.5 font-bold uppercase tracking-wider disabled:opacity-50"
                               >
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
                                 {sendingReview === b.id ? 'Sending...' : 'Ask for Review'}
@@ -4347,7 +4347,7 @@ export default function AdminPage() {
                             </div>
                             <div className="text-right">
                               {driver ? (
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--gold)] bg-[var(--gold)]/10 text-[var(--gold-light)] text-xs font-bold">
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--gold)] bg-[#B8960C]/10 text-[var(--gold-light)] text-xs font-bold">
                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                                   {driver.name}
                                 </div>
@@ -4398,7 +4398,7 @@ export default function AdminPage() {
                     <div key={lead.id} className="p-6 rounded-xl flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold bg-[var(--gold)]/20 text-[var(--gold-light)] px-2 py-1 rounded border border-[var(--gold)]/30 uppercase tracking-wider">NEEDS DRIVER</span>
+                          <span className="text-xs font-bold bg-[#B8960C]/20 text-[var(--gold-light)] px-2 py-1 rounded border border-[#B8960C]/30 uppercase tracking-wider">NEEDS DRIVER</span>
                           <p className="text-white font-bold text-lg">{lead.customer_name}</p>
                         </div>
                         <p className="text-[var(--text-subtle)] text-sm"><span className="font-semibold text-[#ccc]">{formatDateUS(lead.date || '')} at {lead.time}</span></p>
@@ -4724,7 +4724,7 @@ export default function AdminPage() {
                       </button>
                     )}
                     {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
-                      <button onClick={() => generateStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[var(--gold)]/10 text-[var(--gold-light)] border border-[var(--gold)] hover:bg-[var(--gold)]/20 transition-colors flex items-center gap-2">
+                      <button onClick={() => generateStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[var(--gold-light)] border border-[var(--gold)] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
                         <CreditCard size={14} /> Generate Payment Link
                       </button>
                     )}
@@ -4736,7 +4736,7 @@ export default function AdminPage() {
                       </button>
                     )}
                     {viewingLead.status === 'deposit_paid' && (
-                      <button onClick={() => generateRemainingStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[var(--gold)]/10 text-[var(--gold-light)] border border-[var(--gold)] hover:bg-[var(--gold)]/20 transition-colors flex items-center gap-2">
+                      <button onClick={() => generateRemainingStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[var(--gold-light)] border border-[var(--gold)] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
                         <CreditCard size={14} /> Generate Balance Link
                       </button>
                     )}
