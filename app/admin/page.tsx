@@ -10,6 +10,11 @@ import { VEHICLE_LABELS } from '@/lib/vehicles'
 import { CalendarDatePicker, CalendarRangeFilter } from '@/components/CalendarPicker'
 import { useToast } from '@/components/ui/Toast'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
+import {
+  StickyNote, AlertTriangle, Sparkles, Star, CheckCircle2, XCircle,
+  Plane, Armchair, Luggage, X, Trash2, Mail, Receipt, CreditCard, Check,
+  ChevronLeft, ChevronRight,
+} from 'lucide-react'
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import countryNames from 'react-phone-number-input/locale/en.json'
 
@@ -2324,8 +2329,8 @@ export default function AdminPage() {
                             </button>
                           </div>
                           {c.notes && (
-                            <p className="text-xs mt-2 italic" style={{ color: 'var(--text-dim)' }}>
-                              📝 {c.notes}
+                            <p className="text-xs mt-2 italic flex items-start gap-1.5" style={{ color: 'var(--text-dim)' }}>
+                              <StickyNote size={13} className="shrink-0 mt-0.5" /> {c.notes}
                             </p>
                           )}
                         </td>
@@ -2690,8 +2695,8 @@ export default function AdminPage() {
                     </button>
                   </div>
                   {editPricingSettings.payment_provider === 'quickbooks' && !qbConnected && (
-                    <span className="text-xs font-bold" style={{ color: '#f87171' }}>
-                      ⚠️ QuickBooks isn&apos;t connected yet — connect it first (sidebar) or bookings will fail to check out.
+                    <span className="text-xs font-bold flex items-start gap-1.5" style={{ color: '#f87171' }}>
+                      <AlertTriangle size={14} className="shrink-0 mt-0.5" /> QuickBooks isn&apos;t connected yet — connect it first (sidebar) or bookings will fail to check out.
                     </span>
                   )}
                   <button
@@ -3622,8 +3627,8 @@ export default function AdminPage() {
                     {/* Meet & Greet Badge */}
                     {l.meeting_type === 'meet_greet' && (
                       <div className="flex items-center gap-2 pt-2 pb-1 border-t border-[#222]">
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full" style={{ background: '#B8960C20', color: 'var(--gold-light)', border: '1px solid #B8960C50' }}>
-                          ✨ VIP Meet &amp; Greet
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1" style={{ background: '#B8960C20', color: 'var(--gold-light)', border: '1px solid #B8960C50' }}>
+                          <Sparkles size={11} /> VIP Meet &amp; Greet
                         </span>
                         <span className="text-xs font-bold" style={{ color: '#4ade80' }}>+${l.meet_greet_fee || 25}</span>
                       </div>
@@ -3831,7 +3836,7 @@ export default function AdminPage() {
                     {r.rating && (
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((n) => (
-                          <span key={n} style={{ color: n <= (r.rating || 0) ? 'var(--gold-light)' : 'var(--border-soft)' }}>★</span>
+                          <Star key={n} size={14} fill={n <= (r.rating || 0) ? 'var(--gold-light)' : 'none'} style={{ color: n <= (r.rating || 0) ? 'var(--gold-light)' : 'var(--border-soft)' }} />
                         ))}
                       </div>
                     )}
@@ -3841,8 +3846,8 @@ export default function AdminPage() {
                     <p className="text-sm italic" style={{ color: 'var(--text-faint)' }}>Waiting on customer response.</p>
                   ) : (
                     <>
-                      <p className="text-sm font-bold" style={{ color: r.would_recommend ? '#4ade80' : '#f87171' }}>
-                        {r.would_recommend ? '✓ Recommends Express Lyft' : '✗ Does not recommend'}
+                      <p className="text-sm font-bold flex items-center gap-1.5" style={{ color: r.would_recommend ? '#4ade80' : '#f87171' }}>
+                        {r.would_recommend ? <><CheckCircle2 size={15} /> Recommends Express Lyft</> : <><XCircle size={15} /> Does not recommend</>}
                       </p>
                       {r.comment && (
                         <p className="text-sm italic" style={{ color: '#ccc' }}>&ldquo;{r.comment}&rdquo;</p>
@@ -4453,10 +4458,10 @@ export default function AdminPage() {
                             {(l.airline || l.flight_number || (l.car_seats_requested ?? 0) > 0 || (l.luggage_count ?? 0) > 0) && (
                               <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-[var(--gold)]">
                                 {(l.airline || l.flight_number) && (
-                                  <span>✈ {[l.airline, l.flight_number].filter(Boolean).join(' ')}</span>
+                                  <span className="flex items-center gap-1"><Plane size={13} /> {[l.airline, l.flight_number].filter(Boolean).join(' ')}</span>
                                 )}
-                                {(l.car_seats_requested ?? 0) > 0 && <span>🪑 {l.car_seats_requested} car seat{l.car_seats_requested === 1 ? '' : 's'}</span>}
-                                {(l.luggage_count ?? 0) > 0 && <span>🧳 {l.luggage_count} bag{l.luggage_count === 1 ? '' : 's'}</span>}
+                                {(l.car_seats_requested ?? 0) > 0 && <span className="flex items-center gap-1"><Armchair size={13} /> {l.car_seats_requested} car seat{l.car_seats_requested === 1 ? '' : 's'}</span>}
+                                {(l.luggage_count ?? 0) > 0 && <span className="flex items-center gap-1"><Luggage size={13} /> {l.luggage_count} bag{l.luggage_count === 1 ? '' : 's'}</span>}
                               </div>
                             )}
                           </button>
@@ -4479,7 +4484,7 @@ export default function AdminPage() {
                       <h2 className="text-xl font-bold text-white">{viewingLead.customer_name || 'Anonymous'}</h2>
                     </div>
                     <button onClick={() => { setViewingLead(null); setGeneratedLink(null); }} className="p-2 text-[var(--text-muted)] hover:text-white bg-[#222] rounded-full transition-colors">
-                      ✕
+                      <X size={16} />
                     </button>
                   </div>
 
@@ -4506,7 +4511,7 @@ export default function AdminPage() {
                     {viewingLead.meeting_type === 'meet_greet' && (
                       <div className="flex items-center justify-between bg-[#B8960C10] border border-[#B8960C30] rounded-xl px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-base">✨</span>
+                          <Sparkles size={16} className="text-[var(--gold-light)]" />
                           <span className="text-sm font-bold text-[var(--gold-light)]">VIP Meet &amp; Greet</span>
                         </div>
                         <span className="text-sm font-bold text-[#4ade80]">+${viewingLead.meet_greet_fee || 25} included</span>
@@ -4625,7 +4630,7 @@ export default function AdminPage() {
                     {/* Generated Link Display */}
                     {generatedLink && (
                       <div className="bg-green-900/20 border border-green-500/50 p-4 rounded-xl flex flex-col gap-3 mt-2 animate-in fade-in slide-in-from-bottom-4">
-                        <p className="text-xs uppercase text-green-400 font-bold tracking-widest">✅ Payment Link Generated</p>
+                        <p className="text-xs uppercase text-green-400 font-bold tracking-widest flex items-center gap-1.5"><CheckCircle2 size={13} /> Payment Link Generated</p>
                         <div className="flex items-center gap-2">
                           <input type="text" readOnly value={generatedLink} className="bg-black text-green-400 p-3 rounded-lg w-full text-xs outline-none border border-green-900/50 font-mono" />
                           <button onClick={() => { navigator.clipboard.writeText(generatedLink); toast('Copied!', 'success'); }} className="text-xs font-bold uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white px-4 py-3 rounded-lg transition-colors">Copy</button>
@@ -4637,37 +4642,37 @@ export default function AdminPage() {
 
                   {/* Actions Footer */}
                   <div className="border-t border-[#222] bg-[var(--surface-raised)] p-6 flex flex-wrap gap-3 justify-end items-center">
-                    <button onClick={async () => { const deleted = await deleteLead(viewingLead.id); if (deleted) setViewingLead(null); }} className="px-4 py-2 mr-auto rounded-lg text-sm font-bold border border-red-900/50 bg-red-900/10 text-red-500 hover:bg-red-900/20 transition-colors">
-                      🗑️ Delete
+                    <button onClick={async () => { const deleted = await deleteLead(viewingLead.id); if (deleted) setViewingLead(null); }} className="px-4 py-2 mr-auto rounded-lg text-sm font-bold border border-red-900/50 bg-red-900/10 text-red-500 hover:bg-red-900/20 transition-colors flex items-center gap-2">
+                      <Trash2 size={14} /> Delete
                     </button>
                     <button onClick={() => { setEditingLead(viewingLead); setViewingLead(null); }} className="px-4 py-2 rounded-lg text-sm font-bold border border-[var(--border-soft)] text-white hover:bg-[#222] transition-colors">
                       Edit
                     </button>
                     {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
                       <button onClick={() => sendInvoice(viewingLead.id)} disabled={sendingInvoice === viewingLead.id} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/50 hover:bg-[#10B981]/20 transition-colors flex items-center gap-2 disabled:opacity-50">
-                        📧 {sendingInvoice === viewingLead.id ? 'Sending...' : 'Send Invoice (Stripe)'}
+                        <Mail size={14} /> {sendingInvoice === viewingLead.id ? 'Sending...' : 'Send Invoice (Stripe)'}
                       </button>
                     )}
                     {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && qbConnected && (
                       <button onClick={() => sendQuickBooksInvoice(viewingLead.id)} disabled={sendingQuickBooksInvoice === viewingLead.id} className="px-4 py-2 rounded-lg text-sm font-bold bg-blue-500/10 text-blue-400 border border-blue-500/50 hover:bg-blue-500/20 transition-colors flex items-center gap-2 disabled:opacity-50">
-                        🧾 {sendingQuickBooksInvoice === viewingLead.id ? 'Sending...' : 'Send via QuickBooks'}
+                        <Receipt size={14} /> {sendingQuickBooksInvoice === viewingLead.id ? 'Sending...' : 'Send via QuickBooks'}
                       </button>
                     )}
                     {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
                       <button onClick={() => generateStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[var(--gold)]/10 text-[var(--gold-light)] border border-[var(--gold)] hover:bg-[var(--gold)]/20 transition-colors flex items-center gap-2">
-                        💳 Generate Payment Link
+                        <CreditCard size={14} /> Generate Payment Link
                       </button>
                     )}
                     {viewingLead.status === 'deposit_paid' && (
                       <button onClick={async () => {
                         if (await confirmDialog('Mark remaining balance as collected manually?')) { updateLead(viewingLead.id, { status: 'paid', amount_paid: viewingLead.amount_usd, amount_remaining: 0 } as any); setViewingLead(null); }
                       }} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#FBBF24]/10 text-[#FBBF24] border border-[#FBBF24]/50 hover:bg-[#FBBF24]/20 transition-colors flex items-center gap-2">
-                        ✅ Mark Paid (Manual)
+                        <CheckCircle2 size={14} /> Mark Paid (Manual)
                       </button>
                     )}
                     {viewingLead.status === 'deposit_paid' && (
                       <button onClick={() => generateRemainingStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[var(--gold)]/10 text-[var(--gold-light)] border border-[var(--gold)] hover:bg-[var(--gold)]/20 transition-colors flex items-center gap-2">
-                        💳 Generate Balance Link
+                        <CreditCard size={14} /> Generate Balance Link
                       </button>
                     )}
                   </div>

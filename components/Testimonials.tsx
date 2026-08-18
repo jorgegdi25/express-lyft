@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { ChevronLeft, ChevronRight, Star } from 'lucide-react'
 
 export interface Testimonial {
   name: string
@@ -63,14 +64,14 @@ export default function Testimonials({ reviews }: { reviews?: Testimonial[] }) {
               className="w-12 h-12 rounded-full border border-neutral-800 flex items-center justify-center text-white hover:border-[var(--gold)] hover:text-[var(--gold)] transition-all bg-neutral-900/50"
               aria-label="Previous reviews"
             >
-              ❮
+              <ChevronLeft size={18} />
             </button>
             <button
               onClick={handleNext}
               className="w-12 h-12 rounded-full border border-neutral-800 flex items-center justify-center text-white hover:border-[var(--gold)] hover:text-[var(--gold)] transition-all bg-neutral-900/50"
               aria-label="Next reviews"
             >
-              ❯
+              <ChevronRight size={18} />
             </button>
           </div>
         </div>
@@ -98,7 +99,7 @@ export default function Testimonials({ reviews }: { reviews?: Testimonial[] }) {
                 {/* Stars */}
                 <div className="flex gap-1 mb-4">
                   {[...Array(t.rating)].map((_, i) => (
-                    <span key={i} className="text-sm" style={{ color: 'var(--gold-light)' }}>★</span>
+                    <Star key={i} size={14} fill="var(--gold-light)" style={{ color: 'var(--gold-light)' }} />
                   ))}
                 </div>
                 <p className="text-base italic leading-relaxed mb-6" style={{ color: '#CCCCCC' }}>

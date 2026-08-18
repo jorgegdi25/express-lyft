@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface GalleryItem {
   src: string
@@ -151,10 +152,10 @@ export default function ImageGallery() {
           {/* Close button */}
           <button
             onClick={() => setLightboxIndex(null)}
-            className="absolute top-6 right-6 text-white text-3xl font-light hover:text-[var(--gold)] transition-colors"
+            className="absolute top-6 right-6 text-white hover:text-[var(--gold)] transition-colors"
             aria-label="Close lightbox"
           >
-            ✕
+            <X size={28} strokeWidth={1.5} />
           </button>
 
           {/* Navigation arrows */}
@@ -163,7 +164,7 @@ export default function ImageGallery() {
             className="absolute left-4 md:left-8 w-12 h-12 rounded-full border border-neutral-800 flex items-center justify-center text-white hover:border-[var(--gold)] hover:text-[var(--gold)] transition-all bg-black/40"
             aria-label="Previous image"
           >
-            ❮
+            <ChevronLeft size={22} />
           </button>
           
           <button
@@ -171,7 +172,7 @@ export default function ImageGallery() {
             className="absolute right-4 md:right-8 w-12 h-12 rounded-full border border-neutral-800 flex items-center justify-center text-white hover:border-[var(--gold)] hover:text-[var(--gold)] transition-all bg-black/40"
             aria-label="Next image"
           >
-            ❯
+            <ChevronRight size={22} />
           </button>
 
           {/* Image display */}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import VehicleDisplay from './VehicleDisplay'
+import { Check } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import ErrorBoundary from './ErrorBoundary'
 import { applyTimeSurcharge, calculateDistanceAmount, SurchargeConfig, TIME_SLOTS } from '@/lib/pricing'
@@ -569,7 +570,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                             color: isActive ? 'var(--bg-deep)' : (isCompleted ? 'var(--gold-light)' : 'var(--text-muted)'),
                           }}
                         >
-                          {isCompleted ? '✓' : visualStepNum}
+                          {isCompleted ? <Check size={14} strokeWidth={3} /> : visualStepNum}
                         </button>
                         <span
                           className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider transition-colors duration-300"

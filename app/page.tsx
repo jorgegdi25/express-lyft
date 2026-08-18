@@ -9,6 +9,7 @@ import ImageGallery from '@/components/ImageGallery'
 import Testimonials from '@/components/Testimonials'
 import ReviewsMarquee from '@/components/ReviewsMarquee'
 import { getApprovedReviews, toTestimonials, toMarqueeReviews } from '@/lib/reviews'
+import { Check } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const fetchCache = 'force-no-store'
@@ -209,7 +210,7 @@ export default async function HomePage({ searchParams }: { searchParams: { succe
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5"
             style={{ background: 'rgba(184,150,12,0.2)', border: '1px solid var(--gold)' }}
           >
-            <span style={{ color: 'var(--gold)', fontWeight: 'bold' }}>✓</span>
+            <Check size={16} strokeWidth={3} style={{ color: 'var(--gold)' }} />
           </div>
           <div>
             <p className="font-bold text-base mb-1" style={{ color: 'var(--gold-light)' }}>

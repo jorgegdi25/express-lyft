@@ -6,6 +6,7 @@ import Image from 'next/image'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 import VehicleDisplay from './VehicleDisplay'
+import { Check } from 'lucide-react'
 import { applyTimeSurcharge, SurchargeConfig, TIME_SLOTS } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { CalendarDatePicker } from '@/components/CalendarPicker'
@@ -573,7 +574,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                             color: isActive ? 'var(--bg-deep)' : (isCompleted ? 'var(--gold-light)' : 'var(--text-muted)'),
                           }}
                         >
-                          {isCompleted ? '✓' : visualStepNum}
+                          {isCompleted ? <Check size={14} strokeWidth={3} /> : visualStepNum}
                         </button>
                         <span
                           className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider transition-colors duration-300"
