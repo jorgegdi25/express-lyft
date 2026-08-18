@@ -45,8 +45,8 @@ function getVehicleType(passengers: number): VehicleType {
 const LABEL_CLASS = 'text-sm font-semibold mb-2 block'
 const LABEL_COLOR = { color: '#BBBBBB' }
 
-const INPUT_CLASS = 'w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[#B8960C]'
-const INPUT_STYLE = { background: '#0e0e0e', border: '1px solid #333333', color: '#FFFFFF' }
+const INPUT_CLASS = 'w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)]'
+const INPUT_STYLE = { background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: 'var(--text)' }
 
 // Removed global todayStr to prevent hydration mismatches
 
@@ -487,13 +487,13 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
         {/* Section header */}
         {!isPromo && (
           <div className="text-center mb-10 md:mb-14">
-            <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: '#B8960C' }}>
+            <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: 'var(--gold)' }}>
               Online Reservation
             </p>
             <h2 className="text-2xl md:text-4xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
               Book Your Luxury Ride
             </h2>
-            <p className="text-base mt-3" style={{ color: '#999999' }}>
+            <p className="text-base mt-3" style={{ color: 'var(--text-dim)' }}>
               Fill in the details below and our concierge team will confirm your transfer.
             </p>
           </div>
@@ -506,18 +506,18 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
             <div
               className="rounded-2xl p-7 md:p-10"
               style={{
-                background: '#161616',
-                border: '1px solid #2a2a2a',
+                background: 'var(--surface-raised)',
+                border: '1px solid var(--border)',
                 boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
               }}
             >
               <div className="flex flex-col items-center justify-center text-center py-12">
-                <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6" style={{ background: 'rgba(184,150,12,0.1)', border: '2px solid #B8960C' }}>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#B8960C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6" style={{ background: 'rgba(184,150,12,0.1)', border: '2px solid var(--gold)' }}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </div>
-                <h3 className="text-2xl font-bold mb-4" style={{ color: '#FFFFFF', fontFamily: "'Playfair Display', Georgia, serif" }}>
+                <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text)', fontFamily: "'Playfair Display', Georgia, serif" }}>
                   Reservation Received!
                 </h3>
                 <p className="text-sm mb-4 font-bold" style={{ color: '#ffbaba' }}>
@@ -526,14 +526,14 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                 <p className="text-base mb-2" style={{ color: '#DDDDDD' }}>
                   Your request has been successfully processed.
                 </p>
-                <p className="text-base" style={{ color: '#AAAAAA' }}>
+                <p className="text-base" style={{ color: 'var(--text-subtle)' }}>
                   Our concierge team will contact you shortly to confirm the details and process your payment.
                 </p>
                 <button
                   type="button"
                   onClick={handleResetForm}
                   className="mt-8 px-8 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95"
-                  style={{ background: '#222222', color: '#FFFFFF', border: '1px solid #333333' }}
+                  style={{ background: '#222222', color: 'var(--text)', border: '1px solid var(--border-soft)' }}
                 >
                   Make Another Reservation
                 </button>
@@ -567,17 +567,17 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                           className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all duration-300 ${s < step ? 'cursor-pointer' : 'cursor-default'}`}
                           style={{
                             background: isActive 
-                              ? 'linear-gradient(135deg, #B8960C, #D4AF37)' 
-                              : (isCompleted ? 'rgba(184,150,12,0.2)' : '#1e1e1e'),
-                            border: `1px solid ${isActive || isCompleted ? '#B8960C' : '#333333'}`,
-                            color: isActive ? '#0a0a0a' : (isCompleted ? '#D4AF37' : '#888888'),
+                              ? 'linear-gradient(135deg, var(--gold), var(--gold-light))' 
+                              : (isCompleted ? 'rgba(184,150,12,0.2)' : 'var(--surface-alt)'),
+                            border: `1px solid ${isActive || isCompleted ? 'var(--gold)' : 'var(--border-soft)'}`,
+                            color: isActive ? 'var(--bg-deep)' : (isCompleted ? 'var(--gold-light)' : 'var(--text-muted)'),
                           }}
                         >
                           {isCompleted ? '✓' : visualStepNum}
                         </button>
                         <span
                           className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider transition-colors duration-300"
-                          style={{ color: isActive ? '#D4AF37' : '#666666' }}
+                          style={{ color: isActive ? 'var(--gold-light)' : 'var(--text-faint)' }}
                         >
                           {labels[s as keyof typeof labels]}
                         </span>
@@ -586,7 +586,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         <div
                           className="h-[2px] flex-1 -mt-5 transition-all duration-500"
                           style={{
-                            background: s < step ? 'linear-gradient(90deg, #B8960C, #D4AF37)' : '#222222'
+                            background: s < step ? 'linear-gradient(90deg, var(--gold), var(--gold-light))' : '#222222'
                           }}
                         />
                       )}
@@ -600,16 +600,16 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                 <div
                   className="rounded-2xl p-5 md:p-8 flex flex-col gap-4"
                   style={{
-                    background: '#161616',
-                    border: '1px solid #2a2a2a',
+                    background: 'var(--surface-raised)',
+                    border: '1px solid var(--border)',
                     boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
                   }}
                 >
-                  <h3 className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
+                  <h3 className="text-lg font-bold" style={{ color: 'var(--text)' }}>
                     1. Trip Details
                   </h3>
                   {/* Trip Type Toggle */}
-                  <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #333333' }}>
+                  <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-soft)' }}>
                     {(['one-way', 'round-trip'] as TripType[]).map((type) => (
                       <button
                         key={type}
@@ -619,18 +619,18 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         style={{
                           background:
                             tripType === type
-                              ? 'linear-gradient(135deg, #B8960C, #D4AF37)'
+                              ? 'linear-gradient(135deg, var(--gold), var(--gold-light))'
                               : 'transparent',
-                          color: tripType === type ? '#111111' : '#888888',
+                          color: tripType === type ? 'var(--bg)' : 'var(--text-muted)',
                         }}
                       >
                         {type === 'one-way' ? 'One Way' : 'Round Trip'}
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs -mt-1" style={{ color: '#888' }}>
+                  <p className="text-xs -mt-1" style={{ color: 'var(--text-muted)' }}>
                     Need more than 2 stops on your trip?{' '}
-                    <a href="tel:+18889737896" style={{ color: '#D4AF37' }} className="hover:underline">
+                    <a href="tel:+18889737896" style={{ color: 'var(--gold-light)' }} className="hover:underline">
                       Call us
                     </a>{' '}
                     or{' '}
@@ -638,7 +638,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       href="https://wa.me/19546236207"
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#D4AF37' }}
+                      style={{ color: 'var(--gold-light)' }}
                       className="hover:underline"
                     >
                       WhatsApp us
@@ -794,10 +794,10 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
                   {/* Airport specific fields */}
                   {(pickup.toLowerCase().includes('airport') || pickup.toLowerCase().includes('mia') || pickup.toLowerCase().includes('fll')) && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 border border-[#333] p-5 rounded-xl bg-[#0a0a0a]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 border border-[var(--border-soft)] p-5 rounded-xl bg-[var(--bg-deep)]">
                       <div className="sm:col-span-2 mb-2">
-                        <p className="text-sm font-bold text-[#D4AF37] mb-1">Flight Information Needed</p>
-                        <p className="text-xs text-[#888]">We track your flight to adjust for any delays (up to 30 mins free waiting time).</p>
+                        <p className="text-sm font-bold text-[var(--gold-light)] mb-1">Flight Information Needed</p>
+                        <p className="text-xs text-[var(--text-muted)]">We track your flight to adjust for any delays (up to 30 mins free waiting time).</p>
                       </div>
                       <div>
                         <label className={LABEL_CLASS} style={LABEL_COLOR}>
@@ -836,24 +836,24 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                               onClick={() => setMeetingType('curbside')}
                               className="rounded-xl p-4 flex flex-col gap-1 text-left transition-all duration-200"
                               style={{
-                                background: meetingType === 'curbside' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
-                                border: meetingType === 'curbside' ? '2px solid #B8960C' : '1px solid #333333',
+                                background: meetingType === 'curbside' ? 'rgba(184,150,12,0.12)' : 'var(--bg-alt)',
+                                border: meetingType === 'curbside' ? '2px solid var(--gold)' : '1px solid var(--border-soft)',
                               }}
                             >
                               <span className="text-sm font-bold text-white">Curbside Pickup</span>
-                              <span className="text-xs text-[#888]">Meet driver outside at arrivals</span>
+                              <span className="text-xs text-[var(--text-muted)]">Meet driver outside at arrivals</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => setMeetingType('meet_greet')}
                               className="rounded-xl p-4 flex flex-col gap-1 text-left transition-all duration-200"
                               style={{
-                                background: meetingType === 'meet_greet' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
-                                border: meetingType === 'meet_greet' ? '2px solid #B8960C' : '1px solid #333333',
+                                background: meetingType === 'meet_greet' ? 'rgba(184,150,12,0.12)' : 'var(--bg-alt)',
+                                border: meetingType === 'meet_greet' ? '2px solid var(--gold)' : '1px solid var(--border-soft)',
                               }}
                             >
                               <span className="text-sm font-bold text-white">VIP Meet & Greet (+$25)</span>
-                              <span className="text-xs text-[#888]">Driver meets you inside with a sign</span>
+                              <span className="text-xs text-[var(--text-muted)]">Driver meets you inside with a sign</span>
                             </button>
                           </div>
                         </div>
@@ -870,13 +870,13 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       </label>
                       <div
                         className="flex items-center justify-between rounded-xl px-4 py-2"
-                        style={{ background: '#0e0e0e', border: '1px solid #333333' }}
+                        style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-soft)' }}
                       >
                         <button
                           type="button"
                           onClick={() => setPassengers((p) => Math.max(1, p - 1))}
-                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[var(--gold)]"
+                          style={{ border: '1px solid var(--border-soft)', color: 'var(--text)', background: 'var(--surface)' }}
                           aria-label="Decrease passengers"
                         >
                           −
@@ -889,14 +889,14 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                             value={passengers} 
                             onChange={(e) => setPassengers(Math.max(1, Math.min(55, parseInt(e.target.value) || 1)))}
                             className="w-full text-center text-2xl font-bold bg-transparent outline-none" 
-                            style={{ color: '#FFFFFF' }} 
+                            style={{ color: 'var(--text)' }} 
                           />
                         </div>
                         <button
                           type="button"
                           onClick={() => setPassengers((p) => Math.min(55, p + 1))}
-                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[var(--gold)]"
+                          style={{ border: '1px solid var(--border-soft)', color: 'var(--text)', background: 'var(--surface)' }}
                           aria-label="Increase passengers"
                         >
                           +
@@ -911,13 +911,13 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       </label>
                       <div
                         className="flex items-center justify-between rounded-xl px-4 py-2"
-                        style={{ background: '#0e0e0e', border: '1px solid #333333' }}
+                        style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-soft)' }}
                       >
                         <button
                           type="button"
                           onClick={() => setLuggageCount((p) => Math.max(0, p - 1))}
-                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[var(--gold)]"
+                          style={{ border: '1px solid var(--border-soft)', color: 'var(--text)', background: 'var(--surface)' }}
                         >
                           −
                         </button>
@@ -929,14 +929,14 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                             value={luggageCount} 
                             onChange={(e) => setLuggageCount(Math.max(0, Math.min(60, parseInt(e.target.value) || 0)))}
                             className="w-full text-center text-2xl font-bold bg-transparent outline-none" 
-                            style={{ color: '#FFFFFF' }} 
+                            style={{ color: 'var(--text)' }} 
                           />
                         </div>
                         <button
                           type="button"
                           onClick={() => setLuggageCount((p) => Math.min(60, p + 1))}
-                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[var(--gold)]"
+                          style={{ border: '1px solid var(--border-soft)', color: 'var(--text)', background: 'var(--surface)' }}
                         >
                           +
                         </button>
@@ -950,13 +950,13 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       </label>
                       <div
                         className="flex items-center justify-between rounded-xl px-4 py-2"
-                        style={{ background: '#0e0e0e', border: '1px solid #333333' }}
+                        style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-soft)' }}
                       >
                         <button
                           type="button"
                           onClick={() => setCarSeatsRequested((p) => Math.max(0, p - 1))}
-                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[var(--gold)]"
+                          style={{ border: '1px solid var(--border-soft)', color: 'var(--text)', background: 'var(--surface)' }}
                         >
                           −
                         </button>
@@ -968,14 +968,14 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                             value={carSeatsRequested} 
                             onChange={(e) => setCarSeatsRequested(Math.max(0, Math.min(4, parseInt(e.target.value) || 0)))}
                             className="w-full text-center text-2xl font-bold bg-transparent outline-none" 
-                            style={{ color: '#FFFFFF' }} 
+                            style={{ color: 'var(--text)' }} 
                           />
                         </div>
                         <button
                           type="button"
                           onClick={() => setCarSeatsRequested((p) => Math.min(4, p + 1))}
-                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[#B8960C]"
-                          style={{ border: '1px solid #333333', color: '#FFFFFF', background: '#1a1a1a' }}
+                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[var(--gold)]"
+                          style={{ border: '1px solid var(--border-soft)', color: 'var(--text)', background: 'var(--surface)' }}
                         >
                           +
                         </button>
@@ -996,7 +996,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       placeholder="e.g. Need a wheelchair accessible vehicle, please have coffee, etc."
                     />
                   </div>
-                  <p className="text-[11px] text-[#888] mt-0">
+                  <p className="text-[11px] text-[var(--text-muted)] mt-0">
                     Sedan: Max 4 bags. Suburban: Max 6 bags. Sprinter: Max 14. Minibus: Max 30. Coach: Max 60. Complimentary car seats available.
                   </p>
 
@@ -1019,7 +1019,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       <a
                         href="tel:+18889737896"
                         className="w-full py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-2"
-                        style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                        style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
@@ -1043,7 +1043,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       type="button"
                       onClick={handleNextStep1}
                       className="w-full py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
-                      style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                      style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                     >
                       {isPromo ? 'Enter Contact Info →' : 'Choose Your Vehicle →'}
                     </button>
@@ -1071,8 +1071,8 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     <button
                       type="button"
                       onClick={handlePrevStep}
-                      className="flex-1 py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:bg-[#252525] active:scale-[0.98]"
-                      style={{ background: '#1e1e1e', color: '#FFFFFF', border: '1px solid #333333' }}
+                      className="flex-1 py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:bg-[var(--border-faint)] active:scale-[0.98]"
+                      style={{ background: 'var(--surface-alt)', color: 'var(--text)', border: '1px solid var(--border-soft)' }}
                     >
                       ← Back
                     </button>
@@ -1080,7 +1080,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       type="button"
                       onClick={handleNextStep2}
                       className="flex-1 py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-[0.98]"
-                      style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                      style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                     >
                       Enter Contact Info →
                     </button>
@@ -1093,45 +1093,45 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                 <div
                   className="rounded-2xl p-7 md:p-10 flex flex-col gap-6"
                   style={{
-                    background: '#161616',
-                    border: '1px solid #2a2a2a',
+                    background: 'var(--surface-raised)',
+                    border: '1px solid var(--border)',
                     boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
                   }}
                 >
-                  <h3 className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
+                  <h3 className="text-lg font-bold" style={{ color: 'var(--text)' }}>
                     {isPromo ? '2. Contact Info' : '3. Contact & Checkout'}
                   </h3>
 
                   {/* Trip Summary Card */}
                   <div className="p-5 rounded-xl flex flex-col gap-3" style={{ background: 'rgba(184, 150, 12, 0.05)', border: '1px solid rgba(184, 150, 12, 0.2)' }}>
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-[#B8960C] text-xs font-bold uppercase tracking-wider">Trip Summary</span>
-                      <span className="text-white font-bold text-sm bg-[#B8960C] text-[#0a0a0a] px-2 py-0.5 rounded uppercase">{vehicleType === 'sedan_suv' ? 'Sedan & SUV' : vehicleType === 'suburban' ? 'Suburban' : vehicleType === 'sprinter' ? 'Sprinter' : vehicleType === 'minibus' ? 'Minibus' : 'Coach Bus'}</span>
+                      <span className="text-[var(--gold)] text-xs font-bold uppercase tracking-wider">Trip Summary</span>
+                      <span className="text-white font-bold text-sm bg-[var(--gold)] text-[var(--bg-deep)] px-2 py-0.5 rounded uppercase">{vehicleType === 'sedan_suv' ? 'Sedan & SUV' : vehicleType === 'suburban' ? 'Suburban' : vehicleType === 'sprinter' ? 'Sprinter' : vehicleType === 'minibus' ? 'Minibus' : 'Coach Bus'}</span>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-[#888888] text-xs mb-1">Pickup</p>
+                        <p className="text-[var(--text-muted)] text-xs mb-1">Pickup</p>
                         <p className="text-white font-medium truncate" title={pickup}>{pickup}</p>
                       </div>
                       <div>
-                        <p className="text-[#888888] text-xs mb-1">Drop-off</p>
+                        <p className="text-[var(--text-muted)] text-xs mb-1">Drop-off</p>
                         <p className="text-white font-medium truncate" title={destination}>{destination}</p>
                       </div>
                       <div>
-                        <p className="text-[#888888] text-xs mb-1">
+                        <p className="text-[var(--text-muted)] text-xs mb-1">
                           {tripType === 'round-trip' ? 'Pick up Date' : 'Date & Time'}
                         </p>
                         <p className="text-white font-medium">{date} at {time}</p>
                       </div>
                       {tripType === 'round-trip' && returnDate && returnTime && (
                         <div>
-                          <p className="text-[#B8960C] text-xs mb-1 uppercase tracking-widest font-bold">Drop off Date</p>
+                          <p className="text-[var(--gold)] text-xs mb-1 uppercase tracking-widest font-bold">Drop off Date</p>
                           <p className="text-white font-medium">{returnDate} at {returnTime}</p>
                         </div>
                       )}
                       <div>
-                        <p className="text-[#888888] text-xs mb-1">Passengers</p>
+                        <p className="text-[var(--text-muted)] text-xs mb-1">Passengers</p>
                         <p className="text-white font-medium">{passengers} {passengers === 1 ? 'Person' : 'People'}</p>
                       </div>
                     </div>
@@ -1185,17 +1185,17 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         }}
                       >
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#B8960C' }}>
+                          <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'var(--gold)' }}>
                             Estimated Total
                           </p>
-                          <p className="text-xs" style={{ color: '#888888' }}>
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                             ${total} + {FL_TAX_RATE_PERCENT}% FL sales tax
                           </p>
                           {tripType === 'round-trip' && (
-                            <p className="text-xs" style={{ color: '#888888' }}>Round trip included</p>
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Round trip included</p>
                           )}
                         </div>
-                        <span className="text-4xl font-bold" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
+                        <span className="text-4xl font-bold" style={{ color: 'var(--gold-accent)', fontFamily: "'Playfair Display', Georgia, serif" }}>
                           ${totalWithTax}
                         </span>
                       </div>
@@ -1213,26 +1213,26 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                             onClick={() => setPaymentMode('full')}
                             className="rounded-xl p-4 flex flex-col gap-2 text-left transition-all duration-200"
                             style={{
-                              background: paymentMode === 'full' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
-                              border: paymentMode === 'full' ? '2px solid #B8960C' : '1px solid #333333',
+                              background: paymentMode === 'full' ? 'rgba(184,150,12,0.12)' : 'var(--bg-alt)',
+                              border: paymentMode === 'full' ? '2px solid var(--gold)' : '1px solid var(--border-soft)',
                             }}
                           >
                             <div className="flex items-center gap-2">
                               <div
                                 className="w-5 h-5 rounded-full flex items-center justify-center"
                                 style={{
-                                  border: paymentMode === 'full' ? '2px solid #B8960C' : '2px solid #555',
+                                  border: paymentMode === 'full' ? '2px solid var(--gold)' : '2px solid #555',
                                 }}
                               >
                                 {paymentMode === 'full' && (
-                                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#D4AF37' }} />
+                                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--gold-light)' }} />
                                 )}
                               </div>
-                              <span className="text-sm font-bold uppercase tracking-wider" style={{ color: '#FFFFFF' }}>
+                              <span className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--text)' }}>
                                 Pay Full Amount
                               </span>
                             </div>
-                            <span className="text-2xl font-bold ml-7" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
+                            <span className="text-2xl font-bold ml-7" style={{ color: 'var(--gold-accent)', fontFamily: "'Playfair Display', Georgia, serif" }}>
                               ${totalWithTax}
                             </span>
                           </button>
@@ -1243,30 +1243,30 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                             onClick={() => setPaymentMode('deposit')}
                             className="rounded-xl p-4 flex flex-col gap-2 text-left transition-all duration-200"
                             style={{
-                              background: paymentMode === 'deposit' ? 'rgba(184,150,12,0.12)' : '#0e0e0e',
-                              border: paymentMode === 'deposit' ? '2px solid #B8960C' : '1px solid #333333',
+                              background: paymentMode === 'deposit' ? 'rgba(184,150,12,0.12)' : 'var(--bg-alt)',
+                              border: paymentMode === 'deposit' ? '2px solid var(--gold)' : '1px solid var(--border-soft)',
                             }}
                           >
                             <div className="flex items-center gap-2">
                               <div
                                 className="w-5 h-5 rounded-full flex items-center justify-center"
                                 style={{
-                                  border: paymentMode === 'deposit' ? '2px solid #B8960C' : '2px solid #555',
+                                  border: paymentMode === 'deposit' ? '2px solid var(--gold)' : '2px solid #555',
                                 }}
                               >
                                 {paymentMode === 'deposit' && (
-                                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#D4AF37' }} />
+                                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--gold-light)' }} />
                                 )}
                               </div>
-                              <span className="text-sm font-bold uppercase tracking-wider" style={{ color: '#FFFFFF' }}>
+                              <span className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--text)' }}>
                                 Reserve with Deposit
                               </span>
                             </div>
                             <div className="ml-7">
-                              <span className="text-2xl font-bold" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>
+                              <span className="text-2xl font-bold" style={{ color: 'var(--gold-accent)', fontFamily: "'Playfair Display', Georgia, serif" }}>
                                 ${depositWithTax}
                               </span>
-                              <span className="text-xs ml-2 font-semibold" style={{ color: '#888888' }}>(20%)</span>
+                              <span className="text-xs ml-2 font-semibold" style={{ color: 'var(--text-muted)' }}>(20%)</span>
                             </div>
                           </button>
                         </div>
@@ -1276,11 +1276,11 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                             className="mt-3 rounded-lg px-4 py-3 flex items-start gap-2"
                             style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)' }}
                           >
-                            <svg className="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2">
+                            <svg className="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="2">
                               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                             </svg>
                             <p className="text-xs leading-relaxed" style={{ color: '#BBBBBB' }}>
-                              Remaining <strong style={{ color: '#EF9F27' }}>${remainingWithTax}</strong> is due before your trip — payable via secure payment link.
+                              Remaining <strong style={{ color: 'var(--gold-accent)' }}>${remainingWithTax}</strong> is due before your trip — payable via secure payment link.
                             </p>
                           </div>
                         )}
@@ -1297,14 +1297,14 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         border: '1px solid rgba(184,150,12,0.3)',
                       }}
                     >
-                      <h4 className="text-lg font-bold mb-2" style={{ color: '#D4AF37' }}>Custom Pricing Required</h4>
+                      <h4 className="text-lg font-bold mb-2" style={{ color: 'var(--gold-light)' }}>Custom Pricing Required</h4>
                       <p className="text-sm leading-relaxed max-w-md mx-auto" style={{ color: '#BBBBBB' }}>
                         Due to the custom nature of large group reservations, pricing and availability must be confirmed manually. Please submit your request below or call us directly.
                       </p>
                       <a
                         href="tel:+18889737896"
-                        className="mt-4 px-6 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:bg-[#333]"
-                        style={{ background: '#111', border: '1px solid #555', color: '#fff' }}
+                        className="mt-4 px-6 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:bg-[var(--border-soft)]"
+                        style={{ background: 'var(--bg)', border: '1px solid #555', color: 'var(--text)' }}
                       >
                         Call Us: +1 (888) 973-7896
                       </a>
@@ -1317,13 +1317,13 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       type="checkbox"
                       id="terms"
                       required
-                      className="mt-1 w-5 h-5 rounded cursor-pointer accent-[#B8960C]"
+                      className="mt-1 w-5 h-5 rounded cursor-pointer accent-[var(--gold)]"
                     />
-                    <label htmlFor="terms" className="text-sm cursor-pointer" style={{ color: '#AAAAAA' }}>
+                    <label htmlFor="terms" className="text-sm cursor-pointer" style={{ color: 'var(--text-subtle)' }}>
                       I agree to the{' '}
-                      <a href="/terms" target="_blank" className="underline hover:text-[#B8960C] transition-colors">Terms of Service</a>
+                      <a href="/terms" target="_blank" className="underline hover:text-[var(--gold)] transition-colors">Terms of Service</a>
                       {' '}and{' '}
-                      <a href="/privacy" target="_blank" className="underline hover:text-[#B8960C] transition-colors">Privacy Policy</a>
+                      <a href="/privacy" target="_blank" className="underline hover:text-[var(--gold)] transition-colors">Privacy Policy</a>
                       , and I understand the cancellation policy.
                     </label>
                   </div>
@@ -1338,8 +1338,8 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     <button
                       type="button"
                       onClick={handlePrevStep}
-                      className="w-full sm:w-1/3 py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:bg-[#252525] active:scale-[0.98]"
-                      style={{ background: '#1e1e1e', color: '#FFFFFF', border: '1px solid #333333' }}
+                      className="w-full sm:w-1/3 py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:bg-[var(--border-faint)] active:scale-[0.98]"
+                      style={{ background: 'var(--surface-alt)', color: 'var(--text)', border: '1px solid var(--border-soft)' }}
                     >
                       ← Back
                     </button>
@@ -1348,8 +1348,8 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       disabled={loading}
                       className="flex-1 py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-3 disabled:cursor-not-allowed shadow-xl shadow-[#B8960C20]"
                       style={{
-                        background: loading ? '#8a7209' : 'linear-gradient(135deg, #B8960C, #D4AF37)',
-                        color: '#0a0a0a',
+                        background: loading ? '#8a7209' : 'linear-gradient(135deg, var(--gold), var(--gold-light))',
+                        color: 'var(--bg-deep)',
                         opacity: loading ? 0.85 : 1,
                       }}
                     >
@@ -1374,12 +1374,12 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   {/* Secure Payment Badge */}
                   {!isPromo && vehicleType !== 'coachbus' && vehicleType !== 'minibus' && (
                     <div className="flex flex-col items-center justify-center gap-1.5 mt-3 select-none">
-                      <div className="flex items-center gap-1.5 text-[#888888]">
+                      <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                         <span className="text-xs font-semibold tracking-wider uppercase">100% Secure Checkout</span>
                       </div>
                       <div className="flex items-center gap-1.5 opacity-60">
-                        <span className="text-[10px] uppercase font-bold text-[#666666] tracking-widest">Powered by</span>
+                        <span className="text-[10px] uppercase font-bold text-[var(--text-faint)] tracking-widest">Powered by</span>
                         <span className="text-[#635BFF] font-bold" style={{ fontSize: '1.1rem', letterSpacing: '-0.02em', fontFamily: 'system-ui, -apple-system, sans-serif' }}>stripe</span>
                       </div>
                     </div>

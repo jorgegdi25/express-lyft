@@ -329,7 +329,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
             Pickup Location
           </label>
           <div ref={pickupGeocoderContainerRef} className="mapbox-geocoder-container" />
-          <p className="text-[11px] text-[#888] mt-1.5 flex items-center gap-1">
+          <p className="text-[11px] text-[var(--text-muted)] mt-1.5 flex items-center gap-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
             Green marker (click map or drag to set)
           </p>
@@ -339,7 +339,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
             Destination
           </label>
           <div ref={dropoffGeocoderContainerRef} className="mapbox-geocoder-container" />
-          <p className="text-[11px] text-[#888] mt-1.5 flex items-center gap-1">
+          <p className="text-[11px] text-[var(--text-muted)] mt-1.5 flex items-center gap-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
             Red marker (click map or drag to set)
           </p>
@@ -349,7 +349,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
       {/* Map Container */}
       <div 
         ref={mapContainerRef} 
-        className="w-full h-[300px] md:h-[400px] rounded-xl overflow-hidden border border-[#333333] cursor-pointer"
+        className="w-full h-[300px] md:h-[400px] rounded-xl overflow-hidden border border-[var(--border-soft)] cursor-pointer"
         title="Click anywhere on the map to set a location, or drag the markers"
       />
 
@@ -357,40 +357,40 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
         .mapbox-geocoder-container .mapboxgl-ctrl-geocoder {
           width: 100%;
           max-width: 100%;
-          background: #0e0e0e;
-          border: 1px solid #333333;
+          background: var(--bg-alt);
+          border: 1px solid var(--border-soft);
           border-radius: 0.75rem;
           box-shadow: none;
         }
         .mapbox-geocoder-container .mapboxgl-ctrl-geocoder input {
-          color: #FFFFFF;
+          color: var(--text);
           padding-left: 40px;
           height: 50px;
           font-size: 16px;
         }
         .mapbox-geocoder-container .mapboxgl-ctrl-geocoder .mapboxgl-ctrl-geocoder--icon-search {
-          fill: #888888;
+          fill: var(--text-muted);
           top: 13px;
         }
         .mapbox-geocoder-container .mapboxgl-ctrl-geocoder .mapboxgl-ctrl-geocoder--icon-close {
-          fill: #888888;
+          fill: var(--text-muted);
           margin-top: 5px;
         }
         .mapbox-geocoder-container .mapboxgl-ctrl-geocoder .suggestions {
-          background: #161616;
-          border: 1px solid #333333;
-          color: #fff;
+          background: var(--surface-raised);
+          border: 1px solid var(--border-soft);
+          color: var(--text);
         }
         .mapbox-geocoder-container .mapboxgl-ctrl-geocoder .suggestions > li > a {
           color: #ddd;
         }
         .mapbox-geocoder-container .mapboxgl-ctrl-geocoder .suggestions > li.active > a,
         .mapbox-geocoder-container .mapboxgl-ctrl-geocoder .suggestions > li:hover > a {
-          background: #2a2a2a;
-          color: #fff;
+          background: var(--border);
+          color: var(--text);
         }
         .mapbox-geocoder-container .mapboxgl-ctrl-geocoder .suggestions > .active > a {
-          background: #2a2a2a;
+          background: var(--border);
         }
       `}} />
     </div>

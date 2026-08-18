@@ -1376,7 +1376,7 @@ export default function AdminPage() {
     const dataUrl = await QRCode.toDataURL(url, {
       width: 800,
       margin: 2,
-      color: { dark: '#111111', light: '#FFFFFF' },
+      color: { dark: 'var(--bg)', light: 'var(--text)' },
     })
     setQrDataUrl(dataUrl)
   }
@@ -1620,29 +1620,29 @@ export default function AdminPage() {
 
   if (checkingSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] text-[#E5E5E5] font-sans">
-        <div className="w-8 h-8 rounded-full border-2 border-[#B8960C] border-t-transparent animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-deep)] text-[#E5E5E5] font-sans">
+        <div className="w-8 h-8 rounded-full border-2 border-[var(--gold)] border-t-transparent animate-spin"></div>
       </div>
     )
   }
 
   if (!authed) {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0a' }}>
+      <main className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-deep)' }}>
         <form
           onSubmit={handleLogin}
           className="flex flex-col gap-5 w-full max-w-sm p-10 rounded-2xl"
-          style={{ background: '#111111', border: '1px solid #1e1e1e', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}
+          style={{ background: 'var(--bg)', border: '1px solid var(--surface-alt)', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}
         >
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#B8960C' }}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--gold)' }}>
               <span className="text-black font-bold text-sm">EL</span>
             </div>
             <div>
-              <p className="text-base font-bold tracking-[3px] uppercase" style={{ color: '#B8960C', fontFamily: 'Georgia, serif' }}>
+              <p className="text-base font-bold tracking-[3px] uppercase" style={{ color: 'var(--gold)', fontFamily: 'Georgia, serif' }}>
                 Express Lyft
               </p>
-              <p className="text-xs uppercase tracking-[2px]" style={{ color: '#888' }}>
+              <p className="text-xs uppercase tracking-[2px]" style={{ color: 'var(--text-muted)' }}>
                 Admin Console
               </p>
             </div>
@@ -1653,14 +1653,14 @@ export default function AdminPage() {
             placeholder="Enter admin password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl px-4 py-3.5 text-sm outline-none transition-colors focus:border-[#B8960C]"
-            style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: '#FFFFFF' }}
+            className="w-full rounded-xl px-4 py-3.5 text-sm outline-none transition-colors focus:border-[var(--gold)]"
+            style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'var(--text)' }}
           />
           {authError && <p className="text-sm text-red-400">{authError}</p>}
           <button
             type="submit"
             className="w-full py-3.5 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+            style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
           >
             Authenticate
           </button>
@@ -1750,7 +1750,7 @@ export default function AdminPage() {
 
 
   return (
-    <div className="flex min-h-screen" style={{ background: '#0a0a0a', color: '#FFFFFF' }}>
+    <div className="flex min-h-screen" style={{ background: 'var(--bg-deep)', color: 'var(--text)' }}>
 
       {/* -- Mobile nav backdrop -- */}
       {mobileNavOpen && (
@@ -1763,19 +1763,19 @@ export default function AdminPage() {
       {/* -- Sidebar -- */}
       <aside
         className={`w-[240px] h-screen flex flex-col py-6 px-4 fixed left-0 top-0 z-50 transition-transform duration-300 lg:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ background: '#0f0f0f', borderRight: '1px solid #1a1a1a' }}
+        style={{ background: '#0f0f0f', borderRight: '1px solid var(--surface)' }}
       >
         {/* Brand */}
         <div className="flex items-center justify-between px-2 mb-10">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#B8960C' }}>
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--gold)' }}>
               <span className="text-black font-bold text-xs">EL</span>
             </div>
             <div>
-              <p className="text-sm font-bold tracking-[2px] uppercase" style={{ color: '#B8960C', fontFamily: 'Georgia, serif' }}>
+              <p className="text-sm font-bold tracking-[2px] uppercase" style={{ color: 'var(--gold)', fontFamily: 'Georgia, serif' }}>
                 Express Lyft
               </p>
-              <p className="text-[9px] uppercase tracking-[1.5px]" style={{ color: '#999' }}>
+              <p className="text-[9px] uppercase tracking-[1.5px]" style={{ color: 'var(--text-dim)' }}>
                 Management
               </p>
             </div>
@@ -1783,7 +1783,7 @@ export default function AdminPage() {
           <button
             onClick={() => setMobileNavOpen(false)}
             className="w-8 h-8 rounded-lg flex items-center justify-center lg:hidden"
-            style={{ color: '#999' }}
+            style={{ color: 'var(--text-dim)' }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -1802,7 +1802,7 @@ export default function AdminPage() {
               className="flex items-center gap-3 px-3 py-3 rounded-xl text-left text-sm transition-all"
               style={{
                 background: activeTab === 'dashboard' ? 'linear-gradient(135deg, rgba(184, 150, 12, 0.15), rgba(212, 175, 55, 0.05))' : 'transparent',
-                color: activeTab === 'dashboard' ? '#D4AF37' : '#999',
+                color: activeTab === 'dashboard' ? 'var(--gold-light)' : 'var(--text-dim)',
                 border: activeTab === 'dashboard' ? '1px solid rgba(184, 150, 12, 0.2)' : '1px solid transparent',
               }}
             >
@@ -1819,10 +1819,10 @@ export default function AdminPage() {
                   <button
                     key={item.key}
                     onClick={() => { setActiveTab(item.key as TabKey); setMobileNavOpen(false) }}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-sm transition-all hover:bg-[#1a1a1a]"
+                    className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-sm transition-all hover:bg-[var(--surface)]"
                     style={{
                       background: activeTab === item.key ? 'linear-gradient(135deg, rgba(184, 150, 12, 0.15), rgba(212, 175, 55, 0.05))' : 'transparent',
-                      color: activeTab === item.key ? '#D4AF37' : '#999',
+                      color: activeTab === item.key ? 'var(--gold-light)' : 'var(--text-dim)',
                       border: activeTab === item.key ? '1px solid rgba(184, 150, 12, 0.2)' : '1px solid transparent',
                     }}
                   >
@@ -1831,7 +1831,7 @@ export default function AdminPage() {
                       <span className="font-semibold tracking-wide">{item.label}</span>
                     </div>
                     {item.getBadge && item.getBadge() > 0 && (
-                      <span className="text-[10px] font-bold bg-[#D4AF37] text-black px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(212,175,55,0.4)]">
+                      <span className="text-[10px] font-bold bg-[var(--gold-light)] text-black px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(212,175,55,0.4)]">
                         {item.getBadge()}
                       </span>
                     )}
@@ -1849,10 +1849,10 @@ export default function AdminPage() {
                 <button
                   key={item.key}
                   onClick={() => { setActiveTab(item.key as TabKey); setMobileNavOpen(false) }}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all hover:bg-[#1a1a1a]"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all hover:bg-[var(--surface)]"
                   style={{
                     background: activeTab === item.key ? 'linear-gradient(135deg, rgba(184, 150, 12, 0.15), rgba(212, 175, 55, 0.05))' : 'transparent',
-                    color: activeTab === item.key ? '#D4AF37' : '#777',
+                    color: activeTab === item.key ? 'var(--gold-light)' : '#777',
                     border: activeTab === item.key ? '1px solid rgba(184, 150, 12, 0.2)' : '1px solid transparent',
                   }}
                 >
@@ -1874,8 +1874,8 @@ export default function AdminPage() {
           ) : (
             <a
               href={`/api/quickbooks/connect?key=${encodeURIComponent(password)}`}
-              className="flex items-center gap-2 px-2 py-2 rounded-xl text-[11px] transition-colors hover:bg-[#1a1a1a]"
-              style={{ border: '1px solid #333', color: '#999' }}
+              className="flex items-center gap-2 px-2 py-2 rounded-xl text-[11px] transition-colors hover:bg-[var(--surface)]"
+              style={{ border: '1px solid var(--border-soft)', color: 'var(--text-dim)' }}
             >
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#555' }} />
               <span className="font-semibold tracking-wide">Connect QuickBooks</span>
@@ -1886,19 +1886,19 @@ export default function AdminPage() {
         {/* User / Logout */}
         <div
           className="pt-4 px-2"
-          style={{ borderTop: '1px solid #1a1a1a' }}
+          style={{ borderTop: '1px solid var(--surface)' }}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: '#1a1a1a', color: '#999' }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--surface)', color: 'var(--text-dim)' }}>
                 A
               </div>
-              <span className="text-[11px] text-[#aaa]">Admin</span>
+              <span className="text-[11px] text-[var(--text-subtle)]">Admin</span>
             </div>
             <button
               onClick={handleLogout}
               className="text-xs uppercase tracking-widest hover:text-red-400 transition-colors"
-              style={{ color: '#999' }}
+              style={{ color: 'var(--text-dim)' }}
             >
               Exit
             </button>
@@ -1914,7 +1914,7 @@ export default function AdminPage() {
           <button
             onClick={() => setMobileNavOpen(true)}
             className="w-9 h-9 rounded-lg flex items-center justify-center"
-            style={{ background: '#111', border: '1px solid #2a2a2a', color: '#B8960C' }}
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--gold)' }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="3" y1="6" x2="21" y2="6" />
@@ -1922,7 +1922,7 @@ export default function AdminPage() {
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
-          <p className="text-xs font-bold tracking-[2px] uppercase" style={{ color: '#B8960C', fontFamily: 'Georgia, serif' }}>
+          <p className="text-xs font-bold tracking-[2px] uppercase" style={{ color: 'var(--gold)', fontFamily: 'Georgia, serif' }}>
             Express Lyft
           </p>
           <div className="w-9" />
@@ -1930,7 +1930,7 @@ export default function AdminPage() {
 
         {/* -- Live refresh indicator -- */}
         <div className="flex items-center justify-end gap-3 mb-4 -mt-2">
-          <span className="text-[11px] uppercase tracking-widest" style={{ color: '#666' }}>
+          <span className="text-[11px] uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>
             {isRefreshing
               ? 'Updating…'
               : lastRefreshedAt
@@ -1945,7 +1945,7 @@ export default function AdminPage() {
             onClick={() => refreshData(password)}
             disabled={isRefreshing}
             className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all hover:brightness-110 disabled:opacity-50"
-            style={{ borderColor: '#2a2a2a', color: '#B8960C', background: '#111' }}
+            style={{ borderColor: 'var(--border)', color: 'var(--gold)', background: 'var(--bg)' }}
           >
             <svg
               width="12"
@@ -1970,58 +1970,58 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div>
               <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Command Center</h1>
-              <p className="text-sm" style={{ color: '#888' }}>Overview and pending actions for your transportation business</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Overview and pending actions for your transportation business</p>
             </div>
 
             {/* TOP SECTION: High-Level Metrics */}
             <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Monthly Revenue (collected so far this calendar month) */}
-              <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#888]">Monthly Revenue</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Monthly Revenue</p>
                   <IconRevenue />
                 </div>
                 <p className="text-3xl font-bold text-green-400 mt-2">
                   ${revenueStats.currentMonthRevenue.toLocaleString()}
                 </p>
-                <p className="text-xs text-[#666]">Collected this month (Stripe + External + Cash)</p>
+                <p className="text-xs text-[var(--text-faint)]">Collected this month (Stripe + External + Cash)</p>
               </div>
 
               {/* Total Bookings */}
-              <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#888]">Total Bookings</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Total Bookings</p>
                   <IconBookings />
                 </div>
                 <p className="text-3xl font-bold text-blue-400 mt-2">
                   {bookings.length}
                 </p>
-                <p className="text-xs text-[#666]">Confirmed and active trips</p>
+                <p className="text-xs text-[var(--text-faint)]">Confirmed and active trips</p>
               </div>
 
               {/* Pending Actions */}
               <div className="rounded-xl p-6 flex flex-col gap-2" style={{ background: '#B8960C10', border: '1px solid #B8960C50' }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#B8960C]">Pending Actions</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[var(--gold)]">Pending Actions</p>
                   <IconDashboard />
                 </div>
-                <p className="text-3xl font-bold text-[#D4AF37] mt-2">
+                <p className="text-3xl font-bold text-[var(--gold-light)] mt-2">
                   {leads.filter(l => ['pending_payment', 'new'].includes(l.status || '')).length}
                 </p>
-                <p className="text-xs text-[#B8960C] opacity-80">Requires immediate attention</p>
+                <p className="text-xs text-[var(--gold)] opacity-80">Requires immediate attention</p>
               </div>
             </section>
 
             {/* ACTION CENTER */}
             <section>
-              <h2 className="text-sm font-bold uppercase tracking-widest text-[#888] mb-4">Action Center</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Action Center</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* Abandoned Reservations */}
                 <div 
                   onClick={() => { setActiveTab('leads'); setLeadsStatusFilter('pending_payment'); }}
                   className="rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg hover:shadow-red-900/20 hover:-translate-y-1 relative overflow-hidden group" 
-                  style={{ background: 'linear-gradient(145deg, #160f0f, #111111)', border: '1px solid rgba(248, 113, 113, 0.1)' }}
+                  style={{ background: 'linear-gradient(145deg, #160f0f, var(--bg))', border: '1px solid rgba(248, 113, 113, 0.1)' }}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-red-500/10 text-red-400">
@@ -2029,17 +2029,17 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <p className="font-bold text-white text-sm">Abandoned Reservations</p>
-                      <p className="text-xs text-[#888]">Leads pending checkout</p>
+                      <p className="text-xs text-[var(--text-muted)]">Leads pending checkout</p>
                     </div>
                   </div>
-                  <span className="text-[#888]">&rarr;</span>
+                  <span className="text-[var(--text-muted)]">&rarr;</span>
                 </div>
 
                 {/* Manual Leads / Quotes */}
                 <div 
                   onClick={() => { setActiveTab('quotes'); setLeadsStatusFilter('all'); }}
                   className="rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg hover:shadow-purple-900/20 hover:-translate-y-1 relative overflow-hidden group" 
-                  style={{ background: 'linear-gradient(145deg, #140f1a, #111111)', border: '1px solid rgba(192, 132, 252, 0.1)' }}
+                  style={{ background: 'linear-gradient(145deg, #140f1a, var(--bg))', border: '1px solid rgba(192, 132, 252, 0.1)' }}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-500/10 text-purple-400">
@@ -2047,10 +2047,10 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <p className="font-bold text-white text-sm">Pending Quotes</p>
-                      <p className="text-xs text-[#888]">Needs manual processing (Buses)</p>
+                      <p className="text-xs text-[var(--text-muted)]">Needs manual processing (Buses)</p>
                     </div>
                   </div>
-                  <span className="text-[#888] group-hover:text-purple-400 group-hover:translate-x-1 transition-all">&rarr;</span>
+                  <span className="text-[var(--text-muted)] group-hover:text-purple-400 group-hover:translate-x-1 transition-all">&rarr;</span>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
                 </div>
 
@@ -2058,7 +2058,7 @@ export default function AdminPage() {
                 <div 
                   onClick={() => { setActiveTab('dispatch'); }}
                   className="rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg hover:shadow-yellow-900/20 hover:-translate-y-1 relative overflow-hidden group" 
-                  style={{ background: 'linear-gradient(145deg, #18150a, #111111)', border: '1px solid rgba(251, 191, 36, 0.1)' }}
+                  style={{ background: 'linear-gradient(145deg, #18150a, var(--bg))', border: '1px solid rgba(251, 191, 36, 0.1)' }}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-yellow-500/10 text-yellow-400">
@@ -2066,17 +2066,17 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <p className="font-bold text-white text-sm">Unassigned Trips</p>
-                      <p className="text-xs text-[#888]">Bookings without a driver</p>
+                      <p className="text-xs text-[var(--text-muted)]">Bookings without a driver</p>
                     </div>
                   </div>
-                  <span className="text-[#888]">&rarr;</span>
+                  <span className="text-[var(--text-muted)]">&rarr;</span>
                 </div>
 
                 {/* Deposits Awaiting Payment */}
                 <div 
                   onClick={() => { setActiveTab('leads'); setLeadsStatusFilter('invoice_sent'); }}
                   className="rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg hover:shadow-blue-900/20 hover:-translate-y-1 relative overflow-hidden group" 
-                  style={{ background: 'linear-gradient(145deg, #0d121a, #111111)', border: '1px solid rgba(96, 165, 250, 0.1)' }}
+                  style={{ background: 'linear-gradient(145deg, #0d121a, var(--bg))', border: '1px solid rgba(96, 165, 250, 0.1)' }}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/10 text-blue-400">
@@ -2084,10 +2084,10 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <p className="font-bold text-white text-sm">Invoices Sent</p>
-                      <p className="text-xs text-[#888]">Awaiting deposit/payment</p>
+                      <p className="text-xs text-[var(--text-muted)]">Awaiting deposit/payment</p>
                     </div>
                   </div>
-                  <span className="text-[#888]">&rarr;</span>
+                  <span className="text-[var(--text-muted)]">&rarr;</span>
                 </div>
 
               </div>
@@ -2097,33 +2097,33 @@ export default function AdminPage() {
               {/* LATEST BOOKINGS */}
               <section className="lg:col-span-2">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-bold uppercase tracking-widest text-[#888]">Latest Bookings</h2>
-                  <button onClick={() => setActiveTab('bookings')} className="text-xs text-[#B8960C] hover:underline font-bold">
+                  <h2 className="text-sm font-bold uppercase tracking-widest text-[var(--text-muted)]">Latest Bookings</h2>
+                  <button onClick={() => setActiveTab('bookings')} className="text-xs text-[var(--gold)] hover:underline font-bold">
                     View All
                   </button>
                 </div>
-                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1a1a1a', background: '#111' }}>
+                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--surface)', background: 'var(--bg)' }}>
                   <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead style={{ background: '#161616', borderBottom: '1px solid #222' }}>
+                    <thead style={{ background: 'var(--surface-raised)', borderBottom: '1px solid #222' }}>
                       <tr>
-                        <th className="px-4 py-3 font-medium text-[#888] w-1/3">Client</th>
-                        <th className="px-4 py-3 font-medium text-[#888] w-1/4">Date</th>
-                        <th className="px-4 py-3 font-medium text-[#888] w-1/4">Status</th>
-                        <th className="px-4 py-3 font-medium text-[#888] text-right">Amount</th>
+                        <th className="px-4 py-3 font-medium text-[var(--text-muted)] w-1/3">Client</th>
+                        <th className="px-4 py-3 font-medium text-[var(--text-muted)] w-1/4">Date</th>
+                        <th className="px-4 py-3 font-medium text-[var(--text-muted)] w-1/4">Status</th>
+                        <th className="px-4 py-3 font-medium text-[var(--text-muted)] text-right">Amount</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#222]">
                       {bookings.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="px-4 py-8 text-center text-[#666] italic">No recent bookings.</td>
+                          <td colSpan={4} className="px-4 py-8 text-center text-[var(--text-faint)] italic">No recent bookings.</td>
                         </tr>
                       ) : (
                         bookings.slice(0, 5).map((b) => (
-                          <tr key={b.id} className="hover:bg-[#1a1a1a] transition-colors">
+                          <tr key={b.id} className="hover:bg-[var(--surface)] transition-colors">
                             <td className="px-4 py-3 text-white font-medium">
                               <div className="truncate max-w-[150px]">{b.customer_name || 'Unknown'}</div>
                             </td>
-                            <td className="px-4 py-3 text-[#aaa]">{formatDateUS(b.date)}</td>
+                            <td className="px-4 py-3 text-[var(--text-subtle)]">{formatDateUS(b.date)}</td>
                             <td className="px-4 py-3">
                               <span className="px-2 py-1 rounded bg-green-500/10 text-green-400 text-[10px] font-bold uppercase tracking-wider">
                                 Confirmed
@@ -2142,25 +2142,25 @@ export default function AdminPage() {
 
               {/* RECENT ACTIVITY */}
               <section className="lg:col-span-1">
-                <h2 className="text-sm font-bold uppercase tracking-widest text-[#888] mb-4">Recent Activity</h2>
-                <div className="rounded-xl p-5 flex flex-col gap-4" style={{ border: '1px solid #1a1a1a', background: '#111' }}>
+                <h2 className="text-sm font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Recent Activity</h2>
+                <div className="rounded-xl p-5 flex flex-col gap-4" style={{ border: '1px solid var(--surface)', background: 'var(--bg)' }}>
                   {leads.slice(0, 5).map((l, i) => (
                     <div key={l.id || i} className="flex gap-4">
                       <div className="relative mt-1">
-                        <div className="w-2 h-2 rounded-full bg-[#B8960C]" />
-                        {i !== 4 && <div className="absolute top-2 left-1/2 -translate-x-1/2 w-px h-full bg-[#333]" />}
+                        <div className="w-2 h-2 rounded-full bg-[var(--gold)]" />
+                        {i !== 4 && <div className="absolute top-2 left-1/2 -translate-x-1/2 w-px h-full bg-[var(--border-soft)]" />}
                       </div>
                       <div className="pb-4">
                         <p className="text-sm text-white">
                           <span className="font-bold">{l.customer_name || 'A customer'}</span> 
                           {l.status === 'new' ? ' requested a quote' : l.status === 'pending_payment' ? ' abandoned checkout' : l.status === 'invoice_sent' ? ' received an invoice' : ' paid a deposit'}
                         </p>
-                        <p className="text-xs text-[#666] mt-1">{timeAgo(l.created_at)}</p>
+                        <p className="text-xs text-[var(--text-faint)] mt-1">{timeAgo(l.created_at)}</p>
                       </div>
                     </div>
                   ))}
                   {leads.length === 0 && (
-                    <p className="text-sm italic text-[#666] text-center">No recent activity.</p>
+                    <p className="text-sm italic text-[var(--text-faint)] text-center">No recent activity.</p>
                   )}
                 </div>
               </section>
@@ -2175,12 +2175,12 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Frequent Flyers</h1>
-                <p className="text-sm" style={{ color: '#888' }}>Manage your frequent flyers, VIPs, and corporate partners. {clients.length} total clients.</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Manage your frequent flyers, VIPs, and corporate partners. {clients.length} total clients.</p>
               </div>
               <button
                 onClick={() => { resetClientForm(); setShowClientForm(true) }}
                 className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
-                style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
               >
                 + New Client
               </button>
@@ -2188,12 +2188,12 @@ export default function AdminPage() {
 
             {/* Client Form Modal */}
             {showClientForm && (
-              <div className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #B8960C30' }}>
+              <div className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid #B8960C30' }}>
                 <div className="flex items-center justify-between mb-6">
-                  <p className="text-xs font-bold uppercase tracking-[3px]" style={{ color: '#D4AF37' }}>
+                  <p className="text-xs font-bold uppercase tracking-[3px]" style={{ color: 'var(--gold-light)' }}>
                     {editingClient ? 'Edit Client' : 'New Client'}
                   </p>
-                  <button onClick={resetClientForm} className="text-xs text-[#aaa] hover:text-red-400 transition-colors">
+                  <button onClick={resetClientForm} className="text-xs text-[var(--text-subtle)] hover:text-red-400 transition-colors">
                     Cancel
                   </button>
                 </div>
@@ -2205,26 +2205,26 @@ export default function AdminPage() {
                     { label: 'Hotel', key: 'hotel_slug' as const, type: 'text', placeholder: 'Partner Hotel' },
                   ].map(({ label, key, type, placeholder }) => (
                     <div key={key} className="flex flex-col gap-1.5">
-                      <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>{label}</label>
+                      <label className="text-xs uppercase tracking-[2px]" style={{ color: 'var(--text-dim)' }}>{label}</label>
                       <input
                         type={type}
                         placeholder={placeholder}
                         value={clientForm[key] as string}
                         onChange={(e) => setClientForm({ ...clientForm, [key]: e.target.value })}
-                        className="rounded-lg px-4 py-3 text-sm outline-none transition-colors focus:border-[#B8960C]"
-                        style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: '#fff' }}
+                        className="rounded-lg px-4 py-3 text-sm outline-none transition-colors focus:border-[var(--gold)]"
+                        style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'var(--text)' }}
                       />
                     </div>
                   ))}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Status</label>
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: 'var(--text-dim)' }}>Status</label>
                     <select
                       value={clientForm.status}
                       onChange={(e) => setClientForm({ ...clientForm, status: e.target.value as Client['status'] })}
                       className="rounded-lg px-4 py-3 text-sm outline-none"
-                      style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: '#fff' }}
+                      style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'var(--text)' }}
                     >
                       <option value="active">Active</option>
                       <option value="vip">VIP</option>
@@ -2232,30 +2232,30 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Total Trips</label>
-                    <input type="number" value={clientForm.total_trips} onChange={(e) => setClientForm({ ...clientForm, total_trips: parseInt(e.target.value) || 0 })} className="rounded-lg px-4 py-3 text-sm outline-none" style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: '#fff' }} />
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: 'var(--text-dim)' }}>Total Trips</label>
+                    <input type="number" value={clientForm.total_trips} onChange={(e) => setClientForm({ ...clientForm, total_trips: parseInt(e.target.value) || 0 })} className="rounded-lg px-4 py-3 text-sm outline-none" style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'var(--text)' }} />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Total Spent ($)</label>
-                    <input type="number" value={clientForm.total_spent} onChange={(e) => setClientForm({ ...clientForm, total_spent: parseInt(e.target.value) || 0 })} className="rounded-lg px-4 py-3 text-sm outline-none" style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: '#fff' }} />
+                    <label className="text-xs uppercase tracking-[2px]" style={{ color: 'var(--text-dim)' }}>Total Spent ($)</label>
+                    <input type="number" value={clientForm.total_spent} onChange={(e) => setClientForm({ ...clientForm, total_spent: parseInt(e.target.value) || 0 })} className="rounded-lg px-4 py-3 text-sm outline-none" style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'var(--text)' }} />
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5 mb-6">
-                  <label className="text-xs uppercase tracking-[2px]" style={{ color: '#999' }}>Notes</label>
+                  <label className="text-xs uppercase tracking-[2px]" style={{ color: 'var(--text-dim)' }}>Notes</label>
                   <textarea
                     rows={2}
                     placeholder="Private notes about this client..."
                     value={clientForm.notes}
                     onChange={(e) => setClientForm({ ...clientForm, notes: e.target.value })}
                     className="rounded-lg px-4 py-3 text-sm outline-none resize-none"
-                    style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: '#fff' }}
+                    style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'var(--text)' }}
                   />
                 </div>
                 <button
                   onClick={handleSaveClient}
                   disabled={!clientForm.name || !clientForm.email || loadingClients}
                   className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40 flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                  style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                 >
                   {loadingClients ? 'Saving...' : (editingClient ? 'Save Changes' : 'Create Client')}
                 </button>
@@ -2263,11 +2263,11 @@ export default function AdminPage() {
             )}
 
             {/* Client Table */}
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ color: '#888' }}>
+                    <tr style={{ color: 'var(--text-muted)' }}>
                       {['Client', 'Hotel', 'Trips', 'Revenue', 'Status', 'Actions'].map((h) => (
                         <th key={h} className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">
                           {h}
@@ -2277,11 +2277,11 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {clients.map((c) => (
-                      <tr key={c.id} style={{ borderTop: '1px solid #1a1a1a' }}>
+                      <tr key={c.id} style={{ borderTop: '1px solid var(--surface)' }}>
                         <td className="py-4 pr-4">
                           <p className="text-white font-bold">{c.name}</p>
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-xs text-[#aaa]">{c.email}</p>
+                            <p className="text-xs text-[var(--text-subtle)]">{c.email}</p>
                             {c.phone && (
                               <button
                                 onClick={() => openWhatsApp(c.phone, `Hi ${c.name}, this is Express Lyft. How can we help you today?`)}
@@ -2292,7 +2292,7 @@ export default function AdminPage() {
                               </button>
                             )}
                           </div>
-                          {c.phone && <p className="text-xs mt-1 text-[#aaa] font-mono tracking-wider">{c.phone}</p>}
+                          {c.phone && <p className="text-xs mt-1 text-[var(--text-subtle)] font-mono tracking-wider">{c.phone}</p>}
                         </td>
                         <td className="py-4 pr-4">
                           <p className="text-xs text-white">{c.hotel_slug}</p>
@@ -2304,8 +2304,8 @@ export default function AdminPage() {
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => handleEditClient(c)}
-                              className="text-xs uppercase tracking-widest font-bold transition-colors hover:text-[#D4AF37]"
-                              style={{ color: '#999' }}
+                              className="text-xs uppercase tracking-widest font-bold transition-colors hover:text-[var(--gold-light)]"
+                              style={{ color: 'var(--text-dim)' }}
                             >
                               Edit
                             </button>
@@ -2317,7 +2317,7 @@ export default function AdminPage() {
                             </button>
                           </div>
                           {c.notes && (
-                            <p className="text-xs mt-2 italic" style={{ color: '#999' }}>
+                            <p className="text-xs mt-2 italic" style={{ color: 'var(--text-dim)' }}>
                               📝 {c.notes}
                             </p>
                           )}
@@ -2337,31 +2337,31 @@ export default function AdminPage() {
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Stay</h1>
-                <p className="text-sm" style={{ color: '#888' }}>Hotels sold through stay.explyft.com — price, photo, inventory, and order shown to guests.</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Hotels sold through stay.explyft.com — price, photo, inventory, and order shown to guests.</p>
               </div>
               <button
                 onClick={() => setAddingStayHotel(true)}
                 className="px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider"
-                style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
               >
                 + Add Hotel
               </button>
             </div>
 
             {addingStayHotel && (
-              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #B8960C' }}>
-                <h3 className="text-sm font-bold text-[#D4AF37] uppercase tracking-wider">New Stay Hotel</h3>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--gold)' }}>
+                <h3 className="text-sm font-bold text-[var(--gold-light)] uppercase tracking-wider">New Stay Hotel</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <input placeholder="Name" value={newStayHotel.name} onChange={e => setNewStayHotel({ ...newStayHotel, name: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
-                  <input placeholder="Photo URL" value={newStayHotel.photo_url} onChange={e => setNewStayHotel({ ...newStayHotel, photo_url: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
-                  <input type="number" placeholder="Price per room/night ($)" value={newStayHotel.price} onChange={e => setNewStayHotel({ ...newStayHotel, price: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
-                  <input type="number" placeholder="Transport portion ($)" value={newStayHotel.transport_amount} onChange={e => setNewStayHotel({ ...newStayHotel, transport_amount: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
-                  <input type="number" placeholder="Rooms available" value={newStayHotel.rooms_available} onChange={e => setNewStayHotel({ ...newStayHotel, rooms_available: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
-                  <input type="number" placeholder="Sort order (0 = first)" value={newStayHotel.sort_order} onChange={e => setNewStayHotel({ ...newStayHotel, sort_order: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                  <input placeholder="Name" value={newStayHotel.name} onChange={e => setNewStayHotel({ ...newStayHotel, name: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                  <input placeholder="Photo URL" value={newStayHotel.photo_url} onChange={e => setNewStayHotel({ ...newStayHotel, photo_url: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                  <input type="number" placeholder="Price per room/night ($)" value={newStayHotel.price} onChange={e => setNewStayHotel({ ...newStayHotel, price: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                  <input type="number" placeholder="Transport portion ($)" value={newStayHotel.transport_amount} onChange={e => setNewStayHotel({ ...newStayHotel, transport_amount: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                  <input type="number" placeholder="Rooms available" value={newStayHotel.rooms_available} onChange={e => setNewStayHotel({ ...newStayHotel, rooms_available: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                  <input type="number" placeholder="Sort order (0 = first)" value={newStayHotel.sort_order} onChange={e => setNewStayHotel({ ...newStayHotel, sort_order: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <button disabled={savingStayHotel} onClick={() => saveStayHotel(newStayHotel)} className="px-4 py-2 rounded-lg text-xs font-bold uppercase" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>Save</button>
-                  <button onClick={() => { setAddingStayHotel(false); setNewStayHotel(emptyStayHotel) }} className="px-4 py-2 rounded-lg text-xs font-bold uppercase text-[#888]">Cancel</button>
+                  <button disabled={savingStayHotel} onClick={() => saveStayHotel(newStayHotel)} className="px-4 py-2 rounded-lg text-xs font-bold uppercase" style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}>Save</button>
+                  <button onClick={() => { setAddingStayHotel(false); setNewStayHotel(emptyStayHotel) }} className="px-4 py-2 rounded-lg text-xs font-bold uppercase text-[var(--text-muted)]">Cancel</button>
                 </div>
               </div>
             )}
@@ -2371,10 +2371,10 @@ export default function AdminPage() {
                 const isEditing = editingStayHotel?.id === hotel.id
                 const edit = isEditing ? editingStayHotel : hotel
                 return (
-                  <div key={hotel.id} className="rounded-xl p-5 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                  <div key={hotel.id} className="rounded-xl p-5 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: '#D4AF37' }}>{hotel.name}</h3>
-                      <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ background: hotel.active ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.08)', color: hotel.active ? '#4ade80' : '#888' }}>
+                      <h3 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: 'var(--gold-light)' }}>{hotel.name}</h3>
+                      <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ background: hotel.active ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.08)', color: hotel.active ? '#4ade80' : 'var(--text-muted)' }}>
                         {hotel.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
@@ -2382,43 +2382,43 @@ export default function AdminPage() {
                     {isEditing ? (
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <label className="flex flex-col gap-1 col-span-2">Name
-                          <input value={edit.name} onChange={e => setEditingStayHotel({ ...edit, name: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                          <input value={edit.name} onChange={e => setEditingStayHotel({ ...edit, name: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                         </label>
                         <label className="flex flex-col gap-1 col-span-2">Photo URL
-                          <input value={edit.photo_url || ''} onChange={e => setEditingStayHotel({ ...edit, photo_url: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                          <input value={edit.photo_url || ''} onChange={e => setEditingStayHotel({ ...edit, photo_url: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                         </label>
                         <label className="flex flex-col gap-1">Price/night ($)
-                          <input type="number" value={edit.price} onChange={e => setEditingStayHotel({ ...edit, price: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                          <input type="number" value={edit.price} onChange={e => setEditingStayHotel({ ...edit, price: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                         </label>
                         <label className="flex flex-col gap-1">Transport portion ($)
-                          <input type="number" value={edit.transport_amount} onChange={e => setEditingStayHotel({ ...edit, transport_amount: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                          <input type="number" value={edit.transport_amount} onChange={e => setEditingStayHotel({ ...edit, transport_amount: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                         </label>
                         <label className="flex flex-col gap-1">Rooms available
-                          <input type="number" value={edit.rooms_available} onChange={e => setEditingStayHotel({ ...edit, rooms_available: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                          <input type="number" value={edit.rooms_available} onChange={e => setEditingStayHotel({ ...edit, rooms_available: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                         </label>
                         <label className="flex flex-col gap-1">Sort order
-                          <input type="number" value={edit.sort_order} onChange={e => setEditingStayHotel({ ...edit, sort_order: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[#2a2a2a]" />
+                          <input type="number" value={edit.sort_order} onChange={e => setEditingStayHotel({ ...edit, sort_order: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                         </label>
                         <label className="flex items-center gap-2 col-span-2 mt-1">
                           <input type="checkbox" checked={edit.active} onChange={e => setEditingStayHotel({ ...edit, active: e.target.checked })} />
                           Active (visible on stay.explyft.com)
                         </label>
                         <div className="col-span-2 flex gap-2 mt-2">
-                          <button disabled={savingStayHotel} onClick={() => saveStayHotel(edit)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>Save</button>
-                          <button onClick={() => setEditingStayHotel(null)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[#888]">Cancel</button>
+                          <button disabled={savingStayHotel} onClick={() => saveStayHotel(edit)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase" style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}>Save</button>
+                          <button onClick={() => setEditingStayHotel(null)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[var(--text-muted)]">Cancel</button>
                         </div>
                       </div>
                     ) : (
                       <>
                         <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div><p className="text-[#666] text-xs">Price/night</p><p className="text-white font-semibold">${hotel.price}</p></div>
-                          <div><p className="text-[#666] text-xs">Rooms left</p><p className="text-white font-semibold">{hotel.rooms_available}</p></div>
-                          <div><p className="text-[#666] text-xs">Transport portion</p><p className="text-white font-semibold">${hotel.transport_amount}</p></div>
-                          <div><p className="text-[#666] text-xs">Order</p><p className="text-white font-semibold">{hotel.sort_order}</p></div>
+                          <div><p className="text-[var(--text-faint)] text-xs">Price/night</p><p className="text-white font-semibold">${hotel.price}</p></div>
+                          <div><p className="text-[var(--text-faint)] text-xs">Rooms left</p><p className="text-white font-semibold">{hotel.rooms_available}</p></div>
+                          <div><p className="text-[var(--text-faint)] text-xs">Transport portion</p><p className="text-white font-semibold">${hotel.transport_amount}</p></div>
+                          <div><p className="text-[var(--text-faint)] text-xs">Order</p><p className="text-white font-semibold">{hotel.sort_order}</p></div>
                         </div>
                         <div className="flex gap-2 mt-1">
-                          <button onClick={() => setEditingStayHotel(hotel)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[#D4AF37] border border-[#B8960C]/40">Edit</button>
-                          <button onClick={() => saveStayHotel({ id: hotel.id, active: !hotel.active })} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[#888] border border-[#2a2a2a]">{hotel.active ? 'Deactivate' : 'Activate'}</button>
+                          <button onClick={() => setEditingStayHotel(hotel)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[var(--gold-light)] border border-[var(--gold)]/40">Edit</button>
+                          <button onClick={() => saveStayHotel({ id: hotel.id, active: !hotel.active })} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[var(--text-muted)] border border-[var(--border)]">{hotel.active ? 'Deactivate' : 'Activate'}</button>
                           <button onClick={() => deleteStayHotel(hotel.id)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-red-400 border border-red-900/40">Delete</button>
                         </div>
                       </>
@@ -2433,19 +2433,19 @@ export default function AdminPage() {
 
             <div>
               <h2 className="text-lg font-bold mb-3" style={{ fontFamily: 'Georgia, serif' }}>Recent Stay Bookings</h2>
-              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1a1a1a' }}>
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--surface)' }}>
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ background: '#161616' }}>
+                    <tr style={{ background: 'var(--surface-raised)' }}>
                       {['Guest', 'Hotel', 'Room', 'Nights', 'Check-in', 'Transport', 'Total', 'Status'].map(h => (
-                        <th key={h} className="text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[#888]">{h}</th>
+                        <th key={h} className="text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {stayBookings.map(b => (
-                      <tr key={b.id} style={{ borderTop: '1px solid #1a1a1a' }}>
-                        <td className="px-4 py-2.5 text-white">{b.guest_name}<br /><span className="text-xs text-[#666]">{b.guest_phone}</span></td>
+                      <tr key={b.id} style={{ borderTop: '1px solid var(--surface)' }}>
+                        <td className="px-4 py-2.5 text-white">{b.guest_name}<br /><span className="text-xs text-[var(--text-faint)]">{b.guest_phone}</span></td>
                         <td className="px-4 py-2.5 text-[#ccc]">{b.hotel_name}</td>
                         <td className="px-4 py-2.5 text-[#ccc]">{b.room_qty}x {b.room_type === '2_beds' ? '2 Beds' : '1 Bed'}</td>
                         <td className="px-4 py-2.5 text-[#ccc]">{b.nights}</td>
@@ -2455,7 +2455,7 @@ export default function AdminPage() {
                         <td className="px-4 py-2.5">
                           <span className="text-xs font-bold px-2 py-1 rounded-full" style={{
                             background: b.status === 'paid' ? 'rgba(74,222,128,0.15)' : b.status === 'paid_overbooked' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.08)',
-                            color: b.status === 'paid' ? '#4ade80' : b.status === 'paid_overbooked' ? '#ef4444' : '#888',
+                            color: b.status === 'paid' ? '#4ade80' : b.status === 'paid_overbooked' ? '#ef4444' : 'var(--text-muted)',
                           }}>{b.status}</span>
                         </td>
                       </tr>
@@ -2474,14 +2474,14 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div>
               <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Websites & Domains</h1>
-              <p className="text-sm" style={{ color: '#888' }}>Quick links to all your active landing pages, hotels, and promos.</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Quick links to all your active landing pages, hotels, and promos.</p>
             </div>
 
             <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Main Website */}
-              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: '#D4AF37' }}>Main Website</h2>
-                <p className="text-xs text-[#888]">The main landing page for general customers.</p>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: 'var(--gold-light)' }}>Main Website</h2>
+                <p className="text-xs text-[var(--text-muted)]">The main landing page for general customers.</p>
                 <div className="mt-auto pt-4">
                   <a href="/" target="_blank" className="text-sm text-[#4ade80] hover:underline flex items-center gap-2">
                     Open Main Site ↗
@@ -2490,9 +2490,9 @@ export default function AdminPage() {
               </div>
 
               {/* Dynamic Hotels */}
-              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: '#D4AF37' }}>Hotel Pages</h2>
-                <p className="text-xs text-[#888]">These are all the active hotels detected in your pricing database.</p>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: 'var(--gold-light)' }}>Hotel Pages</h2>
+                <p className="text-xs text-[var(--text-muted)]">These are all the active hotels detected in your pricing database.</p>
                 <div className="mt-2 flex flex-col gap-2">
                   {Array.from(new Set(routePrices.map(r => r.hotel_slug))).filter(Boolean).map(slug => (
                     <a key={slug} href={`/hotel/${slug}`} target="_blank" className="text-sm text-[#4ade80] hover:underline flex items-center gap-2">
@@ -2506,9 +2506,9 @@ export default function AdminPage() {
               </div>
 
               {/* Stay */}
-              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: '#D4AF37' }}>Stay</h2>
-                <p className="text-xs text-[#888]">Hotel + transportation for guests needing a room tonight.</p>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: 'var(--gold-light)' }}>Stay</h2>
+                <p className="text-xs text-[var(--text-muted)]">Hotel + transportation for guests needing a room tonight.</p>
                 <div className="mt-auto pt-4">
                   <a href="/stay" target="_blank" className="text-sm text-[#4ade80] hover:underline flex items-center gap-2">
                     Open Stay ↗
@@ -2517,9 +2517,9 @@ export default function AdminPage() {
               </div>
 
               {/* Promos */}
-              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: '#D4AF37' }}>Promo Links</h2>
-                <p className="text-xs text-[#888]">You can create any promo code simply by typing it in the URL!</p>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif', color: 'var(--gold-light)' }}>Promo Links</h2>
+                <p className="text-xs text-[var(--text-muted)]">You can create any promo code simply by typing it in the URL!</p>
                 <div className="mt-auto pt-4">
                   <a href="/promo/SUMMER2026" target="_blank" className="text-sm text-[#4ade80] hover:underline flex items-center gap-2">
                     Example: /promo/SUMMER2026 ↗
@@ -2535,33 +2535,33 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div>
               <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Routes & Prices</h1>
-              <p className="text-sm" style={{ color: '#888' }}>Manage base prices, per-mile rates, and per-route pricing by vehicle type</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Manage base prices, per-mile rates, and per-route pricing by vehicle type</p>
             </div>
 
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif' }}>Time-of-Day Surcharge</h2>
               </div>
-              <p className="text-xs mb-4" style={{ color: '#888' }}>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
                 Applied automatically per leg (pickup and, on round trips, the return separately) when its scheduled time falls inside the window below.
               </p>
               {!editPricingSettings ? (
-                <p className="text-sm italic" style={{ color: '#888' }}>Loading…</p>
+                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Loading…</p>
               ) : (
                 <div className="flex flex-wrap items-end gap-4">
                   <div>
-                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: '#888' }}>Type</label>
+                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: 'var(--text-muted)' }}>Type</label>
                     <select
                       value={editPricingSettings.surcharge_type}
                       onChange={(e) => setEditPricingSettings(prev => prev && ({ ...prev, surcharge_type: e.target.value as 'fixed' | 'percentage' }))}
-                      className="rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[#0a0a0a] border border-[#1e1e1e] focus:border-[#B8960C]"
+                      className="rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[var(--bg-deep)] border border-[var(--surface-alt)] focus:border-[var(--gold)]"
                     >
                       <option value="fixed">Flat $ amount</option>
                       <option value="percentage">Percentage %</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: '#888' }}>
+                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {editPricingSettings.surcharge_type === 'percentage' ? 'Amount (%)' : 'Amount ($)'}
                     </label>
                     <input
@@ -2569,15 +2569,15 @@ export default function AdminPage() {
                       step="0.01"
                       value={editPricingSettings.surcharge_amount}
                       onChange={(e) => setEditPricingSettings(prev => prev && ({ ...prev, surcharge_amount: Number(e.target.value) }))}
-                      className="w-28 rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[#0a0a0a] border border-[#1e1e1e] focus:border-[#B8960C]"
+                      className="w-28 rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[var(--bg-deep)] border border-[var(--surface-alt)] focus:border-[var(--gold)]"
                     />
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: '#888' }}>From hour</label>
+                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: 'var(--text-muted)' }}>From hour</label>
                     <select
                       value={editPricingSettings.surcharge_start_hour}
                       onChange={(e) => setEditPricingSettings(prev => prev && ({ ...prev, surcharge_start_hour: Number(e.target.value) }))}
-                      className="rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[#0a0a0a] border border-[#1e1e1e] focus:border-[#B8960C]"
+                      className="rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[var(--bg-deep)] border border-[var(--surface-alt)] focus:border-[var(--gold)]"
                     >
                       {Array.from({ length: 24 }, (_, h) => (
                         <option key={h} value={h}>{h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}</option>
@@ -2585,11 +2585,11 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: '#888' }}>Until hour</label>
+                    <label className="text-xs uppercase tracking-wider font-bold block mb-1.5" style={{ color: 'var(--text-muted)' }}>Until hour</label>
                     <select
                       value={editPricingSettings.surcharge_end_hour}
                       onChange={(e) => setEditPricingSettings(prev => prev && ({ ...prev, surcharge_end_hour: Number(e.target.value) }))}
-                      className="rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[#0a0a0a] border border-[#1e1e1e] focus:border-[#B8960C]"
+                      className="rounded-lg px-3 py-2.5 text-sm text-white outline-none bg-[var(--bg-deep)] border border-[var(--surface-alt)] focus:border-[var(--gold)]"
                     >
                       {Array.from({ length: 24 }, (_, h) => (
                         <option key={h} value={h}>{h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}</option>
@@ -2600,7 +2600,7 @@ export default function AdminPage() {
                     onClick={updatePricingSettings}
                     disabled={savingPricingSettings}
                     className="px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                    style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                   >
                     {savingPricingSettings ? 'Saving...' : 'Save'}
                   </button>
@@ -2608,15 +2608,15 @@ export default function AdminPage() {
               )}
             </section>
 
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif' }}>Online Deposit Payments</h2>
               </div>
-              <p className="text-xs mb-4" style={{ color: '#888' }}>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
                 When off, the public booking forms only offer &quot;Pay Full Amount&quot; — the &quot;Reserve with Deposit&quot; option is hidden for every guest.
               </p>
               {!editPricingSettings ? (
-                <p className="text-sm italic" style={{ color: '#888' }}>Loading…</p>
+                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Loading…</p>
               ) : (
                 <div className="flex items-center gap-4">
                   <button
@@ -2625,21 +2625,21 @@ export default function AdminPage() {
                     aria-checked={editPricingSettings.deposits_enabled}
                     onClick={() => setEditPricingSettings(prev => prev && ({ ...prev, deposits_enabled: !prev.deposits_enabled }))}
                     className="relative w-14 h-8 rounded-full transition-colors shrink-0"
-                    style={{ background: editPricingSettings.deposits_enabled ? '#B8960C' : '#333' }}
+                    style={{ background: editPricingSettings.deposits_enabled ? 'var(--gold)' : 'var(--border-soft)' }}
                   >
                     <span
                       className="absolute top-1 w-6 h-6 rounded-full bg-white transition-transform"
                       style={{ transform: editPricingSettings.deposits_enabled ? 'translateX(1.75rem)' : 'translateX(0.25rem)' }}
                     />
                   </button>
-                  <span className="text-sm font-bold" style={{ color: editPricingSettings.deposits_enabled ? '#D4AF37' : '#888' }}>
+                  <span className="text-sm font-bold" style={{ color: editPricingSettings.deposits_enabled ? 'var(--gold-light)' : 'var(--text-muted)' }}>
                     {editPricingSettings.deposits_enabled ? 'Enabled' : 'Disabled'}
                   </span>
                   <button
                     onClick={updatePricingSettings}
                     disabled={savingPricingSettings}
                     className="ml-auto px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                    style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                   >
                     {savingPricingSettings ? 'Saving...' : 'Save'}
                   </button>
@@ -2647,25 +2647,25 @@ export default function AdminPage() {
               )}
             </section>
 
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif' }}>Payment Provider</h2>
               </div>
-              <p className="text-xs mb-4" style={{ color: '#888' }}>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
                 Which processor the public booking forms use to collect payment. Switching this doesn&apos;t affect the &quot;Send via QuickBooks&quot; button on individual leads in Sales Pipeline.
               </p>
               {!editPricingSettings ? (
-                <p className="text-sm italic" style={{ color: '#888' }}>Loading…</p>
+                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Loading…</p>
               ) : (
                 <div className="flex items-center gap-4">
-                  <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: '#333' }}>
+                  <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border-soft)' }}>
                     <button
                       type="button"
                       onClick={() => setEditPricingSettings(prev => prev && ({ ...prev, payment_provider: 'stripe' }))}
                       className="px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors"
                       style={{
-                        background: editPricingSettings.payment_provider === 'stripe' ? '#B8960C' : 'transparent',
-                        color: editPricingSettings.payment_provider === 'stripe' ? '#0a0a0a' : '#888',
+                        background: editPricingSettings.payment_provider === 'stripe' ? 'var(--gold)' : 'transparent',
+                        color: editPricingSettings.payment_provider === 'stripe' ? 'var(--bg-deep)' : 'var(--text-muted)',
                       }}
                     >
                       Stripe
@@ -2675,8 +2675,8 @@ export default function AdminPage() {
                       onClick={() => setEditPricingSettings(prev => prev && ({ ...prev, payment_provider: 'quickbooks' }))}
                       className="px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors"
                       style={{
-                        background: editPricingSettings.payment_provider === 'quickbooks' ? '#B8960C' : 'transparent',
-                        color: editPricingSettings.payment_provider === 'quickbooks' ? '#0a0a0a' : '#888',
+                        background: editPricingSettings.payment_provider === 'quickbooks' ? 'var(--gold)' : 'transparent',
+                        color: editPricingSettings.payment_provider === 'quickbooks' ? 'var(--bg-deep)' : 'var(--text-muted)',
                       }}
                     >
                       QuickBooks
@@ -2691,7 +2691,7 @@ export default function AdminPage() {
                     onClick={updatePricingSettings}
                     disabled={savingPricingSettings}
                     className="ml-auto px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                    style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                   >
                     {savingPricingSettings ? 'Saving...' : 'Save'}
                   </button>
@@ -2699,14 +2699,14 @@ export default function AdminPage() {
               )}
             </section>
 
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold" style={{ fontFamily: 'Georgia, serif' }}>Dynamic Map Rates & Base Prices</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #222', color: '#888' }}>
+                    <tr style={{ borderBottom: '1px solid #222', color: 'var(--text-muted)' }}>
                       <th className="pb-3 px-4 font-normal">Vehicle Type</th>
                       <th className="pb-3 px-4 font-normal text-right">Base Price</th>
                       <th className="pb-3 px-4 font-normal text-right">Per Mile</th>
@@ -2719,7 +2719,7 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {basePrices.map((bp) => (
-                      <tr key={bp.vehicle_type} className="group" style={{ borderBottom: '1px solid #1a1a1a' }}>
+                      <tr key={bp.vehicle_type} className="group" style={{ borderBottom: '1px solid var(--surface)' }}>
                         <td className="py-3 px-4 font-medium text-white">{VEHICLE_LABELS[bp.vehicle_type] || bp.vehicle_type}</td>
                         <td className="py-3 px-4 text-right">
                           <input
@@ -2808,7 +2808,7 @@ export default function AdminPage() {
                           <button
                             onClick={() => updateBasePrice(bp.vehicle_type, editBasePriceData[bp.vehicle_type])}
                             disabled={savingBasePrice === bp.vehicle_type}
-                            className="text-[#B8960C] hover:text-white transition-colors disabled:opacity-50"
+                            className="text-[var(--gold)] hover:text-white transition-colors disabled:opacity-50"
                           >
                             {savingBasePrice === bp.vehicle_type ? 'Saving...' : 'Save'}
                           </button>
@@ -2820,11 +2820,11 @@ export default function AdminPage() {
               </div>
             </section>
 
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead>
-                    <tr style={{ color: '#888' }}>
+                    <tr style={{ color: 'var(--text-muted)' }}>
                       <th className="py-2 pr-4 text-xs uppercase tracking-widest">Route</th>
                       <th className="py-2 pr-4 text-xs uppercase tracking-widest">Sedan/SUV</th>
                       <th className="py-2 pr-4 text-xs uppercase tracking-widest">Suburban</th>
@@ -2834,22 +2834,22 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {routePrices.map((rp) => (
-                      <tr key={rp.id} style={{ borderTop: '1px solid #1a1a1a' }}>
+                      <tr key={rp.id} style={{ borderTop: '1px solid var(--surface)' }}>
                         <td className="py-4 pr-4">
                           <div className="flex flex-col gap-1.5 max-w-[280px]">
                             <div className="flex flex-wrap items-center gap-1.5 text-white font-semibold text-xs leading-relaxed">
-                              <span className="bg-[#161616] border border-[#222] px-2.5 py-1 rounded text-gray-200">{rp.pickup}</span>
-                              <span className="text-[#B8960C] font-bold">→</span>
-                              <span className="bg-[#161616] border border-[#222] px-2.5 py-1 rounded text-gray-200">{rp.destination}</span>
+                              <span className="bg-[var(--surface-raised)] border border-[#222] px-2.5 py-1 rounded text-gray-200">{rp.pickup}</span>
+                              <span className="text-[var(--gold)] font-bold">→</span>
+                              <span className="bg-[var(--surface-raised)] border border-[#222] px-2.5 py-1 rounded text-gray-200">{rp.destination}</span>
                             </div>
-                            <span className="inline-block self-start px-1.5 py-0.5 rounded bg-[#1a1708] text-[9px] text-[#B8960C] font-bold uppercase tracking-wider border border-[#332b0a]">
+                            <span className="inline-block self-start px-1.5 py-0.5 rounded bg-[#1a1708] text-[9px] text-[var(--gold)] font-bold uppercase tracking-wider border border-[#332b0a]">
                               {rp.hotel_slug}
                             </span>
                           </div>
                         </td>
                         <td className="py-4 pr-4">
                           <div className="flex items-center gap-1">
-                            <span className="text-[#888]">$</span>
+                            <span className="text-[var(--text-muted)]">$</span>
                             <input
                               type="number"
                               value={editRouteData[rp.id]?.sedan_suv ?? rp.sedan_suv_price}
@@ -2859,13 +2859,13 @@ export default function AdminPage() {
                                   [rp.id]: { ...prev[rp.id], sedan_suv: parseInt(e.target.value) || 0 },
                                 }))
                               }
-                              className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
+                              className="w-16 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]"
                             />
                           </div>
                         </td>
                         <td className="py-4 pr-4">
                           <div className="flex items-center gap-1">
-                            <span className="text-[#888]">$</span>
+                            <span className="text-[var(--text-muted)]">$</span>
                             <input
                               type="number"
                               value={editRouteData[rp.id]?.suburban ?? rp.suburban_price}
@@ -2875,13 +2875,13 @@ export default function AdminPage() {
                                   [rp.id]: { ...prev[rp.id], suburban: parseInt(e.target.value) || 0 },
                                 }))
                               }
-                              className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
+                              className="w-16 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]"
                             />
                           </div>
                         </td>
                         <td className="py-4 pr-4">
                           <div className="flex items-center gap-1">
-                            <span className="text-[#888]">$</span>
+                            <span className="text-[var(--text-muted)]">$</span>
                             <input
                               type="number"
                               value={editRouteData[rp.id]?.sprinter ?? rp.sprinter_price}
@@ -2891,13 +2891,13 @@ export default function AdminPage() {
                                   [rp.id]: { ...prev[rp.id], sprinter: parseInt(e.target.value) || 0 },
                                 }))
                               }
-                              className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]"
+                              className="w-16 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]"
                             />
                           </div>
                         </td>
                         <td className="py-4 text-right">
                           {savingRoute === rp.id ? (
-                            <span className="text-[#B8960C] uppercase tracking-widest text-xs font-bold">Saving…</span>
+                            <span className="text-[var(--gold)] uppercase tracking-widest text-xs font-bold">Saving…</span>
                           ) : (
                             <div className="flex items-center justify-end gap-3">
                               <button
@@ -2915,7 +2915,7 @@ export default function AdminPage() {
                                   })
                                 }
                                 className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
-                                style={{ background: '#B8960C', color: '#0a0a0a' }}
+                                style={{ background: 'var(--gold)', color: 'var(--bg-deep)' }}
                               >
                                 Save
                               </button>
@@ -2933,19 +2933,19 @@ export default function AdminPage() {
 
                     {routePrices.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="py-4 text-center text-[#888] text-xs italic">
+                        <td colSpan={5} className="py-4 text-center text-[var(--text-muted)] text-xs italic">
                           No routes configured yet.
                         </td>
                       </tr>
                     )}
 
                     {/* Add New Route */}
-                    <tr style={{ borderTop: '1px solid #1a1a1a' }}>
+                    <tr style={{ borderTop: '1px solid var(--surface)' }}>
                       <td className="py-4 pr-4">
                         <div className="flex flex-col gap-2">
-                          <input type="text" placeholder="Pickup" value={newRoute.pickup} onChange={(e) => setNewRoute({ ...newRoute, pickup: e.target.value })} list="route-locations" className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                          <input type="text" placeholder="Destination" value={newRoute.destination} onChange={(e) => setNewRoute({ ...newRoute, destination: e.target.value })} list="route-locations" className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]" />
-                          <select value={newRoute.hotel_slug} onChange={(e) => setNewRoute({ ...newRoute, hotel_slug: e.target.value })} className="w-full text-xs rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] p-2 text-white outline-none focus:border-[#B8960C]">
+                          <input type="text" placeholder="Pickup" value={newRoute.pickup} onChange={(e) => setNewRoute({ ...newRoute, pickup: e.target.value })} list="route-locations" className="w-full text-xs rounded-lg border border-[var(--surface-alt)] bg-[var(--bg-deep)] p-2 text-white outline-none focus:border-[var(--gold)]" />
+                          <input type="text" placeholder="Destination" value={newRoute.destination} onChange={(e) => setNewRoute({ ...newRoute, destination: e.target.value })} list="route-locations" className="w-full text-xs rounded-lg border border-[var(--surface-alt)] bg-[var(--bg-deep)] p-2 text-white outline-none focus:border-[var(--gold)]" />
+                          <select value={newRoute.hotel_slug} onChange={(e) => setNewRoute({ ...newRoute, hotel_slug: e.target.value })} className="w-full text-xs rounded-lg border border-[var(--surface-alt)] bg-[var(--bg-deep)] p-2 text-white outline-none focus:border-[var(--gold)]">
                             <option value="bocean-resort">B Ocean Resort (bocean-resort)</option>
                             <option value="ritz-carlton-miami">Ritz-Carlton, Miami (ritz-carlton-miami)</option>
                             <option value="demo">Demo Hotel (demo)</option>
@@ -2957,15 +2957,15 @@ export default function AdminPage() {
                           ))}
                         </datalist>
                       </td>
-                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.sedan_suv_price || ''} onChange={(e) => setNewRoute({ ...newRoute, sedan_suv_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
-                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.suburban_price || ''} onChange={(e) => setNewRoute({ ...newRoute, suburban_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
-                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[#888]">$</span><input type="number" value={newRoute.sprinter_price || ''} onChange={(e) => setNewRoute({ ...newRoute, sprinter_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-white outline-none focus:border-[#B8960C]" /></div></td>
+                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[var(--text-muted)]">$</span><input type="number" value={newRoute.sedan_suv_price || ''} onChange={(e) => setNewRoute({ ...newRoute, sedan_suv_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]" /></div></td>
+                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[var(--text-muted)]">$</span><input type="number" value={newRoute.suburban_price || ''} onChange={(e) => setNewRoute({ ...newRoute, suburban_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]" /></div></td>
+                      <td className="py-4 pr-4"><div className="flex items-center gap-1"><span className="text-[var(--text-muted)]">$</span><input type="number" value={newRoute.sprinter_price || ''} onChange={(e) => setNewRoute({ ...newRoute, sprinter_price: parseInt(e.target.value) || 0 })} className="w-16 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]" /></div></td>
                       <td className="py-4 text-right">
                         <button
                           onClick={addRoute}
                           disabled={addingRoute || !newRoute.pickup || !newRoute.destination}
                           className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-40"
-                          style={{ border: '2px dashed #B8960C', color: '#B8960C' }}
+                          style={{ border: '2px dashed var(--gold)', color: 'var(--gold)' }}
                         >
                           {addingRoute ? 'Wait…' : '+ Add'}
                         </button>
@@ -2984,13 +2984,13 @@ export default function AdminPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Bookings</h1>
-                <p className="text-sm" style={{ color: '#888' }}>Fully paid and confirmed trips. {filteredBookings.length} found ({bookings.length} total)</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Fully paid and confirmed trips. {filteredBookings.length} found ({bookings.length} total)</p>
               </div>
               <div className="flex items-center gap-3">
                 <select
                   value={bookingsStatusFilter}
                   onChange={(e) => { setBookingsStatusFilter(e.target.value); setBookingsPage(1); }}
-                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors"
+                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors"
                 >
                   <option value="all">All Statuses</option>
                   <option value="paid">Paid</option>
@@ -3000,7 +3000,7 @@ export default function AdminPage() {
                 <select
                   value={bookingsVehicleFilter}
                   onChange={(e) => { setBookingsVehicleFilter(e.target.value); setBookingsPage(1); }}
-                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors"
+                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors"
                 >
                   <option value="all">All Vehicles</option>
                   {Object.entries(VEHICLE_LABELS).map(([value, label]) => (
@@ -3010,7 +3010,7 @@ export default function AdminPage() {
                 <select
                   value={bookingsDriverFilter}
                   onChange={(e) => { setBookingsDriverFilter(e.target.value); setBookingsPage(1); }}
-                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors"
+                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors"
                 >
                   <option value="all">All Drivers</option>
                   <option value="assigned">Driver Assigned</option>
@@ -3026,21 +3026,21 @@ export default function AdminPage() {
                   placeholder="Search bookings..."
                   value={bookingsSearch}
                   onChange={(e) => { setBookingsSearch(e.target.value); setBookingsPage(1); }}
-                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors w-full md:max-w-xs"
+                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors w-full md:max-w-xs"
                 />
               </div>
             </div>
 
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               {loadingBookings ? (
-                <p className="text-sm italic" style={{ color: '#888' }}>Loading…</p>
+                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Loading…</p>
               ) : filteredBookings.length === 0 ? (
-                <p className="text-sm italic" style={{ color: '#888' }}>No bookings found.</p>
+                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>No bookings found.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
                     <thead>
-                      <tr style={{ color: '#888' }}>
+                      <tr style={{ color: 'var(--text-muted)' }}>
                         {['Date & Time', 'Passenger info', 'Route / Travel Details', 'Vehicle details', 'Price', 'Status & Action'].map((h) => (
                           <th key={h} className="pb-3 pr-4 text-xs uppercase tracking-widest font-semibold">{h}</th>
                         ))}
@@ -3048,19 +3048,19 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                       {paginatedBookings.map((b) => (
-                        <tr key={b.id} onClick={() => setViewingLead(b as any)} style={{ borderTop: '1px solid #1a1a1a' }} className="hover:bg-[#1a1a1a40] transition-colors cursor-pointer">
+                        <tr key={b.id} onClick={() => setViewingLead(b as any)} style={{ borderTop: '1px solid var(--surface)' }} className="hover:bg-[#1a1a1a40] transition-colors cursor-pointer">
                           <td className="py-4 pr-4 text-white">
                             <span className="font-bold block">{formatDateUS(b.date)}</span>
-                            <span className="text-xs text-[#888]">{b.time || '—'}</span>
+                            <span className="text-xs text-[var(--text-muted)]">{b.time || '—'}</span>
                           </td>
                           <td className="py-4 pr-4">
                             <p className="text-white text-xs font-bold">{b.customer_name || 'Guest'}</p>
-                            <p className="text-xs text-[#888]">{b.customer_email || '—'}</p>
-                            {b.customer_phone && <p className="text-[11px] text-[#666] font-mono">{b.customer_phone}</p>}
+                            <p className="text-xs text-[var(--text-muted)]">{b.customer_email || '—'}</p>
+                            {b.customer_phone && <p className="text-[11px] text-[var(--text-faint)] font-mono">{b.customer_phone}</p>}
                           </td>
-                          <td className="py-4 pr-4 text-xs" style={{ color: '#999' }}>
+                          <td className="py-4 pr-4 text-xs" style={{ color: 'var(--text-dim)' }}>
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[#33333340] text-[#888] w-fit">
+                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[#33333340] text-[var(--text-muted)] w-fit">
                                 {b.trip_type === 'round-trip' ? 'Round Trip' : 'One Way'}
                               </span>
                               <p className="text-white">{b.pickup} &rarr; {b.destination}</p>
@@ -3068,10 +3068,10 @@ export default function AdminPage() {
                             </div>
                           </td>
                           <td className="py-4 pr-4">
-                            <span className="text-xs uppercase font-bold block" style={{ color: '#D4AF37' }}>
+                            <span className="text-xs uppercase font-bold block" style={{ color: 'var(--gold-light)' }}>
                               {VEHICLE_LABELS[b.vehicle_type] ?? b.vehicle_type}
                             </span>
-                            <span className="text-[11px] text-[#888]">{b.passengers || 1} PAX</span>
+                            <span className="text-[11px] text-[var(--text-muted)]">{b.passengers || 1} PAX</span>
                           </td>
                           <td className="py-4 pr-4 font-bold text-base" style={{ color: '#4ade80' }}>
                             ${b.amount_usd}
@@ -3091,7 +3091,7 @@ export default function AdminPage() {
                               <button
                                 onClick={() => sendReviewRequest(b.id)}
                                 disabled={sendingReview === b.id}
-                                className="text-[11px] bg-[#B8960C]/10 text-[#D4AF37] px-2.5 py-1.5 rounded-lg border border-[#B8960C]/30 hover:bg-[#B8960C]/20 transition-all flex items-center gap-1.5 font-bold uppercase tracking-wider disabled:opacity-50"
+                                className="text-[11px] bg-[var(--gold)]/10 text-[var(--gold-light)] px-2.5 py-1.5 rounded-lg border border-[var(--gold)]/30 hover:bg-[var(--gold)]/20 transition-all flex items-center gap-1.5 font-bold uppercase tracking-wider disabled:opacity-50"
                               >
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
                                 {sendingReview === b.id ? 'Sending...' : 'Ask for Review'}
@@ -3107,19 +3107,19 @@ export default function AdminPage() {
 
               {/* Pagination controls */}
               {bookingsTotalPages > 1 && (
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#1a1a1a]">
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-[var(--surface)]">
                   <button
                     disabled={bookingsPage === 1}
                     onClick={() => setBookingsPage(p => Math.max(1, p - 1))}
-                    className="px-3 py-1.5 rounded-lg border border-[#333] text-xs font-semibold text-[#aaa] hover:text-white disabled:opacity-40 transition-all"
+                    className="px-3 py-1.5 rounded-lg border border-[var(--border-soft)] text-xs font-semibold text-[var(--text-subtle)] hover:text-white disabled:opacity-40 transition-all"
                   >
                     &larr; Prev
                   </button>
-                  <span className="text-xs text-[#666]">Page {bookingsPage} of {bookingsTotalPages}</span>
+                  <span className="text-xs text-[var(--text-faint)]">Page {bookingsPage} of {bookingsTotalPages}</span>
                   <button
                     disabled={bookingsPage === bookingsTotalPages}
                     onClick={() => setBookingsPage(p => Math.min(bookingsTotalPages, p + 1))}
-                    className="px-3 py-1.5 rounded-lg border border-[#333] text-xs font-semibold text-[#aaa] hover:text-white disabled:opacity-40 transition-all"
+                    className="px-3 py-1.5 rounded-lg border border-[var(--border-soft)] text-xs font-semibold text-[var(--text-subtle)] hover:text-white disabled:opacity-40 transition-all"
                   >
                     Next &rarr;
                   </button>
@@ -3138,7 +3138,7 @@ export default function AdminPage() {
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>
                   {activeTab === 'quotes' ? 'Manual Quotes (Buses)' : activeTab === 'hotel_bookings' ? 'Hotel Partner Bookings' : 'Sales Pipeline & Leads'}
                 </h1>
-                <p className="text-sm" style={{ color: '#888' }}>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   {activeTab === 'quotes' 
                     ? 'High priority requests that need manual pricing and availability verification.' 
                     : activeTab === 'hotel_bookings'
@@ -3150,14 +3150,14 @@ export default function AdminPage() {
                 <button
                   onClick={() => { setNewLead({ ...emptyNewLead, hotelSlug: hotelOptions[0] || '' }); setShowAddLeadModal(true); }}
                   className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
-                  style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                  style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                 >
                   + New Reservation
                 </button>
                 <select
                   value={leadsStatusFilter}
                   onChange={(e) => { setLeadsStatusFilter(e.target.value); setLeadsPage(1); }}
-                  className="rounded-xl px-3 py-2.5 text-sm outline-none bg-[#111] border border-[#2a2a2a] text-white focus:border-[#B8960C] transition-colors"
+                  className="rounded-xl px-3 py-2.5 text-sm outline-none bg-[var(--bg)] border border-[var(--border)] text-white focus:border-[var(--gold)] transition-colors"
                 >
                   <option value="all">All Statuses</option>
                   <option value="pending_payment">Abandoned Carts</option>
@@ -3175,7 +3175,7 @@ export default function AdminPage() {
                 <select
                   value={leadsSortBy}
                   onChange={(e) => { setLeadsSortBy(e.target.value); setLeadsPage(1); }}
-                  className="rounded-xl px-3 py-2.5 text-sm outline-none bg-[#111] border border-[#2a2a2a] text-[#888] focus:border-[#B8960C] transition-colors"
+                  className="rounded-xl px-3 py-2.5 text-sm outline-none bg-[var(--bg)] border border-[var(--border)] text-[var(--text-muted)] focus:border-[var(--gold)] transition-colors"
                 >
                   <option value="newest">Sort: Newest First</option>
                   <option value="oldest">Sort: Oldest First</option>
@@ -3187,7 +3187,7 @@ export default function AdminPage() {
                   placeholder="Search..."
                   value={leadsSearch}
                   onChange={(e) => { setLeadsSearch(e.target.value); setLeadsPage(1); }}
-                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[#111] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors w-full sm:w-48"
+                  className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors w-full sm:w-48"
                 />
               </div>
             </div>
@@ -3195,22 +3195,22 @@ export default function AdminPage() {
             {/* Add Lead Modal */}
             {showAddLeadModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.85)' }}>
-                <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl p-8 my-auto" style={{ background: '#151515', border: '1px solid #B8960C' }}>
+                <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl p-8 my-auto" style={{ background: '#151515', border: '1px solid var(--gold)' }}>
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-bold text-white uppercase tracking-widest">+ Add New Reservation</h2>
-                    <button onClick={() => setShowAddLeadModal(false)} className="text-sm text-[#aaa] hover:text-red-400 px-3 py-1 rounded-lg border border-[#333] hover:border-red-400 transition-all">x Close</button>
+                    <button onClick={() => setShowAddLeadModal(false)} className="text-sm text-[var(--text-subtle)] hover:text-red-400 px-3 py-1 rounded-lg border border-[var(--border-soft)] hover:border-red-400 transition-all">x Close</button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Name *</label>
-                      <input type="text" placeholder="Full name" value={newLead.customerName} onChange={(e) => setNewLead({ ...newLead, customerName: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Name *</label>
+                      <input type="text" placeholder="Full name" value={newLead.customerName} onChange={(e) => setNewLead({ ...newLead, customerName: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Email</label>
-                      <input type="email" placeholder="email@example.com" value={newLead.customerEmail} onChange={(e) => setNewLead({ ...newLead, customerEmail: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Email</label>
+                      <input type="email" placeholder="email@example.com" value={newLead.customerEmail} onChange={(e) => setNewLead({ ...newLead, customerEmail: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Phone</label>
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Phone</label>
                       <input
                         type="tel"
                         placeholder="+1 (555) 123-4567"
@@ -3223,23 +3223,23 @@ export default function AdminPage() {
                           const countryName = detectedCountry ? (countryNames as Record<string, string>)[detectedCountry] : undefined
                           setNewLead({ ...newLead, customerPhone: phone, ...(countryName ? { customerCountry: countryName } : {}) })
                         }}
-                        className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors"
+                        className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors"
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Country</label>
-                      <input type="text" placeholder="e.g. Colombia" value={newLead.customerCountry} onChange={(e) => setNewLead({ ...newLead, customerCountry: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Country</label>
+                      <input type="text" placeholder="e.g. Colombia" value={newLead.customerCountry} onChange={(e) => setNewLead({ ...newLead, customerCountry: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Hotel *</label>
-                      <select value={newLead.hotelSlug} onChange={(e) => setNewLead({ ...newLead, hotelSlug: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Hotel *</label>
+                      <select value={newLead.hotelSlug} onChange={(e) => setNewLead({ ...newLead, hotelSlug: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
                         <option value="">— Select Hotel —</option>
                         {hotelOptions.map((slug) => (<option key={slug} value={slug}>{slug}</option>))}
                       </select>
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Trip Type</label>
-                      <select value={newLead.tripType} onChange={(e) => setNewLead({ ...newLead, tripType: e.target.value as any })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Trip Type</label>
+                      <select value={newLead.tripType} onChange={(e) => setNewLead({ ...newLead, tripType: e.target.value as any })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
                         <option value="one-way">One Way</option>
                         <option value="round-trip">Round Trip</option>
                       </select>
@@ -3247,63 +3247,63 @@ export default function AdminPage() {
                   </div>
 
                   <div className="mb-5">
-                    <label className="text-sm font-semibold text-[#aaa] mb-2 block">Route</label>
+                    <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Route</label>
                     <div className="flex gap-2 mb-3">
-                      <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'preset', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'preset' ? { background: '#B8960C', color: '#0a0a0a' } : { background: '#0a0a0a', color: '#888', border: '1px solid #2a2a2a' }}>
+                      <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'preset', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'preset' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
                         Preset Route (Airport/Port)
                       </button>
-                      <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'custom', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'custom' ? { background: '#B8960C', color: '#0a0a0a' } : { background: '#0a0a0a', color: '#888', border: '1px solid #2a2a2a' }}>
+                      <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'custom', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'custom' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
                         Custom Trip
                       </button>
                     </div>
 
                     {newLead.routeMode === 'preset' ? (
-                      <select value={`${newLead.pickup}|||${newLead.destination}`} onChange={(e) => { const [p, d] = e.target.value.split('|||'); setNewLead({ ...newLead, pickup: p || '', destination: d || '' }); }} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                      <select value={`${newLead.pickup}|||${newLead.destination}`} onChange={(e) => { const [p, d] = e.target.value.split('|||'); setNewLead({ ...newLead, pickup: p || '', destination: d || '' }); }} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
                         <option value="|||">— Select Route —</option>
                         {routeDropdownOptions.map((r) => (<option key={`${r.pickup}|||${r.destination}`} value={`${r.pickup}|||${r.destination}`}>{r.pickup} → {r.destination}</option>))}
                       </select>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <input type="text" placeholder="Pickup (e.g. B Ocean Resort)" value={newLead.pickup} onChange={(e) => setNewLead({ ...newLead, pickup: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
-                        <input type="text" placeholder="Destination (e.g. Club Space Miami)" value={newLead.destination} onChange={(e) => setNewLead({ ...newLead, destination: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                        <input type="text" placeholder="Pickup (e.g. B Ocean Resort)" value={newLead.pickup} onChange={(e) => setNewLead({ ...newLead, pickup: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                        <input type="text" placeholder="Destination (e.g. Club Space Miami)" value={newLead.destination} onChange={(e) => setNewLead({ ...newLead, destination: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                       </div>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Date *</label>
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Date *</label>
                       <CalendarDatePicker
                         value={newLead.date}
                         onChange={(v) => setNewLead({ ...newLead, date: v })}
-                        className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors text-left flex items-center justify-between gap-2"
+                        className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors text-left flex items-center justify-between gap-2"
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Time *</label>
-                      <select value={newLead.time} onChange={(e) => setNewLead({ ...newLead, time: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Time *</label>
+                      <select value={newLead.time} onChange={(e) => setNewLead({ ...newLead, time: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
                         <option value="">— Select Time —</option>
                         {TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
                       </select>
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Passengers</label>
-                      <input type="number" placeholder="1" value={newLead.passengers} onChange={(e) => setNewLead({ ...newLead, passengers: parseInt(e.target.value) || 1 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Passengers</label>
+                      <input type="number" placeholder="1" value={newLead.passengers} onChange={(e) => setNewLead({ ...newLead, passengers: parseInt(e.target.value) || 1 })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                     </div>
                     {newLead.tripType === 'round-trip' && (
                       <>
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-sm font-semibold text-[#aaa]">Return Date *</label>
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Date *</label>
                           <CalendarDatePicker
                             value={newLead.returnDate}
                             onChange={(v) => setNewLead({ ...newLead, returnDate: v })}
                             min={newLead.date}
-                            className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors text-left flex items-center justify-between gap-2"
+                            className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors text-left flex items-center justify-between gap-2"
                           />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-sm font-semibold text-[#aaa]">Return Time *</label>
-                          <select value={newLead.returnTime} onChange={(e) => setNewLead({ ...newLead, returnTime: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Time *</label>
+                          <select value={newLead.returnTime} onChange={(e) => setNewLead({ ...newLead, returnTime: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
                             <option value="">— Select Time —</option>
                             {TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
                           </select>
@@ -3311,8 +3311,8 @@ export default function AdminPage() {
                       </>
                     )}
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Vehicle</label>
-                      <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Vehicle</label>
+                      <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
                         <option value="sedan_suv">Sedan & SUV</option>
                         <option value="suburban">Suburban</option>
                         <option value="sprinter">Sprinter</option>
@@ -3321,87 +3321,87 @@ export default function AdminPage() {
                       </select>
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">
                         {newLead.routeMode === 'preset' ? 'Total ($) — suggested from rate' : 'Total ($)'}
                       </label>
-                      <input type="number" step="0.01" placeholder="0" value={newLead.amountUsd} onChange={(e) => setNewLead({ ...newLead, amountUsd: parseFloat(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <input type="number" step="0.01" placeholder="0" value={newLead.amountUsd} onChange={(e) => setNewLead({ ...newLead, amountUsd: parseFloat(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                       {newLead.paymentSource === 'stripe' && newLead.amountUsd > 0 && (
-                        <p className="text-xs text-[#666]">
+                        <p className="text-xs text-[var(--text-faint)]">
                           Customer pays ${(newLead.amountUsd * (1 + FL_TAX_RATE_PERCENT / 100)).toFixed(2)} (${newLead.amountUsd} + {FL_TAX_RATE_PERCENT}% FL sales tax)
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5 pt-5 border-t border-[#2a2a2a]">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5 pt-5 border-t border-[var(--border)]">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Airline</label>
-                      <input type="text" placeholder="e.g. Delta" value={newLead.airline} onChange={(e) => setNewLead({ ...newLead, airline: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Airline</label>
+                      <input type="text" placeholder="e.g. Delta" value={newLead.airline} onChange={(e) => setNewLead({ ...newLead, airline: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Flight Number</label>
-                      <input type="text" placeholder="e.g. DL123" value={newLead.flightNumber} onChange={(e) => setNewLead({ ...newLead, flightNumber: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Flight Number</label>
+                      <input type="text" placeholder="e.g. DL123" value={newLead.flightNumber} onChange={(e) => setNewLead({ ...newLead, flightNumber: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Meeting Type</label>
-                      <select value={newLead.meetingType} onChange={(e) => { const meetingType = e.target.value as any; setNewLead({ ...newLead, meetingType, meetGreetFee: meetingType === 'meet_greet' ? 25 : 0 }); }} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Meeting Type</label>
+                      <select value={newLead.meetingType} onChange={(e) => { const meetingType = e.target.value as any; setNewLead({ ...newLead, meetingType, meetGreetFee: meetingType === 'meet_greet' ? 25 : 0 }); }} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
                         <option value="curbside">Curbside</option>
                         <option value="meet_greet">Meet & Greet (+$25)</option>
                       </select>
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Luggage Count</label>
-                      <input type="number" min={0} value={newLead.luggageCount} onChange={(e) => setNewLead({ ...newLead, luggageCount: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Luggage Count</label>
+                      <input type="number" min={0} value={newLead.luggageCount} onChange={(e) => setNewLead({ ...newLead, luggageCount: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[#aaa]">Car Seats</label>
-                      <input type="number" min={0} value={newLead.carSeatsRequested} onChange={(e) => setNewLead({ ...newLead, carSeatsRequested: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Car Seats</label>
+                      <input type="number" min={0} value={newLead.carSeatsRequested} onChange={(e) => setNewLead({ ...newLead, carSeatsRequested: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-1.5 md:col-span-3">
-                      <label className="text-sm font-semibold text-[#aaa]">Special Requests / Notes</label>
-                      <textarea rows={2} placeholder="e.g. 3 cold Cokes, needs extra time, allergic to peanuts" value={newLead.notes} onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors resize-none" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Special Requests / Notes</label>
+                      <textarea rows={2} placeholder="e.g. 3 cold Cokes, needs extra time, allergic to peanuts" value={newLead.notes} onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors resize-none" />
                     </div>
                   </div>
 
-                  <div className="mb-5 pt-5 border-t border-[#2a2a2a]">
-                    <label className="text-sm font-semibold text-[#aaa] mb-2 block">Payment Source</label>
+                  <div className="mb-5 pt-5 border-t border-[var(--border)]">
+                    <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Payment Source</label>
                     <div className="flex gap-2 mb-4">
                       {(['stripe', 'external', 'cash'] as const).map((src) => (
-                        <button key={src} type="button" onClick={() => setNewLead({ ...newLead, paymentSource: src })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.paymentSource === src ? { background: '#B8960C', color: '#0a0a0a' } : { background: '#0a0a0a', color: '#888', border: '1px solid #2a2a2a' }}>
+                        <button key={src} type="button" onClick={() => setNewLead({ ...newLead, paymentSource: src })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.paymentSource === src ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
                           {src === 'stripe' ? 'Stripe' : src === 'external' ? 'External Platform' : 'Cash'}
                         </button>
                       ))}
                     </div>
 
                     {newLead.paymentSource === 'stripe' ? (
-                      <p className="text-xs text-[#666]">Created as a pending reservation — use &quot;Generate Payment Link&quot; or &quot;Send Invoice&quot; afterward to collect payment.</p>
+                      <p className="text-xs text-[var(--text-faint)]">Created as a pending reservation — use &quot;Generate Payment Link&quot; or &quot;Send Invoice&quot; afterward to collect payment.</p>
                     ) : (
                       <div className="flex flex-col gap-4">
                         {newLead.paymentSource === 'external' && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="flex flex-col gap-1.5">
-                              <label className="text-sm font-semibold text-[#aaa]">Platform</label>
-                              <input type="text" placeholder="e.g. GetYourGuide" value={newLead.externalPlatform} onChange={(e) => setNewLead({ ...newLead, externalPlatform: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                              <label className="text-sm font-semibold text-[var(--text-subtle)]">Platform</label>
+                              <input type="text" placeholder="e.g. GetYourGuide" value={newLead.externalPlatform} onChange={(e) => setNewLead({ ...newLead, externalPlatform: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                             </div>
                             <div className="flex flex-col gap-1.5">
-                              <label className="text-sm font-semibold text-[#aaa]">Reference / Booking #</label>
-                              <input type="text" value={newLead.externalReference} onChange={(e) => setNewLead({ ...newLead, externalReference: e.target.value })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                              <label className="text-sm font-semibold text-[var(--text-subtle)]">Reference / Booking #</label>
+                              <input type="text" value={newLead.externalReference} onChange={(e) => setNewLead({ ...newLead, externalReference: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                             </div>
                           </div>
                         )}
-                        <label className="flex items-center gap-2 text-sm text-[#aaa]">
+                        <label className="flex items-center gap-2 text-sm text-[var(--text-subtle)]">
                           <input type="checkbox" checked={newLead.fullyPaid} onChange={(e) => setNewLead({ ...newLead, fullyPaid: e.target.checked })} />
                           Already collected in full
                         </label>
                         {!newLead.fullyPaid && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="flex flex-col gap-1.5">
-                              <label className="text-sm font-semibold text-[#aaa]">Amount Already Collected ($)</label>
-                              <input type="number" step="0.01" placeholder="0" value={newLead.amountPaid} onChange={(e) => setNewLead({ ...newLead, amountPaid: parseFloat(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-white outline-none focus:border-[#B8960C] transition-colors" />
+                              <label className="text-sm font-semibold text-[var(--text-subtle)]">Amount Already Collected ($)</label>
+                              <input type="number" step="0.01" placeholder="0" value={newLead.amountPaid} onChange={(e) => setNewLead({ ...newLead, amountPaid: parseFloat(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                             </div>
                             <div className="flex flex-col gap-1.5">
-                              <label className="text-sm font-semibold text-[#aaa]">Remaining Balance</label>
-                              <input type="text" readOnly value={`$${Math.max(newLead.amountUsd - newLead.amountPaid, 0)}`} className="w-full text-sm rounded-xl border border-[#2a2a2a] bg-[#111] px-4 py-3 text-[#888]" />
+                              <label className="text-sm font-semibold text-[var(--text-subtle)]">Remaining Balance</label>
+                              <input type="text" readOnly value={`$${Math.max(newLead.amountUsd - newLead.amountPaid, 0)}`} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg)] px-4 py-3 text-[var(--text-muted)]" />
                             </div>
                           </div>
                         )}
@@ -3409,7 +3409,7 @@ export default function AdminPage() {
                     )}
                   </div>
 
-                  <div className="flex gap-4 pt-6 border-t border-[#2a2a2a]">
+                  <div className="flex gap-4 pt-6 border-t border-[var(--border)]">
                     <button
                       onClick={async () => { const added = await addLead(); if (added) setShowAddLeadModal(false); }}
                       disabled={
@@ -3424,11 +3424,11 @@ export default function AdminPage() {
                         (newLead.tripType === 'round-trip' && (!newLead.returnDate || !newLead.returnTime))
                       }
                       className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
-                      style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                      style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                     >
                       {addingLead ? 'Saving…' : newLead.paymentSource === 'stripe' ? '+ Add Reservation' : '+ Add Paid Reservation'}
                     </button>
-                    <button onClick={() => setShowAddLeadModal(false)} className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] transition-all">
+                    <button onClick={() => setShowAddLeadModal(false)} className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest border border-[var(--border-soft)] text-[var(--text-subtle)] hover:text-white hover:border-[#555] transition-all">
                       Cancel
                     </button>
                   </div>
@@ -3439,100 +3439,100 @@ export default function AdminPage() {
             {/* Edit Lead Modal */}
             {editingLead && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
-                <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-8" style={{ background: '#151515', border: '2px solid #B8960C' }}>
+                <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-8" style={{ background: '#151515', border: '2px solid var(--gold)' }}>
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-bold text-white">Editing: {editingLead.customer_name}</h2>
-                    <button onClick={() => setEditingLead(null)} className="text-sm text-[#aaa] hover:text-red-400 px-3 py-1 rounded-lg border border-[#333] hover:border-red-400 transition-all">x Close</button>
+                    <button onClick={() => setEditingLead(null)} className="text-sm text-[var(--text-subtle)] hover:text-red-400 px-3 py-1 rounded-lg border border-[var(--border-soft)] hover:border-red-400 transition-all">x Close</button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Full Name</label>
-                      <input type="text" value={editingLead.customer_name || ''} onChange={(e) => setEditingLead({...editingLead, customer_name: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Full Name</label>
+                      <input type="text" value={editingLead.customer_name || ''} onChange={(e) => setEditingLead({...editingLead, customer_name: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Email</label>
-                      <input type="email" value={editingLead.customer_email || ''} onChange={(e) => setEditingLead({...editingLead, customer_email: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Email</label>
+                      <input type="email" value={editingLead.customer_email || ''} onChange={(e) => setEditingLead({...editingLead, customer_email: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Phone</label>
-                      <input type="tel" value={editingLead.customer_phone || ''} onChange={(e) => setEditingLead({...editingLead, customer_phone: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Phone</label>
+                      <input type="tel" value={editingLead.customer_phone || ''} onChange={(e) => setEditingLead({...editingLead, customer_phone: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Passengers</label>
-                      <input type="number" value={editingLead.passengers || 1} onChange={(e) => setEditingLead({...editingLead, passengers: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Passengers</label>
+                      <input type="number" value={editingLead.passengers || 1} onChange={(e) => setEditingLead({...editingLead, passengers: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Trip Type</label>
-                      <select value={editingLead.trip_type || 'one-way'} onChange={(e) => setEditingLead({...editingLead, trip_type: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Trip Type</label>
+                      <select value={editingLead.trip_type || 'one-way'} onChange={(e) => setEditingLead({...editingLead, trip_type: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors">
                         <option value="one-way">One Way</option>
                         <option value="round-trip">Round Trip</option>
                       </select>
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Amount (USD)</label>
-                      <input type="number" value={editingLead.amount_usd || 0} onChange={(e) => setEditingLead({...editingLead, amount_usd: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Amount (USD)</label>
+                      <input type="number" value={editingLead.amount_usd || 0} onChange={(e) => setEditingLead({...editingLead, amount_usd: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Date</label>
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Date</label>
                       <CalendarDatePicker
                         value={editingLead.date || ''}
                         onChange={(v) => setEditingLead({ ...editingLead, date: v })}
-                        className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors text-left flex items-center justify-between gap-2"
+                        className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors text-left flex items-center justify-between gap-2"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Time</label>
-                      <input type="text" placeholder="e.g. 10:00 AM" value={editingLead.time || ''} onChange={(e) => setEditingLead({...editingLead, time: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Time</label>
+                      <input type="text" placeholder="e.g. 10:00 AM" value={editingLead.time || ''} onChange={(e) => setEditingLead({...editingLead, time: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Pickup</label>
-                      <input type="text" value={editingLead.pickup || ''} onChange={(e) => setEditingLead({...editingLead, pickup: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Pickup</label>
+                      <input type="text" value={editingLead.pickup || ''} onChange={(e) => setEditingLead({...editingLead, pickup: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Destination</label>
-                      <input type="text" value={editingLead.destination || ''} onChange={(e) => setEditingLead({...editingLead, destination: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Destination</label>
+                      <input type="text" value={editingLead.destination || ''} onChange={(e) => setEditingLead({...editingLead, destination: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Airline</label>
-                      <input type="text" value={editingLead.airline || ''} onChange={(e) => setEditingLead({...editingLead, airline: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Airline</label>
+                      <input type="text" value={editingLead.airline || ''} onChange={(e) => setEditingLead({...editingLead, airline: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Flight Number</label>
-                      <input type="text" value={editingLead.flight_number || ''} onChange={(e) => setEditingLead({...editingLead, flight_number: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Flight Number</label>
+                      <input type="text" value={editingLead.flight_number || ''} onChange={(e) => setEditingLead({...editingLead, flight_number: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Meeting Type</label>
-                      <select value={editingLead.meeting_type || 'curbside'} onChange={(e) => setEditingLead({...editingLead, meeting_type: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Meeting Type</label>
+                      <select value={editingLead.meeting_type || 'curbside'} onChange={(e) => setEditingLead({...editingLead, meeting_type: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors">
                         <option value="curbside">Curbside</option>
                         <option value="meet_greet">Meet & Greet (+$25)</option>
                       </select>
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Meet & Greet Fee</label>
-                      <input type="number" value={editingLead.meet_greet_fee || 0} onChange={(e) => setEditingLead({...editingLead, meet_greet_fee: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Meet & Greet Fee</label>
+                      <input type="number" value={editingLead.meet_greet_fee || 0} onChange={(e) => setEditingLead({...editingLead, meet_greet_fee: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Luggage Count</label>
-                      <input type="number" value={editingLead.luggage_count || 0} onChange={(e) => setEditingLead({...editingLead, luggage_count: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Luggage Count</label>
+                      <input type="number" value={editingLead.luggage_count || 0} onChange={(e) => setEditingLead({...editingLead, luggage_count: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Car Seats</label>
-                      <input type="number" value={editingLead.car_seats_requested || 0} onChange={(e) => setEditingLead({...editingLead, car_seats_requested: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Car Seats</label>
+                      <input type="number" value={editingLead.car_seats_requested || 0} onChange={(e) => setEditingLead({...editingLead, car_seats_requested: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Wait Time (Mins)</label>
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Wait Time (Mins)</label>
                       <input type="number" value={editingLead.wait_time_minutes || 0} onChange={(e) => {
                         const mins = parseInt(e.target.value) || 0
                         const fee = mins > 30 ? Math.ceil((mins - 30) / 60) * 20 : 0
                         setEditingLead({...editingLead, wait_time_minutes: mins, wait_time_fee: fee})
-                      }} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      }} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-[#aaa]">Wait Time Fee ($)</label>
-                      <input type="number" value={editingLead.wait_time_fee || 0} onChange={(e) => setEditingLead({...editingLead, wait_time_fee: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[#0a0a0a] border border-[#2a2a2a] focus:border-[#B8960C] transition-colors" />
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Wait Time Fee ($)</label>
+                      <input type="number" value={editingLead.wait_time_fee || 0} onChange={(e) => setEditingLead({...editingLead, wait_time_fee: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                   </div>
-                  <div className="flex gap-4 pt-4 border-t border-[#2a2a2a]">
+                  <div className="flex gap-4 pt-4 border-t border-[var(--border)]">
                     <button
                       onClick={async () => {
                         await updateLead(editingLead.id, {
@@ -3558,11 +3558,11 @@ export default function AdminPage() {
                         setEditingLead(null)
                       }}
                       className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110"
-                      style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                      style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                     >
                       Save Changes
                     </button>
-                    <button onClick={() => setEditingLead(null)} className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] transition-all">
+                    <button onClick={() => setEditingLead(null)} className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest border border-[var(--border-soft)] text-[var(--text-subtle)] hover:text-white hover:border-[#555] transition-all">
                       Cancel
                     </button>
                   </div>
@@ -3572,16 +3572,16 @@ export default function AdminPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredLeads.length === 0 && (
-                <div className="col-span-full py-12 text-center text-sm italic" style={{ color: '#888' }}>
+                <div className="col-span-full py-12 text-center text-sm italic" style={{ color: 'var(--text-muted)' }}>
                   No reservations found.
                 </div>
               )}
               {paginatedLeads.map((l) => (
-                <div key={l.id} onClick={() => setViewingLead(l)} className="rounded-xl p-6 relative flex flex-col justify-between gap-5 border border-[#2a2a2a] bg-[#111] shadow-2xl hover:border-[#B8960C] transition-all cursor-pointer">
+                <div key={l.id} onClick={() => setViewingLead(l)} className="rounded-xl p-6 relative flex flex-col justify-between gap-5 border border-[var(--border)] bg-[var(--bg)] shadow-2xl hover:border-[var(--gold)] transition-all cursor-pointer">
                   
                   {/* Top Bar: Time Ago & Actions */}
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-bold text-[#888] uppercase tracking-wider">{timeAgo(l.created_at)}</span>
+                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{timeAgo(l.created_at)}</span>
                   </div>
 
                   {/* Customer Info */}
@@ -3590,10 +3590,10 @@ export default function AdminPage() {
                       <h3 className="text-lg font-bold text-white truncate">{l.customer_name || 'Anonymous'}</h3>
                       {l.customer_country && <span className="text-[10px] bg-blue-900/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-800/30 font-bold">{l.customer_country}</span>}
                     </div>
-                    <p className="text-xs text-[#999] truncate">{l.customer_email || 'No email'}</p>
+                    <p className="text-xs text-[var(--text-dim)] truncate">{l.customer_email || 'No email'}</p>
                     {l.customer_phone && (
                       <div className="flex items-center gap-3 mt-1.5">
-                        <span className="text-xs text-[#666] font-mono">{l.customer_phone}</span>
+                        <span className="text-xs text-[var(--text-faint)] font-mono">{l.customer_phone}</span>
                         <button onClick={(e) => { e.stopPropagation(); openWhatsApp(l.customer_phone!, `Hi ${l.customer_name || 'Guest'}, this is Express Lyft. I saw you were looking for a transfer from ${l.pickup} to ${l.destination}. Would you like to complete your reservation?`); }} className="text-[10px] bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-800/50 hover:bg-green-800/40 transition-all flex items-center gap-1 font-semibold">
                           WhatsApp
                         </button>
@@ -3602,20 +3602,20 @@ export default function AdminPage() {
                   </div>
 
                   {/* Route & Date */}
-                  <div className="bg-[#151515] rounded-xl p-4 border border-[#1a1a1a] flex flex-col gap-3">
+                  <div className="bg-[#151515] rounded-xl p-4 border border-[var(--surface)] flex flex-col gap-3">
                     <div className="flex justify-between items-start gap-2">
                       <div className="flex flex-col">
-                        <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold mb-1">Route</span>
-                        <p className="text-sm text-white font-medium leading-tight">{l.pickup} <br/><span className="text-[#888]">↓</span><br/> {l.destination}</p>
+                        <span className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest font-bold mb-1">Route</span>
+                        <p className="text-sm text-white font-medium leading-tight">{l.pickup} <br/><span className="text-[var(--text-muted)]">↓</span><br/> {l.destination}</p>
                       </div>
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded" style={{ background: l.trip_type === 'round-trip' ? '#B8960C20' : '#33333340', color: l.trip_type === 'round-trip' ? '#B8960C' : '#888' }}>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded" style={{ background: l.trip_type === 'round-trip' ? '#B8960C20' : '#33333340', color: l.trip_type === 'round-trip' ? 'var(--gold)' : 'var(--text-muted)' }}>
                         {l.trip_type === 'round-trip' ? 'Round Trip' : 'One Way'}
                       </span>
                     </div>
                     {/* Meet & Greet Badge */}
                     {l.meeting_type === 'meet_greet' && (
                       <div className="flex items-center gap-2 pt-2 pb-1 border-t border-[#222]">
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full" style={{ background: '#B8960C20', color: '#D4AF37', border: '1px solid #B8960C50' }}>
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full" style={{ background: '#B8960C20', color: 'var(--gold-light)', border: '1px solid #B8960C50' }}>
                           ✨ VIP Meet &amp; Greet
                         </span>
                         <span className="text-xs font-bold" style={{ color: '#4ade80' }}>+${l.meet_greet_fee || 25}</span>
@@ -3623,23 +3623,23 @@ export default function AdminPage() {
                     )}
                     <div className="flex justify-between items-center pt-3 border-t border-[#222]">
                       <div className="flex flex-col">
-                        <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold mb-0.5">
+                        <span className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest font-bold mb-0.5">
                           {l.trip_type === 'round-trip' ? 'Pick up Date' : 'Date & Time'}
                         </span>
                         <p className="text-xs text-white font-bold">{formatDateUS(l.date)}</p>
-                        <p className="text-xs text-[#888]">{l.time || '—'}</p>
+                        <p className="text-xs text-[var(--text-muted)]">{l.time || '—'}</p>
                       </div>
                       {l.trip_type === 'round-trip' && l.return_date && (
                         <div className="flex flex-col text-center px-2">
-                          <span className="text-[10px] text-[#B8960C] uppercase tracking-widest font-bold mb-0.5">Drop off Date</span>
+                          <span className="text-[10px] text-[var(--gold)] uppercase tracking-widest font-bold mb-0.5">Drop off Date</span>
                           <p className="text-xs text-white font-bold">{formatDateUS(l.return_date)}</p>
-                          <p className="text-xs text-[#888]">{l.return_time || '—'}</p>
+                          <p className="text-xs text-[var(--text-muted)]">{l.return_time || '—'}</p>
                         </div>
                       )}
                       <div className="flex flex-col items-end">
-                        <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold mb-0.5">Vehicle</span>
+                        <span className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest font-bold mb-0.5">Vehicle</span>
                         <p className="text-xs font-bold text-white">{l.passengers || 1} PAX</p>
-                        <p className="text-[10px] uppercase font-bold text-[#D4AF37]">{VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}</p>
+                        <p className="text-[10px] uppercase font-bold text-[var(--gold-light)]">{VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}</p>
                       </div>
                     </div>
                   </div>
@@ -3647,18 +3647,18 @@ export default function AdminPage() {
                   {/* Payment & Status */}
                   <div className="flex items-center justify-between mt-1">
                     <div className="flex flex-col gap-0.5 w-1/3">
-                      <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold">
+                      <span className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest font-bold">
                         {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? 'Custom Quote' : activeTab === 'hotel_bookings' ? 'Hotel Billable' : 'Est. Total'}
                       </span>
                       {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? (
-                        <p className="text-sm font-bold mt-1" style={{ color: '#EF9F27' }}>Pending</p>
+                        <p className="text-sm font-bold mt-1" style={{ color: 'var(--gold-accent)' }}>Pending</p>
                       ) : (
                         <p className="text-xl font-bold" style={{ color: activeTab === 'hotel_bookings' ? '#2dd4bf' : '#4ade80' }}>
                           {activeTab === 'hotel_bookings' && !l.amount_usd ? 'TBD' : `$${l.amount_usd || 0}`}
                         </p>
                       )}
                       {l.status === 'deposit_paid' && (
-                        <div className="w-full bg-[#2a2a2a] rounded-full h-1 mt-1" title="20% Deposit Paid">
+                        <div className="w-full bg-[var(--border)] rounded-full h-1 mt-1" title="20% Deposit Paid">
                           <div className="bg-[#FBBF24] h-1 rounded-full" style={{ width: '20%' }}></div>
                         </div>
                       )}
@@ -3671,18 +3671,18 @@ export default function AdminPage() {
                           onChange={(e) => updateLead(l.id, { status: e.target.value })}
                           className="appearance-none pr-8 pl-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer border hover:brightness-110 transition-all text-right w-full"
                           style={{ 
-                            backgroundColor: l.status === 'invoice_sent' ? '#1e3a8a30' : l.status === 'lost' ? '#33161630' : l.status === 'pending_payment' ? '#7f1d1d30' : l.status === 'deposit_paid' ? '#B8960C30' : l.status === 'paid' ? '#065f4630' : l.status === 'quote_requested' ? '#EF9F2730' : '#1a1a1a',
-                            color: l.status === 'invoice_sent' ? '#60a5fa' : l.status === 'lost' ? '#F44336' : l.status === 'pending_payment' ? '#f87171' : l.status === 'deposit_paid' ? '#FBBF24' : l.status === 'paid' ? '#34d399' : l.status === 'quote_requested' ? '#EF9F27' : '#FFFFFF',
-                            borderColor: l.status === 'invoice_sent' ? '#1e3a8a80' : l.status === 'lost' ? '#33161680' : l.status === 'pending_payment' ? '#7f1d1d80' : l.status === 'deposit_paid' ? '#B8960C80' : l.status === 'paid' ? '#065f4680' : l.status === 'quote_requested' ? '#EF9F2780' : '#333'
+                            backgroundColor: l.status === 'invoice_sent' ? '#1e3a8a30' : l.status === 'lost' ? '#33161630' : l.status === 'pending_payment' ? '#7f1d1d30' : l.status === 'deposit_paid' ? '#B8960C30' : l.status === 'paid' ? '#065f4630' : l.status === 'quote_requested' ? '#EF9F2730' : 'var(--surface)',
+                            color: l.status === 'invoice_sent' ? '#60a5fa' : l.status === 'lost' ? '#F44336' : l.status === 'pending_payment' ? '#f87171' : l.status === 'deposit_paid' ? '#FBBF24' : l.status === 'paid' ? '#34d399' : l.status === 'quote_requested' ? 'var(--gold-accent)' : 'var(--text)',
+                            borderColor: l.status === 'invoice_sent' ? '#1e3a8a80' : l.status === 'lost' ? '#33161680' : l.status === 'pending_payment' ? '#7f1d1d80' : l.status === 'deposit_paid' ? '#B8960C80' : l.status === 'paid' ? '#065f4680' : l.status === 'quote_requested' ? '#EF9F2780' : 'var(--border-soft)'
                           }}
                         >
-                          <option value="new" style={{color: '#fff', background: '#111'}}>Manual (New)</option>
-                          <option value="quote_requested" style={{color: '#fff', background: '#111'}}>Quote Requested</option>
-                          <option value="pending_payment" style={{color: '#fff', background: '#111'}}>Abandoned</option>
-                          <option value="invoice_sent" style={{color: '#fff', background: '#111'}}>Invoice Sent</option>
-                          <option value="deposit_paid" style={{color: '#fff', background: '#111'}}>Deposit Paid</option>
-                          <option value="paid" style={{color: '#fff', background: '#111'}}>Paid</option>
-                          <option value="lost" style={{color: '#fff', background: '#111'}}>Lost/Cancel</option>
+                          <option value="new" style={{color: 'var(--text)', background: 'var(--bg)'}}>Manual (New)</option>
+                          <option value="quote_requested" style={{color: 'var(--text)', background: 'var(--bg)'}}>Quote Requested</option>
+                          <option value="pending_payment" style={{color: 'var(--text)', background: 'var(--bg)'}}>Abandoned</option>
+                          <option value="invoice_sent" style={{color: 'var(--text)', background: 'var(--bg)'}}>Invoice Sent</option>
+                          <option value="deposit_paid" style={{color: 'var(--text)', background: 'var(--bg)'}}>Deposit Paid</option>
+                          <option value="paid" style={{color: 'var(--text)', background: 'var(--bg)'}}>Paid</option>
+                          <option value="lost" style={{color: 'var(--text)', background: 'var(--bg)'}}>Lost/Cancel</option>
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-current opacity-70">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -3696,14 +3696,14 @@ export default function AdminPage() {
                           onChange={(e) => updateLead(l.id, { assigned_driver_id: e.target.value || null })}
                           className="appearance-none pr-8 pl-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer border hover:brightness-110 transition-all text-right w-full"
                           style={{ 
-                            backgroundColor: l.assigned_driver_id ? '#B8960C15' : '#1a1a1a',
-                            color: l.assigned_driver_id ? '#D4AF37' : '#888',
-                            borderColor: l.assigned_driver_id ? '#B8960C40' : '#333'
+                            backgroundColor: l.assigned_driver_id ? '#B8960C15' : 'var(--surface)',
+                            color: l.assigned_driver_id ? 'var(--gold-light)' : 'var(--text-muted)',
+                            borderColor: l.assigned_driver_id ? '#B8960C40' : 'var(--border-soft)'
                           }}
                         >
-                          <option value="" style={{color: '#888', background: '#111'}}>Unassigned</option>
+                          <option value="" style={{color: 'var(--text-muted)', background: 'var(--bg)'}}>Unassigned</option>
                           {drivers.map(d => (
-                            <option key={d.id} value={d.id} style={{color: '#fff', background: '#111'}}>{d.name}</option>
+                            <option key={d.id} value={d.id} style={{color: 'var(--text)', background: 'var(--bg)'}}>{d.name}</option>
                           ))}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-current opacity-70">
@@ -3726,7 +3726,7 @@ export default function AdminPage() {
 
                       {/* Notes toggle inline */}
                       <div className="flex flex-col items-end w-full">
-                        <button onClick={() => setExpandedNotes(prev => prev.includes(l.id) ? prev.filter(id => id !== l.id) : [...prev, l.id])} className="text-[10px] font-bold uppercase tracking-widest text-[#888] hover:text-[#D4AF37] transition-colors flex items-center gap-1">
+                        <button onClick={() => setExpandedNotes(prev => prev.includes(l.id) ? prev.filter(id => id !== l.id) : [...prev, l.id])} className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--gold-light)] transition-colors flex items-center gap-1">
                           {l.notes ? (expandedNotes.includes(l.id) ? 'Hide Notes' : 'View Notes') : '+ Add Note'}
                         </button>
                       </div>
@@ -3744,7 +3744,7 @@ export default function AdminPage() {
                           updateLead(l.id, { notes: e.target.value })
                           if(!e.target.value) setExpandedNotes(prev => prev.filter(id => id !== l.id))
                         }}
-                        className="w-full text-xs rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 text-white outline-none focus:border-[#B8960C] transition-colors resize-y"
+                        className="w-full text-xs rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-3 py-2 text-white outline-none focus:border-[var(--gold)] transition-colors resize-y"
                       />
                     </div>
                   )}
@@ -3755,19 +3755,19 @@ export default function AdminPage() {
 
             {/* Pagination controls */}
             {leadsTotalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#1a1a1a]">
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-[var(--surface)]">
                 <button
                   disabled={leadsPage === 1}
                   onClick={() => setLeadsPage(p => Math.max(1, p - 1))}
-                  className="px-4 py-2 rounded-xl border border-[#333] text-xs font-bold uppercase tracking-widest text-[#aaa] hover:text-white hover:border-[#555] disabled:opacity-40 transition-all bg-[#111]"
+                  className="px-4 py-2 rounded-xl border border-[var(--border-soft)] text-xs font-bold uppercase tracking-widest text-[var(--text-subtle)] hover:text-white hover:border-[#555] disabled:opacity-40 transition-all bg-[var(--bg)]"
                 >
                   &larr; Prev
                 </button>
-                <span className="text-xs text-[#666] font-bold uppercase tracking-widest">Page {leadsPage} of {leadsTotalPages}</span>
+                <span className="text-xs text-[var(--text-faint)] font-bold uppercase tracking-widest">Page {leadsPage} of {leadsTotalPages}</span>
                 <button
                   disabled={leadsPage === leadsTotalPages}
                   onClick={() => setLeadsPage(p => Math.min(leadsTotalPages, p + 1))}
-                  className="px-4 py-2 rounded-xl border border-[#333] text-xs font-bold uppercase tracking-widest text-[#aaa] hover:text-white hover:border-[#555] disabled:opacity-40 transition-all bg-[#111]"
+                  className="px-4 py-2 rounded-xl border border-[var(--border-soft)] text-xs font-bold uppercase tracking-widest text-[var(--text-subtle)] hover:text-white hover:border-[#555] disabled:opacity-40 transition-all bg-[var(--bg)]"
                 >
                   Next &rarr;
                 </button>
@@ -3782,15 +3782,15 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div>
               <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Reviews</h1>
-              <p className="text-sm" style={{ color: '#888' }}>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                 Nothing goes live on the website until you approve it here.
               </p>
             </div>
 
             <div className="flex flex-col gap-4">
               {reviews.length === 0 && (
-                <div className="p-10 text-center rounded-2xl" style={{ border: '1px dashed #333' }}>
-                  <p className="text-[#888]">No reviews yet.</p>
+                <div className="p-10 text-center rounded-2xl" style={{ border: '1px dashed var(--border-soft)' }}>
+                  <p className="text-[var(--text-muted)]">No reviews yet.</p>
                 </div>
               )}
               {reviews.map((r) => (
@@ -3798,8 +3798,8 @@ export default function AdminPage() {
                   key={r.id}
                   className="p-6 rounded-xl flex flex-col gap-4"
                   style={{
-                    background: '#111',
-                    border: r.would_recommend === false ? '1px solid #7f1d1d' : '1px solid #1a1a1a',
+                    background: 'var(--bg)',
+                    border: r.would_recommend === false ? '1px solid #7f1d1d' : '1px solid var(--surface)',
                   }}
                 >
                   <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -3816,22 +3816,22 @@ export default function AdminPage() {
                           {r.status}
                         </span>
                         {r.hotel_slug && (
-                          <span className="text-[10px] uppercase font-bold tracking-wider text-[#666]">{r.hotel_slug}</span>
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-faint)]">{r.hotel_slug}</span>
                         )}
                       </div>
-                      <p className="text-xs mt-1" style={{ color: '#666' }}>{r.customer_email}</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>{r.customer_email}</p>
                     </div>
                     {r.rating && (
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((n) => (
-                          <span key={n} style={{ color: n <= (r.rating || 0) ? '#D4AF37' : '#333' }}>★</span>
+                          <span key={n} style={{ color: n <= (r.rating || 0) ? 'var(--gold-light)' : 'var(--border-soft)' }}>★</span>
                         ))}
                       </div>
                     )}
                   </div>
 
                   {r.status === 'requested' ? (
-                    <p className="text-sm italic" style={{ color: '#666' }}>Waiting on customer response.</p>
+                    <p className="text-sm italic" style={{ color: 'var(--text-faint)' }}>Waiting on customer response.</p>
                   ) : (
                     <>
                       <p className="text-sm font-bold" style={{ color: r.would_recommend ? '#4ade80' : '#f87171' }}>
@@ -3849,14 +3849,14 @@ export default function AdminPage() {
                         onClick={() => moderateReview(r.id, 'approved')}
                         disabled={reviewActionId === r.id}
                         className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
-                        style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                        style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                       >
                         Approve — Show on Website
                       </button>
                       <button
                         onClick={() => moderateReview(r.id, 'rejected')}
                         disabled={reviewActionId === r.id}
-                        className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 border border-[#333] text-[#aaa] hover:text-white"
+                        className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 border border-[var(--border-soft)] text-[var(--text-subtle)] hover:text-white"
                       >
                         Keep Private
                       </button>
@@ -3873,52 +3873,52 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div>
               <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Revenue & Finance</h1>
-              <p className="text-sm" style={{ color: '#888' }}>Overview of gross income and cash flow</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Overview of gross income and cash flow</p>
             </div>
 
             {/* Top Cards */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Gross Revenue</p>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[var(--text-muted)]">Gross Revenue</p>
                 <p className="text-3xl font-bold" style={{ color: '#4ade80' }}>${revenueStats.grossRevenue.toLocaleString()}</p>
-                <p className="text-xs uppercase tracking-wider text-[#666]">All collected income</p>
+                <p className="text-xs uppercase tracking-wider text-[var(--text-faint)]">All collected income</p>
               </div>
-              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Stripe</p>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[var(--text-muted)]">Stripe</p>
                 <p className="text-3xl font-bold" style={{ color: '#60a5fa' }}>${revenueStats.stripeTotal.toLocaleString()}</p>
-                <p className="text-xs uppercase tracking-wider text-[#666]">Direct to bank</p>
+                <p className="text-xs uppercase tracking-wider text-[var(--text-faint)]">Direct to bank</p>
               </div>
-              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">External Platform</p>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[var(--text-muted)]">External Platform</p>
                 <p className="text-3xl font-bold" style={{ color: '#2dd4bf' }}>${revenueStats.externalTotal.toLocaleString()}</p>
-                <p className="text-xs uppercase tracking-wider text-[#666]">Collected on the other platform</p>
+                <p className="text-xs uppercase tracking-wider text-[var(--text-faint)]">Collected on the other platform</p>
               </div>
-              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Cash</p>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[var(--text-muted)]">Cash</p>
                 <p className="text-3xl font-bold" style={{ color: '#c084fc' }}>${revenueStats.cashTotal.toLocaleString()}</p>
-                <p className="text-xs uppercase tracking-wider text-[#666]">Collected in person</p>
+                <p className="text-xs uppercase tracking-wider text-[var(--text-faint)]">Collected in person</p>
               </div>
-              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Pending</p>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[var(--text-muted)]">Pending</p>
                 <p className="text-3xl font-bold" style={{ color: '#FBBF24' }}>${revenueStats.pendingTotal.toLocaleString()}</p>
-                <p className="text-xs uppercase tracking-wider text-[#666]">Outstanding deposit balances</p>
+                <p className="text-xs uppercase tracking-wider text-[var(--text-faint)]">Outstanding deposit balances</p>
               </div>
             </section>
 
             {/* Tax collected — separate from revenue on purpose: this is money owed to the state, not income */}
             <section className="rounded-xl p-6 flex items-center justify-between" style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)' }}>
               <div>
-                <p className="text-sm uppercase tracking-wider font-semibold text-[#888]">Florida Sales Tax Collected (7%)</p>
-                <p className="text-xs uppercase tracking-wider text-[#666] mt-1">Not revenue — owed to the state. Only counts reservations since the tax went live.</p>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[var(--text-muted)]">Florida Sales Tax Collected (7%)</p>
+                <p className="text-xs uppercase tracking-wider text-[var(--text-faint)] mt-1">Not revenue — owed to the state. Only counts reservations since the tax went live.</p>
               </div>
               <p className="text-3xl font-bold" style={{ color: '#FBBF24' }}>${revenueStats.taxCollectedTotal.toLocaleString()}</p>
             </section>
 
             {/* Monthly Trend */}
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[#888]">Monthly Revenue Trend</p>
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Monthly Revenue Trend</p>
               {revenueStats.monthlyData.length === 0 ? (
-                <p className="text-sm italic text-[#666]">No data available yet.</p>
+                <p className="text-sm italic text-[var(--text-faint)]">No data available yet.</p>
               ) : (
                 <div className="flex items-stretch gap-4 h-48 mt-4">
                   {revenueStats.monthlyData.map(([month, amount]) => {
@@ -3929,13 +3929,13 @@ export default function AdminPage() {
                         <div className="relative w-full flex-1 flex justify-center items-end">
                           <div 
                             className="w-full max-w-[60px] rounded-t-sm transition-all duration-500 ease-out group-hover:brightness-125"
-                            style={{ height: `${heightPercent}%`, background: '#B8960C' }}
+                            style={{ height: `${heightPercent}%`, background: 'var(--gold)' }}
                           ></div>
                           <span className="absolute -top-6 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
                             ${amount.toLocaleString()}
                           </span>
                         </div>
-                        <span className="text-[10px] uppercase font-bold text-[#888]">{month}</span>
+                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)]">{month}</span>
                       </div>
                     )
                   })}
@@ -3944,14 +3944,14 @@ export default function AdminPage() {
             </section>
 
             {/* Top Routes */}
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <div className="flex items-center justify-between mb-5">
-                <p className="text-sm font-bold uppercase tracking-wider text-[#888]">Top Routes (By Revenue)</p>
+                <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">Top Routes (By Revenue)</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ color: '#888' }}>
+                    <tr style={{ color: 'var(--text-muted)' }}>
                       <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Route</th>
                       <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Trips</th>
                       <th className="text-right py-2 text-xs uppercase tracking-widest font-medium">Revenue generated</th>
@@ -3959,18 +3959,18 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {revenueStats.topRoutes.map(([route, stats], idx) => (
-                      <tr key={route} style={{ borderTop: '1px solid #1a1a1a' }}>
+                      <tr key={route} style={{ borderTop: '1px solid var(--surface)' }}>
                         <td className="py-4 pr-4">
                           <p className="text-white font-bold text-xs">{route.split(' -> ')[0]}</p>
-                          <p className="text-[#888] text-[10px] mt-0.5">to {route.split(' -> ')[1]}</p>
+                          <p className="text-[var(--text-muted)] text-[10px] mt-0.5">to {route.split(' -> ')[1]}</p>
                         </td>
-                        <td className="py-4 pr-4 text-[#aaa] font-bold text-xs">{stats.count}</td>
+                        <td className="py-4 pr-4 text-[var(--text-subtle)] font-bold text-xs">{stats.count}</td>
                         <td className="py-4 text-right font-bold" style={{ color: '#4ade80' }}>${stats.revenue.toLocaleString()}</td>
                       </tr>
                     ))}
                     {revenueStats.topRoutes.length === 0 && (
                       <tr>
-                        <td colSpan={3} className="py-4 text-center text-[#888] text-xs italic">No routes recorded yet.</td>
+                        <td colSpan={3} className="py-4 text-center text-[var(--text-muted)] text-xs italic">No routes recorded yet.</td>
                       </tr>
                     )}
                   </tbody>
@@ -3986,22 +3986,22 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Drivers</h1>
-                <p className="text-sm" style={{ color: '#888' }}>Manage your fleet and personnel</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Manage your fleet and personnel</p>
               </div>
               <button
                 onClick={() => setShowDriverForm(true)}
                 className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
-                style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
               >
                 + New Driver
               </button>
             </div>
 
             {showDriverForm && (
-              <section className="p-6 rounded-2xl relative" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <section className="p-6 rounded-2xl relative" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                 <button
                   onClick={resetDriverForm}
-                  className="absolute top-6 right-6 text-[#888] hover:text-white transition-colors"
+                  className="absolute top-6 right-6 text-[var(--text-muted)] hover:text-white transition-colors"
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -4011,34 +4011,34 @@ export default function AdminPage() {
                 <h2 className="text-lg font-bold mb-6 text-white">{editingDriver ? 'Edit Driver' : 'New Driver'}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#888] mb-2 font-bold">Driver Name</label>
+                    <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-bold">Driver Name</label>
                     <input
                       type="text"
                       value={newDriver.name}
                       onChange={e => setNewDriver(p => ({ ...p, name: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[#B8960C]"
-                      style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: 'white' }}
+                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[var(--gold)]"
+                      style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'white' }}
                       placeholder="John Doe"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#888] mb-2 font-bold">Phone Number</label>
+                    <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-bold">Phone Number</label>
                     <input
                       type="text"
                       value={newDriver.phone}
                       onChange={e => setNewDriver(p => ({ ...p, phone: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[#B8960C]"
-                      style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: 'white' }}
+                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[var(--gold)]"
+                      style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'white' }}
                       placeholder="1234567890"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#888] mb-2 font-bold">Vehicle Type</label>
+                    <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-bold">Vehicle Type</label>
                     <select
                       value={newDriver.vehicle_type}
                       onChange={e => setNewDriver(p => ({ ...p, vehicle_type: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[#B8960C]"
-                      style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: 'white' }}
+                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[var(--gold)]"
+                      style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'white' }}
                     >
                       {Object.entries(VEHICLE_LABELS).map(([val, label]) => (
                         <option key={val} value={val}>{label}</option>
@@ -4046,23 +4046,23 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#888] mb-2 font-bold">License Plate</label>
+                    <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-bold">License Plate</label>
                     <input
                       type="text"
                       value={newDriver.license_plate}
                       onChange={e => setNewDriver(p => ({ ...p, license_plate: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[#B8960C]"
-                      style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: 'white' }}
+                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[var(--gold)]"
+                      style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'white' }}
                       placeholder="ABC-123"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#888] mb-2 font-bold">Status</label>
+                    <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-bold">Status</label>
                     <select
                       value={newDriver.status}
                       onChange={e => setNewDriver(p => ({ ...p, status: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[#B8960C]"
-                      style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: 'white' }}
+                      className="w-full px-4 py-3 rounded-xl outline-none text-sm focus:border-[var(--gold)]"
+                      style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'white' }}
                     >
                       <option value="available">Available</option>
                       <option value="on_trip">On Trip</option>
@@ -4075,7 +4075,7 @@ export default function AdminPage() {
                     onClick={handleSaveDriver}
                     disabled={savingDriver || !newDriver.name || !newDriver.phone}
                     className="px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 hover:brightness-110"
-                    style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                    style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                   >
                     {savingDriver ? 'Saving...' : 'Save Driver'}
                   </button>
@@ -4085,19 +4085,19 @@ export default function AdminPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {drivers.length === 0 && !loadingDrivers && (
-                <div className="col-span-full p-10 text-center rounded-2xl" style={{ border: '1px dashed #333' }}>
-                  <p className="text-[#888] mb-4">No drivers registered yet.</p>
+                <div className="col-span-full p-10 text-center rounded-2xl" style={{ border: '1px dashed var(--border-soft)' }}>
+                  <p className="text-[var(--text-muted)] mb-4">No drivers registered yet.</p>
                 </div>
               )}
               {drivers.map(driver => (
-                <div key={driver.id} className="rounded-2xl p-6 relative group" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                <div key={driver.id} className="rounded-2xl p-6 relative group" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                   <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleEditDriver(driver)} className="p-2 bg-[#222] text-[#888] hover:text-white rounded-lg transition-colors">
+                    <button onClick={() => handleEditDriver(driver)} className="p-2 bg-[#222] text-[var(--text-muted)] hover:text-white rounded-lg transition-colors">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
                       </svg>
                     </button>
-                    <button onClick={() => handleDeleteDriver(driver.id)} className="p-2 bg-[#222] text-[#888] hover:text-red-400 rounded-lg transition-colors">
+                    <button onClick={() => handleDeleteDriver(driver.id)} className="p-2 bg-[#222] text-[var(--text-muted)] hover:text-red-400 rounded-lg transition-colors">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                       </svg>
@@ -4105,26 +4105,26 @@ export default function AdminPage() {
                   </div>
                   
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#222] border border-[#333]">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#222] border border-[var(--border-soft)]">
                       <IconDrivers />
                     </div>
                     <div>
                       <h3 className="font-bold text-white text-lg">{driver.name}</h3>
-                      <p className="text-xs text-[#888]">{driver.phone}</p>
+                      <p className="text-xs text-[var(--text-muted)]">{driver.phone}</p>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 mt-6">
                     <div>
-                      <p className="text-[10px] uppercase font-bold text-[#666] tracking-wider mb-1">Vehicle</p>
+                      <p className="text-[10px] uppercase font-bold text-[var(--text-faint)] tracking-wider mb-1">Vehicle</p>
                       <p className="text-sm text-[#ddd]">{VEHICLE_LABELS[driver.vehicle_type] || driver.vehicle_type}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase font-bold text-[#666] tracking-wider mb-1">Plate</p>
+                      <p className="text-[10px] uppercase font-bold text-[var(--text-faint)] tracking-wider mb-1">Plate</p>
                       <p className="text-sm text-[#ddd] uppercase">{driver.license_plate}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase font-bold text-[#666] tracking-wider mb-1">Status</p>
+                      <p className="text-[10px] uppercase font-bold text-[var(--text-faint)] tracking-wider mb-1">Status</p>
                       <span className="text-xs px-2 py-1 rounded border capitalize" style={{
                         borderColor: driver.status === 'available' ? '#166534' : driver.status === 'on_trip' ? '#854d0e' : '#3f3f46',
                         color: driver.status === 'available' ? '#4ade80' : driver.status === 'on_trip' ? '#facc15' : '#a1a1aa',
@@ -4146,12 +4146,12 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Dispatch Calendar</h1>
-                <p className="text-sm" style={{ color: '#888' }}>View assigned trips and detect conflicts</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>View assigned trips and detect conflicts</p>
               </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => { const d = new Date(calendarMonth); d.setMonth(d.getMonth() - 1); setCalendarMonth(d); }}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2a2a] text-[#aaa] hover:text-white hover:border-[#B8960C] transition-colors"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors"
                   aria-label="Previous month"
                 >&larr;</button>
                 <span className="text-sm font-bold text-white min-w-[140px] text-center" style={{ fontFamily: 'Georgia, serif' }}>
@@ -4159,21 +4159,21 @@ export default function AdminPage() {
                 </span>
                 <button
                   onClick={() => { const d = new Date(calendarMonth); d.setMonth(d.getMonth() + 1); setCalendarMonth(d); }}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#2a2a2a] text-[#aaa] hover:text-white hover:border-[#B8960C] transition-colors"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors"
                   aria-label="Next month"
                 >&rarr;</button>
                 <button
                   onClick={() => { const d = new Date(); d.setDate(1); setCalendarMonth(d); }}
-                  className="px-3 py-2 rounded-lg border border-[#2a2a2a] text-xs font-bold uppercase tracking-wider text-[#aaa] hover:text-[#D4AF37] hover:border-[#B8960C] transition-colors"
+                  className="px-3 py-2 rounded-lg border border-[var(--border)] text-xs font-bold uppercase tracking-wider text-[var(--text-subtle)] hover:text-[var(--gold-light)] hover:border-[var(--gold)] transition-colors"
                 >Today</button>
               </div>
             </div>
 
             {/* Month grid — mirrors what should be on Google Calendar, straight from the leads table */}
-            <div className="rounded-xl overflow-hidden" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <div className="grid grid-cols-7">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-                  <div key={d} className="text-center text-[10px] uppercase font-bold tracking-widest text-[#666] py-2 border-b border-[#1a1a1a]">{d}</div>
+                  <div key={d} className="text-center text-[10px] uppercase font-bold tracking-widest text-[var(--text-faint)] py-2 border-b border-[var(--surface)]">{d}</div>
                 ))}
               </div>
               <div className="grid grid-cols-7">
@@ -4187,12 +4187,12 @@ export default function AdminPage() {
                   return (
                     <div
                       key={dateStr}
-                      className="min-h-[92px] p-1.5 border-b border-r border-[#1a1a1a] flex flex-col gap-1"
+                      className="min-h-[92px] p-1.5 border-b border-r border-[var(--surface)] flex flex-col gap-1"
                       style={{ opacity: inMonth ? 1 : 0.35 }}
                     >
                       <span
                         className="text-[11px] font-bold w-5 h-5 flex items-center justify-center rounded-full"
-                        style={{ color: isToday ? '#0a0a0a' : '#888', background: isToday ? '#D4AF37' : 'transparent' }}
+                        style={{ color: isToday ? 'var(--bg-deep)' : 'var(--text-muted)', background: isToday ? 'var(--gold-light)' : 'transparent' }}
                       >
                         {date.getDate()}
                       </span>
@@ -4210,7 +4210,7 @@ export default function AdminPage() {
                                 (l.luggage_count ?? 0) > 0 ? `${l.luggage_count} bag(s)` : null,
                               ].filter(Boolean).join(' • ')}
                               className="text-left text-[10px] px-1.5 py-0.5 rounded truncate hover:brightness-125 transition-all"
-                              style={{ background: `${STATUS_DOT[l.status || '']}20`, color: STATUS_DOT[l.status || ''] || '#999', borderLeft: `2px solid ${STATUS_DOT[l.status || '']}` }}
+                              style={{ background: `${STATUS_DOT[l.status || '']}20`, color: STATUS_DOT[l.status || ''] || 'var(--text-dim)', borderLeft: `2px solid ${STATUS_DOT[l.status || '']}` }}
                             >
                               {isReturnLeg ? '↩ ' : ''}{l.time || l.return_time} {l.customer_name}
                             </button>
@@ -4219,7 +4219,7 @@ export default function AdminPage() {
                         {dayLeads.length > 3 && (
                           <button
                             onClick={() => setViewingDay(dateStr)}
-                            className="text-left text-[9px] text-[#666] px-1.5 hover:text-[#D4AF37] transition-colors"
+                            className="text-left text-[9px] text-[var(--text-faint)] px-1.5 hover:text-[var(--gold-light)] transition-colors"
                           >+{dayLeads.length - 3} more</button>
                         )}
                       </div>
@@ -4251,31 +4251,31 @@ export default function AdminPage() {
                 if (groupLeads.length === 0) return null
 
                 return (
-                  <section key={dayGroup} className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
-                    <h3 className="text-sm font-bold uppercase tracking-wider mb-5 text-[#888]">{dayGroup}</h3>
+                  <section key={dayGroup} className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                    <h3 className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">{dayGroup}</h3>
                     <div className="flex flex-col gap-3">
                       {groupLeads.map(lead => {
                         const driver = drivers.find(d => d.id === lead.assigned_driver_id)
                         return (
-                          <div key={lead.id} className="p-4 rounded-lg flex items-center justify-between" style={{ background: '#1a1a1a' }}>
+                          <div key={lead.id} className="p-4 rounded-lg flex items-center justify-between" style={{ background: 'var(--surface)' }}>
                             <div className="flex items-center gap-4">
-                              <div className="w-16 h-16 bg-[#0a0a0a] rounded flex flex-col items-center justify-center border border-[#333]">
-                                <span className="text-xs text-[#888] uppercase">{formatDateUS(lead.date || '')}</span>
+                              <div className="w-16 h-16 bg-[var(--bg-deep)] rounded flex flex-col items-center justify-center border border-[var(--border-soft)]">
+                                <span className="text-xs text-[var(--text-muted)] uppercase">{formatDateUS(lead.date || '')}</span>
                                 <span className="text-sm font-bold text-white">{lead.time}</span>
                               </div>
                               <div>
-                                <p className="text-white font-bold">{lead.pickup} <span className="text-[#666] font-normal mx-1">→</span> {lead.destination}</p>
-                                <p className="text-xs text-[#888] mt-1">{lead.customer_name} • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}</p>
+                                <p className="text-white font-bold">{lead.pickup} <span className="text-[var(--text-faint)] font-normal mx-1">→</span> {lead.destination}</p>
+                                <p className="text-xs text-[var(--text-muted)] mt-1">{lead.customer_name} • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}</p>
                               </div>
                             </div>
                             <div className="text-right">
                               {driver ? (
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#B8960C] bg-[#B8960C]/10 text-[#D4AF37] text-xs font-bold">
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--gold)] bg-[var(--gold)]/10 text-[var(--gold-light)] text-xs font-bold">
                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                                   {driver.name}
                                 </div>
                               ) : (
-                                <span className="inline-block px-3 py-1 rounded-full border border-[#333] bg-[#222] text-[#888] text-xs font-bold">
+                                <span className="inline-block px-3 py-1 rounded-full border border-[var(--border-soft)] bg-[#222] text-[var(--text-muted)] text-xs font-bold">
                                   UNASSIGNED
                                 </span>
                               )}
@@ -4289,8 +4289,8 @@ export default function AdminPage() {
               })}
               
               {leads.filter(l => l.status === 'deposit_paid' || l.status === 'paid' || l.status === 'new').length === 0 && (
-                 <div className="p-10 text-center rounded-2xl" style={{ border: '1px dashed #333' }}>
-                 <p className="text-[#888]">No active trips to dispatch.</p>
+                 <div className="p-10 text-center rounded-2xl" style={{ border: '1px dashed var(--border-soft)' }}>
+                 <p className="text-[var(--text-muted)]">No active trips to dispatch.</p>
                </div>
               )}
             </div>
@@ -4303,14 +4303,14 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Available to Talk?</h1>
-                <p className="text-sm" style={{ color: '#888' }}>Assign drivers to promotional and pending trips</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Assign drivers to promotional and pending trips</p>
               </div>
             </div>
 
             <div className="flex flex-col gap-6">
               {leads.filter(l => l.status === 'pending_assignment').length === 0 ? (
-                <div className="p-10 text-center rounded-2xl" style={{ border: '1px dashed #333' }}>
-                  <p className="text-[#888]">No pending assignments. All trips are dispatched.</p>
+                <div className="p-10 text-center rounded-2xl" style={{ border: '1px dashed var(--border-soft)' }}>
+                  <p className="text-[var(--text-muted)]">No pending assignments. All trips are dispatched.</p>
                 </div>
               ) : (
                 leads.filter(l => l.status === 'pending_assignment').map(lead => {
@@ -4318,15 +4318,15 @@ export default function AdminPage() {
                   const waLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
 
                   return (
-                    <div key={lead.id} className="p-6 rounded-xl flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+                    <div key={lead.id} className="p-6 rounded-xl flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold bg-[#B8960C]/20 text-[#D4AF37] px-2 py-1 rounded border border-[#B8960C]/30 uppercase tracking-wider">NEEDS DRIVER</span>
+                          <span className="text-xs font-bold bg-[var(--gold)]/20 text-[var(--gold-light)] px-2 py-1 rounded border border-[var(--gold)]/30 uppercase tracking-wider">NEEDS DRIVER</span>
                           <p className="text-white font-bold text-lg">{lead.customer_name}</p>
                         </div>
-                        <p className="text-[#aaa] text-sm"><span className="font-semibold text-[#ccc]">{formatDateUS(lead.date || '')} at {lead.time}</span></p>
-                        <p className="text-[#888] text-sm">{lead.pickup} <span className="mx-1">→</span> {lead.destination}</p>
-                        <p className="text-[#888] text-sm">{lead.passengers} passengers • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}</p>
+                        <p className="text-[var(--text-subtle)] text-sm"><span className="font-semibold text-[#ccc]">{formatDateUS(lead.date || '')} at {lead.time}</span></p>
+                        <p className="text-[var(--text-muted)] text-sm">{lead.pickup} <span className="mx-1">→</span> {lead.destination}</p>
+                        <p className="text-[var(--text-muted)] text-sm">{lead.passengers} passengers • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}</p>
                       </div>
 
                       <div className="flex flex-col gap-3 w-full sm:w-auto">
@@ -4337,7 +4337,7 @@ export default function AdminPage() {
                         
                         <div className="flex items-center gap-2">
                           <select 
-                            className="bg-[#0a0a0a] border border-[#333] text-white text-sm rounded-lg px-3 py-2.5 flex-1 outline-none focus:border-[#B8960C]"
+                            className="bg-[var(--bg-deep)] border border-[var(--border-soft)] text-white text-sm rounded-lg px-3 py-2.5 flex-1 outline-none focus:border-[var(--gold)]"
                             onChange={(e) => {
                               const driverId = e.target.value;
                               if (driverId) {
@@ -4368,32 +4368,32 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div>
               <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>QR Code Generator</h1>
-              <p className="text-sm" style={{ color: '#888' }}>Generate branded QR codes for hotel partners</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Generate branded QR codes for hotel partners</p>
             </div>
 
-            <section className="rounded-xl p-6" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <div className="flex items-center gap-4 flex-wrap">
                 <input
                   type="text"
                   placeholder="hotel-slug (e.g. partner-slug)"
                   value={qrSlug}
                   onChange={(e) => setQrSlug(e.target.value)}
-                  className="flex-1 min-w-[220px] rounded-xl px-4 py-3.5 text-sm outline-none transition-colors focus:border-[#B8960C]"
-                  style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', color: '#FFFFFF' }}
+                  className="flex-1 min-w-[220px] rounded-xl px-4 py-3.5 text-sm outline-none transition-colors focus:border-[var(--gold)]"
+                  style={{ background: 'var(--bg-deep)', border: '1px solid var(--surface-alt)', color: 'var(--text)' }}
                 />
                 <button
                   onClick={generateQR}
                   className="px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
-                  style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+                  style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                 >
                   Generate QR
                 </button>
               </div>
               {qrDataUrl && (
                 <div className="mt-8 flex flex-col items-start gap-4">
-                  <div className="bg-[#1a1a1a] p-3 rounded-lg border border-[#333] w-full max-w-sm">
-                    <p className="text-xs text-[#888] mb-1 uppercase tracking-wider font-bold">QR Destination URL:</p>
-                    <p className="text-sm font-mono text-[#B8960C] break-all">{qrUrl}</p>
+                  <div className="bg-[var(--surface)] p-3 rounded-lg border border-[var(--border-soft)] w-full max-w-sm">
+                    <p className="text-xs text-[var(--text-muted)] mb-1 uppercase tracking-wider font-bold">QR Destination URL:</p>
+                    <p className="text-sm font-mono text-[var(--gold)] break-all">{qrUrl}</p>
                   </div>
                   <div className="p-4 bg-white rounded-xl">
                     <Image src={qrDataUrl} alt="QR Code" width={192} height={192} className="w-48 h-48" />
@@ -4401,8 +4401,8 @@ export default function AdminPage() {
                   <a
                     href={qrDataUrl}
                     download={`expresslift-qr-${qrSlug}.png`}
-                    className="text-xs uppercase tracking-widest font-bold transition-colors hover:text-[#D4AF37]"
-                    style={{ color: '#B8960C' }}
+                    className="text-xs uppercase tracking-widest font-bold transition-colors hover:text-[var(--gold-light)]"
+                    style={{ color: 'var(--gold)' }}
                   >
                     ↓ Download PNG
                   </a>
@@ -4421,13 +4421,13 @@ export default function AdminPage() {
               const STATUS_DOT: Record<string, string> = { paid: '#4ade80', deposit_paid: '#FBBF24', hotel_b2b: '#2dd4bf' }
               return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setViewingDay(null)}>
-                  <div className="bg-[#111] border border-[#333] rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center justify-between p-5 border-b border-[#222] bg-[#161616]">
+                  <div className="bg-[var(--bg)] border border-[var(--border-soft)] rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between p-5 border-b border-[#222] bg-[var(--surface-raised)]">
                       <div>
-                        <p className="text-[10px] uppercase tracking-widest text-[#B8960C] font-bold mb-1">Reservations</p>
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--gold)] font-bold mb-1">Reservations</p>
                         <h2 className="text-lg font-bold text-white">{formatDateUS(viewingDay)}</h2>
                       </div>
-                      <button onClick={() => setViewingDay(null)} className="text-sm text-[#aaa] hover:text-red-400 px-3 py-1 rounded-lg border border-[#333] hover:border-red-400 transition-all">x Close</button>
+                      <button onClick={() => setViewingDay(null)} className="text-sm text-[var(--text-subtle)] hover:text-red-400 px-3 py-1 rounded-lg border border-[var(--border-soft)] hover:border-red-400 transition-all">x Close</button>
                     </div>
                     <div className="flex flex-col gap-2 p-4 overflow-y-auto">
                       {dayLeads.map(l => {
@@ -4442,9 +4442,9 @@ export default function AdminPage() {
                             <p className="text-sm font-bold text-white truncate">
                               {isReturnLeg ? '↩ ' : ''}{l.time || l.return_time} — {l.customer_name}
                             </p>
-                            <p className="text-xs text-[#888] truncate">{l.pickup} → {l.destination}</p>
+                            <p className="text-xs text-[var(--text-muted)] truncate">{l.pickup} → {l.destination}</p>
                             {(l.airline || l.flight_number || (l.car_seats_requested ?? 0) > 0 || (l.luggage_count ?? 0) > 0) && (
-                              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-[#B8960C]">
+                              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-[var(--gold)]">
                                 {(l.airline || l.flight_number) && (
                                   <span>✈ {[l.airline, l.flight_number].filter(Boolean).join(' ')}</span>
                                 )}
@@ -4464,14 +4464,14 @@ export default function AdminPage() {
       {/* FULL DETAILS MODAL */}
             {viewingLead && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setViewingLead(null)}>
-                <div className="bg-[#111] border border-[#333] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="bg-[var(--bg)] border border-[var(--border-soft)] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
                   {/* Header */}
-                  <div className="flex items-center justify-between p-6 border-b border-[#222] bg-[#161616]">
+                  <div className="flex items-center justify-between p-6 border-b border-[#222] bg-[var(--surface-raised)]">
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-[#B8960C] font-bold mb-1">Reservation Details</p>
+                      <p className="text-[10px] uppercase tracking-widest text-[var(--gold)] font-bold mb-1">Reservation Details</p>
                       <h2 className="text-xl font-bold text-white">{viewingLead.customer_name || 'Anonymous'}</h2>
                     </div>
-                    <button onClick={() => { setViewingLead(null); setGeneratedLink(null); }} className="p-2 text-[#888] hover:text-white bg-[#222] rounded-full transition-colors">
+                    <button onClick={() => { setViewingLead(null); setGeneratedLink(null); }} className="p-2 text-[var(--text-muted)] hover:text-white bg-[#222] rounded-full transition-colors">
                       ✕
                     </button>
                   </div>
@@ -4481,8 +4481,8 @@ export default function AdminPage() {
                     
                     {/* Financial Summary */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4 text-center">
-                        <p className="text-xs uppercase text-[#888] font-bold tracking-wider mb-1">Total</p>
+                      <div className="bg-[var(--surface)] border border-[var(--border-soft)] rounded-xl p-4 text-center">
+                        <p className="text-xs uppercase text-[var(--text-muted)] font-bold tracking-wider mb-1">Total</p>
                         <p className="text-2xl font-bold text-white">${viewingLead.amount_usd || 0}</p>
                       </div>
                       <div className="bg-green-900/10 border border-green-900/30 rounded-xl p-4 text-center">
@@ -4500,7 +4500,7 @@ export default function AdminPage() {
                       <div className="flex items-center justify-between bg-[#B8960C10] border border-[#B8960C30] rounded-xl px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="text-base">✨</span>
-                          <span className="text-sm font-bold text-[#D4AF37]">VIP Meet &amp; Greet</span>
+                          <span className="text-sm font-bold text-[var(--gold-light)]">VIP Meet &amp; Greet</span>
                         </div>
                         <span className="text-sm font-bold text-[#4ade80]">+${viewingLead.meet_greet_fee || 25} included</span>
                       </div>
@@ -4510,11 +4510,11 @@ export default function AdminPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="flex flex-col gap-4">
                         <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Status</p>
+                          <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Status</p>
                           <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border inline-block" style={{ 
-                            backgroundColor: viewingLead.status === 'hotel_b2b' ? '#134e4a80' : viewingLead.status === 'invoice_sent' ? '#1e3a8a30' : viewingLead.status === 'lost' ? '#33161630' : viewingLead.status === 'pending_payment' ? '#7f1d1d30' : viewingLead.status === 'deposit_paid' ? '#B8960C30' : viewingLead.status === 'paid' ? '#065f4630' : viewingLead.status === 'quote_requested' ? '#EF9F2730' : '#1a1a1a',
-                            color: viewingLead.status === 'hotel_b2b' ? '#2dd4bf' : viewingLead.status === 'invoice_sent' ? '#60a5fa' : viewingLead.status === 'lost' ? '#F44336' : viewingLead.status === 'pending_payment' ? '#f87171' : viewingLead.status === 'deposit_paid' ? '#FBBF24' : viewingLead.status === 'paid' ? '#34d399' : viewingLead.status === 'quote_requested' ? '#EF9F27' : '#FFFFFF',
-                            borderColor: viewingLead.status === 'hotel_b2b' ? '#2dd4bf80' : viewingLead.status === 'invoice_sent' ? '#1e3a8a80' : viewingLead.status === 'lost' ? '#33161680' : viewingLead.status === 'pending_payment' ? '#7f1d1d80' : viewingLead.status === 'deposit_paid' ? '#B8960C80' : viewingLead.status === 'paid' ? '#065f4680' : viewingLead.status === 'quote_requested' ? '#EF9F2780' : '#333'
+                            backgroundColor: viewingLead.status === 'hotel_b2b' ? '#134e4a80' : viewingLead.status === 'invoice_sent' ? '#1e3a8a30' : viewingLead.status === 'lost' ? '#33161630' : viewingLead.status === 'pending_payment' ? '#7f1d1d30' : viewingLead.status === 'deposit_paid' ? '#B8960C30' : viewingLead.status === 'paid' ? '#065f4630' : viewingLead.status === 'quote_requested' ? '#EF9F2730' : 'var(--surface)',
+                            color: viewingLead.status === 'hotel_b2b' ? '#2dd4bf' : viewingLead.status === 'invoice_sent' ? '#60a5fa' : viewingLead.status === 'lost' ? '#F44336' : viewingLead.status === 'pending_payment' ? '#f87171' : viewingLead.status === 'deposit_paid' ? '#FBBF24' : viewingLead.status === 'paid' ? '#34d399' : viewingLead.status === 'quote_requested' ? 'var(--gold-accent)' : 'var(--text)',
+                            borderColor: viewingLead.status === 'hotel_b2b' ? '#2dd4bf80' : viewingLead.status === 'invoice_sent' ? '#1e3a8a80' : viewingLead.status === 'lost' ? '#33161680' : viewingLead.status === 'pending_payment' ? '#7f1d1d80' : viewingLead.status === 'deposit_paid' ? '#B8960C80' : viewingLead.status === 'paid' ? '#065f4680' : viewingLead.status === 'quote_requested' ? '#EF9F2780' : 'var(--border-soft)'
                           }}>
                             {viewingLead.status === 'hotel_b2b' ? 'Hotel B2B' :
                              viewingLead.status === 'quote_requested' ? 'Quote Requested' :
@@ -4527,59 +4527,59 @@ export default function AdminPage() {
                           </span>
                         </div>
                         <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">
+                          <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">
                             {viewingLead.trip_type === 'round-trip' ? 'Pick up Date & Time' : 'Date & Time'}
                           </p>
                           <p className="text-sm text-white font-medium">{formatDateUS(viewingLead.date)} at {viewingLead.time || 'TBD'}</p>
                         </div>
                         {viewingLead.trip_type === 'round-trip' && viewingLead.return_date && viewingLead.return_time && (
                           <div>
-                            <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Drop off Date & Time</p>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Drop off Date & Time</p>
                             <p className="text-sm text-white font-medium">{formatDateUS(viewingLead.return_date)} at {viewingLead.return_time}</p>
                           </div>
                         )}
                         <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Route</p>
-                          <p className="text-sm text-white"><span className="text-[#B8960C]">•</span> {viewingLead.pickup}</p>
-                          <p className="text-sm text-white"><span className="text-[#D4AF37]">↓</span> {viewingLead.destination}</p>
+                          <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Route</p>
+                          <p className="text-sm text-white"><span className="text-[var(--gold)]">•</span> {viewingLead.pickup}</p>
+                          <p className="text-sm text-white"><span className="text-[var(--gold-light)]">↓</span> {viewingLead.destination}</p>
                         </div>
                       </div>
 
                       <div className="flex flex-col gap-4">
                         <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Vehicle</p>
+                          <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Vehicle</p>
                           <p className="text-sm text-white font-medium">{VEHICLE_LABELS[viewingLead.vehicle_type] || viewingLead.vehicle_type}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Passengers</p>
+                          <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Passengers</p>
                           <p className="text-sm text-white">{viewingLead.passengers || 1} PAX</p>
                         </div>
                         {(viewingLead.luggage_count ?? 0) > 0 && (
                           <div>
-                            <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Luggage</p>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Luggage</p>
                             <p className="text-sm text-white">{viewingLead.luggage_count}</p>
                           </div>
                         )}
                         {(viewingLead.car_seats_requested ?? 0) > 0 && (
                           <div>
-                            <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Car Seats</p>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Car Seats</p>
                             <p className="text-sm text-white">{viewingLead.car_seats_requested}</p>
                           </div>
                         )}
                         {viewingLead.airline && viewingLead.flight_number && (
                           <div>
-                            <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Flight</p>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Flight</p>
                             <p className="text-sm text-white">{viewingLead.airline} — {viewingLead.flight_number}</p>
                           </div>
                         )}
                         <div>
-                          <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Contact</p>
+                          <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Contact</p>
                           <p className="text-sm text-white">{viewingLead.customer_email || 'No email'}</p>
-                          <p className="text-sm text-[#888]">{viewingLead.customer_phone || 'No phone'}</p>
+                          <p className="text-sm text-[var(--text-muted)]">{viewingLead.customer_phone || 'No phone'}</p>
                         </div>
                         {viewingLead.trip_reminder_sent_at && (
                           <div>
-                            <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-1">Pickup Reminder Email</p>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Pickup Reminder Email</p>
                             {(() => {
                               const s = viewingLead.trip_reminder_status
                               const label = s === 'delivered' ? 'Delivered'
@@ -4592,7 +4592,7 @@ export default function AdminPage() {
                               const color = s === 'delivered' || s === 'opened' ? '#4ade80'
                                 : s === 'bounced' || s === 'failed' || s === 'complained' ? '#f87171'
                                 : s === 'delivery_delayed' ? '#FBBF24'
-                                : '#888'
+                                : 'var(--text-muted)'
                               return (
                                 <p className="text-sm font-medium" style={{ color }}>
                                   ● {label}
@@ -4607,8 +4607,8 @@ export default function AdminPage() {
                     {/* Notes — free text the guest typed in (special requests), not admin-only */}
                     {viewingLead.notes && (
                       <div>
-                        <p className="text-xs text-[#666] uppercase tracking-wider font-bold mb-2">Special Requests / Notes</p>
-                        <div className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] text-sm text-[#ccc] whitespace-pre-wrap">
+                        <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-2">Special Requests / Notes</p>
+                        <div className="bg-[var(--surface)] p-4 rounded-xl border border-[var(--border-soft)] text-sm text-[#ccc] whitespace-pre-wrap">
                           {viewingLead.notes}
                         </div>
                       </div>
@@ -4622,18 +4622,18 @@ export default function AdminPage() {
                         <div className="flex items-center gap-2">
                           <input type="text" readOnly value={generatedLink} className="bg-black text-green-400 p-3 rounded-lg w-full text-xs outline-none border border-green-900/50 font-mono" />
                           <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Copied!'); }} className="text-xs font-bold uppercase tracking-widest bg-green-600 hover:bg-green-500 text-white px-4 py-3 rounded-lg transition-colors">Copy</button>
-                          <a href={generatedLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-widest bg-[#222] hover:bg-[#333] border border-[#444] text-white px-4 py-3 rounded-lg whitespace-nowrap transition-colors">Open</a>
+                          <a href={generatedLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-widest bg-[#222] hover:bg-[var(--border-soft)] border border-[#444] text-white px-4 py-3 rounded-lg whitespace-nowrap transition-colors">Open</a>
                         </div>
                       </div>
                     )}
                   </div>
 
                   {/* Actions Footer */}
-                  <div className="border-t border-[#222] bg-[#161616] p-6 flex flex-wrap gap-3 justify-end items-center">
+                  <div className="border-t border-[#222] bg-[var(--surface-raised)] p-6 flex flex-wrap gap-3 justify-end items-center">
                     <button onClick={async () => { const deleted = await deleteLead(viewingLead.id); if (deleted) setViewingLead(null); }} className="px-4 py-2 mr-auto rounded-lg text-sm font-bold border border-red-900/50 bg-red-900/10 text-red-500 hover:bg-red-900/20 transition-colors">
                       🗑️ Delete
                     </button>
-                    <button onClick={() => { setEditingLead(viewingLead); setViewingLead(null); }} className="px-4 py-2 rounded-lg text-sm font-bold border border-[#333] text-white hover:bg-[#222] transition-colors">
+                    <button onClick={() => { setEditingLead(viewingLead); setViewingLead(null); }} className="px-4 py-2 rounded-lg text-sm font-bold border border-[var(--border-soft)] text-white hover:bg-[#222] transition-colors">
                       Edit
                     </button>
                     {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
@@ -4647,7 +4647,7 @@ export default function AdminPage() {
                       </button>
                     )}
                     {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
-                      <button onClick={() => generateStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[#D4AF37] border border-[#B8960C] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
+                      <button onClick={() => generateStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[var(--gold)]/10 text-[var(--gold-light)] border border-[var(--gold)] hover:bg-[var(--gold)]/20 transition-colors flex items-center gap-2">
                         💳 Generate Payment Link
                       </button>
                     )}
@@ -4659,7 +4659,7 @@ export default function AdminPage() {
                       </button>
                     )}
                     {viewingLead.status === 'deposit_paid' && (
-                      <button onClick={() => generateRemainingStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[#D4AF37] border border-[#B8960C] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
+                      <button onClick={() => generateRemainingStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[var(--gold)]/10 text-[var(--gold-light)] border border-[var(--gold)] hover:bg-[var(--gold)]/20 transition-colors flex items-center gap-2">
                         💳 Generate Balance Link
                       </button>
                     )}
