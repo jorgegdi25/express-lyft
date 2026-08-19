@@ -77,6 +77,45 @@ export async function getConnectionStatus() {
   return data || null
 }
 
+/**
+ * Actually calls QuickBooks to prove the stored token works against the
+ * environment this deployment is pointed at. A row in the table only means
+ * someone completed OAuth once — it says nothing about whether invoicing
+ * will work now. Notably, a production token queried against the sandbox
+ * host (which is what an unset QUICKBOOKS_ENVIRONMENT silently selects)
+ * fails here with ApplicationAuthorizationFailed / 403.
+ */
+export async function verifyConnection(): Promise<
+  | { ok: true; companyName: string; realmId: string; environment: string }
+  | { ok: false; reason: string; environment: string }
+> {
+  const environment = IS_SANDBOX ? 'sandbox' : 'production'
+  try {
+    const { accessToken, realmId } = await getValidConnection()
+    const res = await fetch(`${API_BASE}/v3/company/${realmId}/companyinfo/${realmId}`, {
+      headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+      cache: 'no-store',
+    })
+    if (!res.ok) {
+      const body = await res.text()
+      const hint =
+        res.status === 403 && IS_SANDBOX
+          ? ' — this deployment is pointed at the QuickBooks sandbox. Set QUICKBOOKS_ENVIRONMENT=production and redeploy.'
+          : ''
+      return { ok: false, environment, reason: `QuickBooks returned ${res.status}${hint} ${body.slice(0, 200)}` }
+    }
+    const json = await res.json()
+    return {
+      ok: true,
+      environment,
+      realmId,
+      companyName: json?.CompanyInfo?.CompanyName || 'Unknown company',
+    }
+  } catch (err) {
+    return { ok: false, environment, reason: err instanceof Error ? err.message : 'Unknown error' }
+  }
+}
+
 async function getValidConnection() {
   const { data: connection, error } = await supabaseAdmin
     .from('quickbooks_connection')

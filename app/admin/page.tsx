@@ -407,6 +407,7 @@ export default function AdminPage() {
   const [sendingInvoice, setSendingInvoice] = useState<string | null>(null)
   const [sendingQuickBooksInvoice, setSendingQuickBooksInvoice] = useState<string | null>(null)
   const [qbConnected, setQbConnected] = useState<boolean | null>(null)
+  const [qbStatusDetail, setQbStatusDetail] = useState<{ companyName?: string; environment?: string; error?: string } | null>(null)
   const [sendingReview, setSendingReview] = useState<string | null>(null)
   const [viewingLead, setViewingLead] = useState<Lead | null>(null)
   const [viewingDay, setViewingDay] = useState<string | null>(null)
@@ -1349,8 +1350,16 @@ export default function AdminPage() {
       })
       const data = await res.json()
       setQbConnected(!!data.connected)
+      setQbStatusDetail(
+        data.connected
+          ? { companyName: data.companyName, environment: data.environment }
+          : data.error
+          ? { error: data.error, environment: data.environment }
+          : null
+      )
     } catch {
       setQbConnected(false)
+      setQbStatusDetail(null)
     }
   }
 
@@ -1965,9 +1974,39 @@ export default function AdminPage() {
         {/* QuickBooks connection status */}
         <div className="mt-auto pt-3 px-2">
           {qbConnected ? (
-            <div className="flex items-center gap-2 px-2 py-2 rounded-xl text-[11px]" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', color: '#10B981' }}>
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#10B981' }} />
-              <span className="font-semibold tracking-wide">QuickBooks Connected</span>
+            <div className="flex flex-col gap-0.5 px-2 py-2 rounded-xl text-[11px]" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', color: '#10B981' }}>
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#10B981' }} />
+                <span className="font-semibold tracking-wide">QuickBooks Connected</span>
+              </span>
+              {qbStatusDetail?.companyName && (
+                <span className="pl-3.5 text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
+                  {qbStatusDetail.companyName}
+                  {qbStatusDetail.environment === 'sandbox' && ' · sandbox'}
+                </span>
+              )}
+            </div>
+          ) : qbStatusDetail?.error ? (
+            /* OAuth was completed but the API call fails — reconnecting won't
+               help until the underlying cause (usually a wrong environment) is
+               fixed, so surface the reason instead of a "Connect" button. */
+            <div className="flex flex-col gap-1 px-2 py-2 rounded-xl text-[11px]" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171' }}>
+              <span className="flex items-center gap-2">
+                <AlertTriangle size={12} className="shrink-0" />
+                <span className="font-semibold tracking-wide">QuickBooks Failing</span>
+              </span>
+              <span className="pl-5 text-[10px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+                {qbStatusDetail.environment === 'sandbox'
+                  ? 'Pointed at sandbox — set QUICKBOOKS_ENVIRONMENT=production and redeploy.'
+                  : qbStatusDetail.error.slice(0, 120)}
+              </span>
+              <a
+                href={`/api/quickbooks/connect?key=${encodeURIComponent(password)}`}
+                className="pl-5 text-[10px] underline hover:no-underline"
+                style={{ color: 'var(--gold-light)' }}
+              >
+                Reconnect anyway
+              </a>
             </div>
           ) : (
             <a
