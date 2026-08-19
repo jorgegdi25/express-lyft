@@ -119,6 +119,87 @@ async function fulfillPaidLead(leadData: any, amountPaid: number, taxAmount: num
   await Promise.allSettled([clientProfileTask(), emailTask()])
 }
 
+export type InvoiceSyncResult =
+  | { status: 'not_ours' }
+  | { status: 'no_change'; paid: boolean }
+  | { status: 'fulfilled' }
+  | { status: 'error'; message: string }
+
+/**
+ * Looks up one QuickBooks invoice and, if it's fully paid and the matching
+ * lead hasn't been fulfilled yet, marks it paid and runs the same
+ * fulfillment as a Stripe checkout completion (calendar event, client
+ * profile, confirmation email, owner notification).
+ *
+ * Shared by the webhook handler below and the reconcile cron
+ * (app/api/cron/quickbooks-reconcile/route.ts) — the cron exists because
+ * Intuit's webhook delivery has proven unreliable in practice (invoices
+ * observed fully paid on Intuit's side with no webhook ever received), so
+ * this same logic also runs on a timer as a safety net rather than only in
+ * response to a webhook we can't fully trust.
+ */
+export async function syncInvoicePayment(invoiceId: string): Promise<InvoiceSyncResult> {
+  try {
+    const invoice = await getInvoice(invoiceId)
+    const totalAmt = invoice.TotalAmt ?? 0
+    // QuickBooks omits the Balance field entirely once an invoice is fully
+    // paid, instead of returning 0 — so a MISSING Balance means paid, not
+    // "unknown, assume the full amount is still owed".
+    const balance = invoice.Balance ?? 0
+    const isPaid = balance === 0
+    const isPartiallyPaid = balance > 0 && balance < totalAmt
+
+    const { data: existingLead } = await supabaseAdmin
+      .from('leads')
+      .select('*')
+      .eq('quickbooks_invoice_id', invoiceId)
+      .maybeSingle()
+
+    // Not one of ours (or the lead was deleted) — nothing to sync.
+    if (!existingLead) return { status: 'not_ours' }
+
+    const alreadyFulfilled = existingLead.status === 'paid'
+
+    // We add tax as a plain second line (see lib/quickbooks.ts) instead of
+    // using QuickBooks' own tax fields, so recover the amount by matching
+    // that line's description rather than reading invoice.TotalTax.
+    const taxLine = (invoice.Line || []).find(
+      (l: any) => l.Description === 'Florida Sales Tax (7%)'
+    )
+    const taxAmount = taxLine?.Amount ?? 0
+
+    const updateFields: Record<string, any> = {
+      quickbooks_invoice_status: isPaid ? 'paid' : isPartiallyPaid ? 'partially_paid' : 'sent',
+    }
+    if (isPaid && !alreadyFulfilled) {
+      updateFields.status = 'paid'
+      updateFields.amount_paid = totalAmt - taxAmount
+      updateFields.amount_remaining = 0
+      updateFields.tax_collected = (existingLead.tax_collected || 0) + taxAmount
+    }
+
+    const { data: leadData, error } = await supabaseAdmin
+      .from('leads')
+      .update(updateFields)
+      .eq('id', existingLead.id)
+      .select()
+      .single()
+
+    if (error) {
+      return { status: 'error', message: error.message }
+    }
+
+    if (isPaid && !alreadyFulfilled) {
+      await fulfillPaidLead(leadData, totalAmt - taxAmount, taxAmount)
+      return { status: 'fulfilled' }
+    }
+
+    return { status: 'no_change', paid: isPaid }
+  } catch (err) {
+    return { status: 'error', message: err instanceof Error ? err.message : String(err) }
+  }
+}
+
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
   const signature = req.headers.get('intuit-signature')
@@ -142,62 +223,9 @@ export async function POST(req: NextRequest) {
   }
 
   for (const invoiceId of Array.from(invoiceIds)) {
-    try {
-      const invoice = await getInvoice(invoiceId)
-      const totalAmt = invoice.TotalAmt ?? 0
-      // QuickBooks omits the Balance field entirely once an invoice is fully
-      // paid, instead of returning 0 — so a MISSING Balance means paid, not
-      // "unknown, assume the full amount is still owed".
-      const balance = invoice.Balance ?? 0
-      const isPaid = balance === 0
-      const isPartiallyPaid = balance > 0 && balance < totalAmt
-
-      const { data: existingLead } = await supabaseAdmin
-        .from('leads')
-        .select('*')
-        .eq('quickbooks_invoice_id', invoiceId)
-        .maybeSingle()
-
-      // Not one of ours (or the lead was deleted) — nothing to sync.
-      if (!existingLead) continue
-
-      const alreadyFulfilled = existingLead.status === 'paid'
-
-      // We add tax as a plain second line (see lib/quickbooks.ts) instead of
-      // using QuickBooks' own tax fields, so recover the amount by matching
-      // that line's description rather than reading invoice.TotalTax.
-      const taxLine = (invoice.Line || []).find(
-        (l: any) => l.Description === 'Florida Sales Tax (7%)'
-      )
-      const taxAmount = taxLine?.Amount ?? 0
-
-      const updateFields: Record<string, any> = {
-        quickbooks_invoice_status: isPaid ? 'paid' : isPartiallyPaid ? 'partially_paid' : 'sent',
-      }
-      if (isPaid && !alreadyFulfilled) {
-        updateFields.status = 'paid'
-        updateFields.amount_paid = totalAmt - taxAmount
-        updateFields.amount_remaining = 0
-        updateFields.tax_collected = (existingLead.tax_collected || 0) + taxAmount
-      }
-
-      const { data: leadData, error } = await supabaseAdmin
-        .from('leads')
-        .update(updateFields)
-        .eq('id', existingLead.id)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('[quickbooks-webhook] failed to update lead for invoice', invoiceId, error)
-        continue
-      }
-
-      if (isPaid && !alreadyFulfilled) {
-        await fulfillPaidLead(leadData, totalAmt - taxAmount, taxAmount)
-      }
-    } catch (err) {
-      console.error('[quickbooks-webhook] failed to process invoice', invoiceId, err instanceof Error ? err.message : err)
+    const result = await syncInvoicePayment(invoiceId)
+    if (result.status === 'error') {
+      console.error('[quickbooks-webhook] failed to process invoice', invoiceId, result.message)
     }
   }
 
