@@ -54,10 +54,11 @@ export async function POST(req: NextRequest) {
     }
 
     // hotel.price is the single all-in price the guest sees and pays — one
-    // number, transportation included, never itemized separately in the
-    // chat (QuickBooks' invoice still splits room/transport as two lines,
-    // same as the CRM's internal revenue split — the guest just never sees
-    // the chat quote itemized that way).
+    // number, transportation included, never itemized separately, not in
+    // the chat and not on the QuickBooks invoice either (deliberately one
+    // combined line — see createAndSendStayInvoice). room_amount /
+    // transport_amount below is purely an internal split for our own
+    // revenue reports; the guest never sees it broken out anywhere.
     const total = Math.round(hotel.price * roomQty * nights * 100) / 100
     const transportAmount = Math.min(Math.round(hotel.transport_amount * 100) / 100, total)
     const roomAmount = Math.round((total - transportAmount) * 100) / 100
@@ -96,15 +97,15 @@ export async function POST(req: NextRequest) {
     const roomLabel = roomType === '2_beds' ? '2 Beds' : '1 Bed'
 
     try {
+      // One combined line, deliberately not split into room vs. transport —
+      // see the comment on createAndSendStayInvoice for why.
       const invoice = await createAndSendStayInvoice({
         guestName,
         guestEmail,
         guestPhone,
-        roomAmount,
-        transportAmount,
+        amount: total,
         taxAmount,
-        roomDescription: `${hotel.name} — ${roomQty}x ${roomLabel} (${nights} night${nights > 1 ? 's' : ''}) — Check-in ${checkInDate}`,
-        transportDescription: `Airport transportation — Fort Lauderdale Airport (FLL) → ${hotel.name}, pickup ${pickupTime}`,
+        description: `${hotel.name} — ${roomQty}x ${roomLabel} (${nights} night${nights > 1 ? 's' : ''}), airport transportation included — Check-in ${checkInDate}, pickup ${pickupTime}`,
       })
 
       await supabaseAdmin
