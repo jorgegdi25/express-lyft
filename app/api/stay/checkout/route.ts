@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createAndSendStayInvoice } from '@/lib/quickbooks'
 import { STAY_LODGING_TAX_RATE_PERCENT } from '@/lib/stayTax'
+import { checkDiscountCode, redeemDiscountCode } from '@/lib/discountCodes'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
       airline,
       flightNumber,
       pickupTime,
+      discountCode,
     } = body
 
     if (!stayHotelId || !roomType || !roomQty || !nights || !checkInDate) {
@@ -58,7 +60,17 @@ export async function POST(req: NextRequest) {
     // chat (QuickBooks' invoice still splits room/transport as two lines,
     // same as the CRM's internal revenue split — the guest just never sees
     // the chat quote itemized that way).
-    const total = Math.round(hotel.price * roomQty * nights * 100) / 100
+    let total = Math.round(hotel.price * roomQty * nights * 100) / 100
+    let appliedDiscountCode: string | null = null
+    let appliedDiscountAmount = 0
+    if (discountCode) {
+      const check = await checkDiscountCode(discountCode, total)
+      if (check.valid) {
+        appliedDiscountCode = check.code
+        appliedDiscountAmount = check.discountAmount
+        total = check.finalAmount
+      }
+    }
     const transportAmount = Math.min(Math.round(hotel.transport_amount * 100) / 100, total)
     const roomAmount = Math.round((total - transportAmount) * 100) / 100
     const taxAmount = Math.round(total * (STAY_LODGING_TAX_RATE_PERCENT / 100) * 100) / 100
@@ -83,6 +95,8 @@ export async function POST(req: NextRequest) {
         room_amount: roomAmount,
         transport_amount: transportAmount,
         total_amount: total,
+        discount_code: appliedDiscountCode,
+        discount_amount: appliedDiscountAmount,
         status: 'pending_payment',
       })
       .select()
@@ -93,18 +107,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
     }
 
+    if (appliedDiscountCode) {
+      await redeemDiscountCode(appliedDiscountCode)
+    }
+
     const roomLabel = roomType === '2_beds' ? '2 Beds' : '1 Bed'
 
     try {
+      // One combined line, deliberately not split into room vs. transport —
+      // see the comment on createAndSendStayInvoice for why.
       const invoice = await createAndSendStayInvoice({
         guestName,
         guestEmail,
         guestPhone,
-        roomAmount,
-        transportAmount,
+        amount: total,
         taxAmount,
-        roomDescription: `${hotel.name} — ${roomQty}x ${roomLabel} (${nights} night${nights > 1 ? 's' : ''}) — Check-in ${checkInDate}`,
-        transportDescription: `Airport transportation — Fort Lauderdale Airport (FLL) → ${hotel.name}, pickup ${pickupTime}`,
+        description: `${hotel.name} — ${roomQty}x ${roomLabel} (${nights} night${nights > 1 ? 's' : ''}), airport transportation included — Check-in ${checkInDate}, pickup ${pickupTime}`,
       })
 
       await supabaseAdmin

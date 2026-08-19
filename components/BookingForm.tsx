@@ -135,6 +135,10 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   const [selectedVehicleOverride, setSelectedVehicleOverride] = useState<VehicleType | null>(null)
   const [step, setStep] = useState<number>(1)
   const [paymentMode, setPaymentMode] = useState<'full' | 'deposit'>('full')
+  const [discountInput, setDiscountInput] = useState('')
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; type: 'percent' | 'fixed'; value: number } | null>(null)
+  const [discountChecking, setDiscountChecking] = useState(false)
+  const [discountError, setDiscountError] = useState<string | null>(null)
 
   // If the owner turns deposits off after the guest already picked that
   // option, fall back to full payment instead of submitting a stale choice.
@@ -353,16 +357,52 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     ? Math.ceil(applyTimeSurcharge(getPricesForRoute(d, p)[vehicleType], returnTime, surcharge))
     : 0
   const total = (tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice) + meetGreetFee
+  // Discount codes never apply to deposits — the deposit is always 20% of
+  // the undiscounted total, only the "pay in full" total is reduced.
+  const discountAmount = appliedDiscount
+    ? Math.min(appliedDiscount.type === 'percent' ? total * (appliedDiscount.value / 100) : appliedDiscount.value, total)
+    : 0
+  const discountedTotal = Math.round((total - discountAmount) * 100) / 100
   const depositAmount = Math.ceil(total * 0.20)
-  const chargeAmount = paymentMode === 'deposit' ? depositAmount : total
+  const chargeAmount = paymentMode === 'deposit' ? depositAmount : discountedTotal
   // Display-only: shown so the customer sees the same tax-inclusive number
   // here that Stripe actually charges, instead of the total jumping up once
   // they reach checkout. The pre-tax `total`/`depositAmount` above are still
   // what gets sent to the server — Stripe adds the real tax on its own.
   const taxMultiplier = 1 + FL_TAX_RATE_PERCENT / 100
-  const totalWithTax = (total * taxMultiplier).toFixed(2)
+  const totalWithTax = (discountedTotal * taxMultiplier).toFixed(2)
   const depositWithTax = (depositAmount * taxMultiplier).toFixed(2)
   const remainingWithTax = ((total - depositAmount) * taxMultiplier).toFixed(2)
+
+  async function applyDiscountCode() {
+    if (!discountInput.trim()) return
+    setDiscountChecking(true)
+    setDiscountError(null)
+    try {
+      const res = await fetch('/api/discount-codes/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: discountInput, amount: total }),
+      })
+      const data = await res.json()
+      if (!data.valid) {
+        setDiscountError(data.error || 'Invalid code.')
+        setAppliedDiscount(null)
+        return
+      }
+      setAppliedDiscount({ code: data.code, type: data.type, value: data.value })
+    } catch {
+      setDiscountError('Could not check that code right now.')
+    } finally {
+      setDiscountChecking(false)
+    }
+  }
+
+  function removeDiscountCode() {
+    setAppliedDiscount(null)
+    setDiscountInput('')
+    setDiscountError(null)
+  }
 
   const availableDestinations = LOCATIONS.filter((l) => l !== pickup)
   const availablePickups = LOCATIONS.filter((l) => l !== destination)
@@ -422,7 +462,8 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           date,
           time,
           passengers,
-          estimatedTotal: isPromo ? 0 : total,
+          estimatedTotal: isPromo ? 0 : (paymentMode === 'deposit' ? total : discountedTotal),
+          discountCode: paymentMode === 'deposit' ? undefined : appliedDiscount?.code,
           tripType,
           returnDate: tripType === 'round-trip' ? returnDate : undefined,
           returnTime: tripType === 'round-trip' ? returnTime : undefined,
@@ -1178,6 +1219,43 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   {/* Estimated Total */}
                   {!isPromo && vehicleType !== 'coachbus' && vehicleType !== 'minibus' && (
                     <>
+                      {/* Discount Code */}
+                      {paymentMode !== 'deposit' && (
+                        <div>
+                          {!appliedDiscount ? (
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={discountInput}
+                                onChange={(e) => { setDiscountInput(e.target.value.toUpperCase()); setDiscountError(null) }}
+                                placeholder="Have a discount code?"
+                                className={`${INPUT_CLASS} flex-1`}
+                                style={INPUT_STYLE}
+                              />
+                              <button
+                                type="button"
+                                onClick={applyDiscountCode}
+                                disabled={discountChecking || !discountInput.trim()}
+                                className="px-5 rounded-xl text-sm font-bold uppercase tracking-wider disabled:opacity-50"
+                                style={{ border: '1px solid var(--gold)', color: 'var(--gold)' }}
+                              >
+                                {discountChecking ? '...' : 'Apply'}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.3)' }}>
+                              <span className="text-sm font-semibold" style={{ color: '#4ade80' }}>
+                                Code {appliedDiscount.code} applied — {appliedDiscount.type === 'percent' ? `${appliedDiscount.value}% off` : `$${appliedDiscount.value} off`}
+                              </span>
+                              <button type="button" onClick={removeDiscountCode} className="text-xs font-bold uppercase" style={{ color: 'var(--text-muted)' }}>
+                                Remove
+                              </button>
+                            </div>
+                          )}
+                          {discountError && <p className="text-xs mt-1.5" style={{ color: '#f87171' }}>{discountError}</p>}
+                        </div>
+                      )}
+
                       <div
                         className="rounded-xl px-5 py-4 flex items-center justify-between"
                         style={{
@@ -1190,7 +1268,14 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                             Estimated Total
                           </p>
                           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            ${total} + {FL_TAX_RATE_PERCENT}% FL sales tax
+                            {appliedDiscount && paymentMode !== 'deposit' ? (
+                              <>
+                                <span className="line-through mr-1.5">${total}</span>
+                                ${discountedTotal} + {FL_TAX_RATE_PERCENT}% FL sales tax
+                              </>
+                            ) : (
+                              <>${total} + {FL_TAX_RATE_PERCENT}% FL sales tax</>
+                            )}
                           </p>
                           {tripType === 'round-trip' && (
                             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Round trip included</p>

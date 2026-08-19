@@ -254,7 +254,7 @@ async function getOrCreateServiceItem(realmId: string, accessToken: string, item
 // what actually got written onto the invoice here.
 export const TAX_ITEM_NAME = 'Florida Sales Tax (7%)'
 export const STAY_TAX_ITEM_NAME = 'FL Lodging Tax (13%)'
-const STAY_ROOM_ITEM_NAME = 'Hotel Room (Stay)'
+const STAY_ROOM_ITEM_NAME = 'Hotel Stay (Room & Transportation)'
 
 // A plain line item for the tax amount (flat rate, not QuickBooks' Automated
 // Sales Tax engine, which needs per-item tax categories and nexus setup we
@@ -347,22 +347,23 @@ export async function createAndSendInvoice(params: {
   return { ...invoice, emailSent, invoiceLink }
 }
 
-// Stay's own version: two revenue lines (room + the transport leg, kept
-// separate so the CRM's revenue split still works the same way it does for
-// Stripe — see room_amount/transport_amount in app/api/stay/checkout) plus
-// the 13% lodging tax line instead of the 7% transport tax. The tax line's
-// exact text ('FL Lodging Tax (13%)') is what the webhook looks for later to
-// recover the taxed amount — same pattern as the transport invoice's
-// 'Florida Sales Tax (7%)' line, see syncStayInvoicePayment.
+// Stay's own version: ONE combined revenue line (room + transport as a
+// single all-in charge — deliberately not itemized, so a guest can't take
+// the invoice and price-shop the room and the ride separately against other
+// platforms; see room_amount/transport_amount in app/api/stay/checkout for
+// where that split still lives, purely internal to our own revenue
+// reports) plus the 13% lodging tax line instead of the 7% transport tax.
+// The tax line's exact text ('FL Lodging Tax (13%)') is what the webhook
+// looks for later to recover the taxed amount — same pattern as the
+// transport invoice's 'Florida Sales Tax (7%)' line, see
+// syncStayInvoicePayment.
 export async function createAndSendStayInvoice(params: {
   guestName: string
   guestEmail: string
   guestPhone?: string
-  roomAmount: number
-  transportAmount: number
+  amount: number
   taxAmount: number
-  roomDescription: string
-  transportDescription: string
+  description: string
 }) {
   const { accessToken, realmId } = await getValidConnection()
 
@@ -372,21 +373,14 @@ export async function createAndSendStayInvoice(params: {
     phone: params.guestPhone,
   })
 
-  const roomItem = await getOrCreateServiceItem(realmId, accessToken, STAY_ROOM_ITEM_NAME)
-  const transportItem = await getOrCreateServiceItem(realmId, accessToken)
+  const item = await getOrCreateServiceItem(realmId, accessToken, STAY_ROOM_ITEM_NAME)
 
   const lines: any[] = [
     {
-      Amount: params.roomAmount,
+      Amount: params.amount,
       DetailType: 'SalesItemLineDetail',
-      SalesItemLineDetail: { ItemRef: { value: roomItem.Id } },
-      Description: params.roomDescription,
-    },
-    {
-      Amount: params.transportAmount,
-      DetailType: 'SalesItemLineDetail',
-      SalesItemLineDetail: { ItemRef: { value: transportItem.Id } },
-      Description: params.transportDescription,
+      SalesItemLineDetail: { ItemRef: { value: item.Id } },
+      Description: params.description,
     },
   ]
 

@@ -62,6 +62,11 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [discountInput, setDiscountInput] = useState('')
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; type: 'percent' | 'fixed'; value: number } | null>(null)
+  const [discountChecking, setDiscountChecking] = useState(false)
+  const [discountError, setDiscountError] = useState<string | null>(null)
+
   const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
@@ -118,10 +123,44 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
   }
 
   const total = selectedHotel ? selectedHotel.price * roomQty * nights : 0
+  const discountAmount = appliedDiscount
+    ? Math.min(appliedDiscount.type === 'percent' ? total * (appliedDiscount.value / 100) : appliedDiscount.value, total)
+    : 0
+  const discountedTotal = Math.round((total - discountAmount) * 100) / 100
   // Same 13% used server-side (lib/stayTax.ts) to build the QuickBooks
   // invoice — shown here so the guest sees the real charge before paying,
   // not a vague "taxes calculated at checkout".
-  const lodgingTax = Math.round(total * (STAY_LODGING_TAX_RATE_PERCENT / 100) * 100) / 100
+  const lodgingTax = Math.round(discountedTotal * (STAY_LODGING_TAX_RATE_PERCENT / 100) * 100) / 100
+
+  async function applyDiscountCode() {
+    if (!discountInput.trim()) return
+    setDiscountChecking(true)
+    setDiscountError(null)
+    try {
+      const res = await fetch('/api/discount-codes/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: discountInput, amount: total }),
+      })
+      const data = await res.json()
+      if (!data.valid) {
+        setDiscountError(data.error || 'Invalid code.')
+        setAppliedDiscount(null)
+        return
+      }
+      setAppliedDiscount({ code: data.code, type: data.type, value: data.value })
+    } catch {
+      setDiscountError('Could not check that code right now.')
+    } finally {
+      setDiscountChecking(false)
+    }
+  }
+
+  function removeDiscountCode() {
+    setAppliedDiscount(null)
+    setDiscountInput('')
+    setDiscountError(null)
+  }
 
   async function submitPayment() {
     if (!selectedHotel) return
@@ -144,6 +183,7 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
           airline: airline || undefined,
           flightNumber: flightNumber || undefined,
           pickupTime,
+          discountCode: appliedDiscount?.code,
         }),
       })
       const data = await res.json()
@@ -298,9 +338,43 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
           <div className="flex justify-between text-sm"><span className="text-[#888]">Airport pickup</span><span className="text-white font-semibold">FLL → {selectedHotel.name} · {pickupTime}</span></div>
           <div className="flex justify-between text-sm"><span className="text-[#888]">Guest</span><span className="text-white font-semibold">{guestName}</span></div>
           <hr style={{ borderColor: '#2a2a2a' }} />
+
+          {!appliedDiscount ? (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={discountInput}
+                onChange={(e) => { setDiscountInput(e.target.value.toUpperCase()); setDiscountError(null) }}
+                placeholder="Have a discount code?"
+                className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
+                style={{ background: '#0f0f0f', border: '1px solid #2a2a2a', color: 'white' }}
+              />
+              <button
+                type="button"
+                onClick={applyDiscountCode}
+                disabled={discountChecking || !discountInput.trim()}
+                className="px-4 rounded-lg text-xs font-bold uppercase tracking-wider disabled:opacity-50"
+                style={{ border: '1px solid #D4AF37', color: '#D4AF37' }}
+              >
+                {discountChecking ? '...' : 'Apply'}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.3)' }}>
+              <span className="text-xs font-semibold" style={{ color: '#4ade80' }}>
+                Code {appliedDiscount.code} applied — {appliedDiscount.type === 'percent' ? `${appliedDiscount.value}% off` : `$${appliedDiscount.value} off`}
+              </span>
+              <button type="button" onClick={removeDiscountCode} className="text-xs font-bold uppercase text-[#888]">Remove</button>
+            </div>
+          )}
+          {discountError && <p className="text-xs text-red-400">{discountError}</p>}
+
           <div className="flex justify-between text-sm"><span className="text-[#888]">Subtotal (transportation included)</span><span className="text-white">${total.toFixed(2)}</span></div>
+          {appliedDiscount && (
+            <div className="flex justify-between text-sm"><span className="text-[#888]">Discount</span><span className="text-[#4ade80]">-${discountAmount.toFixed(2)}</span></div>
+          )}
           <div className="flex justify-between text-sm"><span className="text-[#888]">FL Lodging Tax ({STAY_LODGING_TAX_RATE_PERCENT}%)</span><span className="text-white">${lodgingTax.toFixed(2)}</span></div>
-          <div className="flex justify-between text-base"><span className="text-[#ccc]">Total</span><span className="text-[#D4AF37] font-bold">${(total + lodgingTax).toFixed(2)}</span></div>
+          <div className="flex justify-between text-base"><span className="text-[#ccc]">Total</span><span className="text-[#D4AF37] font-bold">${(discountedTotal + lodgingTax).toFixed(2)}</span></div>
           <p className="text-xs text-[#666]">You'll pay on a secure QuickBooks page, then get your confirmation by email — please check spam/junk too.</p>
           {error && <p className="text-xs text-red-400">{error}</p>}
           <button onClick={submitPayment} disabled={submitting} className="mt-1 py-4 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-60" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>
