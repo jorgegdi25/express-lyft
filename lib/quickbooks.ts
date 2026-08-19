@@ -213,13 +213,13 @@ async function findOrCreateCustomer(
   return createCustomer(realmId, accessToken, info)
 }
 
-async function findServiceItem(realmId: string, accessToken: string) {
-  const query = `select * from Item where Name = '${escapeQb(SERVICE_ITEM_NAME)}'`
+async function findServiceItem(realmId: string, accessToken: string, itemName: string) {
+  const query = `select * from Item where Name = '${escapeQb(itemName)}'`
   const data = await qbFetch(realmId, accessToken, `/query?query=${encodeURIComponent(query)}`)
   return data.QueryResponse?.Item?.[0] || null
 }
 
-async function createServiceItem(realmId: string, accessToken: string) {
+async function createServiceItem(realmId: string, accessToken: string, itemName: string) {
   const accountsData = await qbFetch(
     realmId,
     accessToken,
@@ -233,7 +233,7 @@ async function createServiceItem(realmId: string, accessToken: string) {
   const data = await qbFetch(realmId, accessToken, '/item', {
     method: 'POST',
     body: JSON.stringify({
-      Name: SERVICE_ITEM_NAME,
+      Name: itemName,
       Type: 'Service',
       IncomeAccountRef: { value: incomeAccount.Id },
     }),
@@ -241,50 +241,30 @@ async function createServiceItem(realmId: string, accessToken: string) {
   return data.Item
 }
 
-async function getOrCreateServiceItem(realmId: string, accessToken: string) {
-  const existing = await findServiceItem(realmId, accessToken)
+// Line items are looked up (or created once) by name — same pattern for the
+// transport service, the room charge, and either tax item below.
+async function getOrCreateServiceItem(realmId: string, accessToken: string, itemName: string = SERVICE_ITEM_NAME) {
+  const existing = await findServiceItem(realmId, accessToken, itemName)
   if (existing) return existing
-  return createServiceItem(realmId, accessToken)
+  return createServiceItem(realmId, accessToken, itemName)
 }
 
-const TAX_ITEM_NAME = 'Florida Sales Tax (7%)'
+// Exported so the webhook/cron reconciliation code (which needs to find
+// these exact strings again on an invoice's line items) can't drift from
+// what actually got written onto the invoice here.
+export const TAX_ITEM_NAME = 'Florida Sales Tax (7%)'
+export const STAY_TAX_ITEM_NAME = 'FL Lodging Tax (13%)'
+const STAY_ROOM_ITEM_NAME = 'Hotel Room (Stay)'
 
-async function findTaxItem(realmId: string, accessToken: string) {
-  const query = `select * from Item where Name = '${escapeQb(TAX_ITEM_NAME)}'`
-  const data = await qbFetch(realmId, accessToken, `/query?query=${encodeURIComponent(query)}`)
-  return data.QueryResponse?.Item?.[0] || null
-}
-
-async function createTaxItem(realmId: string, accessToken: string) {
-  const accountsData = await qbFetch(
-    realmId,
-    accessToken,
-    `/query?query=${encodeURIComponent("select * from Account where AccountType = 'Income' maxresults 1")}`
-  )
-  const incomeAccount = accountsData.QueryResponse?.Account?.[0]
-  if (!incomeAccount) {
-    throw new Error('No se encontró una cuenta de ingresos en QuickBooks para asociar el impuesto')
-  }
-
-  const data = await qbFetch(realmId, accessToken, '/item', {
-    method: 'POST',
-    body: JSON.stringify({
-      Name: TAX_ITEM_NAME,
-      Type: 'Service',
-      IncomeAccountRef: { value: incomeAccount.Id },
-    }),
-  })
-  return data.Item
-}
-
-// A plain line item for the tax amount, added at a flat 7% — same approach
-// already used for Stripe (lib/tax.ts), instead of relying on QuickBooks'
-// Automated Sales Tax engine, which needs per-item tax categories and nexus
-// setup we don't have configured.
-async function getOrCreateTaxItem(realmId: string, accessToken: string) {
-  const existing = await findTaxItem(realmId, accessToken)
+// A plain line item for the tax amount (flat rate, not QuickBooks' Automated
+// Sales Tax engine, which needs per-item tax categories and nexus setup we
+// don't have configured) — same approach already used for Stripe
+// (lib/tax.ts / lib/stayTax.ts). Transport and Stay are taxed at different
+// rates, so they're two distinct named items, not one shared one.
+async function getOrCreateTaxItem(realmId: string, accessToken: string, itemName: string = TAX_ITEM_NAME) {
+  const existing = await findServiceItem(realmId, accessToken, itemName)
   if (existing) return existing
-  return createTaxItem(realmId, accessToken)
+  return createServiceItem(realmId, accessToken, itemName)
 }
 
 export async function createAndSendInvoice(params: {
@@ -362,6 +342,94 @@ export async function createAndSendInvoice(params: {
   } catch (err) {
     emailSent = false
     console.error('[quickbooks] invoice created but email send failed:', err instanceof Error ? err.message : err)
+  }
+
+  return { ...invoice, emailSent, invoiceLink }
+}
+
+// Stay's own version: two revenue lines (room + the transport leg, kept
+// separate so the CRM's revenue split still works the same way it does for
+// Stripe — see room_amount/transport_amount in app/api/stay/checkout) plus
+// the 13% lodging tax line instead of the 7% transport tax. The tax line's
+// exact text ('FL Lodging Tax (13%)') is what the webhook looks for later to
+// recover the taxed amount — same pattern as the transport invoice's
+// 'Florida Sales Tax (7%)' line, see syncStayInvoicePayment.
+export async function createAndSendStayInvoice(params: {
+  guestName: string
+  guestEmail: string
+  guestPhone?: string
+  roomAmount: number
+  transportAmount: number
+  taxAmount: number
+  roomDescription: string
+  transportDescription: string
+}) {
+  const { accessToken, realmId } = await getValidConnection()
+
+  const customer = await findOrCreateCustomer(realmId, accessToken, {
+    name: params.guestName,
+    email: params.guestEmail,
+    phone: params.guestPhone,
+  })
+
+  const roomItem = await getOrCreateServiceItem(realmId, accessToken, STAY_ROOM_ITEM_NAME)
+  const transportItem = await getOrCreateServiceItem(realmId, accessToken)
+
+  const lines: any[] = [
+    {
+      Amount: params.roomAmount,
+      DetailType: 'SalesItemLineDetail',
+      SalesItemLineDetail: { ItemRef: { value: roomItem.Id } },
+      Description: params.roomDescription,
+    },
+    {
+      Amount: params.transportAmount,
+      DetailType: 'SalesItemLineDetail',
+      SalesItemLineDetail: { ItemRef: { value: transportItem.Id } },
+      Description: params.transportDescription,
+    },
+  ]
+
+  if (params.taxAmount > 0) {
+    const taxItem = await getOrCreateTaxItem(realmId, accessToken, STAY_TAX_ITEM_NAME)
+    lines.push({
+      Amount: Math.round(params.taxAmount * 100) / 100,
+      DetailType: 'SalesItemLineDetail',
+      SalesItemLineDetail: { ItemRef: { value: taxItem.Id } },
+      Description: STAY_TAX_ITEM_NAME,
+    })
+  }
+
+  const invoiceData = await qbFetch(realmId, accessToken, '/invoice', {
+    method: 'POST',
+    body: JSON.stringify({
+      CustomerRef: { value: customer.Id },
+      BillEmail: { Address: params.guestEmail },
+      Line: lines,
+    }),
+  })
+
+  const invoice = invoiceData.Invoice
+
+  let invoiceLink: string | null = null
+  try {
+    const linkData = await qbFetch(realmId, accessToken, `/invoice/${invoice.Id}?include=invoiceLink`)
+    invoiceLink = linkData.Invoice?.InvoiceLink || null
+  } catch (err) {
+    console.error('[quickbooks][stay] failed to fetch invoice link:', err instanceof Error ? err.message : err)
+  }
+
+  let emailSent = true
+  try {
+    await qbFetch(
+      realmId,
+      accessToken,
+      `/invoice/${invoice.Id}/send?sendTo=${encodeURIComponent(params.guestEmail)}`,
+      { method: 'POST' }
+    )
+  } catch (err) {
+    emailSent = false
+    console.error('[quickbooks][stay] invoice created but email send failed:', err instanceof Error ? err.message : err)
   }
 
   return { ...invoice, emailSent, invoiceLink }

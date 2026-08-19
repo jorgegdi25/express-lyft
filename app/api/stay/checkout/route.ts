@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { stripe } from '@/lib/stripe'
-import { stayLodgingTaxRateIds } from '@/lib/stayTax'
+import { createAndSendStayInvoice } from '@/lib/quickbooks'
+import { STAY_LODGING_TAX_RATE_PERCENT } from '@/lib/stayTax'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,13 +54,14 @@ export async function POST(req: NextRequest) {
     }
 
     // hotel.price is the single all-in price the guest sees and pays — one
-    // number, transportation included, never itemized separately (not in
-    // the chat, not at Stripe checkout). room_amount/transport_amount below
-    // are an internal-only split so the transport leg can still get its own
-    // dollar figure on the CRM's revenue reports; the guest never sees it.
+    // number, transportation included, never itemized separately in the
+    // chat (QuickBooks' invoice still splits room/transport as two lines,
+    // same as the CRM's internal revenue split — the guest just never sees
+    // the chat quote itemized that way).
     const total = Math.round(hotel.price * roomQty * nights * 100) / 100
     const transportAmount = Math.min(Math.round(hotel.transport_amount * 100) / 100, total)
     const roomAmount = Math.round((total - transportAmount) * 100) / 100
+    const taxAmount = Math.round(total * (STAY_LODGING_TAX_RATE_PERCENT / 100) * 100) / 100
 
     const { data: booking, error: insertErr } = await supabaseAdmin
       .from('stay_bookings')
@@ -92,39 +93,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
     }
 
-    const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const successUrl = `${origin}/stay?success=true&booking_id=${booking.id}&session_id={CHECKOUT_SESSION_ID}#book`
-    const cancelUrl = `${origin}/stay`
-
     const roomLabel = roomType === '2_beds' ? '2 Beds' : '1 Bed'
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      invoice_creation: { enabled: true },
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `${hotel.name} — ${roomQty}x ${roomLabel} (${nights} night${nights > 1 ? 's' : ''}) — Airport transportation included`,
-              description: `Check-in ${checkInDate}`,
-            },
-            unit_amount: Math.round(total * 100),
-          },
-          quantity: 1,
-          tax_rates: stayLodgingTaxRateIds(),
-        },
-      ],
-      mode: 'payment',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      customer_email: guestEmail,
-      metadata: {
-        stay_booking_id: booking.id,
-      },
-    })
+    try {
+      const invoice = await createAndSendStayInvoice({
+        guestName,
+        guestEmail,
+        guestPhone,
+        roomAmount,
+        transportAmount,
+        taxAmount,
+        roomDescription: `${hotel.name} — ${roomQty}x ${roomLabel} (${nights} night${nights > 1 ? 's' : ''}) — Check-in ${checkInDate}`,
+        transportDescription: `Airport transportation — Fort Lauderdale Airport (FLL) → ${hotel.name}, pickup ${pickupTime}`,
+      })
 
-    return NextResponse.json({ success: true, url: session.url })
+      await supabaseAdmin
+        .from('stay_bookings')
+        .update({ quickbooks_invoice_id: invoice.Id, quickbooks_invoice_status: 'sent' })
+        .eq('id', booking.id)
+
+      if (!invoice.invoiceLink) {
+        console.error('[stay/checkout] QuickBooks invoice created but no payment link returned for booking', booking.id)
+        return NextResponse.json({ error: 'Failed to generate a QuickBooks payment link' }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, url: invoice.invoiceLink })
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : JSON.stringify(err)
+      console.error('[stay/checkout] QuickBooks invoice creation failed for booking', booking.id, errorMsg)
+      return NextResponse.json({ error: 'Failed to create QuickBooks invoice: ' + errorMsg }, { status: 500 })
+    }
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : JSON.stringify(err)
     console.error('[stay/checkout] POST error:', errorMsg, 'Body:', body || 'no-body-read')

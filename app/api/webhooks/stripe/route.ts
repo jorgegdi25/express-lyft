@@ -6,7 +6,6 @@ import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
 import Stripe from 'stripe'
 import { createCalendarEvent } from '@/lib/calendar'
 import { sessionTaxAmount } from '@/lib/tax'
-import { fulfillStayBooking } from '@/lib/stayBooking'
 
 export const dynamic = 'force-dynamic'
 // Sin esto, Vercel usa un timeout bajo (~15s) y en cold start el trabajo
@@ -47,17 +46,6 @@ export async function POST(req: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const leadId = session.metadata?.lead_id
-    const stayBookingId = session.metadata?.stay_booking_id
-
-    if (stayBookingId) {
-      try {
-        const result = await fulfillStayBooking(session)
-        if (!result.ok) console.error(`[webhook][stay] fulfillStayBooking failed for booking ${stayBookingId}:`, result.reason)
-      } catch (e) {
-        console.error(`[webhook][stay] Unexpected error fulfilling booking ${stayBookingId}:`, e)
-      }
-      return NextResponse.json({ received: true })
-    }
 
     if (leadId) {
       // Determine if this was a deposit or full payment

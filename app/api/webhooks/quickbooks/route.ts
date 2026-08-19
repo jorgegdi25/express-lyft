@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase'
-import { getInvoice } from '@/lib/quickbooks'
+import { getInvoice, TAX_ITEM_NAME, STAY_TAX_ITEM_NAME } from '@/lib/quickbooks'
 import { createCalendarEvent } from '@/lib/calendar'
 import { resend, sendOwnerNotification } from '@/lib/resend'
 import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
+import { fulfillStayBooking } from '@/lib/stayBooking'
 
 export const dynamic = 'force-dynamic'
 // Same reasoning as the Stripe webhook (app/api/webhooks/stripe/route.ts):
@@ -164,7 +165,7 @@ export async function syncInvoicePayment(invoiceId: string): Promise<InvoiceSync
     // using QuickBooks' own tax fields, so recover the amount by matching
     // that line's description rather than reading invoice.TotalTax.
     const taxLine = (invoice.Line || []).find(
-      (l: any) => l.Description === 'Florida Sales Tax (7%)'
+      (l: any) => l.Description === TAX_ITEM_NAME
     )
     const taxAmount = taxLine?.Amount ?? 0
 
@@ -200,6 +201,58 @@ export async function syncInvoicePayment(invoiceId: string): Promise<InvoiceSync
   }
 }
 
+/**
+ * Same idea as syncInvoicePayment above, for Stay's hotel+transport
+ * invoices instead of a transport-only lead. A given invoice ID belongs to
+ * exactly one of the two tables, never both, so callers try this one after
+ * syncInvoicePayment reports 'not_ours'.
+ */
+export async function syncStayInvoicePayment(invoiceId: string): Promise<InvoiceSyncResult> {
+  try {
+    const invoice = await getInvoice(invoiceId)
+    const totalAmt = invoice.TotalAmt ?? 0
+    const balance = invoice.Balance ?? 0
+    const isPaid = balance === 0
+    const isPartiallyPaid = balance > 0 && balance < totalAmt
+
+    const { data: existingBooking } = await supabaseAdmin
+      .from('stay_bookings')
+      .select('*')
+      .eq('quickbooks_invoice_id', invoiceId)
+      .maybeSingle()
+
+    if (!existingBooking) return { status: 'not_ours' }
+
+    const alreadyFulfilled = existingBooking.status === 'paid' || existingBooking.status === 'paid_overbooked'
+
+    const taxLine = (invoice.Line || []).find((l: any) => l.Description === STAY_TAX_ITEM_NAME)
+    const taxAmount = taxLine?.Amount ?? 0
+
+    if (!isPaid || alreadyFulfilled) {
+      const { error } = await supabaseAdmin
+        .from('stay_bookings')
+        .update({ quickbooks_invoice_status: isPaid ? 'paid' : isPartiallyPaid ? 'partially_paid' : 'sent' })
+        .eq('id', existingBooking.id)
+      if (error) return { status: 'error', message: error.message }
+      return { status: 'no_change', paid: isPaid }
+    }
+
+    // fulfillStayBooking does its own atomic claim (status must still be
+    // 'pending_payment' at that point) — this quickbooks_invoice_status
+    // write is just bookkeeping, not what guards against double-fulfillment.
+    await supabaseAdmin
+      .from('stay_bookings')
+      .update({ quickbooks_invoice_status: 'paid' })
+      .eq('id', existingBooking.id)
+
+    const result = await fulfillStayBooking(existingBooking.id, taxAmount)
+    if (!result.ok) return { status: 'error', message: result.reason }
+    return { status: 'fulfilled' }
+  } catch (err) {
+    return { status: 'error', message: err instanceof Error ? err.message : String(err) }
+  }
+}
+
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
   const signature = req.headers.get('intuit-signature')
@@ -223,7 +276,10 @@ export async function POST(req: NextRequest) {
   }
 
   for (const invoiceId of Array.from(invoiceIds)) {
-    const result = await syncInvoicePayment(invoiceId)
+    let result = await syncInvoicePayment(invoiceId)
+    if (result.status === 'not_ours') {
+      result = await syncStayInvoicePayment(invoiceId)
+    }
     if (result.status === 'error') {
       console.error('[quickbooks-webhook] failed to process invoice', invoiceId, result.message)
     }

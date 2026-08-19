@@ -1,8 +1,5 @@
-import Stripe from 'stripe'
 import { supabaseAdmin } from './supabase'
-import { stripe } from './stripe'
 import { createCalendarEvent } from './calendar'
-import { sessionTaxAmount } from './tax'
 import { resend, sendStayOwnerNotification } from './resend'
 import { StayConfirmationEmail } from '@/emails/StayConfirmationEmail'
 
@@ -10,33 +7,29 @@ import { StayConfirmationEmail } from '@/emails/StayConfirmationEmail'
 // selection step in the chat.
 export const STAY_AIRPORT_NAME = 'Fort Lauderdale Airport (FLL)'
 
-// Shared by both the Stripe webhook and the /success-page backup
-// (app/api/stay/confirm-payment), the same way lib's `createCalendarEvent`
-// is shared across leads/route.ts, webhooks/stripe/route.ts and
-// confirm-payment/route.ts. Keeping this in one place avoids the drift that
-// once caused the `amountPaid` bug in the transport webhook.
-export async function fulfillStayBooking(session: Stripe.Checkout.Session) {
-  const bookingId = session.metadata?.stay_booking_id
-  if (!bookingId) return { ok: false, reason: 'no_booking_id' as const }
-
-  const taxAmount = sessionTaxAmount(session)
-
-  // Atomic claim: the webhook and the /success-page backup can both call
-  // this for the same session (that's the whole point of having a backup),
-  // and in dev, React Strict Mode double-fires effects too. The claim UPDATE
-  // must flip `status` away from 'pending_payment' AS PART OF the same
-  // compare-and-swap write — that's what makes the `.eq('status',
-  // 'pending_payment')` filter actually exclude a concurrent second caller.
-  // (An earlier version of this function updated stripe_session_id/tax here
-  // but left status untouched until a later write, so the guard never
-  // actually blocked anything — verified locally: two concurrent calls both
-  // passed it and double-created transport leads and double-decremented
-  // inventory.) We optimistically set status to 'paid' here; if the
-  // inventory decrement below finds no rooms left, we correct it to
-  // 'paid_overbooked' in a second, unconditional update.
+/**
+ * Runs once, the first time a Stay booking's QuickBooks invoice is
+ * confirmed paid — called from both the QuickBooks webhook and the
+ * reconciliation cron (app/api/webhooks/quickbooks/route.ts), the same
+ * shared-logic pattern used for transport leads. Room + transport is one
+ * QuickBooks invoice (see lib/quickbooks.ts createAndSendStayInvoice), so
+ * there's a single amount already known at booking time — the caller only
+ * needs to pass the tax QuickBooks actually charged.
+ */
+export async function fulfillStayBooking(bookingId: string, taxAmount: number): Promise<
+  | { ok: true; alreadyProcessed?: true; overbooked?: boolean }
+  | { ok: false; reason: 'db_error' | 'not_found' }
+> {
+  // Atomic claim: the webhook and the cron can both try to fulfill the same
+  // booking around the same time, and the compare-and-swap UPDATE (flipping
+  // `status` away from 'pending_payment' as part of the same write) is what
+  // makes the `.eq('status', 'pending_payment')` filter actually exclude a
+  // concurrent second caller. See the Stripe-era version of this comment in
+  // git history — the same double-fulfillment bug it warns about applies
+  // here too if that invariant is ever broken.
   const { data: claimedRows, error: claimErr } = await supabaseAdmin
     .from('stay_bookings')
-    .update({ status: 'paid', stripe_session_id: session.id, tax_collected: taxAmount })
+    .update({ status: 'paid', tax_collected: taxAmount })
     .eq('id', bookingId)
     .eq('status', 'pending_payment')
     .select()
@@ -108,7 +101,7 @@ export async function fulfillStayBooking(session: Stripe.Checkout.Session) {
         amount_usd: updatedBooking.transport_amount,
         amount_paid: updatedBooking.transport_amount,
         amount_remaining: 0,
-        payment_source: 'stripe',
+        payment_source: 'quickbooks',
         paid_at: new Date().toISOString(),
         airline: updatedBooking.airline,
         flight_number: updatedBooking.flight_number,
@@ -141,18 +134,11 @@ export async function fulfillStayBooking(session: Stripe.Checkout.Session) {
     .eq('id', bookingId)
 
   // Guest confirmation + owner alert — never throw, same as the rest of the
-  // notification helpers in this codebase.
+  // notification helpers in this codebase. A QuickBooks-paying guest never
+  // redirects back to our success page (Intuit's hosted payment page has no
+  // "return to merchant" option), so this email is the only confirmation
+  // they get — there's no receipt URL to include the way Stripe had one.
   if (resend && updatedBooking.guest_email) {
-    let receiptUrl: string | null = null
-    try {
-      const expanded = await stripe.checkout.sessions.retrieve(session.id, { expand: ['payment_intent.latest_charge'] })
-      const pi = expanded.payment_intent as Stripe.PaymentIntent | null
-      const charge = pi?.latest_charge as Stripe.Charge | undefined
-      if (charge?.receipt_url) receiptUrl = charge.receipt_url
-    } catch (e) {
-      console.error('[stay] Failed to get receipt URL', e)
-    }
-
     try {
       await resend.emails.send({
         from: 'Express Lyft <book@explyft.com>',
@@ -172,7 +158,7 @@ export async function fulfillStayBooking(session: Stripe.Checkout.Session) {
           subtotal: updatedBooking.room_amount + updatedBooking.transport_amount,
           taxAmount,
           totalCharged: updatedBooking.room_amount + updatedBooking.transport_amount + taxAmount,
-          receiptUrl,
+          receiptUrl: null,
         }),
       })
     } catch (emailErr) {

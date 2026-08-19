@@ -102,3 +102,11 @@ create policy "Service role only stay_bookings" on stay_bookings for select usin
 insert into stay_hotels (name, photo_url, price, transport_amount, rooms_available, active, sort_order)
 values ('Ocean', '/gallery/stay/ocean-pool.jpg', 189, 45, 5, true, 0)
 on conflict do nothing;
+
+-- ============================================================
+--  Stay pasa de Stripe a QuickBooks (ago 2026) — mismas columnas que
+--  leads.quickbooks_invoice_id/status, para que el mismo webhook y el
+--  mismo cron de reconciliación cubran ambos tipos de reserva.
+-- ============================================================
+alter table stay_bookings add column if not exists quickbooks_invoice_id text;
+alter table stay_bookings add column if not exists quickbooks_invoice_status text;

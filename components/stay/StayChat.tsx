@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
 import type { StayHotel } from '@/app/stay/page'
+import { STAY_LODGING_TAX_RATE_PERCENT } from '@/lib/stayTax'
 
 const PHONE_TEL = 'tel:+18889737896'
 const PHONE_DISPLAY = '+1 (888) 973-7896'
@@ -41,11 +41,6 @@ function presetTime(minutesFromNow: number): { label: string; value24: string } 
 }
 
 export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
-  const searchParams = useSearchParams()
-  const successBookingId = searchParams.get('booking_id')
-  const successSessionId = searchParams.get('session_id')
-  const isSuccess = searchParams.get('success') === 'true'
-
   const [step, setStep] = useState<Step>('hotel')
   const [transcript, setTranscript] = useState<Bubble[]>([])
 
@@ -71,71 +66,6 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [transcript, step])
-
-  // ---- Success screen (after Stripe redirect) ----
-  const [successBooking, setSuccessBooking] = useState<any>(null)
-  const [confirming, setConfirming] = useState(isSuccess)
-
-  useEffect(() => {
-    if (!isSuccess || !successBookingId) return
-    async function run() {
-      try {
-        if (successSessionId) {
-          await fetch('/api/stay/confirm-payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: successSessionId, booking_id: successBookingId }),
-          })
-        }
-      } catch (e) {
-        console.error('[stay] confirm-payment failed', e)
-      }
-      try {
-        const res = await fetch(`/api/stay/booking?id=${successBookingId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setSuccessBooking(data.booking)
-        }
-      } catch (e) {
-        console.error('[stay] booking lookup failed', e)
-      }
-      setConfirming(false)
-    }
-    run()
-  }, [isSuccess, successBookingId, successSessionId])
-
-  if (isSuccess) {
-    return (
-      <div className="text-center py-6">
-        {confirming ? (
-          <>
-            <div className="w-16 h-16 border-4 border-[#B8960C] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-            <p className="text-lg text-white font-semibold">Confirming your payment...</p>
-          </>
-        ) : (
-          <>
-            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: 'rgba(184,150,12,0.1)', border: '2px solid #B8960C' }}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#B8960C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold mb-3" style={{ color: '#FFFFFF', fontFamily: "'Playfair Display', Georgia, serif" }}>Room & Ride Confirmed!</h3>
-            <p className="text-sm mb-6 font-bold" style={{ color: '#ffbaba' }}>Please check spam/junk to make sure you get the confirmation email.</p>
-            {successBooking && (
-              <div className="mt-2 mb-8 text-left bg-black/40 p-5 rounded-xl border border-[#2a2a2a] text-sm">
-                <p className="text-white font-medium">{successBooking.hotel_name}</p>
-                <p className="text-[#888]">{successBooking.room_qty}x {successBooking.room_type === '2_beds' ? '2 Beds' : '1 Bed'} · {successBooking.nights} night(s)</p>
-                <p className="text-[#888] mt-2">Airport pickup: {successBooking.pickup_time}</p>
-              </div>
-            )}
-            <a href="/stay" className="inline-block w-full py-4 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>
-              Book Another Room
-            </a>
-          </>
-        )}
-      </div>
-    )
-  }
 
   // ---- Booking flow ----
   function pushBubble(from: 'bot' | 'user', text: string) {
@@ -188,6 +118,10 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
   }
 
   const total = selectedHotel ? selectedHotel.price * roomQty * nights : 0
+  // Same 13% used server-side (lib/stayTax.ts) to build the QuickBooks
+  // invoice — shown here so the guest sees the real charge before paying,
+  // not a vague "taxes calculated at checkout".
+  const lodgingTax = Math.round(total * (STAY_LODGING_TAX_RATE_PERCENT / 100) * 100) / 100
 
   async function submitPayment() {
     if (!selectedHotel) return
@@ -364,8 +298,10 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
           <div className="flex justify-between text-sm"><span className="text-[#888]">Airport pickup</span><span className="text-white font-semibold">FLL → {selectedHotel.name} · {pickupTime}</span></div>
           <div className="flex justify-between text-sm"><span className="text-[#888]">Guest</span><span className="text-white font-semibold">{guestName}</span></div>
           <hr style={{ borderColor: '#2a2a2a' }} />
-          <div className="flex justify-between text-base"><span className="text-[#ccc]">Total (transportation included)</span><span className="text-[#D4AF37] font-bold">${total.toFixed(2)}</span></div>
-          <p className="text-xs text-[#666]">Taxes calculated at checkout.</p>
+          <div className="flex justify-between text-sm"><span className="text-[#888]">Subtotal (transportation included)</span><span className="text-white">${total.toFixed(2)}</span></div>
+          <div className="flex justify-between text-sm"><span className="text-[#888]">FL Lodging Tax ({STAY_LODGING_TAX_RATE_PERCENT}%)</span><span className="text-white">${lodgingTax.toFixed(2)}</span></div>
+          <div className="flex justify-between text-base"><span className="text-[#ccc]">Total</span><span className="text-[#D4AF37] font-bold">${(total + lodgingTax).toFixed(2)}</span></div>
+          <p className="text-xs text-[#666]">You'll pay on a secure QuickBooks page, then get your confirmation by email — please check spam/junk too.</p>
           {error && <p className="text-xs text-red-400">{error}</p>}
           <button onClick={submitPayment} disabled={submitting} className="mt-1 py-4 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-60" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>
             {submitting ? 'Redirecting to payment...' : 'Confirm & Pay'}
