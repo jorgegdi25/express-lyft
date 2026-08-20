@@ -1847,7 +1847,6 @@ export default function AdminPage() {
         { key: 'clients', label: 'Frequent Flyers', icon: <IconClients /> },
         { key: 'reviews', label: 'Reviews', icon: <IconReviews />, getBadge: () => reviews.filter(r => r.status === 'pending').length },
         { key: 'revenue', label: 'Revenue Dashboard', icon: <IconRevenue /> },
-        { key: 'commissions', label: 'Commissions', icon: <DollarSign size={20} /> },
       ] as SidebarItem[]
     }
   ]
@@ -1856,6 +1855,7 @@ export default function AdminPage() {
     { key: 'websites', label: 'Websites & Domains', icon: <IconWeb /> },
     { key: 'routes', label: 'Routes & Pricing', icon: <IconRoutes /> },
     { key: 'discounts', label: 'Discount Codes', icon: <IconDiscount /> },
+    { key: 'commissions', label: 'Commissions', icon: <DollarSign size={20} /> },
     { key: 'qr', label: 'QR Codes', icon: <IconQR /> },
   ] as SidebarItem[]
 
@@ -4597,22 +4597,35 @@ export default function AdminPage() {
           // the trip date. Keyed off the ISO timestamp's date portion
           // directly (no Date() parsing) so it lines up with UTC-based
           // dates shown elsewhere in the admin (see formatDateUS).
-          const commissionsByDay: Record<string, number> = {}
+          //
+          // Also split web (booked online, payment_source 'stripe') vs
+          // other (walk-up/phone/cash, entered by staff) so the monthly
+          // total can be broken down instead of just one lump count — Stay
+          // bookings are always guest-self-service, so they always count
+          // as web.
+          const commissionsByDay: Record<string, { total: number; web: number; other: number }> = {}
+          const bump = (key: string, isWeb: boolean) => {
+            if (!key) return
+            if (!commissionsByDay[key]) commissionsByDay[key] = { total: 0, web: 0, other: 0 }
+            commissionsByDay[key].total += 1
+            if (isWeb) commissionsByDay[key].web += 1
+            else commissionsByDay[key].other += 1
+          }
           leads.forEach(l => {
             if (l.status === 'paid' || l.status === 'deposit_paid') {
-              const key = (l.created_at || '').slice(0, 10)
-              if (key) commissionsByDay[key] = (commissionsByDay[key] || 0) + 1
+              bump((l.created_at || '').slice(0, 10), l.payment_source === 'stripe')
             }
           })
           stayBookings.forEach(b => {
             if (b.status === 'paid' || b.status === 'paid_overbooked') {
-              const key = (b.created_at || '').slice(0, 10)
-              if (key) commissionsByDay[key] = (commissionsByDay[key] || 0) + 1
+              bump((b.created_at || '').slice(0, 10), true)
             }
           })
 
           const monthDays = getMonthGridDays(commissionMonth).filter(d => d.inMonth)
-          const monthCount = monthDays.reduce((sum, d) => sum + (commissionsByDay[d.dateStr] || 0), 0)
+          const monthCount = monthDays.reduce((sum, d) => sum + (commissionsByDay[d.dateStr]?.total || 0), 0)
+          const monthWeb = monthDays.reduce((sum, d) => sum + (commissionsByDay[d.dateStr]?.web || 0), 0)
+          const monthOther = monthDays.reduce((sum, d) => sum + (commissionsByDay[d.dateStr]?.other || 0), 0)
 
           return (
           <div className="flex flex-col gap-8">
@@ -4646,6 +4659,7 @@ export default function AdminPage() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4ade80' }}>This Month</p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{monthCount} paid booking{monthCount === 1 ? '' : 's'}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>{monthWeb} web · {monthOther} walk-up/other</p>
               </div>
               <span className="text-4xl font-bold" style={{ color: '#4ade80', fontFamily: "'Playfair Display', Georgia, serif" }}>
                 ${(monthCount * COMMISSION_PER_BOOKING).toFixed(2)}
@@ -4661,7 +4675,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-7">
                 {getMonthGridDays(commissionMonth).map(({ date, dateStr, inMonth }) => {
                   const isToday = dateStr === new Date().toLocaleDateString('en-CA')
-                  const count = commissionsByDay[dateStr] || 0
+                  const count = commissionsByDay[dateStr]?.total || 0
                   return (
                     <div
                       key={dateStr}
