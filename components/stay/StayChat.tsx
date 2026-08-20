@@ -1,7 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
+import PhoneInput from 'react-phone-number-input'
+import 'react-phone-number-input/style.css'
+import { Check } from 'lucide-react'
 import type { StayHotel } from '@/app/stay/page'
 import { STAY_LODGING_TAX_RATE_PERCENT } from '@/lib/stayTax'
 
@@ -11,10 +14,17 @@ const WHATSAPP_URL = 'https://wa.me/19546236207'
 const WHATSAPP_DISPLAY = '954-623-6207'
 const MAX_SEDAN_SUV_GUESTS = 4
 
-type Step = 'hotel' | 'room' | 'nights' | 'guest' | 'pickup' | 'review' | 'waiting' | 'confirmed'
+type Step = 'details' | 'checkout' | 'waiting' | 'confirmed'
 type RoomType = '1_bed' | '2_beds'
 
-type Bubble = { from: 'bot' | 'user'; text: string }
+const STEP_NUM: Record<Step, number> = { details: 1, checkout: 2, waiting: 2, confirmed: 2 }
+const STEP_LABELS: Record<number, string> = { 1: 'Stay Details', 2: 'Checkout' }
+
+const LABEL_CLASS = 'text-sm font-semibold mb-2 block'
+const LABEL_COLOR = { color: '#BBBBBB' }
+const INPUT_CLASS = 'w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors'
+const INPUT_STYLE = { background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#fff' }
+const CARD_STYLE = { background: '#161616', border: '1px solid #2a2a2a' }
 
 function todayNY(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
@@ -41,10 +51,9 @@ function presetTime(minutesFromNow: number): { label: string; value24: string } 
 }
 
 export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
-  const [step, setStep] = useState<Step>('hotel')
-  const [transcript, setTranscript] = useState<Bubble[]>([])
+  const [step, setStep] = useState<Step>('details')
 
-  const [selectedHotel, setSelectedHotel] = useState<StayHotel | null>(null)
+  const [selectedHotel, setSelectedHotel] = useState<StayHotel | null>(hotels[0] || null)
 
   const [roomType, setRoomType] = useState<RoomType>('1_bed')
   const [roomQty, setRoomQty] = useState(1)
@@ -70,7 +79,7 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
 
   // QuickBooks' hosted invoice page has no "return to merchant" redirect,
   // so payment opens in a separate tab and we poll here — the guest never
-  // loses this chat.
+  // loses this page.
   //
   // Confirmation is a bonus, not the point: payment is currently only picked
   // up by the reconcile cron (every 3 min), so this can take minutes to flip.
@@ -99,63 +108,21 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
     return () => clearInterval(interval)
   }, [qbWaitingBookingId])
 
-  const scrollRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [transcript, step])
-
-  // ---- Booking flow ----
-  function pushBubble(from: 'bot' | 'user', text: string) {
-    setTranscript(t => [...t, { from, text }])
-  }
-
-  function selectHotel(hotel: StayHotel) {
-    setSelectedHotel(hotel)
-    pushBubble('user', `I'll take ${hotel.name}`)
-    pushBubble('bot', `Great choice — $${hotel.price}/night, transportation included. What type of room do you need?`)
-    setStep('room')
-  }
-
-  function confirmRoom() {
-    pushBubble('user', `${roomQty}x ${roomType === '2_beds' ? '2 Beds' : '1 Bed'}`)
-    pushBubble('bot', 'How many nights will you be staying?')
-    setStep('nights')
-  }
-
-  function confirmNights() {
-    pushBubble('user', `${nights} night${nights > 1 ? 's' : ''}`)
-    pushBubble('bot', 'Can I get your details for the reservation?')
-    setStep('guest')
-  }
-
-  function confirmGuest() {
-    if (!guestName || !guestEmail || !guestPhone) {
-      setError('Please fill in your name, email, and phone.')
-      return
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
-      setError('Please enter a valid email address (e.g. name@example.com).')
+  function confirmDetails() {
+    if (!selectedHotel) {
+      setError('Please select a hotel.')
       return
     }
     if (guestCount > MAX_SEDAN_SUV_GUESTS) {
       setError(`Our standard SUV seats up to ${MAX_SEDAN_SUV_GUESTS}. For larger groups, please call ${PHONE_DISPLAY} or WhatsApp ${WHATSAPP_DISPLAY} — we'll arrange a bigger vehicle.`)
       return
     }
-    setError(null)
-    pushBubble('user', `${guestName} · ${guestCount} guest${guestCount > 1 ? 's' : ''}`)
-    pushBubble('bot', 'Last step — what time should we pick you up at the airport?')
-    setStep('pickup')
-  }
-
-  function confirmPickup() {
     if (!pickupTime) {
-      setError('Please select a pickup time.')
+      setError('Please select an airport pickup time.')
       return
     }
     setError(null)
-    pushBubble('user', pickupTime)
-    pushBubble('bot', 'Here is your summary — ready to confirm and pay?')
-    setStep('review')
+    setStep('checkout')
   }
 
   const total = selectedHotel ? selectedHotel.price * roomQty * nights : 0
@@ -198,8 +165,17 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
     setDiscountError(null)
   }
 
-  async function submitPayment() {
+  async function submitPayment(e: React.FormEvent) {
+    e.preventDefault()
     if (!selectedHotel) return
+    if (!guestName.trim() || !guestEmail.trim() || !guestPhone) {
+      setError('Please provide your full name, email, and phone.')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+      setError('Please enter a valid email address (e.g. name@example.com).')
+      return
+    }
     setSubmitting(true)
     setError(null)
     // Must open synchronously on the click, before the await below —
@@ -248,145 +224,202 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
     }
   }
 
-  const presets = useMemo(() => [presetTime(30), presetTime(60), presetTime(120)], [step])
+  const presets = useMemo(() => [presetTime(30), presetTime(60), presetTime(120)], [])
+  const stepNum = STEP_NUM[step]
+  const showProgress = step === 'details' || step === 'checkout'
 
   return (
-    <div className="flex flex-col">
-      <p className="text-center text-xs text-[#777] mb-4">
+    <div className="flex flex-col gap-6">
+      <p className="text-center text-xs text-[#777]">
         Questions? <a href={PHONE_TEL} className="font-semibold" style={{ color: '#D4AF37' }}>Call {PHONE_DISPLAY}</a>
         {' '}or{' '}
         <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="font-semibold" style={{ color: '#4ade80' }}>WhatsApp us</a>
       </p>
 
-      {transcript.length > 0 && (
-        <div ref={scrollRef} className="flex flex-col gap-3 mb-4 max-h-64 overflow-y-auto pr-1">
-          {transcript.map((b, i) => (
-            <div key={i} className={`max-w-[90%] px-4 py-2.5 rounded-2xl text-sm leading-snug ${b.from === 'bot' ? 'self-start rounded-bl-sm' : 'self-end rounded-br-sm'}`}
-              style={b.from === 'bot'
-                ? { background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#eee' }
-                : { background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a', fontWeight: 600 }}>
-              {b.text}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {step === 'hotel' && (
-        <div className="flex flex-col gap-4">
-          {hotels.length === 0 && (
-            <p className="text-sm text-[#888] text-center py-8">No rooms available right now — please call {PHONE_DISPLAY} and we'll help directly.</p>
-          )}
-          {hotels.map(h => (
-            <button key={h.id} onClick={() => selectHotel(h)}
-              className="text-left rounded-xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99]"
-              style={{ background: '#161616', border: '1px solid #2a2a2a' }}>
-              <div className="relative w-full aspect-[16/7]" style={{ background: '#222' }}>
-                {h.photo_url && <Image src={h.photo_url} alt={h.name} fill className="object-cover" unoptimized />}
-                {h.rooms_available <= 3 ? (
-                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(239,68,68,0.9)', color: '#fff' }}>
-                    Only {h.rooms_available} left tonight
-                  </div>
-                ) : (
-                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(74,222,128,0.9)', color: '#0a0a0a' }}>
-                    Available
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-white font-bold text-lg" style={{ fontFamily: 'Georgia, serif' }}>{h.name}</p>
-                  <p className="text-xs" style={{ color: '#4ade80' }}>Airport transportation included</p>
+      {showProgress && (
+        <div className="flex items-center justify-center gap-2 max-w-xs mx-auto select-none w-full">
+          {[1, 2].map((s) => {
+            const isCompleted = s < stepNum
+            const isActive = s === stepNum
+            return (
+              <React.Fragment key={s}>
+                <div className="flex flex-col items-center gap-1.5 flex-1 relative">
+                  <button
+                    type="button"
+                    disabled={s > stepNum}
+                    onClick={() => { if (s < stepNum) { setError(null); setStep('details') } }}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 ${s < stepNum ? 'cursor-pointer' : 'cursor-default'}`}
+                    style={{
+                      background: isActive ? 'linear-gradient(135deg, #B8960C, #D4AF37)' : (isCompleted ? 'rgba(184,150,12,0.2)' : '#1a1a1a'),
+                      border: `1px solid ${isActive || isCompleted ? '#D4AF37' : '#2a2a2a'}`,
+                      color: isActive ? '#0a0a0a' : (isCompleted ? '#D4AF37' : '#888'),
+                    }}
+                  >
+                    {isCompleted ? <Check size={14} strokeWidth={3} /> : s}
+                  </button>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-center" style={{ color: isActive ? '#D4AF37' : '#666' }}>
+                    {STEP_LABELS[s]}
+                  </span>
                 </div>
-                <p className="text-right">
-                  <span className="text-[#D4AF37] font-bold text-xl">${h.price}</span>
-                  <span className="block text-xs text-[#888]">/night</span>
-                </p>
+                {s < 2 && (
+                  <div className="h-[2px] flex-1 -mt-5" style={{ background: s < stepNum ? 'linear-gradient(90deg, #B8960C, #D4AF37)' : '#222' }} />
+                )}
+              </React.Fragment>
+            )
+          })}
+        </div>
+      )}
+
+      {step === 'details' && (
+        <div className="rounded-2xl p-5 flex flex-col gap-5" style={CARD_STYLE}>
+          <div>
+            <label className={LABEL_CLASS} style={LABEL_COLOR}>Hotel</label>
+            {hotels.length === 0 ? (
+              <p className="text-sm text-[#888] text-center py-8">No rooms available right now — please call {PHONE_DISPLAY} and we'll help directly.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {hotels.map(h => (
+                  <button
+                    key={h.id}
+                    type="button"
+                    onClick={() => { setSelectedHotel(h); setRoomQty(1) }}
+                    className="text-left rounded-xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99]"
+                    style={selectedHotel?.id === h.id ? { background: '#161616', border: '2px solid #D4AF37' } : { background: '#161616', border: '1px solid #2a2a2a' }}
+                  >
+                    <div className="relative w-full aspect-[16/7]" style={{ background: '#222' }}>
+                      {h.photo_url && <Image src={h.photo_url} alt={h.name} fill className="object-cover" unoptimized />}
+                      {h.rooms_available <= 3 ? (
+                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(239,68,68,0.9)', color: '#fff' }}>
+                          Only {h.rooms_available} left tonight
+                        </div>
+                      ) : (
+                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(74,222,128,0.9)', color: '#0a0a0a' }}>
+                          Available
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between p-4">
+                      <div>
+                        <p className="text-white font-bold text-lg" style={{ fontFamily: 'Georgia, serif' }}>{h.name}</p>
+                        <p className="text-xs" style={{ color: '#4ade80' }}>Airport transportation included</p>
+                      </div>
+                      <p className="text-right">
+                        <span className="text-[#D4AF37] font-bold text-xl">${h.price}</span>
+                        <span className="block text-xs text-[#888]">/night</span>
+                      </p>
+                    </div>
+                  </button>
+                ))}
               </div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {step === 'room' && (
-        <div className="flex flex-col gap-3 p-4 rounded-xl" style={{ background: '#161616', border: '1px solid #2a2a2a' }}>
-          <div className="flex gap-3">
-            {(['1_bed', '2_beds'] as RoomType[]).map(rt => (
-              <button key={rt} onClick={() => setRoomType(rt)} className="flex-1 py-3 rounded-xl font-bold text-sm"
-                style={roomType === rt ? { background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' } : { background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc' }}>
-                {rt === '2_beds' ? '2 Beds' : '1 Bed'}
-              </button>
-            ))}
+            )}
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-[#ccc]">Number of rooms</span>
-            <div className="flex items-center gap-3">
-              <button onClick={() => setRoomQty(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-full font-bold" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#fff' }}>−</button>
-              <span className="text-white font-bold w-4 text-center">{roomQty}</span>
-              <button onClick={() => setRoomQty(q => Math.min(selectedHotel?.rooms_available || 1, q + 1))} className="w-8 h-8 rounded-full font-bold" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#fff' }}>+</button>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={LABEL_CLASS} style={LABEL_COLOR}>Room Type</label>
+              <div className="flex gap-2">
+                {(['1_bed', '2_beds'] as RoomType[]).map(rt => (
+                  <button key={rt} type="button" onClick={() => setRoomType(rt)} className="flex-1 py-3 rounded-xl font-bold text-sm"
+                    style={roomType === rt ? { background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' } : { background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc' }}>
+                    {rt === '2_beds' ? '2 Beds' : '1 Bed'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className={LABEL_CLASS} style={LABEL_COLOR}>Nights</label>
+              <div className="flex gap-2">
+                {[1, 2, 3].map(n => (
+                  <button key={n} type="button" onClick={() => setNights(n)} className="flex-1 py-3 rounded-xl font-bold text-sm"
+                    style={nights === n ? { background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' } : { background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc' }}>
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-          <button onClick={confirmRoom} className="mt-1 py-3 rounded-xl font-bold text-sm" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>Continue</button>
-        </div>
-      )}
 
-      {step === 'nights' && (
-        <div className="flex flex-col gap-3 p-4 rounded-xl" style={{ background: '#161616', border: '1px solid #2a2a2a' }}>
-          <div className="flex gap-3">
-            {[1, 2, 3].map(n => (
-              <button key={n} onClick={() => setNights(n)} className="flex-1 py-3 rounded-xl font-bold text-sm"
-                style={nights === n ? { background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' } : { background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc' }}>
-                {n} night{n > 1 ? 's' : ''}
-              </button>
-            ))}
-          </div>
-          <button onClick={confirmNights} className="mt-1 py-3 rounded-xl font-bold text-sm" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>Continue</button>
-        </div>
-      )}
-
-      {step === 'guest' && (
-        <div className="flex flex-col gap-3 p-4 rounded-xl" style={{ background: '#161616', border: '1px solid #2a2a2a' }}>
-          <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Full name" className="px-4 py-3 rounded-xl text-sm text-white" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }} />
-          <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email" type="email" className="px-4 py-3 rounded-xl text-sm text-white" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }} />
-          <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder="Phone" type="tel" className="px-4 py-3 rounded-xl text-sm text-white" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }} />
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-[#ccc]">Number of guests</span>
-            <div className="flex items-center gap-3">
-              <button onClick={() => setGuestCount(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-full font-bold" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#fff' }}>−</button>
-              <span className="text-white font-bold w-4 text-center">{guestCount}</span>
-              <button onClick={() => setGuestCount(q => q + 1)} className="w-8 h-8 rounded-full font-bold" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#fff' }}>+</button>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={LABEL_CLASS} style={LABEL_COLOR}>Rooms</label>
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }}>
+                <button type="button" onClick={() => setRoomQty(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-full font-bold" style={{ background: '#222', color: '#fff' }}>−</button>
+                <span className="text-white font-bold flex-1 text-center">{roomQty}</span>
+                <button type="button" onClick={() => setRoomQty(q => Math.min(selectedHotel?.rooms_available || 1, q + 1))} className="w-8 h-8 rounded-full font-bold" style={{ background: '#222', color: '#fff' }}>+</button>
+              </div>
+            </div>
+            <div>
+              <label className={LABEL_CLASS} style={LABEL_COLOR}>Guests</label>
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }}>
+                <button type="button" onClick={() => setGuestCount(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-full font-bold" style={{ background: '#222', color: '#fff' }}>−</button>
+                <span className="text-white font-bold flex-1 text-center">{guestCount}</span>
+                <button type="button" onClick={() => setGuestCount(q => q + 1)} className="w-8 h-8 rounded-full font-bold" style={{ background: '#222', color: '#fff' }}>+</button>
+              </div>
             </div>
           </div>
-          <div className="flex gap-3">
-            <input value={airline} onChange={e => setAirline(e.target.value)} placeholder="Airline (optional)" className="flex-1 px-4 py-3 rounded-xl text-sm text-white" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }} />
-            <input value={flightNumber} onChange={e => setFlightNumber(e.target.value)} placeholder="Flight # (optional)" className="flex-1 px-4 py-3 rounded-xl text-sm text-white" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }} />
+
+          <div>
+            <label className={LABEL_CLASS} style={LABEL_COLOR}>Airport Pickup Time (FLL)</label>
+            <div className="flex gap-2 flex-wrap mb-2">
+              {presets.map(p => (
+                <button key={p.value24} type="button" onClick={() => setPickupTime(to12Hour(p.value24))} className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+                  style={pickupTime === to12Hour(p.value24) ? { background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' } : { background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc' }}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <input type="time" onChange={e => setPickupTime(to12Hour(e.target.value))} className={INPUT_CLASS} style={INPUT_STYLE} />
+            {pickupTime && <p className="text-xs mt-1.5" style={{ color: '#4ade80' }}>Selected: {pickupTime}</p>}
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={LABEL_CLASS} style={LABEL_COLOR}>Airline (Optional)</label>
+              <input value={airline} onChange={e => setAirline(e.target.value)} placeholder="e.g. American Airlines" className={INPUT_CLASS} style={INPUT_STYLE} />
+            </div>
+            <div>
+              <label className={LABEL_CLASS} style={LABEL_COLOR}>Flight # (Optional)</label>
+              <input value={flightNumber} onChange={e => setFlightNumber(e.target.value)} placeholder="e.g. AA1234" className={INPUT_CLASS} style={INPUT_STYLE} />
+            </div>
+          </div>
+
           {error && <p className="text-xs text-red-400">{error}</p>}
-          <button onClick={confirmGuest} className="mt-1 py-3 rounded-xl font-bold text-sm" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>Continue</button>
+
+          <button type="button" onClick={confirmDetails} disabled={hotels.length === 0}
+            className="py-4 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>
+            Continue to Checkout →
+          </button>
         </div>
       )}
 
-      {step === 'pickup' && (
-        <div className="flex flex-col gap-3 p-4 rounded-xl" style={{ background: '#161616', border: '1px solid #2a2a2a' }}>
-          <p className="text-xs text-[#888]">When should we pick you up at Fort Lauderdale Airport (FLL)?</p>
-          <div className="flex gap-2 flex-wrap">
-            {presets.map(p => (
-              <button key={p.value24} onClick={() => setPickupTime(to12Hour(p.value24))} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc' }}>{p.label}</button>
-            ))}
+      {step === 'checkout' && selectedHotel && (
+        <form onSubmit={submitPayment} className="rounded-2xl p-5 flex flex-col gap-5" style={CARD_STYLE}>
+          <div className="flex flex-col gap-2 p-4 rounded-xl" style={{ background: '#0f0f0f', border: '1px solid #2a2a2a' }}>
+            <div className="flex justify-between text-sm"><span className="text-[#888]">Hotel</span><span className="text-white font-semibold">{selectedHotel.name}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-[#888]">Room</span><span className="text-white font-semibold">{roomQty}x {roomType === '2_beds' ? '2 Beds' : '1 Bed'}, {nights} night{nights > 1 ? 's' : ''}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-[#888]">Airport pickup</span><span className="text-white font-semibold">FLL → {selectedHotel.name} · {pickupTime}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-[#888]">Guests</span><span className="text-white font-semibold">{guestCount}</span></div>
           </div>
-          <input type="time" onChange={e => setPickupTime(to12Hour(e.target.value))} className="px-4 py-3 rounded-xl text-sm text-white w-full" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }} />
-          {pickupTime && <p className="text-xs text-[#4ade80]">Selected: {pickupTime}</p>}
-          {error && <p className="text-xs text-red-400">{error}</p>}
-          <button onClick={confirmPickup} className="mt-1 py-3 rounded-xl font-bold text-sm" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>Continue</button>
-        </div>
-      )}
 
-      {step === 'review' && selectedHotel && (
-        <div className="flex flex-col gap-3 p-5 rounded-xl" style={{ background: '#161616', border: '1px solid #2a2a2a' }}>
-          <div className="flex justify-between text-sm"><span className="text-[#888]">Hotel</span><span className="text-white font-semibold">{selectedHotel.name}</span></div>
-          <div className="flex justify-between text-sm"><span className="text-[#888]">Room</span><span className="text-white font-semibold">{roomQty}x {roomType === '2_beds' ? '2 Beds' : '1 Bed'}, {nights} night{nights > 1 ? 's' : ''}</span></div>
-          <div className="flex justify-between text-sm"><span className="text-[#888]">Airport pickup</span><span className="text-white font-semibold">FLL → {selectedHotel.name} · {pickupTime}</span></div>
-          <div className="flex justify-between text-sm"><span className="text-[#888]">Guest</span><span className="text-white font-semibold">{guestName}</span></div>
-          <hr style={{ borderColor: '#2a2a2a' }} />
+          <div>
+            <label className={LABEL_CLASS} style={LABEL_COLOR}>Your Contact Information</label>
+            <div className="flex flex-col gap-3">
+              <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Full Name *" className={INPUT_CLASS} style={INPUT_STYLE} required />
+              <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email Address *" type="email" className={INPUT_CLASS} style={INPUT_STYLE} required />
+              <div className="w-full">
+                <PhoneInput
+                  placeholder="Phone Number *"
+                  value={guestPhone}
+                  onChange={(val) => setGuestPhone(val || '')}
+                  defaultCountry="US"
+                  className={`${INPUT_CLASS} phone-input-override`}
+                  style={INPUT_STYLE}
+                  required
+                />
+              </div>
+            </div>
+          </div>
 
           {!appliedDiscount ? (
             <div className="flex gap-2">
@@ -418,22 +451,30 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
           )}
           {discountError && <p className="text-xs text-red-400">{discountError}</p>}
 
-          <div className="flex justify-between text-sm"><span className="text-[#888]">Subtotal (transportation included)</span><span className="text-white">${total.toFixed(2)}</span></div>
-          {appliedDiscount && (
-            <div className="flex justify-between text-sm"><span className="text-[#888]">Discount</span><span className="text-[#4ade80]">-${discountAmount.toFixed(2)}</span></div>
-          )}
-          <div className="flex justify-between text-sm"><span className="text-[#888]">FL Lodging Tax ({STAY_LODGING_TAX_RATE_PERCENT}%)</span><span className="text-white">${lodgingTax.toFixed(2)}</span></div>
-          <div className="flex justify-between text-base"><span className="text-[#ccc]">Total</span><span className="text-[#D4AF37] font-bold">${(discountedTotal + lodgingTax).toFixed(2)}</span></div>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-between text-sm"><span className="text-[#888]">Subtotal (transportation included)</span><span className="text-white">${total.toFixed(2)}</span></div>
+            {appliedDiscount && (
+              <div className="flex justify-between text-sm"><span className="text-[#888]">Discount</span><span className="text-[#4ade80]">-${discountAmount.toFixed(2)}</span></div>
+            )}
+            <div className="flex justify-between text-sm"><span className="text-[#888]">FL Lodging Tax ({STAY_LODGING_TAX_RATE_PERCENT}%)</span><span className="text-white">${lodgingTax.toFixed(2)}</span></div>
+            <div className="flex justify-between text-base pt-1"><span className="text-[#ccc]">Total</span><span className="text-[#D4AF37] font-bold">${(discountedTotal + lodgingTax).toFixed(2)}</span></div>
+          </div>
           <p className="text-xs text-[#666]">You'll pay on a secure QuickBooks page, then get your confirmation by email — please check spam/junk too.</p>
           {error && <p className="text-xs text-red-400">{error}</p>}
-          <button onClick={submitPayment} disabled={submitting} className="mt-1 py-4 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-60" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>
-            {submitting ? 'Redirecting to payment...' : 'Confirm & Pay'}
-          </button>
-        </div>
+
+          <div className="flex gap-3">
+            <button type="button" onClick={() => { setError(null); setStep('details') }} className="px-6 py-4 rounded-xl font-bold text-sm uppercase tracking-wider" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc' }}>
+              ← Back
+            </button>
+            <button type="submit" disabled={submitting} className="flex-1 py-4 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-60" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>
+              {submitting ? 'Redirecting to payment...' : 'Confirm & Pay'}
+            </button>
+          </div>
+        </form>
       )}
 
       {step === 'waiting' && (
-        <div className="flex flex-col items-center gap-3 p-6 rounded-xl text-center" style={{ background: '#161616', border: '1px solid #2a2a2a' }}>
+        <div className="flex flex-col items-center gap-3 p-6 rounded-xl text-center" style={CARD_STYLE}>
           <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)', border: '2px solid #D4AF37' }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
@@ -446,7 +487,7 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
       )}
 
       {step === 'confirmed' && (
-        <div className="flex flex-col items-center gap-3 p-6 rounded-xl text-center" style={{ background: '#161616', border: '1px solid #2a2a2a' }}>
+        <div className="flex flex-col items-center gap-3 p-6 rounded-xl text-center" style={CARD_STYLE}>
           <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(74,222,128,0.1)', border: '2px solid #4ade80' }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
