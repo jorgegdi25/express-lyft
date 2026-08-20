@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createAndSendStayInvoice } from '@/lib/quickbooks'
 import { STAY_LODGING_TAX_RATE_PERCENT } from '@/lib/stayTax'
+import { checkDiscountCode, redeemDiscountCode } from '@/lib/discountCodes'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
       airline,
       flightNumber,
       pickupTime,
+      discountCode,
     } = body
 
     if (!stayHotelId || !roomType || !roomQty || !nights || !checkInDate) {
@@ -59,7 +61,17 @@ export async function POST(req: NextRequest) {
     // combined line — see createAndSendStayInvoice). room_amount /
     // transport_amount below is purely an internal split for our own
     // revenue reports; the guest never sees it broken out anywhere.
-    const total = Math.round(hotel.price * roomQty * nights * 100) / 100
+    let total = Math.round(hotel.price * roomQty * nights * 100) / 100
+    let appliedDiscountCode: string | null = null
+    let appliedDiscountAmount = 0
+    if (discountCode) {
+      const check = await checkDiscountCode(discountCode, total)
+      if (check.valid) {
+        appliedDiscountCode = check.code
+        appliedDiscountAmount = check.discountAmount
+        total = check.finalAmount
+      }
+    }
     const transportAmount = Math.min(Math.round(hotel.transport_amount * 100) / 100, total)
     const roomAmount = Math.round((total - transportAmount) * 100) / 100
     const taxAmount = Math.round(total * (STAY_LODGING_TAX_RATE_PERCENT / 100) * 100) / 100
@@ -84,6 +96,8 @@ export async function POST(req: NextRequest) {
         room_amount: roomAmount,
         transport_amount: transportAmount,
         total_amount: total,
+        discount_code: appliedDiscountCode,
+        discount_amount: appliedDiscountAmount,
         status: 'pending_payment',
       })
       .select()
@@ -92,6 +106,10 @@ export async function POST(req: NextRequest) {
     if (insertErr || !booking) {
       console.error('[stay/checkout] insert error:', insertErr)
       return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
+    }
+
+    if (appliedDiscountCode) {
+      await redeemDiscountCode(appliedDiscountCode)
     }
 
     const roomLabel = roomType === '2_beds' ? '2 Beds' : '1 Bed'

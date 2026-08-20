@@ -80,6 +80,21 @@ interface RoutePricing {
   coachbus_price: number
 }
 
+interface DiscountCode {
+  id: string
+  code: string
+  type: 'percent' | 'fixed'
+  value: number
+  max_uses: number | null
+  uses_count: number
+  expires_at: string | null
+  min_amount: number | null
+  active: boolean
+  client_name: string | null
+  notes: string | null
+  created_at: string
+}
+
 interface Lead {
   id: string
   hotel_slug: string
@@ -153,7 +168,7 @@ interface Review {
 }
 
 
-type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites' | 'reviews' | 'stay'
+type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites' | 'reviews' | 'stay' | 'discounts'
 
 type SidebarItem = { key: TabKey; label: string; icon: React.ReactNode; getBadge?: () => number }
 
@@ -252,6 +267,14 @@ function IconQuotes() {
       <line x1="16" y1="13" x2="8" y2="13" />
       <line x1="16" y1="17" x2="8" y2="17" />
       <polyline points="10 9 9 9 8 9" />
+    </svg>
+  )
+}
+function IconDiscount() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2.59 12.59a2 2 0 0 1-.59-1.42V4a2 2 0 0 1 2-2h7.17a2 2 0 0 1 1.41.59l7.99 7.99a2 2 0 0 1 .01 2.83Z" />
+      <circle cx="7.5" cy="7.5" r="1.5" />
     </svg>
   )
 }
@@ -461,6 +484,20 @@ export default function AdminPage() {
     sprinter_price: 280,
     minibus_price: 450,
     coachbus_price: 800,
+  })
+
+  const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([])
+  const [editDiscountData, setEditDiscountData] = useState<Record<string, { code: string; type: 'percent' | 'fixed'; value: number; max_uses: string; expires_at: string; min_amount: string; client_name: string }>>({})
+  const [savingDiscount, setSavingDiscount] = useState<string | null>(null)
+  const [addingDiscount, setAddingDiscount] = useState(false)
+  const [newDiscount, setNewDiscount] = useState({
+    code: '',
+    type: 'percent' as 'percent' | 'fixed',
+    value: 5,
+    max_uses: '',
+    expires_at: '',
+    min_amount: '',
+    client_name: '',
   })
 
   const uniqueLocationsList = useMemo(() => {
@@ -736,6 +773,15 @@ export default function AdminPage() {
     )
   }
 
+  async function fetchDiscountCodes(pw: string) {
+    const res = await fetch(`/api/admin/discount-codes?t=${Date.now()}`, {
+      headers: { authorization: `Bearer ${pw}` },
+      cache: 'no-store'
+    })
+    if (!res.ok) return []
+    return res.json() as Promise<DiscountCode[]>
+  }
+
   async function fetchLeads(pw: string) {
     const res = await fetch(`/api/leads?t=${Date.now()}`, {
       headers: { authorization: `Bearer ${pw}` },
@@ -949,7 +995,7 @@ export default function AdminPage() {
     let bp: BasePrice[] = []
 
     try {
-      const [bData, rData, lData, cData, dData, bpData, psData, rvData, stayData] = await Promise.all([
+      const [bData, rData, lData, cData, dData, bpData, psData, rvData, stayData, dcData] = await Promise.all([
         fetchBookings(pw),
         fetchRoutes(pw),
         fetchLeads(pw),
@@ -958,7 +1004,8 @@ export default function AdminPage() {
         fetchBasePrices(pw),
         fetchPricingSettings(pw),
         fetchReviews(pw),
-        fetchStayData(pw)
+        fetchStayData(pw),
+        fetchDiscountCodes(pw)
       ])
 
       setBookings(bData)
@@ -971,6 +1018,7 @@ export default function AdminPage() {
       setReviews(rvData)
       setStayHotels(stayData.hotels)
       setStayBookings(stayData.bookings)
+      setDiscountCodes(dcData)
       bk = bData
       rt = rData
       ld = lData
@@ -1179,6 +1227,82 @@ export default function AdminPage() {
     })
     const data = await fetchRoutes(password)
     setRoutePrices(data)
+  }
+
+  async function addDiscount() {
+    setAddingDiscount(true)
+    try {
+      const res = await fetch('/api/admin/discount-codes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
+        body: JSON.stringify({
+          code: newDiscount.code,
+          type: newDiscount.type,
+          value: newDiscount.value,
+          max_uses: newDiscount.max_uses ? parseInt(newDiscount.max_uses) : null,
+          expires_at: newDiscount.expires_at || null,
+          min_amount: newDiscount.min_amount ? parseFloat(newDiscount.min_amount) : null,
+          client_name: newDiscount.client_name || null,
+        }),
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        toast(`Error adding code: ${result.error || 'Unknown error'}`, 'error')
+        setAddingDiscount(false)
+        return
+      }
+      const data = await fetchDiscountCodes(password)
+      setDiscountCodes(data)
+      setNewDiscount({ code: '', type: 'percent', value: 5, max_uses: '', expires_at: '', min_amount: '', client_name: '' })
+    } catch (err) {
+      toast(`Network error adding code: ${err}`, 'error')
+    }
+    setAddingDiscount(false)
+  }
+
+  async function saveDiscount(dc: DiscountCode) {
+    setSavingDiscount(dc.id)
+    const edit = editDiscountData[dc.id]
+    await fetch('/api/admin/discount-codes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
+      body: JSON.stringify({
+        id: dc.id,
+        code: edit?.code ?? dc.code,
+        type: edit?.type ?? dc.type,
+        value: edit?.value ?? dc.value,
+        max_uses: edit?.max_uses !== undefined ? (edit.max_uses ? parseInt(edit.max_uses) : null) : dc.max_uses,
+        expires_at: edit?.expires_at !== undefined ? (edit.expires_at || null) : dc.expires_at,
+        min_amount: edit?.min_amount !== undefined ? (edit.min_amount ? parseFloat(edit.min_amount) : null) : dc.min_amount,
+        client_name: edit?.client_name ?? dc.client_name,
+        active: dc.active,
+      }),
+    })
+    const data = await fetchDiscountCodes(password)
+    setDiscountCodes(data)
+    setSavingDiscount(null)
+  }
+
+  async function toggleDiscountActive(dc: DiscountCode) {
+    setSavingDiscount(dc.id)
+    await fetch('/api/admin/discount-codes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
+      body: JSON.stringify({ id: dc.id, active: !dc.active }),
+    })
+    const data = await fetchDiscountCodes(password)
+    setDiscountCodes(data)
+    setSavingDiscount(null)
+  }
+
+  async function deleteDiscount(id: string) {
+    if (!(await confirmDialog('Are you sure you want to permanently delete this discount code?', { danger: true }))) return
+    await fetch(`/api/admin/discount-codes?id=${id}`, {
+      method: 'DELETE',
+      headers: { authorization: `Bearer ${password}` },
+    })
+    const data = await fetchDiscountCodes(password)
+    setDiscountCodes(data)
   }
 
   async function addLead(): Promise<boolean> {
@@ -1718,6 +1842,7 @@ export default function AdminPage() {
   const settingsItems = [
     { key: 'websites', label: 'Websites & Domains', icon: <IconWeb /> },
     { key: 'routes', label: 'Routes & Pricing', icon: <IconRoutes /> },
+    { key: 'discounts', label: 'Discount Codes', icon: <IconDiscount /> },
     { key: 'qr', label: 'QR Codes', icon: <IconQR /> },
   ] as SidebarItem[]
 
@@ -3093,6 +3218,182 @@ export default function AdminPage() {
                           style={{ border: '2px dashed var(--gold)', color: 'var(--gold)' }}
                         >
                           {addingRoute ? 'Wait…' : '+ Add'}
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* ------- DISCOUNT CODES TAB ------- */}
+        {activeTab === 'discounts' && (
+          <div className="flex flex-col gap-8">
+            <div>
+              <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Discount Codes</h1>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Each code belongs to one client or company. Applies to any booking on the site, never to deposits.</p>
+            </div>
+
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead>
+                    <tr style={{ color: 'var(--text-muted)' }}>
+                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Code</th>
+                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Client</th>
+                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Discount</th>
+                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Uses</th>
+                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Expires</th>
+                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Min. $</th>
+                      <th className="py-2 pr-4 text-xs uppercase tracking-widest">Active</th>
+                      <th className="py-2 text-xs uppercase tracking-widest text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {discountCodes.map((dc) => (
+                      <tr key={dc.id} style={{ borderTop: '1px solid var(--surface)' }}>
+                        <td className="py-4 pr-4">
+                          <input
+                            type="text"
+                            value={editDiscountData[dc.id]?.code ?? dc.code}
+                            onChange={(e) => setEditDiscountData((prev) => ({ ...prev, [dc.id]: { ...(prev[dc.id] || { type: dc.type, value: dc.value, max_uses: dc.max_uses?.toString() || '', expires_at: dc.expires_at?.slice(0, 10) || '', min_amount: dc.min_amount?.toString() || '', client_name: dc.client_name || '' }), code: e.target.value.toUpperCase() } }))}
+                            className="w-28 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white font-bold outline-none focus:border-[var(--gold)]"
+                          />
+                        </td>
+                        <td className="py-4 pr-4">
+                          <input
+                            type="text"
+                            placeholder="e.g. Uber Corporate"
+                            value={editDiscountData[dc.id]?.client_name ?? dc.client_name ?? ''}
+                            onChange={(e) => setEditDiscountData((prev) => ({ ...prev, [dc.id]: { ...(prev[dc.id] || { code: dc.code, type: dc.type, value: dc.value, max_uses: dc.max_uses?.toString() || '', expires_at: dc.expires_at?.slice(0, 10) || '', min_amount: dc.min_amount?.toString() || '' }), client_name: e.target.value } }))}
+                            className="w-36 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]"
+                          />
+                        </td>
+                        <td className="py-4 pr-4">
+                          <div className="flex items-center gap-1">
+                            <select
+                              value={editDiscountData[dc.id]?.type ?? dc.type}
+                              onChange={(e) => setEditDiscountData((prev) => ({ ...prev, [dc.id]: { ...(prev[dc.id] || { code: dc.code, value: dc.value, max_uses: dc.max_uses?.toString() || '', expires_at: dc.expires_at?.slice(0, 10) || '', min_amount: dc.min_amount?.toString() || '', client_name: dc.client_name || '' }), type: e.target.value as 'percent' | 'fixed' } }))}
+                              className="rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white text-xs outline-none focus:border-[var(--gold)]"
+                            >
+                              <option value="percent">%</option>
+                              <option value="fixed">$</option>
+                            </select>
+                            <input
+                              type="number"
+                              value={editDiscountData[dc.id]?.value ?? dc.value}
+                              onChange={(e) => setEditDiscountData((prev) => ({ ...prev, [dc.id]: { ...(prev[dc.id] || { code: dc.code, type: dc.type, max_uses: dc.max_uses?.toString() || '', expires_at: dc.expires_at?.slice(0, 10) || '', min_amount: dc.min_amount?.toString() || '', client_name: dc.client_name || '' }), value: parseFloat(e.target.value) || 0 } }))}
+                              className="w-16 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]"
+                            />
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              placeholder="∞"
+                              value={editDiscountData[dc.id]?.max_uses ?? (dc.max_uses?.toString() || '')}
+                              onChange={(e) => setEditDiscountData((prev) => ({ ...prev, [dc.id]: { ...(prev[dc.id] || { code: dc.code, type: dc.type, value: dc.value, expires_at: dc.expires_at?.slice(0, 10) || '', min_amount: dc.min_amount?.toString() || '', client_name: dc.client_name || '' }), max_uses: e.target.value } }))}
+                              className="w-14 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]"
+                            />
+                            <span className="text-xs text-[var(--text-muted)]">/ {dc.uses_count} used</span>
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <input
+                            type="date"
+                            value={editDiscountData[dc.id]?.expires_at ?? (dc.expires_at?.slice(0, 10) || '')}
+                            onChange={(e) => setEditDiscountData((prev) => ({ ...prev, [dc.id]: { ...(prev[dc.id] || { code: dc.code, type: dc.type, value: dc.value, max_uses: dc.max_uses?.toString() || '', min_amount: dc.min_amount?.toString() || '', client_name: dc.client_name || '' }), expires_at: e.target.value } }))}
+                            className="w-36 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white text-xs outline-none focus:border-[var(--gold)]"
+                          />
+                        </td>
+                        <td className="py-4 pr-4">
+                          <input
+                            type="number"
+                            placeholder="none"
+                            value={editDiscountData[dc.id]?.min_amount ?? (dc.min_amount?.toString() || '')}
+                            onChange={(e) => setEditDiscountData((prev) => ({ ...prev, [dc.id]: { ...(prev[dc.id] || { code: dc.code, type: dc.type, value: dc.value, max_uses: dc.max_uses?.toString() || '', expires_at: dc.expires_at?.slice(0, 10) || '', client_name: dc.client_name || '' }), min_amount: e.target.value } }))}
+                            className="w-16 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]"
+                          />
+                        </td>
+                        <td className="py-4 pr-4">
+                          <button
+                            onClick={() => toggleDiscountActive(dc)}
+                            className="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest"
+                            style={dc.active ? { background: 'rgba(74, 222, 128, 0.12)', color: '#4ade80', border: '1px solid rgba(74, 222, 128, 0.3)' } : { background: 'rgba(153,153,153,0.1)', color: '#888', border: '1px solid #333' }}
+                          >
+                            {dc.active ? 'Active' : 'Off'}
+                          </button>
+                        </td>
+                        <td className="py-4 text-right">
+                          {savingDiscount === dc.id ? (
+                            <span className="text-[var(--gold)] uppercase tracking-widest text-xs font-bold">Saving…</span>
+                          ) : (
+                            <div className="flex items-center justify-end gap-3">
+                              <button
+                                onClick={() => saveDiscount(dc)}
+                                className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
+                                style={{ background: 'var(--gold)', color: 'var(--bg-deep)' }}
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={() => deleteDiscount(dc.id)}
+                                className="text-red-900 hover:text-red-400 text-xs font-bold uppercase tracking-widest"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+
+                    {discountCodes.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="py-4 text-center text-[var(--text-muted)] text-xs italic">
+                          No discount codes yet.
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Add New Discount Code */}
+                    <tr style={{ borderTop: '1px solid var(--surface)' }}>
+                      <td className="py-4 pr-4">
+                        <input type="text" placeholder="e.g. UBER5" value={newDiscount.code} onChange={(e) => setNewDiscount({ ...newDiscount, code: e.target.value.toUpperCase() })} className="w-28 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white font-bold outline-none focus:border-[var(--gold)]" />
+                      </td>
+                      <td className="py-4 pr-4">
+                        <input type="text" placeholder="e.g. Uber Corporate" value={newDiscount.client_name} onChange={(e) => setNewDiscount({ ...newDiscount, client_name: e.target.value })} className="w-36 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]" />
+                      </td>
+                      <td className="py-4 pr-4">
+                        <div className="flex items-center gap-1">
+                          <select value={newDiscount.type} onChange={(e) => setNewDiscount({ ...newDiscount, type: e.target.value as 'percent' | 'fixed' })} className="rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white text-xs outline-none focus:border-[var(--gold)]">
+                            <option value="percent">%</option>
+                            <option value="fixed">$</option>
+                          </select>
+                          <input type="number" value={newDiscount.value || ''} onChange={(e) => setNewDiscount({ ...newDiscount, value: parseFloat(e.target.value) || 0 })} className="w-16 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]" />
+                        </div>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <input type="number" placeholder="∞" value={newDiscount.max_uses} onChange={(e) => setNewDiscount({ ...newDiscount, max_uses: e.target.value })} className="w-14 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]" />
+                      </td>
+                      <td className="py-4 pr-4">
+                        <input type="date" value={newDiscount.expires_at} onChange={(e) => setNewDiscount({ ...newDiscount, expires_at: e.target.value })} className="w-36 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white text-xs outline-none focus:border-[var(--gold)]" />
+                      </td>
+                      <td className="py-4 pr-4">
+                        <input type="number" placeholder="none" value={newDiscount.min_amount} onChange={(e) => setNewDiscount({ ...newDiscount, min_amount: e.target.value })} className="w-16 rounded-lg bg-[var(--bg-deep)] border border-[var(--surface-alt)] p-2 text-white outline-none focus:border-[var(--gold)]" />
+                      </td>
+                      <td className="py-4 pr-4"></td>
+                      <td className="py-4 text-right">
+                        <button
+                          onClick={addDiscount}
+                          disabled={addingDiscount || !newDiscount.code || !newDiscount.value}
+                          className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-40"
+                          style={{ border: '2px dashed var(--gold)', color: 'var(--gold)' }}
+                        >
+                          {addingDiscount ? 'Wait…' : '+ Add'}
                         </button>
                       </td>
                     </tr>

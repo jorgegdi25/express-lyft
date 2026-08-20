@@ -5,6 +5,7 @@ import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@
 import { calculateDistanceAmount, applyTimeSurcharge, SurchargeConfig } from '@/lib/pricing'
 import { flTaxRateIds, FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { createAndSendInvoice } from '@/lib/quickbooks'
+import { checkDiscountCode, redeemDiscountCode } from '@/lib/discountCodes'
 
 export const dynamic = 'force-dynamic'
 
@@ -256,7 +257,8 @@ export async function POST(req: NextRequest) {
       externalPlatform,
       externalReference,
       amountPaid: manualAmountPaid,
-      amountRemaining: manualAmountRemaining
+      amountRemaining: manualAmountRemaining,
+      discountCode
     } = body
 
     if (!hotelSlug) return NextResponse.json({ error: 'Missing hotelSlug' }, { status: 400 })
@@ -282,7 +284,9 @@ export async function POST(req: NextRequest) {
     // Determine target price
     const inputTotal = estimatedTotal !== undefined ? estimatedTotal : amountUsd
     let finalAmount = inputTotal
-    
+    let appliedDiscountCode: string | null = null
+    let appliedDiscountAmount = 0
+
     let leadStatus = isAdmin ? (status || 'new') : 'pending_payment'
     let isDeposit = paymentMode === 'deposit' && !isAdmin
 
@@ -313,8 +317,19 @@ export async function POST(req: NextRequest) {
       if (meetingType === 'meet_greet') {
         expectedFee = 25;
       }
-      const expectedAmount = calculatedBaseAmount + expectedFee;
-      
+      let expectedAmount = calculatedBaseAmount + expectedFee;
+
+      // Discount codes don't apply to deposits — always re-validated
+      // server-side, never trusting a discounted total the client sends.
+      if (discountCode && !isDeposit) {
+        const check = await checkDiscountCode(discountCode, expectedAmount)
+        if (check.valid) {
+          appliedDiscountCode = check.code
+          appliedDiscountAmount = check.discountAmount
+          expectedAmount = check.finalAmount
+        }
+      }
+
       if (expectedAmount > 0 && Math.abs(expectedAmount - inputTotal) > 0.01) {
         console.warn(`[leads] Price mismatch: input=${inputTotal}, expected=${expectedAmount}. Using calculated price.`)
         finalAmount = expectedAmount
@@ -366,12 +381,21 @@ export async function POST(req: NextRequest) {
       luggage_count: luggageCount || 0,
       notes: notes || null,
       distance_miles: distanceMiles || 0,
-      duration_minutes: durationMinutes || 0
+      duration_minutes: durationMinutes || 0,
+      discount_code: appliedDiscountCode,
+      discount_amount: appliedDiscountAmount
     }).select().single()
 
     if (error) {
       console.error('[leads] supabase insertion error:', error)
       throw error
+    }
+
+    // Consumed on lead creation (not on payment) so it lines up with the
+    // rest of this route's trust boundary — the same point calendar events
+    // and QuickBooks invoices already get created from.
+    if (appliedDiscountCode) {
+      await redeemDiscountCode(appliedDiscountCode)
     }
 
     // Create Calendar Event if status warrants it. Admin-entered reservations
