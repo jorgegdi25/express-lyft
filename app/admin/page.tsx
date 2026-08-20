@@ -168,7 +168,7 @@ interface Review {
 }
 
 
-type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites' | 'reviews' | 'stay' | 'discounts'
+type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'commissions' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites' | 'reviews' | 'stay' | 'discounts'
 
 type SidebarItem = { key: TabKey; label: string; icon: React.ReactNode; getBadge?: () => number }
 
@@ -422,6 +422,8 @@ export default function AdminPage() {
   })
 
   const [calendarMonth, setCalendarMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
+  const [commissionMonth, setCommissionMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
+  const COMMISSION_PER_BOOKING = 2
 
   const [metrics, setMetrics] = useState<any>(null)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -1845,6 +1847,7 @@ export default function AdminPage() {
         { key: 'clients', label: 'Frequent Flyers', icon: <IconClients /> },
         { key: 'reviews', label: 'Reviews', icon: <IconReviews />, getBadge: () => reviews.filter(r => r.status === 'pending').length },
         { key: 'revenue', label: 'Revenue Dashboard', icon: <IconRevenue /> },
+        { key: 'commissions', label: 'Commissions', icon: <DollarSign size={20} /> },
       ] as SidebarItem[]
     }
   ]
@@ -4586,6 +4589,105 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* ------- COMMISSIONS CALENDAR TAB ------- */}
+        {activeTab === 'commissions' && (() => {
+          // $2 per paid booking (transport or Stay), regardless of source —
+          // grouped by the date it was created (i.e. when it came in), not
+          // the trip date. Keyed off the ISO timestamp's date portion
+          // directly (no Date() parsing) so it lines up with UTC-based
+          // dates shown elsewhere in the admin (see formatDateUS).
+          const commissionsByDay: Record<string, number> = {}
+          leads.forEach(l => {
+            if (l.status === 'paid' || l.status === 'deposit_paid') {
+              const key = (l.created_at || '').slice(0, 10)
+              if (key) commissionsByDay[key] = (commissionsByDay[key] || 0) + 1
+            }
+          })
+          stayBookings.forEach(b => {
+            if (b.status === 'paid' || b.status === 'paid_overbooked') {
+              const key = (b.created_at || '').slice(0, 10)
+              if (key) commissionsByDay[key] = (commissionsByDay[key] || 0) + 1
+            }
+          })
+
+          const monthDays = getMonthGridDays(commissionMonth).filter(d => d.inMonth)
+          const monthCount = monthDays.reduce((sum, d) => sum + (commissionsByDay[d.dateStr] || 0), 0)
+
+          return (
+          <div className="flex flex-col gap-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Commissions</h1>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>${COMMISSION_PER_BOOKING} per paid booking, by the date it came in.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => { const d = new Date(commissionMonth); d.setMonth(d.getMonth() - 1); setCommissionMonth(d); }}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors"
+                  aria-label="Previous month"
+                >&larr;</button>
+                <span className="text-sm font-bold text-white min-w-[140px] text-center" style={{ fontFamily: 'Georgia, serif' }}>
+                  {commissionMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </span>
+                <button
+                  onClick={() => { const d = new Date(commissionMonth); d.setMonth(d.getMonth() + 1); setCommissionMonth(d); }}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors"
+                  aria-label="Next month"
+                >&rarr;</button>
+                <button
+                  onClick={() => { const d = new Date(); d.setDate(1); setCommissionMonth(d); }}
+                  className="px-3 py-2 rounded-lg border border-[var(--border)] text-xs font-bold uppercase tracking-wider text-[var(--text-subtle)] hover:text-[var(--gold-light)] hover:border-[var(--gold)] transition-colors"
+                >Today</button>
+              </div>
+            </div>
+
+            <div className="rounded-xl p-6 flex items-center justify-between" style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.3)' }}>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4ade80' }}>This Month</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{monthCount} paid booking{monthCount === 1 ? '' : 's'}</p>
+              </div>
+              <span className="text-4xl font-bold" style={{ color: '#4ade80', fontFamily: "'Playfair Display', Georgia, serif" }}>
+                ${(monthCount * COMMISSION_PER_BOOKING).toFixed(2)}
+              </span>
+            </div>
+
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <div className="grid grid-cols-7">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                  <div key={d} className="text-center text-[10px] uppercase font-bold tracking-widest text-[var(--text-faint)] py-2 border-b border-[var(--surface)]">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7">
+                {getMonthGridDays(commissionMonth).map(({ date, dateStr, inMonth }) => {
+                  const isToday = dateStr === new Date().toLocaleDateString('en-CA')
+                  const count = commissionsByDay[dateStr] || 0
+                  return (
+                    <div
+                      key={dateStr}
+                      className="min-h-[76px] p-1.5 border-b border-r border-[var(--surface)] flex flex-col gap-1"
+                      style={{ opacity: inMonth ? 1 : 0.35 }}
+                    >
+                      <span
+                        className="text-[11px] font-bold w-5 h-5 flex items-center justify-center rounded-full"
+                        style={{ color: isToday ? 'var(--bg-deep)' : 'var(--text-muted)', background: isToday ? 'var(--gold-light)' : 'transparent' }}
+                      >
+                        {date.getDate()}
+                      </span>
+                      {count > 0 && (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold" style={{ color: '#4ade80' }}>${count * COMMISSION_PER_BOOKING}</span>
+                          <span className="text-[10px] text-[var(--text-faint)]">{count} booking{count === 1 ? '' : 's'}</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+          )
+        })()}
 
         {/* ------- DISPATCH CALENDAR TAB ------- */}
         {activeTab === 'dispatch' && (
