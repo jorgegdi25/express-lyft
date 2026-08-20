@@ -57,6 +57,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   const [liveRoutePrices, setLiveRoutePrices] = useState(serverRoutePrices)
   const [surcharge, setSurcharge] = useState<SurchargeConfig | null>(null)
   const [depositsEnabled, setDepositsEnabled] = useState<boolean>(true)
+  const [paymentProvider, setPaymentProvider] = useState<'stripe' | 'quickbooks'>('stripe')
   const [minDateStr, setMinDateStr] = useState<string>('')
 
   // Calculate local date safely on the client
@@ -78,6 +79,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           if (data.routePrices) setLiveRoutePrices(data.routePrices)
           if (data.surcharge) setSurcharge(data.surcharge)
           if (typeof data.depositsEnabled === 'boolean') setDepositsEnabled(data.depositsEnabled)
+          if (data.paymentProvider === 'quickbooks' || data.paymentProvider === 'stripe') setPaymentProvider(data.paymentProvider)
         }
       } catch (err) {
         console.error('Failed to fetch fresh prices:', err)
@@ -139,6 +141,43 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; type: 'percent' | 'fixed'; value: number } | null>(null)
   const [discountChecking, setDiscountChecking] = useState(false)
   const [discountError, setDiscountError] = useState<string | null>(null)
+  const [qbWaitingLeadId, setQbWaitingLeadId] = useState<string | null>(null)
+  const [qbPaymentConfirmed, setQbPaymentConfirmed] = useState(false)
+
+  // QuickBooks' hosted invoice page has no "return to merchant" redirect the
+  // way Stripe Checkout's success_url does, so instead of navigating this
+  // tab away we open payment in a new one and poll here — the guest never
+  // loses the Express Lyft tab.
+  //
+  // Confirmation is a bonus, not the point: payment is currently only picked
+  // up by the reconcile cron (every 3 min), so this can take minutes to flip.
+  // The screen below is written to be useful immediately without it, and the
+  // poll just upgrades the wording if it does land while they're still here.
+  useEffect(() => {
+    if (!qbWaitingLeadId) return
+    const deadline = Date.now() + 10 * 60 * 1000
+    const interval = setInterval(async () => {
+      // Stop after 10 minutes — they've almost certainly left the page, and
+      // their email receipt is the real confirmation either way.
+      if (Date.now() > deadline) {
+        clearInterval(interval)
+        return
+      }
+      try {
+        const res = await fetch(`/api/leads/status?id=${qbWaitingLeadId}`, { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.status === 'paid' || data.status === 'deposit_paid') {
+          setQbPaymentConfirmed(true)
+          setIsSuccess(true)
+          setQbWaitingLeadId(null)
+        }
+      } catch {
+        // Keep polling — a transient network error shouldn't stop it
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [qbWaitingLeadId])
 
   // If the owner turns deposits off after the guest already picked that
   // option, fall back to full payment instead of submitting a stale choice.
@@ -435,6 +474,10 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
       setError('Please provide your full contact information, including phone and country.')
       return
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())) {
+      setError('Please enter a valid email address (e.g. name@example.com).')
+      return
+    }
 
     // Final luggage check just in case
     const maxLuggage = vehicleType === 'sedan_suv' ? 4 : vehicleType === 'suburban' ? 6 : vehicleType === 'sprinter' ? 14 : vehicleType === 'minibus' ? 30 : 60;
@@ -445,6 +488,12 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     }
 
     setLoading(true)
+
+    // Must open synchronously on the click, before the await below — browsers
+    // block window.open() called after an async gap.
+    const isQuoteOnly = vehicleType === 'coachbus' || vehicleType === 'minibus'
+    const willChargeViaQuickBooks = paymentProvider === 'quickbooks' && !isPromo && !isQuoteOnly
+    const qbWindow = willChargeViaQuickBooks ? window.open('', '_blank') : null
 
     try {
       const res = await fetch('/api/leads', {
@@ -481,12 +530,21 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        qbWindow?.close()
         throw new Error(data.error || 'Failed to submit reservation.')
       }
 
       const data = await res.json()
       if (data.url) {
-        window.location.href = data.url
+        if (qbWindow && !qbWindow.closed) {
+          qbWindow.location.href = data.url
+          setQbWaitingLeadId(data.leadId)
+        } else {
+          // Popup blocked, or this wasn't a QuickBooks charge — fall back to
+          // the normal same-tab redirect (Stripe's success_url handles the
+          // return trip on its own).
+          window.location.href = data.url
+        }
       } else {
         setIsSuccess(true)
       }
@@ -521,6 +579,8 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     setSelectedVehicleOverride(null)
     setStep(1)
     setIsSuccess(false)
+    setQbWaitingLeadId(null)
+    setQbPaymentConfirmed(false)
   }
 
   return (
@@ -544,7 +604,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
         <div className="max-w-3xl mx-auto">
           {/* ── Booking Form ──────────────────────────────────── */}
 
-          {isSuccess ? (
+          {qbWaitingLeadId ? (
             <div
               className="rounded-2xl p-7 md:p-10"
               style={{
@@ -560,16 +620,53 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   </svg>
                 </div>
                 <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text)', fontFamily: "'Playfair Display', Georgia, serif" }}>
-                  Reservation Received!
+                  Reservation Registered!
+                </h3>
+                <p className="text-base mb-2" style={{ color: '#DDDDDD' }}>
+                  We opened your secure QuickBooks payment page in a new tab — just finish paying there to lock in your ride.
+                </p>
+                <p className="text-sm mb-4 font-bold" style={{ color: '#ffbaba' }}>
+                  Please check your spam/junk messages to ensure you receive your confirmation email.
+                </p>
+                <p className="text-sm" style={{ color: 'var(--text-subtle)' }}>
+                  Already paid? Your emailed receipt is your confirmation — it can take a couple of minutes to show up on this page.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResetForm}
+                  className="mt-8 px-8 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95"
+                  style={{ background: '#222222', color: 'var(--text)', border: '1px solid var(--border-soft)' }}
+                >
+                  Make Another Reservation
+                </button>
+              </div>
+            </div>
+          ) : isSuccess ? (
+            <div
+              className="rounded-2xl p-7 md:p-10"
+              style={{
+                background: 'var(--surface-raised)',
+                border: '1px solid var(--border)',
+                boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+              }}
+            >
+              <div className="flex flex-col items-center justify-center text-center py-12">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6" style={{ background: 'rgba(184,150,12,0.1)', border: '2px solid var(--gold)' }}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text)', fontFamily: "'Playfair Display', Georgia, serif" }}>
+                  {qbPaymentConfirmed ? 'Payment Confirmed!' : 'Reservation Received!'}
                 </h3>
                 <p className="text-sm mb-4 font-bold" style={{ color: '#ffbaba' }}>
                   Please check your spam/junk messages to ensure you receive your confirmation email.
                 </p>
                 <p className="text-base mb-2" style={{ color: '#DDDDDD' }}>
-                  Your request has been successfully processed.
+                  {qbPaymentConfirmed ? 'Your payment went through and your ride is booked.' : 'Your request has been successfully processed.'}
                 </p>
                 <p className="text-base" style={{ color: 'var(--text-subtle)' }}>
-                  Our concierge team will contact you shortly to confirm the details and process your payment.
+                  {qbPaymentConfirmed ? "You're all set — we'll see you at pickup time." : 'Our concierge team will contact you shortly to confirm the details and process your payment.'}
                 </p>
                 <button
                   type="button"
@@ -1466,7 +1563,13 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       </div>
                       <div className="flex items-center gap-1.5 opacity-60">
                         <span className="text-[10px] uppercase font-bold text-[var(--text-faint)] tracking-widest">Powered by</span>
-                        <span className="text-[#635BFF] font-bold" style={{ fontSize: '1.1rem', letterSpacing: '-0.02em', fontFamily: 'system-ui, -apple-system, sans-serif' }}>stripe</span>
+                        {paymentProvider === 'quickbooks' ? (
+                          <span className="font-bold" style={{ fontSize: '1.1rem', letterSpacing: '-0.02em', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#2CA01C' }}>
+                            QuickBooks
+                          </span>
+                        ) : (
+                          <span className="text-[#635BFF] font-bold" style={{ fontSize: '1.1rem', letterSpacing: '-0.02em', fontFamily: 'system-ui, -apple-system, sans-serif' }}>stripe</span>
+                        )}
                       </div>
                     </div>
                   )}

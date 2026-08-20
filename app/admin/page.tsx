@@ -845,6 +845,7 @@ export default function AdminPage() {
     return_pickup_time: string | null
     room_amount: number
     transport_amount: number
+    tax_collected?: number
     status: string
     created_at: string
   }
@@ -895,6 +896,15 @@ export default function AdminPage() {
   async function deleteStayHotel(id: string) {
     if (!(await confirmDialog('Delete this Stay hotel? This cannot be undone.', { danger: true }))) return
     const res = await fetch(`/api/admin/stay-hotels?id=${id}`, {
+      method: 'DELETE',
+      headers: { authorization: `Bearer ${password}` },
+    })
+    if (res.ok) await refreshStayData()
+  }
+
+  async function deleteStayBooking(id: string) {
+    if (!(await confirmDialog('Delete this Stay booking? This cannot be undone.', { danger: true }))) return
+    const res = await fetch(`/api/admin/stay-hotels?bookingId=${id}`, {
       method: 'DELETE',
       headers: { authorization: `Bearer ${password}` },
     })
@@ -2687,13 +2697,17 @@ export default function AdminPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ background: 'var(--surface-raised)' }}>
-                      {['Guest', 'Hotel', 'Room', 'Nights', 'Check-in', 'Transport', 'Total', 'Status'].map(h => (
+                      {['Guest', 'Hotel', 'Room', 'Nights', 'Check-in', 'Transport', 'Total', 'Status', 'Actions'].map(h => (
                         <th key={h} className="text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {stayBookings.map(b => (
+                    {stayBookings.map(b => {
+                      const preTax = b.room_amount + b.transport_amount
+                      const isPaid = b.status === 'paid' || b.status === 'paid_overbooked'
+                      const grandTotal = isPaid ? preTax + (b.tax_collected || 0) : preTax
+                      return (
                       <tr key={b.id} style={{ borderTop: '1px solid var(--surface)' }}>
                         <td className="px-4 py-2.5 text-white">{b.guest_name}<br /><span className="text-xs text-[var(--text-faint)]">{b.guest_phone}</span></td>
                         <td className="px-4 py-2.5 text-[#ccc]">{b.hotel_name}</td>
@@ -2701,17 +2715,26 @@ export default function AdminPage() {
                         <td className="px-4 py-2.5 text-[#ccc]">{b.nights}</td>
                         <td className="px-4 py-2.5 text-[#ccc]">{b.check_in_date}</td>
                         <td className="px-4 py-2.5 text-[#ccc]">Airport pickup · {b.pickup_time}</td>
-                        <td className="px-4 py-2.5 text-white font-semibold">${(b.room_amount + b.transport_amount).toFixed(2)}</td>
+                        <td className="px-4 py-2.5 text-white font-semibold">
+                          ${grandTotal.toFixed(2)}
+                          {isPaid && !!b.tax_collected && (
+                            <div className="text-[10px] font-normal text-[var(--text-faint)]">${preTax.toFixed(2)} + ${b.tax_collected.toFixed(2)} tax</div>
+                          )}
+                        </td>
                         <td className="px-4 py-2.5">
                           <span className="text-xs font-bold px-2 py-1 rounded-full" style={{
                             background: b.status === 'paid' ? 'rgba(74,222,128,0.15)' : b.status === 'paid_overbooked' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.08)',
                             color: b.status === 'paid' ? '#4ade80' : b.status === 'paid_overbooked' ? '#ef4444' : 'var(--text-muted)',
                           }}>{b.status}</span>
                         </td>
+                        <td className="px-4 py-2.5">
+                          <button onClick={() => deleteStayBooking(b.id)} className="text-xs font-bold uppercase text-red-400 hover:text-red-300">Delete</button>
+                        </td>
                       </tr>
-                    ))}
+                      )
+                    })}
                     {stayBookings.length === 0 && (
-                      <tr><td colSpan={8} className="px-4 py-6 text-center text-[#555] italic">No Stay bookings yet.</td></tr>
+                      <tr><td colSpan={9} className="px-4 py-6 text-center text-[#555] italic">No Stay bookings yet.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -4080,14 +4103,21 @@ export default function AdminPage() {
                   <div className="flex items-center justify-between gap-3 pt-3.5 border-t border-[#222]">
                     <div>
                       <span className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest font-bold block">
-                        {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? 'Custom Quote' : activeTab === 'hotel_bookings' ? 'Hotel Billable' : 'Est. Total'}
+                        {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? 'Custom Quote' : activeTab === 'hotel_bookings' ? 'Hotel Billable' : l.status === 'paid' && !!l.tax_collected ? 'Total Paid' : 'Est. Total'}
                       </span>
                       {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? (
                         <p className="text-base font-bold" style={{ color: 'var(--gold-accent)' }}>Pending</p>
                       ) : (
-                        <p className="text-lg font-bold" style={{ color: activeTab === 'hotel_bookings' ? '#2dd4bf' : '#4ade80' }}>
-                          {activeTab === 'hotel_bookings' && !l.amount_usd ? 'TBD' : `$${l.amount_usd || 0}`}
-                        </p>
+                        <>
+                          <p className="text-lg font-bold" style={{ color: activeTab === 'hotel_bookings' ? '#2dd4bf' : '#4ade80' }}>
+                            {activeTab === 'hotel_bookings' && !l.amount_usd
+                              ? 'TBD'
+                              : `$${(l.status === 'paid' ? (l.amount_usd || 0) + (l.tax_collected || 0) : l.amount_usd || 0).toFixed(2)}`}
+                          </p>
+                          {l.status === 'paid' && !!l.tax_collected && (
+                            <p className="text-[10px] text-[var(--text-faint)]">${(l.amount_usd || 0).toFixed(2)} fare + ${l.tax_collected.toFixed(2)} tax</p>
+                          )}
+                        </>
                       )}
                       {l.status === 'deposit_paid' && (
                         <div className="w-16 bg-[var(--border)] rounded-full h-1 mt-1" title="20% Deposit Paid">

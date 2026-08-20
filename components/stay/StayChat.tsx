@@ -11,7 +11,7 @@ const WHATSAPP_URL = 'https://wa.me/19546236207'
 const WHATSAPP_DISPLAY = '954-623-6207'
 const MAX_SEDAN_SUV_GUESTS = 4
 
-type Step = 'hotel' | 'room' | 'nights' | 'guest' | 'pickup' | 'review'
+type Step = 'hotel' | 'room' | 'nights' | 'guest' | 'pickup' | 'review' | 'waiting' | 'confirmed'
 type RoomType = '1_bed' | '2_beds'
 
 type Bubble = { from: 'bot' | 'user'; text: string }
@@ -66,6 +66,38 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
   const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; type: 'percent' | 'fixed'; value: number } | null>(null)
   const [discountChecking, setDiscountChecking] = useState(false)
   const [discountError, setDiscountError] = useState<string | null>(null)
+  const [qbWaitingBookingId, setQbWaitingBookingId] = useState<string | null>(null)
+
+  // QuickBooks' hosted invoice page has no "return to merchant" redirect,
+  // so payment opens in a separate tab and we poll here — the guest never
+  // loses this chat.
+  //
+  // Confirmation is a bonus, not the point: payment is currently only picked
+  // up by the reconcile cron (every 3 min), so this can take minutes to flip.
+  // The 'waiting' step is written to be useful immediately without it.
+  useEffect(() => {
+    if (!qbWaitingBookingId) return
+    const deadline = Date.now() + 10 * 60 * 1000
+    const interval = setInterval(async () => {
+      // Stop after 10 minutes — the emailed receipt is the real confirmation.
+      if (Date.now() > deadline) {
+        clearInterval(interval)
+        return
+      }
+      try {
+        const res = await fetch(`/api/stay/status?id=${qbWaitingBookingId}`, { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.status === 'paid') {
+          setStep('confirmed')
+          setQbWaitingBookingId(null)
+        }
+      } catch {
+        // Keep polling — a transient network error shouldn't stop it
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [qbWaitingBookingId])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -99,6 +131,10 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
   function confirmGuest() {
     if (!guestName || !guestEmail || !guestPhone) {
       setError('Please fill in your name, email, and phone.')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+      setError('Please enter a valid email address (e.g. name@example.com).')
       return
     }
     if (guestCount > MAX_SEDAN_SUV_GUESTS) {
@@ -166,6 +202,9 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
     if (!selectedHotel) return
     setSubmitting(true)
     setError(null)
+    // Must open synchronously on the click, before the await below —
+    // browsers block window.open() called after an async gap.
+    const qbWindow = window.open('', '_blank')
     try {
       const res = await fetch('/api/stay/checkout', {
         method: 'POST',
@@ -188,12 +227,22 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
+        qbWindow?.close()
         setError(data.error || 'Something went wrong starting checkout.')
         setSubmitting(false)
         return
       }
-      window.location.href = data.url
+      if (qbWindow && !qbWindow.closed) {
+        qbWindow.location.href = data.url
+        setQbWaitingBookingId(data.bookingId)
+        setStep('waiting')
+        setSubmitting(false)
+      } else {
+        // Popup blocked — fall back to a same-tab redirect.
+        window.location.href = data.url
+      }
     } catch (e) {
+      qbWindow?.close()
       setError('Network error — please try again.')
       setSubmitting(false)
     }
@@ -380,6 +429,31 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
           <button onClick={submitPayment} disabled={submitting} className="mt-1 py-4 rounded-xl font-bold text-sm uppercase tracking-wider disabled:opacity-60" style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}>
             {submitting ? 'Redirecting to payment...' : 'Confirm & Pay'}
           </button>
+        </div>
+      )}
+
+      {step === 'waiting' && (
+        <div className="flex flex-col items-center gap-3 p-6 rounded-xl text-center" style={{ background: '#161616', border: '1px solid #2a2a2a' }}>
+          <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)', border: '2px solid #D4AF37' }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <p className="text-base font-bold text-white">Booking registered!</p>
+          <p className="text-sm text-[#999]">We opened your secure QuickBooks payment page in a new tab — just finish paying there to lock in your room and airport pickup.</p>
+          <p className="text-xs text-[#666]">Already paid? Your emailed receipt is your confirmation — please check spam/junk too. It can take a couple of minutes to show up here.</p>
+        </div>
+      )}
+
+      {step === 'confirmed' && (
+        <div className="flex flex-col items-center gap-3 p-6 rounded-xl text-center" style={{ background: '#161616', border: '1px solid #2a2a2a' }}>
+          <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(74,222,128,0.1)', border: '2px solid #4ade80' }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <p className="text-base font-bold text-white">Payment Confirmed!</p>
+          <p className="text-sm text-[#999]">Your stay and airport transportation are booked. You'll get a confirmation by email — please check spam/junk too.</p>
         </div>
       )}
     </div>

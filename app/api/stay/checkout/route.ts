@@ -136,11 +136,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Failed to generate a QuickBooks payment link' }, { status: 500 })
       }
 
-      return NextResponse.json({ success: true, url: invoice.invoiceLink })
+      return NextResponse.json({ success: true, url: invoice.invoiceLink, bookingId: booking.id })
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : JSON.stringify(err)
       console.error('[stay/checkout] QuickBooks invoice creation failed for booking', booking.id, errorMsg)
-      return NextResponse.json({ error: 'Failed to create QuickBooks invoice: ' + errorMsg }, { status: 500 })
+      // The raw QuickBooks API error is logged above for us — it's not
+      // something a guest should see (it's often just JSON from Intuit's API).
+      const friendlyError = errorMsg.includes('Invalid Email Address')
+        ? 'That email address looks invalid — please double check it and try again.'
+        : 'We could not start checkout. Please try again, or contact us and we will complete your booking manually.'
+      return NextResponse.json({ error: friendlyError }, { status: 500 })
     }
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : JSON.stringify(err)

@@ -1,0 +1,242 @@
+import { supabaseAdmin } from '@/lib/supabase'
+import { getInvoice, TAX_ITEM_NAME, STAY_TAX_ITEM_NAME } from '@/lib/quickbooks'
+import { createCalendarEvent } from '@/lib/calendar'
+import { resend, sendOwnerNotification } from '@/lib/resend'
+import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
+import { fulfillStayBooking } from '@/lib/stayBooking'
+
+// Shared by the QuickBooks webhook (app/api/webhooks/quickbooks/route.ts),
+// the reconcile cron (app/api/cron/quickbooks-reconcile/route.ts), and the
+// CRM's manual "check now" action (app/api/admin/quickbooks-sync/route.ts).
+// Lives outside any route.ts file because Next's App Router only allows a
+// route file to export HTTP method handlers plus a small set of config
+// options — anything else fails its route-type validation.
+
+// Runs once, the first time an invoice's balance hits 0 — mirrors what the
+// Stripe webhook does on checkout.session.completed, since a QuickBooks-paid
+// customer never lands back on our /success page to trigger that path.
+async function fulfillPaidLead(leadData: any, amountPaid: number, taxAmount: number) {
+  try {
+    const googleEventId = await createCalendarEvent(leadData)
+    let googleReturnEventId = null
+    if (leadData.trip_type === 'round-trip') {
+      googleReturnEventId = await createCalendarEvent(leadData, true)
+    }
+    if (googleEventId || googleReturnEventId) {
+      await supabaseAdmin
+        .from('leads')
+        .update({ google_event_id: googleEventId, google_return_event_id: googleReturnEventId })
+        .eq('id', leadData.id)
+    }
+  } catch (e) {
+    console.error('[quickbooks-webhook][calendar] error creating event for lead', leadData.id, e)
+  }
+
+  const clientProfileTask = async () => {
+    if (!leadData?.customer_email) return
+    try {
+      const { data: existingClient } = await supabaseAdmin
+        .from('clients')
+        .select('*')
+        .eq('email', leadData.customer_email)
+        .maybeSingle()
+
+      if (existingClient) {
+        await supabaseAdmin
+          .from('clients')
+          .update({
+            total_trips: (existingClient.total_trips || 0) + 1,
+            total_spent: (existingClient.total_spent || 0) + (leadData.amount_usd || 0),
+            last_trip_date: leadData.date || existingClient.last_trip_date,
+            name: leadData.customer_name || existingClient.name,
+            phone: leadData.customer_phone || existingClient.phone,
+          })
+          .eq('id', existingClient.id)
+      } else {
+        await supabaseAdmin.from('clients').insert({
+          name: leadData.customer_name || 'Guest',
+          email: leadData.customer_email,
+          phone: leadData.customer_phone || '',
+          hotel_slug: leadData.hotel_slug || '',
+          total_trips: 1,
+          total_spent: leadData.amount_usd || 0,
+          status: 'active',
+          last_trip_date: leadData.date || null,
+        })
+      }
+    } catch (clientErr) {
+      console.error('[quickbooks-webhook] Error updating clients table:', clientErr)
+    }
+  }
+
+  const emailTask = async () => {
+    if (!resend || !leadData?.customer_email) return
+    try {
+      await resend.emails.send({
+        from: 'Express Lyft <book@explyft.com>',
+        to: [leadData.customer_email],
+        subject: 'Reservation Confirmed & Paid - Express Lyft',
+        react: ConfirmationEmail({
+          customerName: leadData.customer_name || 'Valued Guest',
+          bookingId: leadData.id || 'CONFIRMED',
+          pickup: leadData.pickup || 'N/A',
+          destination: leadData.destination || 'N/A',
+          date: leadData.date || 'N/A',
+          time: leadData.time || 'N/A',
+          vehicleType: leadData.vehicle_type || 'N/A',
+          amount: String(amountPaid),
+          taxAmount: String(taxAmount),
+          paymentType: 'full',
+          airline: leadData.airline,
+          flightNumber: leadData.flight_number,
+          meetingType: leadData.meeting_type,
+          carSeatsRequested: leadData.car_seats_requested,
+          luggageCount: leadData.luggage_count,
+          notes: leadData.notes,
+          receiptUrl: null,
+          tripType: leadData.trip_type,
+          returnDate: leadData.return_date,
+          returnTime: leadData.return_time,
+        }),
+      })
+    } catch (emailErr) {
+      console.error('[quickbooks-webhook] Failed to send confirmation email:', emailErr)
+    }
+
+    await sendOwnerNotification(leadData, { isDeposit: false, amountPaid, totalAmount: amountPaid })
+  }
+
+  await Promise.allSettled([clientProfileTask(), emailTask()])
+}
+
+export type InvoiceSyncResult =
+  | { status: 'not_ours' }
+  | { status: 'no_change'; paid: boolean }
+  | { status: 'fulfilled' }
+  | { status: 'error'; message: string }
+
+/**
+ * Looks up one QuickBooks invoice and, if it's fully paid and the matching
+ * lead hasn't been fulfilled yet, marks it paid and runs the same
+ * fulfillment as a Stripe checkout completion (calendar event, client
+ * profile, confirmation email, owner notification).
+ *
+ * Shared by the webhook handler and the reconcile cron — the cron exists
+ * because Intuit's webhook delivery has proven unreliable in practice
+ * (invoices observed fully paid on Intuit's side with no webhook ever
+ * received), so this same logic also runs on a timer as a safety net rather
+ * than only in response to a webhook we can't fully trust.
+ */
+export async function syncInvoicePayment(invoiceId: string): Promise<InvoiceSyncResult> {
+  try {
+    const invoice = await getInvoice(invoiceId)
+    const totalAmt = invoice.TotalAmt ?? 0
+    // QuickBooks omits the Balance field entirely once an invoice is fully
+    // paid, instead of returning 0 — so a MISSING Balance means paid, not
+    // "unknown, assume the full amount is still owed".
+    const balance = invoice.Balance ?? 0
+    const isPaid = balance === 0
+    const isPartiallyPaid = balance > 0 && balance < totalAmt
+
+    const { data: existingLead } = await supabaseAdmin
+      .from('leads')
+      .select('*')
+      .eq('quickbooks_invoice_id', invoiceId)
+      .maybeSingle()
+
+    // Not one of ours (or the lead was deleted) — nothing to sync.
+    if (!existingLead) return { status: 'not_ours' }
+
+    const alreadyFulfilled = existingLead.status === 'paid'
+
+    // We add tax as a plain second line (see lib/quickbooks.ts) instead of
+    // using QuickBooks' own tax fields, so recover the amount by matching
+    // that line's description rather than reading invoice.TotalTax.
+    const taxLine = (invoice.Line || []).find(
+      (l: any) => l.Description === TAX_ITEM_NAME
+    )
+    const taxAmount = taxLine?.Amount ?? 0
+
+    const updateFields: Record<string, any> = {
+      quickbooks_invoice_status: isPaid ? 'paid' : isPartiallyPaid ? 'partially_paid' : 'sent',
+    }
+    if (isPaid && !alreadyFulfilled) {
+      updateFields.status = 'paid'
+      updateFields.amount_paid = totalAmt - taxAmount
+      updateFields.amount_remaining = 0
+      updateFields.tax_collected = (existingLead.tax_collected || 0) + taxAmount
+    }
+
+    const { data: leadData, error } = await supabaseAdmin
+      .from('leads')
+      .update(updateFields)
+      .eq('id', existingLead.id)
+      .select()
+      .single()
+
+    if (error) {
+      return { status: 'error', message: error.message }
+    }
+
+    if (isPaid && !alreadyFulfilled) {
+      await fulfillPaidLead(leadData, totalAmt - taxAmount, taxAmount)
+      return { status: 'fulfilled' }
+    }
+
+    return { status: 'no_change', paid: isPaid }
+  } catch (err) {
+    return { status: 'error', message: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+/**
+ * Same idea as syncInvoicePayment above, for Stay's hotel+transport
+ * invoices instead of a transport-only lead. A given invoice ID belongs to
+ * exactly one of the two tables, never both, so callers try this one after
+ * syncInvoicePayment reports 'not_ours'.
+ */
+export async function syncStayInvoicePayment(invoiceId: string): Promise<InvoiceSyncResult> {
+  try {
+    const invoice = await getInvoice(invoiceId)
+    const totalAmt = invoice.TotalAmt ?? 0
+    const balance = invoice.Balance ?? 0
+    const isPaid = balance === 0
+    const isPartiallyPaid = balance > 0 && balance < totalAmt
+
+    const { data: existingBooking } = await supabaseAdmin
+      .from('stay_bookings')
+      .select('*')
+      .eq('quickbooks_invoice_id', invoiceId)
+      .maybeSingle()
+
+    if (!existingBooking) return { status: 'not_ours' }
+
+    const alreadyFulfilled = existingBooking.status === 'paid' || existingBooking.status === 'paid_overbooked'
+
+    const taxLine = (invoice.Line || []).find((l: any) => l.Description === STAY_TAX_ITEM_NAME)
+    const taxAmount = taxLine?.Amount ?? 0
+
+    if (!isPaid || alreadyFulfilled) {
+      const { error } = await supabaseAdmin
+        .from('stay_bookings')
+        .update({ quickbooks_invoice_status: isPaid ? 'paid' : isPartiallyPaid ? 'partially_paid' : 'sent' })
+        .eq('id', existingBooking.id)
+      if (error) return { status: 'error', message: error.message }
+      return { status: 'no_change', paid: isPaid }
+    }
+
+    // fulfillStayBooking does its own atomic claim (status must still be
+    // 'pending_payment' at that point) — this quickbooks_invoice_status
+    // write is just bookkeeping, not what guards against double-fulfillment.
+    await supabaseAdmin
+      .from('stay_bookings')
+      .update({ quickbooks_invoice_status: 'paid' })
+      .eq('id', existingBooking.id)
+
+    const result = await fulfillStayBooking(existingBooking.id, taxAmount)
+    if (!result.ok) return { status: 'error', message: result.reason }
+    return { status: 'fulfilled' }
+  } catch (err) {
+    return { status: 'error', message: err instanceof Error ? err.message : String(err) }
+  }
+}

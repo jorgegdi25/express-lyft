@@ -86,6 +86,13 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   if (!(await isAuthorized(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const bookingId = req.nextUrl.searchParams.get('bookingId')
+  if (bookingId) {
+    const { error } = await supabaseAdmin.from('stay_bookings').delete().eq('id', bookingId)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
+  }
+
   const id = req.nextUrl.searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 

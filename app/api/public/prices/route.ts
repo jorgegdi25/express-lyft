@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
     hotel: hotelRes.data || null,
     surcharge: surchargeRes.data || null,
     depositsEnabled: surchargeRes.data?.deposits_enabled ?? true,
+    paymentProvider: surchargeRes.data?.payment_provider || 'stripe',
   })
 
   // Prevent ANY caching

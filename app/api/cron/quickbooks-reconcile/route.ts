@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { syncInvoicePayment, syncStayInvoicePayment } from '@/app/api/webhooks/quickbooks/route'
+import { syncInvoicePayment, syncStayInvoicePayment } from '@/lib/quickbooksSync'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
