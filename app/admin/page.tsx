@@ -5447,22 +5447,26 @@ export default function AdminPage() {
                     <button onClick={() => { setEditingLead(viewingLead); setViewingLead(null); }} className="px-4 py-2 rounded-lg text-sm font-bold border border-[var(--border-soft)] text-white hover:bg-[#222] transition-colors">
                       Edit
                     </button>
-                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
+                    {/* Only the processor actually picked for this reservation gets buttons —
+                        no point showing a Stripe link next to a QuickBooks one when it's one or
+                        the other. Missing payment_source (older rows, pre-dates this field) falls
+                        back to Stripe, since that was always the implicit default before. */}
+                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (viewingLead.payment_source || 'stripe') === 'stripe' && (
                       <button onClick={() => sendInvoice(viewingLead.id)} disabled={sendingInvoice === viewingLead.id} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/50 hover:bg-[#10B981]/20 transition-colors flex items-center gap-2 disabled:opacity-50">
                         <Mail size={14} /> {sendingInvoice === viewingLead.id ? 'Sending...' : 'Send Invoice (Stripe)'}
                       </button>
                     )}
-                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && qbConnected && (
+                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && viewingLead.payment_source === 'quickbooks' && qbConnected && (
                       <button onClick={() => sendQuickBooksInvoice(viewingLead.id)} disabled={sendingQuickBooksInvoice === viewingLead.id} className="px-4 py-2 rounded-lg text-sm font-bold bg-blue-500/10 text-blue-400 border border-blue-500/50 hover:bg-blue-500/20 transition-colors flex items-center gap-2 disabled:opacity-50">
                         <Receipt size={14} /> {sendingQuickBooksInvoice === viewingLead.id ? 'Sending...' : 'Send via QuickBooks'}
                       </button>
                     )}
-                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
+                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (viewingLead.payment_source || 'stripe') === 'stripe' && (
                       <button onClick={() => generateStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[var(--gold-light)] border border-[var(--gold)] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
                         <CreditCard size={14} /> Generate Payment Link (Stripe)
                       </button>
                     )}
-                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && qbConnected && (
+                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && viewingLead.payment_source === 'quickbooks' && qbConnected && (
                       <button onClick={() => generateQuickBooksLink(viewingLead.id)} disabled={generatingQuickBooksLink === viewingLead.id} className="px-4 py-2 rounded-lg text-sm font-bold bg-blue-500/10 text-blue-400 border border-blue-500/50 hover:bg-blue-500/20 transition-colors flex items-center gap-2 disabled:opacity-50">
                         <CreditCard size={14} /> {generatingQuickBooksLink === viewingLead.id ? 'Generating...' : 'Generate Payment Link (QuickBooks)'}
                       </button>
