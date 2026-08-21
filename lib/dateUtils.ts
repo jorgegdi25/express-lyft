@@ -15,6 +15,20 @@ export function formatDateUS(dateStr: string | undefined | null) {
   return dateStr
 }
 
+// Converts a free-text "7:30 PM" / "10:00 AM" time (as typed into the
+// booking form or CRM) into minutes-since-midnight, for sorting a day's
+// reservations chronologically instead of by whatever order they happen to
+// be in (e.g. creation order). Unparseable/missing values sort to the end
+// rather than crashing the sort or landing at the top.
+export function timeStringToMinutes(time: string | undefined | null): number {
+  if (!time) return Infinity
+  const match = time.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+  if (!match) return Infinity
+  let hours = parseInt(match[1], 10) % 12
+  if (/pm/i.test(match[3])) hours += 12
+  return hours * 60 + parseInt(match[2], 10)
+}
+
 // Builds a 6-week, Sunday-start grid for the given month so the calendar
 // view always shows a fixed 42-cell layout (same shape every month).
 export function getMonthGridDays(monthDate: Date) {

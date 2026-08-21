@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react'
 import QRCode from 'qrcode'
 import { applyTimeSurcharge, TIME_SLOTS } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
-import { formatDateUS, getMonthGridDays } from '@/lib/dateUtils'
+import { formatDateUS, getMonthGridDays, timeStringToMinutes } from '@/lib/dateUtils'
 import { VEHICLE_LABELS } from '@/lib/vehicles'
 import { CalendarDatePicker, CalendarRangeFilter } from '@/components/CalendarPicker'
 import { useToast } from '@/components/ui/Toast'
@@ -5025,6 +5025,9 @@ export default function AdminPage() {
                   const dayLeads = leads.filter(l =>
                     (l.date === dateStr || (l.trip_type === 'round-trip' && l.return_date === dateStr)) &&
                     (l.status === 'paid' || l.status === 'deposit_paid' || l.status === 'hotel_b2b')
+                  ).sort((a, b) =>
+                    timeStringToMinutes(a.date === dateStr ? a.time : a.return_time) -
+                    timeStringToMinutes(b.date === dateStr ? b.time : b.return_time)
                   )
                   const STATUS_DOT: Record<string, string> = { paid: '#4ade80', deposit_paid: '#FBBF24', hotel_b2b: '#2dd4bf' }
                   return (
@@ -5088,8 +5091,9 @@ export default function AdminPage() {
                   groupLeads = groupLeads.filter(l => l.date !== todayStr && l.date !== tomorrowStr)
                 }
                 
-                // Sort by time
-                groupLeads.sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+                // Sort by time — a plain string compare puts "9:00 PM" before
+                // "10:00 AM" (lexicographic '9' > '1'), so parse to minutes first.
+                groupLeads.sort((a, b) => timeStringToMinutes(a.time) - timeStringToMinutes(b.time))
 
                 if (groupLeads.length === 0) return null
 
@@ -5260,6 +5264,9 @@ export default function AdminPage() {
               const dayLeads = leads.filter(l =>
                 (l.date === viewingDay || (l.trip_type === 'round-trip' && l.return_date === viewingDay)) &&
                 (l.status === 'paid' || l.status === 'deposit_paid' || l.status === 'hotel_b2b')
+              ).sort((a, b) =>
+                timeStringToMinutes(a.date === viewingDay ? a.time : a.return_time) -
+                timeStringToMinutes(b.date === viewingDay ? b.time : b.return_time)
               )
               const STATUS_DOT: Record<string, string> = { paid: '#4ade80', deposit_paid: '#FBBF24', hotel_b2b: '#2dd4bf' }
               return (
