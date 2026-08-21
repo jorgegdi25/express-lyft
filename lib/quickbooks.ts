@@ -274,6 +274,12 @@ export async function createAndSendInvoice(params: {
   amount: number
   description: string
   taxAmount?: number
+  // Set false for "just give me a payment link" (the CRM's "Generate
+  // Payment Link" button) — the invoice still gets created in QuickBooks
+  // (it has to, to have a link at all), but QuickBooks' own invoice email
+  // never fires, mirroring how the Stripe payment-link button never emails
+  // either. Defaults true so every existing caller keeps emailing.
+  send?: boolean
 }) {
   const { accessToken, realmId } = await getValidConnection()
 
@@ -331,17 +337,20 @@ export async function createAndSendInvoice(params: {
   // The invoice itself is already created at this point, so a failure here
   // (e.g. email delivery hiccup) shouldn't make the whole operation look
   // like it failed — the admin can still see/resend it from QuickBooks.
-  let emailSent = true
-  try {
-    await qbFetch(
-      realmId,
-      accessToken,
-      `/invoice/${invoice.Id}/send?sendTo=${encodeURIComponent(params.customerEmail)}`,
-      { method: 'POST' }
-    )
-  } catch (err) {
-    emailSent = false
-    console.error('[quickbooks] invoice created but email send failed:', err instanceof Error ? err.message : err)
+  let emailSent = false
+  if (params.send !== false) {
+    emailSent = true
+    try {
+      await qbFetch(
+        realmId,
+        accessToken,
+        `/invoice/${invoice.Id}/send?sendTo=${encodeURIComponent(params.customerEmail)}`,
+        { method: 'POST' }
+      )
+    } catch (err) {
+      emailSent = false
+      console.error('[quickbooks] invoice created but email send failed:', err instanceof Error ? err.message : err)
+    }
   }
 
   return { ...invoice, emailSent, invoiceLink }
@@ -433,4 +442,14 @@ export async function getInvoice(invoiceId: string) {
   const { accessToken, realmId } = await getValidConnection()
   const data = await qbFetch(realmId, accessToken, `/invoice/${invoiceId}`)
   return data.Invoice
+}
+
+// Re-fetches the payment link for an invoice that already exists in
+// QuickBooks — used so "Generate Payment Link" can hand back the same link
+// on a second click instead of creating a duplicate invoice in QuickBooks'
+// books every time someone needs to re-copy it.
+export async function getInvoicePaymentLink(invoiceId: string) {
+  const { accessToken, realmId } = await getValidConnection()
+  const data = await qbFetch(realmId, accessToken, `/invoice/${invoiceId}?include=invoiceLink`)
+  return data.Invoice?.InvoiceLink || null
 }

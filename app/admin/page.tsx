@@ -600,6 +600,7 @@ export default function AdminPage() {
 
   // Dynamic Stripe link generation state
   const [generatingLink, setGeneratingLink] = useState<string | null>(null)
+  const [generatingQuickBooksLink, setGeneratingQuickBooksLink] = useState<string | null>(null)
 
   // Hotels available for the "Add Reservation" modal — derived from whatever
   // hotels already have routes loaded, same source of truth as the Websites tab.
@@ -1640,6 +1641,29 @@ export default function AdminPage() {
       toast('Error: ' + e.message, 'error')
     } finally {
       setGeneratingLink(null)
+    }
+  }
+
+  async function generateQuickBooksLink(leadId: string) {
+    setGeneratingQuickBooksLink(leadId)
+    try {
+      const res = await fetch('/api/admin/quickbooks-payment-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
+        body: JSON.stringify({ leadId })
+      })
+      const data = await res.json()
+      if (data.url) {
+        setGeneratedLink(data.url)
+        try { await navigator.clipboard.writeText(data.url) } catch(e) {} // Fallback silent copy
+        fetchLeads(password).then(setLeads)
+      } else {
+        toast('Failed to generate QuickBooks link: ' + (data.error || 'Unknown error'), 'error')
+      }
+    } catch (e: any) {
+      toast('Error: ' + e.message, 'error')
+    } finally {
+      setGeneratingQuickBooksLink(null)
     }
   }
 
@@ -4007,7 +4031,7 @@ export default function AdminPage() {
                     </div>
 
                     {(newLead.paymentSource === 'quickbooks' || newLead.paymentSource === 'stripe') ? (
-                      <p className="text-xs text-[var(--text-faint)]">Created as a pending reservation — open it afterward and use &quot;Send Invoice ({newLead.paymentSource === 'quickbooks' ? 'QuickBooks' : 'Stripe'})&quot; or &quot;Generate Payment Link&quot; to collect payment.</p>
+                      <p className="text-xs text-[var(--text-faint)]">Created as a pending reservation — open it afterward and use &quot;Send Invoice ({newLead.paymentSource === 'quickbooks' ? 'QuickBooks' : 'Stripe'})&quot; or &quot;Generate Payment Link ({newLead.paymentSource === 'quickbooks' ? 'QuickBooks' : 'Stripe'})&quot; to collect payment.</p>
                     ) : (
                       <div className="flex flex-col gap-4">
                         {newLead.paymentSource === 'external' && (
@@ -5435,7 +5459,12 @@ export default function AdminPage() {
                     )}
                     {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && (
                       <button onClick={() => generateStripeLink(viewingLead.id)} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#B8960C]/10 text-[var(--gold-light)] border border-[var(--gold)] hover:bg-[#B8960C]/20 transition-colors flex items-center gap-2">
-                        <CreditCard size={14} /> Generate Payment Link
+                        <CreditCard size={14} /> Generate Payment Link (Stripe)
+                      </button>
+                    )}
+                    {viewingLead.status !== 'paid' && viewingLead.status !== 'deposit_paid' && qbConnected && (
+                      <button onClick={() => generateQuickBooksLink(viewingLead.id)} disabled={generatingQuickBooksLink === viewingLead.id} className="px-4 py-2 rounded-lg text-sm font-bold bg-blue-500/10 text-blue-400 border border-blue-500/50 hover:bg-blue-500/20 transition-colors flex items-center gap-2 disabled:opacity-50">
+                        <CreditCard size={14} /> {generatingQuickBooksLink === viewingLead.id ? 'Generating...' : 'Generate Payment Link (QuickBooks)'}
                       </button>
                     )}
                     {viewingLead.status === 'deposit_paid' && (
