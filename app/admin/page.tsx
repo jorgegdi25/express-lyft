@@ -345,23 +345,34 @@ const LEAD_STATUS_OPTIONS = [
   { value: 'lost',            label: 'Lost/Cancel',     color: '#F44336' },
 ]
 
-// Every reservation created through the "Add Reservation" modal is a manual
-// entry by definition (the public site never hits this path — see isAdmin
-// in app/api/leads/route.ts), so whoever fills the modal must pick which
-// agent it's for. Keep this list in sync with who's actually taking manual
-// bookings — it drives the per-agent commission breakdown on the
-// Commissions tab.
-const SALES_AGENTS = ['Dennis Rivera', 'Karen Hernandez']
-
-// One fixed color per agent so the same person reads as the same color
-// everywhere (lead badges, the agent picker, the commissions breakdown) —
-// add a new agent's colors here too, or they fall back to DEFAULT_AGENT_COLOR.
-const AGENT_COLORS: Record<string, { bg: string; fg: string; border: string; dot: string }> = {
-  'Dennis Rivera':   { bg: 'rgba(251,146,60,0.12)',  fg: '#fb923c', border: 'rgba(251,146,60,0.35)',  dot: '#fb923c' },
-  'Karen Hernandez': { bg: 'rgba(167,139,250,0.12)', fg: '#a78bfa', border: 'rgba(167,139,250,0.35)', dot: '#a78bfa' },
+interface SalesAgent {
+  id: string
+  name: string
+  color: string
+  active: boolean
 }
+
+function hexToRgba(hex: string, alpha: number) {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.substring(0, 2), 16)
+  const g = parseInt(clean.substring(2, 4), 16)
+  const b = parseInt(clean.substring(4, 6), 16)
+  return `rgba(${r},${g},${b},${alpha})`
+}
+
 const DEFAULT_AGENT_COLOR = { bg: 'rgba(161,161,170,0.12)', fg: '#a1a1aa', border: 'rgba(161,161,170,0.35)', dot: '#a1a1aa' }
 const WEB_COLOR = { bg: 'rgba(56,189,248,0.12)', fg: '#38bdf8', border: 'rgba(56,189,248,0.35)', dot: '#38bdf8' }
+
+// Agents are managed from the CRM ("Sales Agent" picker → "+ Add Agent"),
+// not hardcoded, so the roster can grow without a code change. Each row
+// carries its own color (assigned server-side on creation — see
+// app/api/admin/sales-agents/route.ts), so the same person reads as the
+// same color everywhere: lead badges, the picker, the commissions breakdown.
+function agentColorOf(agents: SalesAgent[], name: string | null | undefined) {
+  const agent = agents.find((a) => a.name === name)
+  if (!agent) return DEFAULT_AGENT_COLOR
+  return { bg: hexToRgba(agent.color, 0.12), fg: agent.color, border: hexToRgba(agent.color, 0.35), dot: agent.color }
+}
 
 function StatCard({
   icon, iconColor, label, value, trendPct, caption,
@@ -425,6 +436,7 @@ export default function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loadingBookings, setLoadingBookings] = useState(false)
   const [drivers, setDrivers] = useState<Driver[]>([])
+  const [salesAgents, setSalesAgents] = useState<SalesAgent[]>([])
   const [loadingDrivers, setLoadingDrivers] = useState(false)
 
   const [qrSlug, setQrSlug] = useState('')
@@ -490,6 +502,9 @@ export default function AdminPage() {
     agentName: '',
   }
   const [newLead, setNewLead] = useState(emptyNewLead)
+  const [showAddAgentInput, setShowAddAgentInput] = useState(false)
+  const [newAgentName, setNewAgentName] = useState('')
+  const [addingAgent, setAddingAgent] = useState(false)
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [expandedNotes, setExpandedNotes] = useState<string[]>([])
@@ -847,6 +862,40 @@ export default function AdminPage() {
     return res.json() as Promise<Driver[]>
   }
 
+  async function fetchSalesAgents(pw: string) {
+    const res = await fetch(`/api/admin/sales-agents?t=${Date.now()}`, {
+      headers: { authorization: `Bearer ${pw}` },
+      cache: 'no-store'
+    })
+    if (!res.ok) return []
+    return res.json() as Promise<SalesAgent[]>
+  }
+
+  async function addSalesAgent(name: string): Promise<SalesAgent | null> {
+    const res = await fetch('/api/admin/sales-agents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
+      body: JSON.stringify({ name }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      toast(`Error adding agent: ${data.error || 'Unknown error'}`, 'error')
+      return null
+    }
+    setSalesAgents((prev) => [...prev, data])
+    return data
+  }
+
+  async function toggleSalesAgentActive(agent: SalesAgent) {
+    if (agent.active && !(await confirmDialog(`Retire ${agent.name} from the agent picker? Their past reservations keep showing their name and color.`))) return
+    setSalesAgents((prev) => prev.map((a) => (a.id === agent.id ? { ...a, active: !a.active } : a)))
+    await fetch('/api/admin/sales-agents', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${password}` },
+      body: JSON.stringify({ id: agent.id, active: !agent.active }),
+    })
+  }
+
   interface StayHotelAdmin {
     id: string
     name: string
@@ -1034,7 +1083,7 @@ export default function AdminPage() {
     let bp: BasePrice[] = []
 
     try {
-      const [bData, rData, lData, cData, dData, bpData, psData, rvData, stayData, dcData] = await Promise.all([
+      const [bData, rData, lData, cData, dData, bpData, psData, rvData, stayData, dcData, saData] = await Promise.all([
         fetchBookings(pw),
         fetchRoutes(pw),
         fetchLeads(pw),
@@ -1044,7 +1093,8 @@ export default function AdminPage() {
         fetchPricingSettings(pw),
         fetchReviews(pw),
         fetchStayData(pw),
-        fetchDiscountCodes(pw)
+        fetchDiscountCodes(pw),
+        fetchSalesAgents(pw)
       ])
 
       setBookings(bData)
@@ -1052,6 +1102,7 @@ export default function AdminPage() {
       setLeads(lData)
       setClients(cData)
       setDrivers(dData)
+      setSalesAgents(saData)
       setBasePrices(bpData)
       if (psData) { setPricingSettings(psData); setEditPricingSettings(psData) }
       setReviews(rvData)
@@ -3682,7 +3733,7 @@ export default function AdminPage() {
                       { value: 'all', label: 'All Origins' },
                       { value: 'website', label: 'Web', color: WEB_COLOR.dot },
                       { value: 'manual', label: 'Manual (All Agents)', color: DEFAULT_AGENT_COLOR.dot },
-                      ...SALES_AGENTS.map((agent) => ({ value: agent, label: agent, color: (AGENT_COLORS[agent] ?? DEFAULT_AGENT_COLOR).dot })),
+                      ...salesAgents.filter((a) => a.active).map((agent) => ({ value: agent.name, label: agent.name, color: agent.color })),
                     ]}
                     className="w-[190px]"
                   />
@@ -3881,18 +3932,68 @@ export default function AdminPage() {
 
                   <div className="mb-5 pt-5 border-t border-[var(--border)]">
                     <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Sales Agent (who's entering this)</label>
-                    <div className="flex gap-2">
-                      {SALES_AGENTS.map((agent) => {
-                        const c = AGENT_COLORS[agent] ?? DEFAULT_AGENT_COLOR
+                    <div className="flex flex-wrap items-center gap-2">
+                      {salesAgents.filter((a) => a.active).map((agent) => {
+                        const c = agentColorOf(salesAgents, agent.name)
                         return (
-                          <button key={agent} type="button" onClick={() => setNewLead({ ...newLead, agentName: agent })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2" style={newLead.agentName === agent ? { background: c.bg, color: c.fg, border: `1px solid ${c.border}` } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.dot }} />
-                            {agent}
-                          </button>
+                          <div key={agent.id} className="group relative">
+                            <button type="button" onClick={() => setNewLead({ ...newLead, agentName: agent.name })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2" style={newLead.agentName === agent.name ? { background: c.bg, color: c.fg, border: `1px solid ${c.border}` } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.dot }} />
+                              {agent.name}
+                            </button>
+                            <button
+                              type="button"
+                              title={`Retire ${agent.name}`}
+                              onClick={() => toggleSalesAgentActive(agent)}
+                              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                              style={{ background: '#F44336', color: 'white' }}
+                            >
+                              x
+                            </button>
+                          </div>
                         )
                       })}
+
+                      {showAddAgentInput ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            autoFocus
+                            type="text"
+                            placeholder="Agent name"
+                            value={newAgentName}
+                            onChange={(e) => setNewAgentName(e.target.value)}
+                            onKeyDown={async (e) => {
+                              if (e.key !== 'Enter' || addingAgent || !newAgentName.trim()) return
+                              setAddingAgent(true)
+                              const created = await addSalesAgent(newAgentName.trim())
+                              setAddingAgent(false)
+                              if (created) { setNewLead({ ...newLead, agentName: created.name }); setNewAgentName(''); setShowAddAgentInput(false) }
+                            }}
+                            className="text-xs rounded-lg border border-[var(--border)] bg-[var(--bg-deep)] px-3 py-2 text-white outline-none focus:border-[var(--gold)] transition-colors w-36"
+                          />
+                          <button
+                            type="button"
+                            disabled={addingAgent || !newAgentName.trim()}
+                            onClick={async () => {
+                              setAddingAgent(true)
+                              const created = await addSalesAgent(newAgentName.trim())
+                              setAddingAgent(false)
+                              if (created) { setNewLead({ ...newLead, agentName: created.name }); setNewAgentName(''); setShowAddAgentInput(false) }
+                            }}
+                            className="px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-widest disabled:opacity-40"
+                            style={{ background: 'var(--gold)', color: 'var(--bg-deep)' }}
+                          >
+                            {addingAgent ? '…' : 'Save'}
+                          </button>
+                          <button type="button" onClick={() => { setShowAddAgentInput(false); setNewAgentName('') }} className="px-2 py-2 text-xs text-[var(--text-faint)] hover:text-white transition-colors">Cancel</button>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => setShowAddAgentInput(true)} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors border border-dashed" style={{ background: 'transparent', color: 'var(--text-faint)', borderColor: 'var(--border)' }}>
+                          + Add Agent
+                        </button>
+                      )}
                     </div>
-                    <p className="text-xs text-[var(--text-faint)] mt-2">Used for the manual-bookings commission breakdown — every reservation added here counts as manual, tagged to whoever picked it.</p>
+                    <p className="text-xs text-[var(--text-faint)] mt-2">Used for the manual-bookings commission breakdown — every reservation added here counts as manual, tagged to whoever picked it. Hover an agent for the retire (x) button — new agents can be added here anytime, no code change needed.</p>
                   </div>
 
                   <div className="mb-5 pt-5 border-t border-[var(--border)]">
@@ -4121,7 +4222,7 @@ export default function AdminPage() {
                         {l.booking_source === 'manual' ? (
                           <span
                             className="text-[10px] px-1.5 py-0.5 rounded border font-bold shrink-0"
-                            style={{ background: (AGENT_COLORS[l.created_by || ''] ?? DEFAULT_AGENT_COLOR).bg, color: (AGENT_COLORS[l.created_by || ''] ?? DEFAULT_AGENT_COLOR).fg, borderColor: (AGENT_COLORS[l.created_by || ''] ?? DEFAULT_AGENT_COLOR).border }}
+                            style={{ background: agentColorOf(salesAgents, l.created_by).bg, color: agentColorOf(salesAgents, l.created_by).fg, borderColor: agentColorOf(salesAgents, l.created_by).border }}
                           >
                             ✍ {l.created_by || 'Manual'}
                           </span>
@@ -4777,7 +4878,7 @@ export default function AdminPage() {
                   {agentSummaryRows.map(([agent, s]) => (
                     <div key={agent} className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-white flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: (AGENT_COLORS[agent] ?? DEFAULT_AGENT_COLOR).dot }} />
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: agentColorOf(salesAgents, agent).dot }} />
                         {agent}
                       </span>
                       <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
