@@ -554,12 +554,13 @@ export async function PUT(req: NextRequest) {
       carSeatsRequested, car_seats_requested,
       luggageCount, luggage_count,
       waitTimeMinutes, wait_time_minutes,
-      waitTimeFee, wait_time_fee
+      waitTimeFee, wait_time_fee,
+      created_by
     } = body
 
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
 
-    const updates: Record<string, string | number> = {}
+    const updates: Record<string, string | number | null> = {}
     if (status !== undefined) updates.status = status
     if (notes !== undefined) updates.notes = notes
     if (customerName !== undefined || customer_name !== undefined) updates.customer_name = customerName || customer_name
@@ -584,6 +585,10 @@ export async function PUT(req: NextRequest) {
     if (luggageCount !== undefined || luggage_count !== undefined) updates.luggage_count = luggageCount || luggage_count
     if (waitTimeMinutes !== undefined || wait_time_minutes !== undefined) updates.wait_time_minutes = waitTimeMinutes || wait_time_minutes
     if (waitTimeFee !== undefined || wait_time_fee !== undefined) updates.wait_time_fee = waitTimeFee || wait_time_fee
+    // Lets the CRM retroactively attach a sales agent to a manual lead that
+    // predates that field (or fix a wrong pick) — see the Edit modal's
+    // "Sales Agent" section, only shown for booking_source: 'manual' rows.
+    if (created_by !== undefined) updates.created_by = created_by
 
     const { data, error } = await supabaseAdmin
       .from('leads')

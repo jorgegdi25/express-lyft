@@ -4189,6 +4189,37 @@ export default function AdminPage() {
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Wait Time Fee ($)</label>
                       <input type="number" value={editingLead.wait_time_fee || 0} onChange={(e) => setEditingLead({...editingLead, wait_time_fee: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
+                    {editingLead.booking_source === 'manual' && (
+                      <div className="flex flex-col gap-2 md:col-span-2">
+                        <label className="text-sm font-semibold text-[var(--text-subtle)]">Sales Agent</label>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditingLead({ ...editingLead, created_by: null })}
+                            className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors border border-dashed"
+                            style={!editingLead.created_by ? { background: 'var(--bg-deep)', color: 'var(--text-subtle)', borderColor: 'var(--text-subtle)' } : { background: 'transparent', color: 'var(--text-faint)', borderColor: 'var(--border)' }}
+                          >
+                            Unassigned
+                          </button>
+                          {salesAgents.filter((a) => a.active).map((agent) => {
+                            const c = agentColorOf(salesAgents, agent.name)
+                            return (
+                              <button
+                                key={agent.id}
+                                type="button"
+                                onClick={() => setEditingLead({ ...editingLead, created_by: agent.name })}
+                                className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2"
+                                style={editingLead.created_by === agent.name ? { background: c.bg, color: c.fg, border: `1px solid ${c.border}` } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                              >
+                                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.dot }} />
+                                {agent.name}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <p className="text-xs text-[var(--text-faint)]">Fixes old manual reservations that don't have an agent attached yet — doesn't affect the commissions breakdown for other bookings.</p>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-4 pt-4 border-t border-[var(--border)]">
                     <button
@@ -4211,7 +4242,8 @@ export default function AdminPage() {
                           car_seats_requested: editingLead.car_seats_requested,
                           luggage_count: editingLead.luggage_count,
                           wait_time_minutes: editingLead.wait_time_minutes,
-                          wait_time_fee: editingLead.wait_time_fee
+                          wait_time_fee: editingLead.wait_time_fee,
+                          created_by: editingLead.created_by
                         })
                         setEditingLead(null)
                       }}
