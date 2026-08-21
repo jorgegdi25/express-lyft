@@ -135,6 +135,8 @@ interface Lead {
   external_reference?: string | null
   paid_at?: string | null
   tax_collected?: number
+  booking_source?: 'website' | 'manual' | null
+  created_by?: string | null
 }
 
 interface Client {
@@ -343,6 +345,14 @@ const LEAD_STATUS_OPTIONS = [
   { value: 'lost',            label: 'Lost/Cancel',     color: '#F44336' },
 ]
 
+// Every reservation created through the "Add Reservation" modal is a manual
+// entry by definition (the public site never hits this path — see isAdmin
+// in app/api/leads/route.ts), so whoever fills the modal must pick which
+// agent it's for. Keep this list in sync with who's actually taking manual
+// bookings — it drives the per-agent commission breakdown on the
+// Commissions tab.
+const SALES_AGENTS = ['Dennis Rivera', 'Karen Hernandez']
+
 function StatCard({
   icon, iconColor, label, value, trendPct, caption,
 }: {
@@ -467,6 +477,7 @@ export default function AdminPage() {
     externalReference: '',
     fullyPaid: true,
     amountPaid: 0,
+    agentName: '',
   }
   const [newLead, setNewLead] = useState(emptyNewLead)
 
@@ -555,6 +566,7 @@ export default function AdminPage() {
   const [leadsPage, setLeadsPage] = useState(1)
   const [leadsSearch, setLeadsSearch] = useState('')
   const [leadsStatusFilter, setLeadsStatusFilter] = useState('all')
+  const [leadsOriginFilter, setLeadsOriginFilter] = useState('all')
   const [leadsDateFrom, setLeadsDateFrom] = useState('')
   const [leadsDateTo, setLeadsDateTo] = useState('')
   const [leadsSortBy, setLeadsSortBy] = useState('newest')
@@ -1960,15 +1972,20 @@ export default function AdminPage() {
         (l.hotel_slug || '').toLowerCase().includes(term) ||
         (l.pickup || '').toLowerCase().includes(term) ||
         (l.destination || '').toLowerCase().includes(term) ||
-        (l.status || '').toLowerCase().includes(term)
+        (l.status || '').toLowerCase().includes(term) ||
+        (l.created_by || '').toLowerCase().includes(term)
       )
       const matchesStatus = leadsStatusFilter === 'all' || l.status === leadsStatusFilter
+      let matchesOrigin = true
+      if (leadsOriginFilter === 'website') matchesOrigin = l.booking_source !== 'manual'
+      else if (leadsOriginFilter === 'manual') matchesOrigin = l.booking_source === 'manual'
+      else if (leadsOriginFilter !== 'all') matchesOrigin = l.booking_source === 'manual' && l.created_by === leadsOriginFilter
       let matchesDate = true
       if (leadsDateFrom || leadsDateTo) {
         const legDates = [l.date, l.trip_type === 'round-trip' ? l.return_date : null].filter(Boolean) as string[]
         matchesDate = legDates.some(d => (!leadsDateFrom || d >= leadsDateFrom) && (!leadsDateTo || d <= leadsDateTo))
       }
-      return matchesSearch && matchesStatus && matchesDate
+      return matchesSearch && matchesStatus && matchesOrigin && matchesDate
     })
     .sort((a, b) => {
       if (leadsSortBy === 'newest') {
@@ -3641,6 +3658,18 @@ export default function AdminPage() {
                     ]}
                     className="w-[170px]"
                   />
+                  <Select
+                    ariaLabel="Filter by origin"
+                    value={leadsOriginFilter}
+                    onChange={(v) => { setLeadsOriginFilter(v); setLeadsPage(1); }}
+                    options={[
+                      { value: 'all', label: 'All Origins' },
+                      { value: 'website', label: '🌐 Web' },
+                      { value: 'manual', label: '✍ Manual (All Agents)' },
+                      ...SALES_AGENTS.map((agent) => ({ value: agent, label: `✍ ${agent}` })),
+                    ]}
+                    className="w-[190px]"
+                  />
                   <CalendarRangeFilter
                     from={leadsDateFrom}
                     to={leadsDateTo}
@@ -3835,6 +3864,18 @@ export default function AdminPage() {
                   </div>
 
                   <div className="mb-5 pt-5 border-t border-[var(--border)]">
+                    <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Sales Agent (who's entering this)</label>
+                    <div className="flex gap-2">
+                      {SALES_AGENTS.map((agent) => (
+                        <button key={agent} type="button" onClick={() => setNewLead({ ...newLead, agentName: agent })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.agentName === agent ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                          {agent}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[var(--text-faint)] mt-2">Used for the manual-bookings commission breakdown — every reservation added here counts as manual, tagged to whoever picked it.</p>
+                  </div>
+
+                  <div className="mb-5 pt-5 border-t border-[var(--border)]">
                     <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Payment Source</label>
                     <div className="flex gap-2 mb-4">
                       {(['stripe', 'external', 'cash'] as const).map((src) => (
@@ -3892,6 +3933,7 @@ export default function AdminPage() {
                         !newLead.amountUsd ||
                         !newLead.date ||
                         !newLead.time ||
+                        !newLead.agentName ||
                         (newLead.tripType === 'round-trip' && (!newLead.returnDate || !newLead.returnTime))
                       }
                       className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
@@ -4056,6 +4098,11 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <h3 className="text-base font-bold text-white truncate">{l.customer_name || 'Anonymous'}</h3>
                         {l.customer_country && <span className="text-[10px] bg-blue-900/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-800/30 font-bold shrink-0">{l.customer_country}</span>}
+                        {l.booking_source === 'manual' ? (
+                          <span className="text-[10px] bg-amber-900/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-800/30 font-bold shrink-0">✍ {l.created_by || 'Manual'}</span>
+                        ) : (
+                          <span className="text-[10px] bg-sky-900/20 text-sky-400 px-1.5 py-0.5 rounded border border-sky-800/30 font-bold shrink-0">🌐 Web</span>
+                        )}
                       </div>
                       <p className="text-xs text-[var(--text-dim)] truncate">{l.customer_email || 'No email'}</p>
                     </div>
@@ -4598,11 +4645,16 @@ export default function AdminPage() {
           // directly (no Date() parsing) so it lines up with UTC-based
           // dates shown elsewhere in the admin (see formatDateUS).
           //
-          // Also split web (booked online, payment_source 'stripe') vs
-          // other (walk-up/phone/cash, entered by staff) so the monthly
+          // Also split web (booking_source !== 'manual') vs manual
+          // (entered by staff through "Add Reservation") so the monthly
           // total can be broken down instead of just one lump count — Stay
           // bookings are always guest-self-service, so they always count
-          // as web.
+          // as web. This used to key off payment_source === 'stripe', but
+          // that's the wrong signal: a manually-entered reservation can
+          // still be paid via Stripe, which made it look like a web booking.
+          // booking_source is set once, at creation, from who actually
+          // submitted the request (see isAdmin in app/api/leads/route.ts),
+          // so it can't drift after the fact the way payment method can.
           const commissionsByDay: Record<string, { total: number; web: number; other: number }> = {}
           const bump = (key: string, isWeb: boolean) => {
             if (!key) return
@@ -4613,7 +4665,7 @@ export default function AdminPage() {
           }
           leads.forEach(l => {
             if (l.status === 'paid' || l.status === 'deposit_paid') {
-              bump((l.created_at || '').slice(0, 10), l.payment_source === 'stripe')
+              bump((l.created_at || '').slice(0, 10), l.booking_source !== 'manual')
             }
           })
           stayBookings.forEach(b => {
@@ -4626,6 +4678,26 @@ export default function AdminPage() {
           const monthCount = monthDays.reduce((sum, d) => sum + (commissionsByDay[d.dateStr]?.total || 0), 0)
           const monthWeb = monthDays.reduce((sum, d) => sum + (commissionsByDay[d.dateStr]?.web || 0), 0)
           const monthOther = monthDays.reduce((sum, d) => sum + (commissionsByDay[d.dateStr]?.other || 0), 0)
+
+          // Manual bookings by agent, for the sales-commission payout —
+          // separate from the flat $2/booking calendar above, this is raw
+          // count + revenue per agent so whatever commission formula gets
+          // applied to it by hand.
+          const monthDateSet = new Set(monthDays.map(d => d.dateStr))
+          const agentSummary: Record<string, { count: number; revenue: number }> = {}
+          leads.forEach(l => {
+            if (
+              l.booking_source === 'manual' &&
+              (l.status === 'paid' || l.status === 'deposit_paid') &&
+              monthDateSet.has((l.created_at || '').slice(0, 10))
+            ) {
+              const agent = l.created_by || 'Unassigned'
+              if (!agentSummary[agent]) agentSummary[agent] = { count: 0, revenue: 0 }
+              agentSummary[agent].count += 1
+              agentSummary[agent].revenue += l.amount_usd || 0
+            }
+          })
+          const agentSummaryRows = Object.entries(agentSummary).sort((a, b) => b[1].revenue - a[1].revenue)
 
           return (
           <div className="flex flex-col gap-8">
@@ -4659,11 +4731,29 @@ export default function AdminPage() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4ade80' }}>This Month</p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{monthCount} paid booking{monthCount === 1 ? '' : 's'}</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>{monthWeb} web · {monthOther} walk-up/other</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>{monthWeb} web · {monthOther} manual</p>
               </div>
               <span className="text-4xl font-bold" style={{ color: '#4ade80', fontFamily: "'Playfair Display', Georgia, serif" }}>
                 ${(monthCount * COMMISSION_PER_BOOKING).toFixed(2)}
               </span>
+            </div>
+
+            <div className="rounded-xl p-6" style={{ background: 'rgba(184,150,12,0.06)', border: '1px solid var(--border)' }}>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--gold-light)' }}>Manual Bookings by Agent</p>
+              {agentSummaryRows.length === 0 ? (
+                <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No manually-entered paid bookings this month.</p>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  {agentSummaryRows.map(([agent, s]) => (
+                    <div key={agent} className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-white">{agent}</span>
+                      <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                        {s.count} booking{s.count === 1 ? '' : 's'} · <span className="font-bold" style={{ color: '#4ade80' }}>${s.revenue.toFixed(2)}</span> revenue
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>

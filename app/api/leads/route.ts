@@ -258,7 +258,8 @@ export async function POST(req: NextRequest) {
       externalReference,
       amountPaid: manualAmountPaid,
       amountRemaining: manualAmountRemaining,
-      discountCode
+      discountCode,
+      agentName
     } = body
 
     if (!hotelSlug) return NextResponse.json({ error: 'Missing hotelSlug' }, { status: 400 })
@@ -373,6 +374,12 @@ export async function POST(req: NextRequest) {
       external_platform: isAdmin ? (externalPlatform || null) : null,
       external_reference: isAdmin ? (externalReference || null) : null,
       paid_at: isAdmin && isPaidNow ? new Date().toISOString() : null,
+      // Set once, at creation, from who actually made this HTTP request —
+      // never trust a client-sent "source" field, since a public request
+      // could just claim to be manual. isAdmin is the same Bearer-token
+      // check that already gates external_platform/paid_at above.
+      booking_source: isAdmin ? 'manual' : 'website',
+      created_by: isAdmin ? (agentName || null) : null,
       airline,
       flight_number: flightNumber,
       meeting_type: meetingType || 'curbside',
