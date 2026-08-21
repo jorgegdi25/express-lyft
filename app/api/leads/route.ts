@@ -291,17 +291,18 @@ export async function POST(req: NextRequest) {
     let leadStatus = isAdmin ? (status || 'new') : 'pending_payment'
     let isDeposit = paymentMode === 'deposit' && !isAdmin
 
-    // Re-check the global deposits toggle server-side so a stale client (or a
-    // direct API call) can't request a deposit while the owner has it turned off.
-    if (isDeposit) {
-      const { data: settings } = await supabaseAdmin
-        .from('pricing_settings')
-        .select('*')
-        .eq('id', 1)
-        .maybeSingle()
-      if (settings?.deposits_enabled === false) {
-        isDeposit = false
-      }
+    // Single read of the global settings row — used below both to re-check
+    // the deposits toggle server-side (so a stale client, or a direct API
+    // call, can't request a deposit while the owner has it turned off) and
+    // to know which processor actually handles public checkout, so
+    // payment_source reflects reality instead of being hardcoded.
+    const { data: settings } = await supabaseAdmin
+      .from('pricing_settings')
+      .select('*')
+      .eq('id', 1)
+      .maybeSingle()
+    if (isDeposit && settings?.deposits_enabled === false) {
+      isDeposit = false
     }
 
     if (paymentMode === 'quote') {
@@ -347,7 +348,14 @@ export async function POST(req: NextRequest) {
     // and paid on an external platform, or in cash.
     const finalAmountPaid = isAdmin && manualAmountPaid !== undefined ? manualAmountPaid : 0
     const finalAmountRemaining = isAdmin && manualAmountRemaining !== undefined ? manualAmountRemaining : amountRemaining
-    const resolvedPaymentSource = isAdmin ? (paymentSource || 'stripe') : 'stripe'
+    // For public bookings this must mirror the processor that will actually
+    // handle checkout below (same `settings.payment_provider` read) — it
+    // used to be hardcoded to 'stripe' even while payment_provider was
+    // 'quickbooks', which mislabeled every real QuickBooks booking as
+    // Stripe revenue everywhere payment_source gets summed.
+    const resolvedPaymentSource = isAdmin
+      ? (paymentSource || 'quickbooks')
+      : (settings?.payment_provider === 'quickbooks' ? 'quickbooks' : 'stripe')
     const isPaidNow = leadStatus === 'paid' || leadStatus === 'deposit_paid' || leadStatus === 'hotel_b2b'
 
     const { data, error } = await supabaseAdmin.from('leads').insert({
@@ -450,13 +458,7 @@ export async function POST(req: NextRequest) {
       ? `${date} at ${time} | ${vehicleType} | ${passengers} passengers | Deposit: $${chargeAmount} of $${finalAmount} total`
       : `${date} at ${time} | ${vehicleType} | ${passengers} passengers`
 
-    const { data: paymentSettings } = await supabaseAdmin
-      .from('pricing_settings')
-      .select('payment_provider')
-      .eq('id', 1)
-      .maybeSingle()
-
-    if (paymentSettings?.payment_provider === 'quickbooks') {
+    if (settings?.payment_provider === 'quickbooks') {
       try {
         const invoice = await createAndSendInvoice({
           customerName: customerName || customerEmail,

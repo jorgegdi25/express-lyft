@@ -353,6 +353,16 @@ const LEAD_STATUS_OPTIONS = [
 // Commissions tab.
 const SALES_AGENTS = ['Dennis Rivera', 'Karen Hernandez']
 
+// One fixed color per agent so the same person reads as the same color
+// everywhere (lead badges, the agent picker, the commissions breakdown) —
+// add a new agent's colors here too, or they fall back to DEFAULT_AGENT_COLOR.
+const AGENT_COLORS: Record<string, { bg: string; fg: string; border: string; dot: string }> = {
+  'Dennis Rivera':   { bg: 'rgba(251,146,60,0.12)',  fg: '#fb923c', border: 'rgba(251,146,60,0.35)',  dot: '#fb923c' },
+  'Karen Hernandez': { bg: 'rgba(167,139,250,0.12)', fg: '#a78bfa', border: 'rgba(167,139,250,0.35)', dot: '#a78bfa' },
+}
+const DEFAULT_AGENT_COLOR = { bg: 'rgba(161,161,170,0.12)', fg: '#a1a1aa', border: 'rgba(161,161,170,0.35)', dot: '#a1a1aa' }
+const WEB_COLOR = { bg: 'rgba(56,189,248,0.12)', fg: '#38bdf8', border: 'rgba(56,189,248,0.35)', dot: '#38bdf8' }
+
 function StatCard({
   icon, iconColor, label, value, trendPct, caption,
 }: {
@@ -472,7 +482,7 @@ export default function AdminPage() {
     meetGreetFee: 0,
     carSeatsRequested: 0,
     luggageCount: 0,
-    paymentSource: 'stripe' as 'stripe' | 'external' | 'cash',
+    paymentSource: 'quickbooks' as 'quickbooks' | 'stripe' | 'external' | 'cash',
     externalPlatform: '',
     externalReference: '',
     fullyPaid: true,
@@ -668,9 +678,12 @@ export default function AdminPage() {
     const pending = (b: Booking) => (b.status === 'deposit_paid' ? (b.amount_remaining || 0) : 0)
 
     // Split collected revenue by where the payment actually came from —
-    // Stripe (online, hits the bank directly), the external platform the
-    // client also books through, or cash/transfer collected in person.
+    // Stripe or QuickBooks (both online, hit the bank directly — which one
+    // is live is the pricing_settings.payment_provider toggle), the
+    // external platform the client also books through, or cash/transfer
+    // collected in person.
     let stripeTotal = 0
+    let quickbooksTotal = 0
     let externalTotal = 0
     let cashTotal = 0
     let pendingTotal = 0
@@ -686,12 +699,13 @@ export default function AdminPage() {
       const amount = collected(b)
       if (source === 'external') externalTotal += amount
       else if (source === 'cash') cashTotal += amount
+      else if (source === 'quickbooks') quickbooksTotal += amount
       else stripeTotal += amount
       pendingTotal += pending(b)
       taxCollectedTotal += b.tax_collected || 0
     })
 
-    const grossRevenue = stripeTotal + externalTotal + cashTotal
+    const grossRevenue = stripeTotal + quickbooksTotal + externalTotal + cashTotal
 
     // Monthly breakdown (collected amounts, by month of the trip date)
     const monthlyData: Record<string, number> = {}
@@ -731,6 +745,7 @@ export default function AdminPage() {
 
     return {
       stripeTotal,
+      quickbooksTotal,
       externalTotal,
       cashTotal,
       pendingTotal,
@@ -1332,13 +1347,14 @@ export default function AdminPage() {
   async function addLead(): Promise<boolean> {
     setAddingLead(true)
     try {
-      // Reservations paid on Stripe keep the old flow: they're created as a
-      // plain lead ('new') and the admin sends an invoice / payment link
-      // afterward. Reservations already collected elsewhere (the external
-      // platform, cash) go straight in as paid — that's what makes the
-      // calendar event get created immediately instead of living only in
-      // the other platform's calendar.
-      const isExternalPayment = newLead.paymentSource !== 'stripe'
+      // Reservations pending invoice (QuickBooks or, still supported,
+      // Stripe) keep the old flow: they're created as a plain lead ('new')
+      // and the admin sends an invoice / payment link afterward from the
+      // lead detail view. Reservations already collected elsewhere (the
+      // external platform, cash) go straight in as paid — that's what makes
+      // the calendar event get created immediately instead of living only
+      // in the other platform's calendar.
+      const isExternalPayment = newLead.paymentSource === 'external' || newLead.paymentSource === 'cash'
       let resolvedStatus = newLead.status
       let amountPaid = 0
       let amountRemaining = 0
@@ -2273,7 +2289,7 @@ export default function AdminPage() {
                 label="Monthly Revenue"
                 value={`$${revenueStats.currentMonthRevenue.toLocaleString()}`}
                 trendPct={revenueStats.revenueTrendPct}
-                caption="Collected this month (Stripe + External + Cash)"
+                caption="Collected this month (QuickBooks + Stripe + External + Cash)"
               />
               <StatCard
                 icon={<CalendarCheck size={20} />}
@@ -3664,9 +3680,9 @@ export default function AdminPage() {
                     onChange={(v) => { setLeadsOriginFilter(v); setLeadsPage(1); }}
                     options={[
                       { value: 'all', label: 'All Origins' },
-                      { value: 'website', label: '🌐 Web' },
-                      { value: 'manual', label: '✍ Manual (All Agents)' },
-                      ...SALES_AGENTS.map((agent) => ({ value: agent, label: `✍ ${agent}` })),
+                      { value: 'website', label: 'Web', color: WEB_COLOR.dot },
+                      { value: 'manual', label: 'Manual (All Agents)', color: DEFAULT_AGENT_COLOR.dot },
+                      ...SALES_AGENTS.map((agent) => ({ value: agent, label: agent, color: (AGENT_COLORS[agent] ?? DEFAULT_AGENT_COLOR).dot })),
                     ]}
                     className="w-[190px]"
                   />
@@ -3825,7 +3841,7 @@ export default function AdminPage() {
                         {newLead.routeMode === 'preset' ? 'Total ($) — suggested from rate' : 'Total ($)'}
                       </label>
                       <input type="number" step="0.01" placeholder="0" value={newLead.amountUsd} onChange={(e) => setNewLead({ ...newLead, amountUsd: parseFloat(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
-                      {newLead.paymentSource === 'stripe' && newLead.amountUsd > 0 && (
+                      {(newLead.paymentSource === 'quickbooks' || newLead.paymentSource === 'stripe') && newLead.amountUsd > 0 && (
                         <p className="text-xs text-[var(--text-faint)]">
                           Customer pays ${(newLead.amountUsd * (1 + FL_TAX_RATE_PERCENT / 100)).toFixed(2)} (${newLead.amountUsd} + {FL_TAX_RATE_PERCENT}% FL sales tax)
                         </p>
@@ -3866,11 +3882,15 @@ export default function AdminPage() {
                   <div className="mb-5 pt-5 border-t border-[var(--border)]">
                     <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Sales Agent (who's entering this)</label>
                     <div className="flex gap-2">
-                      {SALES_AGENTS.map((agent) => (
-                        <button key={agent} type="button" onClick={() => setNewLead({ ...newLead, agentName: agent })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.agentName === agent ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                          {agent}
-                        </button>
-                      ))}
+                      {SALES_AGENTS.map((agent) => {
+                        const c = AGENT_COLORS[agent] ?? DEFAULT_AGENT_COLOR
+                        return (
+                          <button key={agent} type="button" onClick={() => setNewLead({ ...newLead, agentName: agent })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2" style={newLead.agentName === agent ? { background: c.bg, color: c.fg, border: `1px solid ${c.border}` } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.dot }} />
+                            {agent}
+                          </button>
+                        )
+                      })}
                     </div>
                     <p className="text-xs text-[var(--text-faint)] mt-2">Used for the manual-bookings commission breakdown — every reservation added here counts as manual, tagged to whoever picked it.</p>
                   </div>
@@ -3878,15 +3898,15 @@ export default function AdminPage() {
                   <div className="mb-5 pt-5 border-t border-[var(--border)]">
                     <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Payment Source</label>
                     <div className="flex gap-2 mb-4">
-                      {(['stripe', 'external', 'cash'] as const).map((src) => (
+                      {(['quickbooks', 'stripe', 'external', 'cash'] as const).map((src) => (
                         <button key={src} type="button" onClick={() => setNewLead({ ...newLead, paymentSource: src })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.paymentSource === src ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                          {src === 'stripe' ? 'Stripe' : src === 'external' ? 'External Platform' : 'Cash'}
+                          {src === 'quickbooks' ? 'QuickBooks' : src === 'stripe' ? 'Stripe' : src === 'external' ? 'External Platform' : 'Cash'}
                         </button>
                       ))}
                     </div>
 
-                    {newLead.paymentSource === 'stripe' ? (
-                      <p className="text-xs text-[var(--text-faint)]">Created as a pending reservation — use &quot;Generate Payment Link&quot; or &quot;Send Invoice&quot; afterward to collect payment.</p>
+                    {(newLead.paymentSource === 'quickbooks' || newLead.paymentSource === 'stripe') ? (
+                      <p className="text-xs text-[var(--text-faint)]">Created as a pending reservation — open it afterward and use &quot;Send Invoice ({newLead.paymentSource === 'quickbooks' ? 'QuickBooks' : 'Stripe'})&quot; or &quot;Generate Payment Link&quot; to collect payment.</p>
                     ) : (
                       <div className="flex flex-col gap-4">
                         {newLead.paymentSource === 'external' && (
@@ -3939,7 +3959,7 @@ export default function AdminPage() {
                       className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
                       style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                     >
-                      {addingLead ? 'Saving…' : newLead.paymentSource === 'stripe' ? '+ Add Reservation' : '+ Add Paid Reservation'}
+                      {addingLead ? 'Saving…' : (newLead.paymentSource === 'quickbooks' || newLead.paymentSource === 'stripe') ? '+ Add Reservation' : '+ Add Paid Reservation'}
                     </button>
                     <button onClick={() => setShowAddLeadModal(false)} className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest border border-[var(--border-soft)] text-[var(--text-subtle)] hover:text-white hover:border-[#555] transition-all">
                       Cancel
@@ -4099,9 +4119,14 @@ export default function AdminPage() {
                         <h3 className="text-base font-bold text-white truncate">{l.customer_name || 'Anonymous'}</h3>
                         {l.customer_country && <span className="text-[10px] bg-blue-900/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-800/30 font-bold shrink-0">{l.customer_country}</span>}
                         {l.booking_source === 'manual' ? (
-                          <span className="text-[10px] bg-amber-900/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-800/30 font-bold shrink-0">✍ {l.created_by || 'Manual'}</span>
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded border font-bold shrink-0"
+                            style={{ background: (AGENT_COLORS[l.created_by || ''] ?? DEFAULT_AGENT_COLOR).bg, color: (AGENT_COLORS[l.created_by || ''] ?? DEFAULT_AGENT_COLOR).fg, borderColor: (AGENT_COLORS[l.created_by || ''] ?? DEFAULT_AGENT_COLOR).border }}
+                          >
+                            ✍ {l.created_by || 'Manual'}
+                          </span>
                         ) : (
-                          <span className="text-[10px] bg-sky-900/20 text-sky-400 px-1.5 py-0.5 rounded border border-sky-800/30 font-bold shrink-0">🌐 Web</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded border font-bold shrink-0" style={{ background: WEB_COLOR.bg, color: WEB_COLOR.fg, borderColor: WEB_COLOR.border }}>🌐 Web</span>
                         )}
                       </div>
                       <p className="text-xs text-[var(--text-dim)] truncate">{l.customer_email || 'No email'}</p>
@@ -4374,11 +4399,16 @@ export default function AdminPage() {
             </div>
 
             {/* Top Cards */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5">
               <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                 <p className="text-sm uppercase tracking-wider font-semibold text-[var(--text-muted)]">Gross Revenue</p>
                 <p className="text-3xl font-bold" style={{ color: '#4ade80' }}>${revenueStats.grossRevenue.toLocaleString()}</p>
                 <p className="text-xs uppercase tracking-wider text-[var(--text-faint)]">All collected income</p>
+              </div>
+              <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                <p className="text-sm uppercase tracking-wider font-semibold text-[var(--text-muted)]">QuickBooks</p>
+                <p className="text-3xl font-bold" style={{ color: '#34d399' }}>${revenueStats.quickbooksTotal.toLocaleString()}</p>
+                <p className="text-xs uppercase tracking-wider text-[var(--text-faint)]">Direct to bank</p>
               </div>
               <div className="rounded-xl p-6 flex flex-col gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                 <p className="text-sm uppercase tracking-wider font-semibold text-[var(--text-muted)]">Stripe</p>
@@ -4746,7 +4776,10 @@ export default function AdminPage() {
                 <div className="flex flex-col gap-2.5">
                   {agentSummaryRows.map(([agent, s]) => (
                     <div key={agent} className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-white">{agent}</span>
+                      <span className="text-sm font-semibold text-white flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: (AGENT_COLORS[agent] ?? DEFAULT_AGENT_COLOR).dot }} />
+                        {agent}
+                      </span>
                       <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
                         {s.count} booking{s.count === 1 ? '' : 's'} · <span className="font-bold" style={{ color: '#4ade80' }}>${s.revenue.toFixed(2)}</span> revenue
                       </span>
