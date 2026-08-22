@@ -4117,7 +4117,7 @@ export default function AdminPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Passengers</label>
-                      <input type="number" value={editingLead.passengers || 1} onChange={(e) => setEditingLead({...editingLead, passengers: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                      <input type="number" value={editingLead.passengers ?? ''} onChange={(e) => setEditingLead({...editingLead, passengers: e.target.value === '' ? undefined : (parseInt(e.target.value) || 1)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Trip Type</label>
@@ -4128,7 +4128,7 @@ export default function AdminPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Amount (USD)</label>
-                      <input type="number" value={editingLead.amount_usd || 0} onChange={(e) => setEditingLead({...editingLead, amount_usd: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                      <input type="number" step="0.01" value={editingLead.amount_usd ?? ''} onChange={(e) => setEditingLead({...editingLead, amount_usd: e.target.value === '' ? undefined : parseFloat(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Date</label>
@@ -4167,19 +4167,20 @@ export default function AdminPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Meet & Greet Fee</label>
-                      <input type="number" value={editingLead.meet_greet_fee || 0} onChange={(e) => setEditingLead({...editingLead, meet_greet_fee: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                      <input type="number" value={editingLead.meet_greet_fee ?? ''} onChange={(e) => setEditingLead({...editingLead, meet_greet_fee: e.target.value === '' ? undefined : parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Luggage Count</label>
-                      <input type="number" value={editingLead.luggage_count || 0} onChange={(e) => setEditingLead({...editingLead, luggage_count: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                      <input type="number" value={editingLead.luggage_count ?? ''} onChange={(e) => setEditingLead({...editingLead, luggage_count: e.target.value === '' ? undefined : parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Car Seats</label>
-                      <input type="number" value={editingLead.car_seats_requested || 0} onChange={(e) => setEditingLead({...editingLead, car_seats_requested: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                      <input type="number" value={editingLead.car_seats_requested ?? ''} onChange={(e) => setEditingLead({...editingLead, car_seats_requested: e.target.value === '' ? undefined : parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Wait Time (Mins)</label>
-                      <input type="number" value={editingLead.wait_time_minutes || 0} onChange={(e) => {
+                      <input type="number" value={editingLead.wait_time_minutes ?? ''} onChange={(e) => {
+                        if (e.target.value === '') { setEditingLead({...editingLead, wait_time_minutes: undefined}); return }
                         const mins = parseInt(e.target.value) || 0
                         const fee = mins > 30 ? Math.ceil((mins - 30) / 60) * 20 : 0
                         setEditingLead({...editingLead, wait_time_minutes: mins, wait_time_fee: fee})
@@ -4187,7 +4188,7 @@ export default function AdminPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Wait Time Fee ($)</label>
-                      <input type="number" value={editingLead.wait_time_fee || 0} onChange={(e) => setEditingLead({...editingLead, wait_time_fee: parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                      <input type="number" value={editingLead.wait_time_fee ?? ''} onChange={(e) => setEditingLead({...editingLead, wait_time_fee: e.target.value === '' ? undefined : parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
                     {editingLead.booking_source === 'manual' && (
                       <div className="flex flex-col gap-2 md:col-span-2">
@@ -4230,19 +4231,24 @@ export default function AdminPage() {
                           customer_phone: editingLead.customer_phone,
                           pickup: editingLead.pickup,
                           destination: editingLead.destination,
-                          passengers: editingLead.passengers,
-                          amount_usd: editingLead.amount_usd,
+                          // Numeric fields can sit at `undefined` mid-edit (see the
+                          // inputs above — clearing the field to retype no longer
+                          // forces it to 0 while typing), so coerce back to 0 here
+                          // rather than send undefined and have the field silently
+                          // keep its old value.
+                          passengers: editingLead.passengers ?? 1,
+                          amount_usd: editingLead.amount_usd ?? 0,
                           trip_type: editingLead.trip_type,
                           date: editingLead.date,
                           time: editingLead.time,
                           airline: editingLead.airline,
                           flight_number: editingLead.flight_number,
                           meeting_type: editingLead.meeting_type,
-                          meet_greet_fee: editingLead.meet_greet_fee,
-                          car_seats_requested: editingLead.car_seats_requested,
-                          luggage_count: editingLead.luggage_count,
-                          wait_time_minutes: editingLead.wait_time_minutes,
-                          wait_time_fee: editingLead.wait_time_fee,
+                          meet_greet_fee: editingLead.meet_greet_fee ?? 0,
+                          car_seats_requested: editingLead.car_seats_requested ?? 0,
+                          luggage_count: editingLead.luggage_count ?? 0,
+                          wait_time_minutes: editingLead.wait_time_minutes ?? 0,
+                          wait_time_fee: editingLead.wait_time_fee ?? 0,
                           created_by: editingLead.created_by
                         })
                         setEditingLead(null)
