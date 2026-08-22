@@ -2501,7 +2501,7 @@ export default function AdminPage() {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right text-white font-medium">
-                              ${b.amount_usd}
+                              ${(b.amount_usd || 0).toFixed(2)}
                             </td>
                           </tr>
                         ))
@@ -3639,7 +3639,7 @@ export default function AdminPage() {
                             <span className="text-[11px] text-[var(--text-muted)]">{b.passengers || 1} PAX</span>
                           </td>
                           <td className="py-4 pr-4 font-bold text-base" style={{ color: '#4ade80' }}>
-                            ${b.amount_usd}
+                            ${(b.amount_usd || 0).toFixed(2)}
                           </td>
                           <td className="py-4 flex items-center gap-3">
                             <StatusBadge status={b.status} />
@@ -5333,15 +5333,15 @@ export default function AdminPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="bg-[var(--surface)] border border-[var(--border-soft)] rounded-xl p-4 text-center">
                         <p className="text-xs uppercase text-[var(--text-muted)] font-bold tracking-wider mb-1">Total</p>
-                        <p className="text-2xl font-bold text-white">${viewingLead.amount_usd || 0}</p>
+                        <p className="text-2xl font-bold text-white">${(viewingLead.amount_usd || 0).toFixed(2)}</p>
                       </div>
                       <div className="bg-green-900/10 border border-green-900/30 rounded-xl p-4 text-center">
                         <p className="text-xs uppercase text-green-500/70 font-bold tracking-wider mb-1">Paid</p>
-                        <p className="text-2xl font-bold text-green-400">${viewingLead.amount_paid || 0}</p>
+                        <p className="text-2xl font-bold text-green-400">${(viewingLead.amount_paid || 0).toFixed(2)}</p>
                       </div>
                       <div className="bg-red-900/10 border border-red-900/30 rounded-xl p-4 text-center">
                         <p className="text-xs uppercase text-red-500/70 font-bold tracking-wider mb-1">Owes</p>
-                        <p className="text-2xl font-bold text-red-400">${viewingLead.amount_remaining || 0}</p>
+                        <p className="text-2xl font-bold text-red-400">${(viewingLead.amount_remaining || 0).toFixed(2)}</p>
                       </div>
                     </div>
 

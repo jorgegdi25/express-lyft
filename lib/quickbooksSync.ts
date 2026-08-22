@@ -162,7 +162,10 @@ export async function syncInvoicePayment(invoiceId: string): Promise<InvoiceSync
     }
     if (isPaid && !alreadyFulfilled) {
       updateFields.status = 'paid'
-      updateFields.amount_paid = totalAmt - taxAmount
+      // Round to cents — plain float subtraction here produced values like
+      // 46.410000000000004 that then rendered raw in the CRM (no .toFixed
+      // there either, since this was never expected to need rounding).
+      updateFields.amount_paid = Math.round((totalAmt - taxAmount) * 100) / 100
       updateFields.amount_remaining = 0
       updateFields.tax_collected = (existingLead.tax_collected || 0) + taxAmount
     }
