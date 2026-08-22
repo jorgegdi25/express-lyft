@@ -203,6 +203,12 @@ async function createCustomer(
   return data.Customer
 }
 
+async function findCustomerByDisplayName(realmId: string, accessToken: string, name: string) {
+  const query = `select * from Customer where DisplayName = '${escapeQb(name)}'`
+  const data = await qbFetch(realmId, accessToken, `/query?query=${encodeURIComponent(query)}`)
+  return data.QueryResponse?.Customer?.[0] || null
+}
+
 async function findOrCreateCustomer(
   realmId: string,
   accessToken: string,
@@ -210,7 +216,21 @@ async function findOrCreateCustomer(
 ) {
   const existing = await findCustomerByEmail(realmId, accessToken, info.email)
   if (existing) return existing
-  return createCustomer(realmId, accessToken, info)
+  try {
+    return await createCustomer(realmId, accessToken, info)
+  } catch (err) {
+    // QuickBooks enforces uniqueness on DisplayName, not email — so a repeat
+    // guest name under a new/different email (or a prior test booking) hits
+    // "Duplicate Name Exists Error" here even though our email lookup above
+    // found nothing. Fall back to a name lookup and reuse that customer
+    // instead of failing the whole checkout.
+    const msg = err instanceof Error ? err.message : String(err)
+    if (msg.includes('Duplicate Name Exists Error')) {
+      const byName = await findCustomerByDisplayName(realmId, accessToken, info.name)
+      if (byName) return byName
+    }
+    throw err
+  }
 }
 
 async function findServiceItem(realmId: string, accessToken: string, itemName: string) {
