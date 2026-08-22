@@ -1025,6 +1025,24 @@ export default function AdminPage() {
   const [savingStayHotel, setSavingStayHotel] = useState(false)
   const emptyStayHotel = { name: '', photo_url: '', price: 189, transport_amount: 45, rooms_available: 5, active: true, sort_order: 100 }
   const [newStayHotel, setNewStayHotel] = useState(emptyStayHotel)
+  const [uploadingNewPhoto, setUploadingNewPhoto] = useState(false)
+  const [uploadingEditPhoto, setUploadingEditPhoto] = useState(false)
+
+  async function uploadStayPhoto(file: File): Promise<string | null> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch('/api/admin/upload', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${password}` },
+      body: formData,
+    })
+    const data = await res.json().catch(() => null)
+    if (!res.ok) {
+      alert(data?.error || 'Upload failed')
+      return null
+    }
+    return data.url as string
+  }
 
   async function fetchStayData(pw: string) {
     const res = await fetch(`/api/admin/stay-hotels?t=${Date.now()}`, {
@@ -2822,7 +2840,32 @@ export default function AdminPage() {
                 <h3 className="text-sm font-bold text-[var(--gold-light)] uppercase tracking-wider">New Stay Hotel</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <input placeholder="Name" value={newStayHotel.name} onChange={e => setNewStayHotel({ ...newStayHotel, name: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
-                  <input placeholder="Photo URL" value={newStayHotel.photo_url} onChange={e => setNewStayHotel({ ...newStayHotel, photo_url: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                  <div className="flex flex-col gap-2 md:col-span-2">
+                    <div className="flex items-center gap-2">
+                      <input placeholder="Photo URL" value={newStayHotel.photo_url} onChange={e => setNewStayHotel({ ...newStayHotel, photo_url: e.target.value })} className="flex-1 px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                      <label className="px-3 py-2 rounded-lg text-xs font-bold uppercase cursor-pointer text-[var(--gold-light)] border border-[#B8960C]/40 whitespace-nowrap">
+                        {uploadingNewPhoto ? 'Uploading…' : 'Upload'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={uploadingNewPhoto}
+                          onChange={async e => {
+                            const file = e.target.files?.[0]
+                            e.target.value = ''
+                            if (!file) return
+                            setUploadingNewPhoto(true)
+                            const url = await uploadStayPhoto(file)
+                            setUploadingNewPhoto(false)
+                            if (url) setNewStayHotel(prev => ({ ...prev, photo_url: url }))
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {newStayHotel.photo_url && (
+                      <img src={newStayHotel.photo_url} alt="" className="h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
+                    )}
+                  </div>
                   <input type="number" placeholder="Price per room/night ($)" value={newStayHotel.price} onChange={e => setNewStayHotel({ ...newStayHotel, price: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                   <input type="number" placeholder="Transport portion ($)" value={newStayHotel.transport_amount} onChange={e => setNewStayHotel({ ...newStayHotel, transport_amount: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                   <input type="number" placeholder="Rooms available" value={newStayHotel.rooms_available} onChange={e => setNewStayHotel({ ...newStayHotel, rooms_available: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
@@ -2854,7 +2897,30 @@ export default function AdminPage() {
                           <input value={edit.name} onChange={e => setEditingStayHotel({ ...edit, name: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                         </label>
                         <label className="flex flex-col gap-1 col-span-2">Photo URL
-                          <input value={edit.photo_url || ''} onChange={e => setEditingStayHotel({ ...edit, photo_url: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                          <div className="flex items-center gap-2">
+                            <input value={edit.photo_url || ''} onChange={e => setEditingStayHotel({ ...edit, photo_url: e.target.value })} className="flex-1 px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                            <label className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase cursor-pointer text-[var(--gold-light)] border border-[#B8960C]/40 whitespace-nowrap">
+                              {uploadingEditPhoto ? 'Uploading…' : 'Upload'}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={uploadingEditPhoto}
+                                onChange={async e => {
+                                  const file = e.target.files?.[0]
+                                  e.target.value = ''
+                                  if (!file) return
+                                  setUploadingEditPhoto(true)
+                                  const url = await uploadStayPhoto(file)
+                                  setUploadingEditPhoto(false)
+                                  if (url) setEditingStayHotel({ ...edit, photo_url: url })
+                                }}
+                              />
+                            </label>
+                          </div>
+                          {edit.photo_url && (
+                            <img src={edit.photo_url} alt="" className="mt-1 h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
+                          )}
                         </label>
                         <label className="flex flex-col gap-1">Price/night ($)
                           <input type="number" value={edit.price} onChange={e => setEditingStayHotel({ ...edit, price: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
