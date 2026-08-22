@@ -42,18 +42,24 @@ export async function createCalendarEvent(lead: any, isReturnTrip = false) {
   try {
     const calendar = getCalendarClient();
     
-    let summary = `Pickup: ${lead.customer_name} - ${lead.pickup} → ${lead.destination}`;
+    // Jet Ski / Boat bookings don't have a pickup/destination route — they
+    // have a service_detail summary instead (e.g. "Single Jet Ski — 2
+    // Hours"), see the "Add Reservation" modal's watercraft package picker.
+    const isWatercraft = lead.service_type === 'jet_ski' || lead.service_type === 'boat';
+    let summary = isWatercraft
+      ? `${lead.service_detail || lead.service_type}: ${lead.customer_name}`
+      : `Pickup: ${lead.customer_name} - ${lead.pickup} → ${lead.destination}`;
     let description = `
 Reservation ID: ${lead.id}
 Customer: ${lead.customer_name}
 Email: ${lead.customer_email || 'N/A'}
 Phone: ${lead.customer_phone || 'N/A'}
-Vehicle: ${lead.vehicle_type}
+${isWatercraft ? `Service: ${lead.service_detail || lead.service_type}` : `Vehicle: ${lead.vehicle_type}`}
 Passengers: ${lead.passengers}
-Luggage: ${lead.luggage_count}
+${isWatercraft ? '' : `Luggage: ${lead.luggage_count}
 Car Seats: ${lead.car_seats_requested}
 Meeting Type: ${lead.meeting_type}
-Flight: ${lead.airline || 'N/A'} ${lead.flight_number || ''}
+Flight: ${lead.airline || 'N/A'} ${lead.flight_number || ''}`}
 Status: ${lead.status}
 Notes: ${lead.notes || 'None'}
     `.trim();
@@ -106,18 +112,24 @@ export async function updateCalendarEvent(eventId: string, lead: any, isReturnTr
   try {
     const calendar = getCalendarClient();
     
-    let summary = `Pickup: ${lead.customer_name} - ${lead.pickup} → ${lead.destination}`;
+    // Jet Ski / Boat bookings don't have a pickup/destination route — they
+    // have a service_detail summary instead (e.g. "Single Jet Ski — 2
+    // Hours"), see the "Add Reservation" modal's watercraft package picker.
+    const isWatercraft = lead.service_type === 'jet_ski' || lead.service_type === 'boat';
+    let summary = isWatercraft
+      ? `${lead.service_detail || lead.service_type}: ${lead.customer_name}`
+      : `Pickup: ${lead.customer_name} - ${lead.pickup} → ${lead.destination}`;
     let description = `
 Reservation ID: ${lead.id}
 Customer: ${lead.customer_name}
 Email: ${lead.customer_email || 'N/A'}
 Phone: ${lead.customer_phone || 'N/A'}
-Vehicle: ${lead.vehicle_type}
+${isWatercraft ? `Service: ${lead.service_detail || lead.service_type}` : `Vehicle: ${lead.vehicle_type}`}
 Passengers: ${lead.passengers}
-Luggage: ${lead.luggage_count}
+${isWatercraft ? '' : `Luggage: ${lead.luggage_count}
 Car Seats: ${lead.car_seats_requested}
 Meeting Type: ${lead.meeting_type}
-Flight: ${lead.airline || 'N/A'} ${lead.flight_number || ''}
+Flight: ${lead.airline || 'N/A'} ${lead.flight_number || ''}`}
 Status: ${lead.status}
 Notes: ${lead.notes || 'None'}
     `.trim();

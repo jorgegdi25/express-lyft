@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import Stripe from 'stripe'
 import { flTaxRateIds } from '@/lib/tax'
+import { leadInvoiceDescription } from '@/lib/leadDescription'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
       customer: customerId,
       amount: Math.round(lead.amount_usd * 100), // Convert to cents
       currency: 'usd',
-      description: `Express Lyft Reservation: ${lead.pickup} to ${lead.destination} (${lead.date} at ${lead.time}) | ${lead.vehicle_type} | ${lead.passengers} passengers`,
+      description: leadInvoiceDescription(lead),
       tax_rates: flTaxRateIds(),
     })
 

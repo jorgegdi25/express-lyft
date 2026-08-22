@@ -199,10 +199,15 @@ export async function POST(req: NextRequest) {
           {
             price_data: {
               currency: 'usd',
-              product_data: {
-                name: `Express Lyft Reservation: ${lead.pickup} to ${lead.destination}`,
-                description: `${lead.date} at ${lead.time} | ${lead.vehicle_type} | ${lead.passengers} passengers`,
-              },
+              product_data: lead.service_type && lead.service_type !== 'transport'
+                ? {
+                    name: `Express Lyft ${lead.service_type === 'jet_ski' ? 'Jet Ski Rental' : 'Boat Rental'}: ${lead.service_detail || lead.service_type}`,
+                    description: `${lead.date} at ${lead.time} | ${lead.passengers} passengers`,
+                  }
+                : {
+                    name: `Express Lyft Reservation: ${lead.pickup} to ${lead.destination}`,
+                    description: `${lead.date} at ${lead.time} | ${lead.vehicle_type} | ${lead.passengers} passengers`,
+                  },
               unit_amount: Math.round(lead.amount_usd * 100),
             },
             quantity: 1,
@@ -259,7 +264,9 @@ export async function POST(req: NextRequest) {
       amountPaid: manualAmountPaid,
       amountRemaining: manualAmountRemaining,
       discountCode,
-      agentName
+      agentName,
+      serviceType,
+      serviceDetail
     } = body
 
     if (!hotelSlug) return NextResponse.json({ error: 'Missing hotelSlug' }, { status: 400 })
@@ -388,6 +395,11 @@ export async function POST(req: NextRequest) {
       // check that already gates external_platform/paid_at above.
       booking_source: isAdmin ? 'manual' : 'website',
       created_by: isAdmin ? (agentName || null) : null,
+      // Only the admin "Add Reservation" flow can pick a service other than
+      // transport (Jet Ski / Boat rentals) — the public site never sends
+      // this, so it always defaults to 'transport' there.
+      service_type: isAdmin && serviceType ? serviceType : 'transport',
+      service_detail: isAdmin ? (serviceDetail || null) : null,
       airline,
       flight_number: flightNumber,
       meeting_type: meetingType || 'curbside',

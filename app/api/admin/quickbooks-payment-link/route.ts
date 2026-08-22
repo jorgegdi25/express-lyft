@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createAndSendInvoice, getInvoicePaymentLink } from '@/lib/quickbooks'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
+import { leadInvoiceDescription } from '@/lib/leadDescription'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
       customerEmail: lead.customer_email,
       customerPhone: lead.customer_phone,
       amount: lead.amount_usd,
-      description: `Express Lyft Reservation: ${lead.pickup} to ${lead.destination} (${lead.date} at ${lead.time}) | ${lead.vehicle_type} | ${lead.passengers} passengers`,
+      description: leadInvoiceDescription(lead),
       taxAmount: lead.amount_usd * (FL_TAX_RATE_PERCENT / 100),
       send: false,
     })

@@ -56,6 +56,8 @@ interface Booking {
   external_reference?: string | null
   paid_at?: string | null
   tax_collected?: number
+  service_type?: string | null
+  service_detail?: string | null
 }
 
 interface Driver {
@@ -137,6 +139,8 @@ interface Lead {
   tax_collected?: number
   booking_source?: 'website' | 'manual' | null
   created_by?: string | null
+  service_type?: 'transport' | 'jet_ski' | 'boat' | null
+  service_detail?: string | null
 }
 
 interface Client {
@@ -363,6 +367,72 @@ function hexToRgba(hex: string, alpha: number) {
 const DEFAULT_AGENT_COLOR = { bg: 'rgba(161,161,170,0.12)', fg: '#a1a1aa', border: 'rgba(161,161,170,0.35)', dot: '#a1a1aa' }
 const WEB_COLOR = { bg: 'rgba(56,189,248,0.12)', fg: '#38bdf8', border: 'rgba(56,189,248,0.35)', dot: '#38bdf8' }
 
+// Jet Ski / Boat rental price sheet (Dennis's on-water services, sold
+// through the same manual "Add Reservation" flow as transport) — picking a
+// package + duration below pre-fills the Total field from here, still
+// editable for one-off adjustments like an added captain.
+type WatercraftDuration = { label: string; price: number; note?: string }
+type WatercraftPackage = { name: string; durations: WatercraftDuration[] }
+const WATERCRAFT_CATALOG: Record<'jet_ski' | 'boat', { label: string; packages: WatercraftPackage[] }> = {
+  jet_ski: {
+    label: 'Jet Ski Rentals',
+    packages: [
+      {
+        name: 'Single Jet Ski',
+        durations: [
+          { label: '1 Hour', price: 150 },
+          { label: '2 Hours', price: 300 },
+          { label: 'Half Day (4 hrs)', price: 450 },
+          { label: 'Full Day (8 hrs)', price: 800 },
+        ],
+      },
+      {
+        name: 'Double Jet Ski (2-seater)',
+        durations: [
+          { label: '1 Hour', price: 150 },
+          { label: '2 Hours', price: 300 },
+          { label: 'Half Day (4 hrs)', price: 450 },
+          { label: 'Full Day (8 hrs)', price: 800 },
+        ],
+      },
+      {
+        name: 'Two Jet Skis (two machines)',
+        durations: [
+          { label: '2 Hours', price: 500, note: '$250 per jet ski' },
+          { label: 'Half Day (4 hrs)', price: 800 },
+          { label: 'Full Day (8 hrs)', price: 1200 },
+        ],
+      },
+    ],
+  },
+  boat: {
+    label: 'Boat Rentals',
+    packages: [
+      {
+        name: 'Pontoon Boat (up to 10 guests)',
+        durations: [
+          { label: 'Half Day (4 hrs)', price: 553, note: 'Captain available +$35/hr' },
+          { label: 'Full Day (8 hrs)', price: 869, note: 'Captain available +$35/hr' },
+        ],
+      },
+      {
+        name: 'Center Console / Fishing Boat',
+        durations: [
+          { label: 'Half Day (4 hrs)', price: 632, note: 'Available Sept 1' },
+          { label: 'Full Day (8 hrs)', price: 1027, note: 'Available Sept 1' },
+        ],
+      },
+      {
+        name: 'Bowrider',
+        durations: [
+          { label: 'Half Day (4 hrs)', price: 553, note: 'Captain available +$35/hr' },
+          { label: 'Full Day (8 hrs)', price: 800, note: 'Captain available +$35/hr' },
+        ],
+      },
+    ],
+  },
+}
+
 // Agents are managed from the CRM ("Sales Agent" picker → "+ Add Agent"),
 // not hardcoded, so the roster can grow without a code change. Each row
 // carries its own color (assigned server-side on creation — see
@@ -500,6 +570,9 @@ export default function AdminPage() {
     fullyPaid: true,
     amountPaid: 0,
     agentName: '',
+    serviceType: 'transport' as 'transport' | 'jet_ski' | 'boat',
+    watercraftPackage: '',
+    watercraftDuration: '',
   }
   const [newLead, setNewLead] = useState(emptyNewLead)
   const [showAddAgentInput, setShowAddAgentInput] = useState(false)
@@ -723,6 +796,20 @@ export default function AdminPage() {
 
     const grossRevenue = stripeTotal + quickbooksTotal + externalTotal + cashTotal
 
+    // Revenue by service — transport vs. the on-water rentals Dennis also
+    // sells (Jet Ski / Boat), so "how much did we make from X" is a direct
+    // read instead of digging through every reservation by hand.
+    const serviceTypeRevenue: Record<string, { count: number; revenue: number }> = {
+      transport: { count: 0, revenue: 0 },
+      jet_ski: { count: 0, revenue: 0 },
+      boat: { count: 0, revenue: 0 },
+    }
+    bookings.forEach((b) => {
+      const key = b.service_type && b.service_type in serviceTypeRevenue ? b.service_type : 'transport'
+      serviceTypeRevenue[key].count += 1
+      serviceTypeRevenue[key].revenue += collected(b)
+    })
+
     // Monthly breakdown (collected amounts, by month of the trip date)
     const monthlyData: Record<string, number> = {}
     bookings.forEach((b) => {
@@ -746,9 +833,10 @@ export default function AdminPage() {
       ? Math.round(((currentMonthBookings - lastMonthBookings) / lastMonthBookings) * 100)
       : null
 
-    // Top Routes (by collected revenue)
+    // Top Routes (by collected revenue) — transport only, Jet Ski/Boat
+    // rentals don't have a pickup/destination route.
     const routesData: Record<string, { count: number; revenue: number }> = {}
-    bookings.forEach(b => {
+    bookings.filter(b => (!b.service_type || b.service_type === 'transport')).forEach(b => {
       const routeKey = `${b.pickup} -> ${b.destination}`
       if (!routesData[routeKey]) routesData[routeKey] = { count: 0, revenue: 0 }
       routesData[routeKey].count += 1
@@ -763,6 +851,7 @@ export default function AdminPage() {
       stripeTotal,
       quickbooksTotal,
       externalTotal,
+      serviceTypeRevenue,
       cashTotal,
       pendingTotal,
       taxCollectedTotal,
@@ -1423,10 +1512,19 @@ export default function AdminPage() {
         }
       }
 
+      // A human-readable summary of the on-water package for non-transport
+      // services (e.g. "Single Jet Ski — 2 Hours") — used on the lead card
+      // and as the invoice line description, since pickup/destination don't
+      // apply to these.
+      const serviceDetail = newLead.serviceType !== 'transport' && newLead.watercraftPackage && newLead.watercraftDuration
+        ? `${newLead.watercraftPackage} — ${newLead.watercraftDuration}`
+        : null
+
       const payload = {
         ...newLead,
-        pickup: newLead.pickup.trim(),
-        destination: newLead.destination.trim(),
+        pickup: newLead.serviceType === 'transport' ? newLead.pickup.trim() : '',
+        destination: newLead.serviceType === 'transport' ? newLead.destination.trim() : '',
+        serviceDetail,
         status: resolvedStatus,
         amountPaid,
         amountRemaining,
@@ -3791,6 +3889,34 @@ export default function AdminPage() {
                     <h2 className="text-xl font-bold text-white uppercase tracking-widest">+ Add New Reservation</h2>
                     <button onClick={() => setShowAddLeadModal(false)} className="text-sm text-[var(--text-subtle)] hover:text-red-400 px-3 py-1 rounded-lg border border-[var(--border-soft)] hover:border-red-400 transition-all">x Close</button>
                   </div>
+
+                  <div className="mb-5 pb-5 border-b border-[var(--border)]">
+                    <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Service Type</label>
+                    <div className="flex gap-2">
+                      {([
+                        { value: 'transport', label: 'Transport' },
+                        { value: 'jet_ski', label: 'Jet Ski' },
+                        { value: 'boat', label: 'Boat' },
+                      ] as const).map((s) => (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => setNewLead({
+                            ...newLead,
+                            serviceType: s.value,
+                            watercraftPackage: '',
+                            watercraftDuration: '',
+                            amountUsd: s.value === 'transport' ? newLead.amountUsd : 0,
+                          })}
+                          className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors"
+                          style={newLead.serviceType === s.value ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Name *</label>
@@ -3828,38 +3954,77 @@ export default function AdminPage() {
                         {hotelOptions.map((slug) => (<option key={slug} value={slug}>{slug}</option>))}
                       </select>
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Trip Type</label>
-                      <select value={newLead.tripType} onChange={(e) => setNewLead({ ...newLead, tripType: e.target.value as any })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
-                        <option value="one-way">One Way</option>
-                        <option value="round-trip">Round Trip</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="mb-5">
-                    <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Route</label>
-                    <div className="flex gap-2 mb-3">
-                      <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'preset', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'preset' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                        Preset Route (Airport/Port)
-                      </button>
-                      <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'custom', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'custom' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                        Custom Trip
-                      </button>
-                    </div>
-
-                    {newLead.routeMode === 'preset' ? (
-                      <select value={`${newLead.pickup}|||${newLead.destination}`} onChange={(e) => { const [p, d] = e.target.value.split('|||'); setNewLead({ ...newLead, pickup: p || '', destination: d || '' }); }} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
-                        <option value="|||">— Select Route —</option>
-                        {routeDropdownOptions.map((r) => (<option key={`${r.pickup}|||${r.destination}`} value={`${r.pickup}|||${r.destination}`}>{r.pickup} → {r.destination}</option>))}
-                      </select>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <input type="text" placeholder="Pickup (e.g. B Ocean Resort)" value={newLead.pickup} onChange={(e) => setNewLead({ ...newLead, pickup: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
-                        <input type="text" placeholder="Destination (e.g. Club Space Miami)" value={newLead.destination} onChange={(e) => setNewLead({ ...newLead, destination: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                    {newLead.serviceType === 'transport' && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-semibold text-[var(--text-subtle)]">Trip Type</label>
+                        <select value={newLead.tripType} onChange={(e) => setNewLead({ ...newLead, tripType: e.target.value as any })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
+                          <option value="one-way">One Way</option>
+                          <option value="round-trip">Round Trip</option>
+                        </select>
                       </div>
                     )}
                   </div>
+
+                  {newLead.serviceType === 'transport' ? (
+                    <div className="mb-5">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Route</label>
+                      <div className="flex gap-2 mb-3">
+                        <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'preset', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'preset' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                          Preset Route (Airport/Port)
+                        </button>
+                        <button type="button" onClick={() => setNewLead({ ...newLead, routeMode: 'custom', pickup: '', destination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.routeMode === 'custom' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                          Custom Trip
+                        </button>
+                      </div>
+
+                      {newLead.routeMode === 'preset' ? (
+                        <select value={`${newLead.pickup}|||${newLead.destination}`} onChange={(e) => { const [p, d] = e.target.value.split('|||'); setNewLead({ ...newLead, pickup: p || '', destination: d || '' }); }} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
+                          <option value="|||">— Select Route —</option>
+                          {routeDropdownOptions.map((r) => (<option key={`${r.pickup}|||${r.destination}`} value={`${r.pickup}|||${r.destination}`}>{r.pickup} → {r.destination}</option>))}
+                        </select>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <input type="text" placeholder="Pickup (e.g. B Ocean Resort)" value={newLead.pickup} onChange={(e) => setNewLead({ ...newLead, pickup: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                          <input type="text" placeholder="Destination (e.g. Club Space Miami)" value={newLead.destination} onChange={(e) => setNewLead({ ...newLead, destination: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                        </div>
+                      )}
+                    </div>
+                  ) : (() => {
+                    const catalog = WATERCRAFT_CATALOG[newLead.serviceType as 'jet_ski' | 'boat']
+                    const pkg = catalog.packages.find((p) => p.name === newLead.watercraftPackage)
+                    const dur = pkg?.durations.find((d) => d.label === newLead.watercraftDuration)
+                    return (
+                    <div className="mb-5">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">{catalog.label} — Package</label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <select
+                          value={newLead.watercraftPackage}
+                          onChange={(e) => setNewLead({ ...newLead, watercraftPackage: e.target.value, watercraftDuration: '', amountUsd: 0 })}
+                          className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors"
+                        >
+                          <option value="">— Select Package —</option>
+                          {catalog.packages.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
+                        </select>
+                        <select
+                          value={newLead.watercraftDuration}
+                          disabled={!newLead.watercraftPackage}
+                          onChange={(e) => {
+                            const selectedPkg = catalog.packages.find((p) => p.name === newLead.watercraftPackage)
+                            const selectedDur = selectedPkg?.durations.find((d) => d.label === e.target.value)
+                            setNewLead({ ...newLead, watercraftDuration: e.target.value, amountUsd: selectedDur?.price || 0 })
+                          }}
+                          className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors disabled:opacity-40"
+                        >
+                          <option value="">— Select Duration —</option>
+                          {pkg?.durations.map((d) => (
+                            <option key={d.label} value={d.label}>{d.label} — ${d.price}{d.note ? ` (${d.note})` : ''}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {dur?.note && <p className="text-xs text-[var(--gold-light)] mt-2">{dur.note}</p>}
+                    </div>
+                    )
+                  })()}
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
                     <div className="flex flex-col gap-1.5">
@@ -3901,19 +4066,21 @@ export default function AdminPage() {
                         </div>
                       </>
                     )}
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Vehicle</label>
-                      <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
-                        <option value="sedan_suv">Sedan & SUV</option>
-                        <option value="suburban">Suburban</option>
-                        <option value="sprinter">Sprinter</option>
-                        <option value="minibus">Mini Bus</option>
-                        <option value="coachbus">Coach Bus</option>
-                      </select>
-                    </div>
+                    {newLead.serviceType === 'transport' && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-semibold text-[var(--text-subtle)]">Vehicle</label>
+                        <select value={newLead.vehicleType} onChange={(e) => setNewLead({ ...newLead, vehicleType: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
+                          <option value="sedan_suv">Sedan & SUV</option>
+                          <option value="suburban">Suburban</option>
+                          <option value="sprinter">Sprinter</option>
+                          <option value="minibus">Mini Bus</option>
+                          <option value="coachbus">Coach Bus</option>
+                        </select>
+                      </div>
+                    )}
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">
-                        {newLead.routeMode === 'preset' ? 'Total ($) — suggested from rate' : 'Total ($)'}
+                        {newLead.serviceType !== 'transport' ? 'Total ($) — from price sheet, editable' : newLead.routeMode === 'preset' ? 'Total ($) — suggested from rate' : 'Total ($)'}
                       </label>
                       <input type="number" step="0.01" placeholder="0" value={newLead.amountUsd} onChange={(e) => setNewLead({ ...newLead, amountUsd: parseFloat(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
                       {(newLead.paymentSource === 'quickbooks' || newLead.paymentSource === 'stripe') && newLead.amountUsd > 0 && (
@@ -3925,29 +4092,33 @@ export default function AdminPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5 pt-5 border-t border-[var(--border)]">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Airline</label>
-                      <input type="text" placeholder="e.g. Delta" value={newLead.airline} onChange={(e) => setNewLead({ ...newLead, airline: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Flight Number</label>
-                      <input type="text" placeholder="e.g. DL123" value={newLead.flightNumber} onChange={(e) => setNewLead({ ...newLead, flightNumber: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Meeting Type</label>
-                      <select value={newLead.meetingType} onChange={(e) => { const meetingType = e.target.value as any; setNewLead({ ...newLead, meetingType, meetGreetFee: meetingType === 'meet_greet' ? 25 : 0 }); }} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
-                        <option value="curbside">Curbside</option>
-                        <option value="meet_greet">Meet & Greet (+$25)</option>
-                      </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Luggage Count</label>
-                      <input type="number" min={0} value={newLead.luggageCount} onChange={(e) => setNewLead({ ...newLead, luggageCount: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Car Seats</label>
-                      <input type="number" min={0} value={newLead.carSeatsRequested} onChange={(e) => setNewLead({ ...newLead, carSeatsRequested: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
-                    </div>
+                    {newLead.serviceType === 'transport' && (
+                      <>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Airline</label>
+                          <input type="text" placeholder="e.g. Delta" value={newLead.airline} onChange={(e) => setNewLead({ ...newLead, airline: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Flight Number</label>
+                          <input type="text" placeholder="e.g. DL123" value={newLead.flightNumber} onChange={(e) => setNewLead({ ...newLead, flightNumber: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Meeting Type</label>
+                          <select value={newLead.meetingType} onChange={(e) => { const meetingType = e.target.value as any; setNewLead({ ...newLead, meetingType, meetGreetFee: meetingType === 'meet_greet' ? 25 : 0 }); }} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
+                            <option value="curbside">Curbside</option>
+                            <option value="meet_greet">Meet & Greet (+$25)</option>
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Luggage Count</label>
+                          <input type="number" min={0} value={newLead.luggageCount} onChange={(e) => setNewLead({ ...newLead, luggageCount: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Car Seats</label>
+                          <input type="number" min={0} value={newLead.carSeatsRequested} onChange={(e) => setNewLead({ ...newLead, carSeatsRequested: parseInt(e.target.value) || 0 })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                        </div>
+                      </>
+                    )}
                     <div className="flex flex-col gap-1.5 md:col-span-3">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Special Requests / Notes</label>
                       <textarea rows={2} placeholder="e.g. 3 cold Cokes, needs extra time, allergic to peanuts" value={newLead.notes} onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors resize-none" />
@@ -4073,13 +4244,13 @@ export default function AdminPage() {
                         addingLead ||
                         !newLead.customerName ||
                         !newLead.hotelSlug ||
-                        !newLead.pickup ||
-                        !newLead.destination ||
                         !newLead.amountUsd ||
                         !newLead.date ||
                         !newLead.time ||
                         !newLead.agentName ||
-                        (newLead.tripType === 'round-trip' && (!newLead.returnDate || !newLead.returnTime))
+                        (newLead.serviceType === 'transport'
+                          ? !newLead.pickup || !newLead.destination || (newLead.tripType === 'round-trip' && (!newLead.returnDate || !newLead.returnTime))
+                          : !newLead.watercraftPackage || !newLead.watercraftDuration)
                       }
                       className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
                       style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
@@ -4297,15 +4468,24 @@ export default function AdminPage() {
                     <span className="text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-wider shrink-0 mt-0.5">{timeAgo(l.created_at)}</span>
                   </div>
 
-                  {/* Route, compact single line */}
-                  <div className="flex items-center gap-2 text-sm text-white pt-3.5 border-t border-[#222]">
-                    <span className="truncate">{l.pickup}</span>
-                    <ArrowRight size={13} className="shrink-0" style={{ color: 'var(--text-faint)' }} />
-                    <span className="truncate">{l.destination}</span>
-                    <span className="ml-auto shrink-0 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded" style={{ background: l.trip_type === 'round-trip' ? '#B8960C20' : '#33333340', color: l.trip_type === 'round-trip' ? 'var(--gold)' : 'var(--text-muted)' }}>
-                      {l.trip_type === 'round-trip' ? 'Round Trip' : 'One Way'}
-                    </span>
-                  </div>
+                  {/* Route (transport) or service package (Jet Ski / Boat), compact single line */}
+                  {l.service_type && l.service_type !== 'transport' ? (
+                    <div className="flex items-center gap-2 text-sm text-white pt-3.5 border-t border-[#222]">
+                      <span className="truncate">{l.service_detail || (l.service_type === 'jet_ski' ? 'Jet Ski Rental' : 'Boat Rental')}</span>
+                      <span className="ml-auto shrink-0 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded" style={{ background: '#0ea5e920', color: '#38bdf8' }}>
+                        {l.service_type === 'jet_ski' ? 'Jet Ski' : 'Boat'}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-white pt-3.5 border-t border-[#222]">
+                      <span className="truncate">{l.pickup}</span>
+                      <ArrowRight size={13} className="shrink-0" style={{ color: 'var(--text-faint)' }} />
+                      <span className="truncate">{l.destination}</span>
+                      <span className="ml-auto shrink-0 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded" style={{ background: l.trip_type === 'round-trip' ? '#B8960C20' : '#33333340', color: l.trip_type === 'round-trip' ? 'var(--gold)' : 'var(--text-muted)' }}>
+                        {l.trip_type === 'round-trip' ? 'Round Trip' : 'One Way'}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Date / vehicle meta row */}
                   <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -4313,7 +4493,9 @@ export default function AdminPage() {
                     {l.trip_type === 'round-trip' && l.return_date && (
                       <span style={{ color: 'var(--gold)' }}>Return {formatDateUS(l.return_date)} · {l.return_time || '—'}</span>
                     )}
-                    <span>{l.passengers || 1} PAX · <span className="font-bold" style={{ color: 'var(--gold-light)' }}>{VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}</span></span>
+                    {(!l.service_type || l.service_type === 'transport') && (
+                      <span>{l.passengers || 1} PAX · <span className="font-bold" style={{ color: 'var(--gold-light)' }}>{VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}</span></span>
+                    )}
                   </div>
 
                   {/* Meet & Greet badge, only if present */}
@@ -4330,7 +4512,7 @@ export default function AdminPage() {
                       <Button
                         variant="success"
                         size="sm"
-                        onClick={(e) => { e.stopPropagation(); openWhatsApp(l.customer_phone!, `Hi ${l.customer_name || 'Guest'}, this is Express Lyft. I saw you were looking for a transfer from ${l.pickup} to ${l.destination}. Would you like to complete your reservation?`); }}
+                        onClick={(e) => { e.stopPropagation(); openWhatsApp(l.customer_phone!, l.service_type && l.service_type !== 'transport' ? `Hi ${l.customer_name || 'Guest'}, this is Express Lyft. I saw you were interested in a ${l.service_detail || (l.service_type === 'jet_ski' ? 'Jet Ski Rental' : 'Boat Rental')}. Would you like to complete your reservation?` : `Hi ${l.customer_name || 'Guest'}, this is Express Lyft. I saw you were looking for a transfer from ${l.pickup} to ${l.destination}. Would you like to complete your reservation?`); }}
                       >
                         WhatsApp
                       </Button>
@@ -4400,7 +4582,10 @@ export default function AdminPage() {
                             onClick={() => {
                               const driver = drivers.find(d => d.id === l.assigned_driver_id);
                               if (driver) {
-                                openWhatsApp(driver.phone, `Hi ${driver.name}, you have a new trip assigned:\n\nPassenger: ${l.customer_name}\nDate: ${formatDateUS(l.date)}\nTime: ${l.time}\nPickup: ${l.pickup}\nDropoff: ${l.destination}\nVehicle: ${VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}`);
+                                const isWatercraft = l.service_type && l.service_type !== 'transport'
+                                openWhatsApp(driver.phone, isWatercraft
+                                  ? `Hi ${driver.name}, you have a new booking assigned:\n\nGuest: ${l.customer_name}\nDate: ${formatDateUS(l.date)}\nTime: ${l.time}\nService: ${l.service_detail || l.service_type}`
+                                  : `Hi ${driver.name}, you have a new trip assigned:\n\nPassenger: ${l.customer_name}\nDate: ${formatDateUS(l.date)}\nTime: ${l.time}\nPickup: ${l.pickup}\nDropoff: ${l.destination}\nVehicle: ${VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}`);
                               }
                             }}
                           >
@@ -4631,6 +4816,29 @@ export default function AdminPage() {
                   })}
                 </div>
               )}
+            </section>
+
+            {/* Revenue by Service — transport vs. Jet Ski / Boat rentals */}
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <div className="flex items-center justify-between mb-5">
+                <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">Revenue by Service</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {([
+                  { key: 'transport', label: 'Transport' },
+                  { key: 'jet_ski', label: 'Jet Ski' },
+                  { key: 'boat', label: 'Boat' },
+                ] as const).map((s) => {
+                  const stat = revenueStats.serviceTypeRevenue[s.key]
+                  return (
+                    <div key={s.key} className="rounded-lg p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border-faint)' }}>
+                      <p className="text-xs uppercase tracking-wider font-bold text-[var(--text-muted)] mb-1">{s.label}</p>
+                      <p className="text-xl font-bold" style={{ color: '#4ade80' }}>${stat.revenue.toLocaleString()}</p>
+                      <p className="text-xs text-[var(--text-faint)]">{stat.count} booking{stat.count === 1 ? '' : 's'}</p>
+                    </div>
+                  )
+                })}
+              </div>
             </section>
 
             {/* Top Routes */}
@@ -5394,18 +5602,27 @@ export default function AdminPage() {
                             <p className="text-sm text-white font-medium">{formatDateUS(viewingLead.return_date)} at {viewingLead.return_time}</p>
                           </div>
                         )}
-                        <div>
-                          <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Route</p>
-                          <p className="text-sm text-white"><span className="text-[var(--gold)]">•</span> {viewingLead.pickup}</p>
-                          <p className="text-sm text-white"><span className="text-[var(--gold-light)]">↓</span> {viewingLead.destination}</p>
-                        </div>
+                        {viewingLead.service_type && viewingLead.service_type !== 'transport' ? (
+                          <div>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Service</p>
+                            <p className="text-sm text-white">{viewingLead.service_detail || (viewingLead.service_type === 'jet_ski' ? 'Jet Ski Rental' : 'Boat Rental')}</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Route</p>
+                            <p className="text-sm text-white"><span className="text-[var(--gold)]">•</span> {viewingLead.pickup}</p>
+                            <p className="text-sm text-white"><span className="text-[var(--gold-light)]">↓</span> {viewingLead.destination}</p>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex flex-col gap-4">
-                        <div>
-                          <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Vehicle</p>
-                          <p className="text-sm text-white font-medium">{VEHICLE_LABELS[viewingLead.vehicle_type] || viewingLead.vehicle_type}</p>
-                        </div>
+                        {(!viewingLead.service_type || viewingLead.service_type === 'transport') && (
+                          <div>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Vehicle</p>
+                            <p className="text-sm text-white font-medium">{VEHICLE_LABELS[viewingLead.vehicle_type] || viewingLead.vehicle_type}</p>
+                          </div>
+                        )}
                         <div>
                           <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Passengers</p>
                           <p className="text-sm text-white">{viewingLead.passengers || 1} PAX</p>
