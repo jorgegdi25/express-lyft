@@ -298,9 +298,14 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
       )}
 
       {(step === 'details' || step === 'checkout') && urgencySecondsLeft !== null && urgencySecondsLeft > 0 && (
-        <div className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold text-center" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)', color: '#D4AF37' }}>
-          <Clock size={14} className="shrink-0" />
-          Your selection stays available for {formatMMSS(urgencySecondsLeft)} — complete your booking to lock it in.
+        <div
+          className="flex items-center justify-center gap-3 py-3.5 px-5 rounded-xl text-center"
+          style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', boxShadow: '0 6px 24px rgba(212,175,55,0.4)' }}
+        >
+          <Clock size={20} className="shrink-0 animate-pulse" style={{ color: '#0a0a0a' }} />
+          <p className="text-sm font-bold leading-snug" style={{ color: '#0a0a0a' }}>
+            Your reservation is held for <span className="text-lg font-extrabold tabular-nums">{formatMMSS(urgencySecondsLeft)}</span> — complete your booking now to lock it in.
+          </p>
         </div>
       )}
 
