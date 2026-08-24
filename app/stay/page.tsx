@@ -119,7 +119,7 @@ export default async function StayPage() {
       <ReviewsMarquee reviews={marqueeReviews} />
 
       {/* ── Booking ──────────────────────────────────────────── */}
-      <section id="book" className="max-w-2xl mx-auto px-4 md:px-6 pb-24 scroll-mt-8">
+      <section id="book" className="max-w-5xl mx-auto px-4 md:px-6 pb-24 scroll-mt-8">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold mb-2" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#FFFFFF' }}>Reserve Your Room</h2>
           <p className="text-sm text-[#888]">Pick a hotel below — transportation from FLL is already included in the price.</p>

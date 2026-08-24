@@ -277,16 +277,16 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
             {hotels.length === 0 ? (
               <p className="text-sm text-[#888] text-center py-8">No rooms available right now — please call {PHONE_DISPLAY} and we'll help directly.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {hotels.map((h, i) => (
                   <button
                     key={h.id}
                     type="button"
                     onClick={() => { setSelectedHotel(h); setRoomQty(1) }}
-                    className="text-left rounded-xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99]"
+                    className="text-left rounded-xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99] flex flex-col"
                     style={selectedHotel?.id === h.id ? { background: '#161616', border: '2px solid #D4AF37' } : { background: '#161616', border: '1px solid #2a2a2a' }}
                   >
-                    <div className="relative w-full aspect-[16/7]" style={{ background: '#222' }}>
+                    <div className="relative w-full aspect-[4/3]" style={{ background: '#222' }}>
                       {h.photo_url && <Image src={h.photo_url} alt={h.name} fill className="object-cover" unoptimized />}
                       {i === 0 && (
                         <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(212,175,55,0.95)', color: '#0a0a0a' }}>
@@ -303,13 +303,13 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center justify-between p-4">
-                      <div>
-                        <p className="text-white font-bold text-lg" style={{ fontFamily: 'Georgia, serif' }}>{h.name}</p>
-                        <p className="text-xs" style={{ color: '#4ade80' }}>Airport transportation included</p>
+                    <div className="flex items-start justify-between gap-3 p-4 flex-1">
+                      <div className="min-w-0">
+                        <p className="text-white font-bold text-base leading-snug line-clamp-2" style={{ fontFamily: 'Georgia, serif' }}>{h.name}</p>
+                        <p className="text-xs mt-1" style={{ color: '#4ade80' }}>Airport transportation included</p>
                       </div>
-                      <p className="text-right">
-                        <span className="text-[#D4AF37] font-bold text-xl">${h.price}</span>
+                      <p className="text-right shrink-0">
+                        <span className="text-[#D4AF37] font-bold text-lg">${h.price}</span>
                         <span className="block text-xs text-[#888]">/night</span>
                       </p>
                     </div>
