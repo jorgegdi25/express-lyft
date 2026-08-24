@@ -277,8 +277,8 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
             {hotels.length === 0 ? (
               <p className="text-sm text-[#888] text-center py-8">No rooms available right now — please call {PHONE_DISPLAY} and we'll help directly.</p>
             ) : (
-              <div className="flex flex-col gap-3">
-                {hotels.map(h => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {hotels.map((h, i) => (
                   <button
                     key={h.id}
                     type="button"
@@ -288,6 +288,11 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
                   >
                     <div className="relative w-full aspect-[16/7]" style={{ background: '#222' }}>
                       {h.photo_url && <Image src={h.photo_url} alt={h.name} fill className="object-cover" unoptimized />}
+                      {i === 0 && (
+                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(212,175,55,0.95)', color: '#0a0a0a' }}>
+                          Featured
+                        </div>
+                      )}
                       {h.rooms_available <= 3 ? (
                         <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(239,68,68,0.9)', color: '#fff' }}>
                           Only {h.rooms_available} left tonight
