@@ -120,6 +120,11 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   const [time, setTime] = useState<string>('')
   const [returnDate, setReturnDate] = useState<string>('')
   const [returnTime, setReturnTime] = useState<string>('')
+  // Where the return leg actually goes — most guests going to/from a hotel
+  // come back to the same place, but port trips often return somewhere else
+  // entirely (e.g. cruise port → airport, not port → hotel). Empty means
+  // "same as the outbound pickup", the old assumed behavior.
+  const [returnDestination, setReturnDestination] = useState<string>('')
   const [passengers, setPassengers] = useState<number>(2)
   const [customerName, setCustomerName] = useState<string>('')
   const [customerEmail, setCustomerEmail] = useState<string>('')
@@ -393,7 +398,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   // do) cost different amounts. Each leg's own pickup time gets its own
   // time-of-day surcharge.
   const returnBasePrice = tripType === 'round-trip'
-    ? Math.ceil(applyTimeSurcharge(getPricesForRoute(d, p)[vehicleType], returnTime, surcharge))
+    ? Math.ceil(applyTimeSurcharge(getPricesForRoute(d, returnDestination.trim() || p)[vehicleType], returnTime, surcharge))
     : 0
   const total = (tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice) + meetGreetFee
   // Discount codes never apply to deposits — the deposit is always 20% of
@@ -445,6 +450,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
   const availableDestinations = LOCATIONS.filter((l) => l !== pickup)
   const availablePickups = LOCATIONS.filter((l) => l !== destination)
+  const availableReturnDestinations = LOCATIONS.filter((l) => l !== destination && l !== pickup)
 
   // Auto-correct invalid states if the user selects the same location for both
   useEffect(() => {
@@ -516,6 +522,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           tripType,
           returnDate: tripType === 'round-trip' ? returnDate : undefined,
           returnTime: tripType === 'round-trip' ? returnTime : undefined,
+          returnDestination: tripType === 'round-trip' ? (returnDestination.trim() || pickup) : undefined,
           airline,
           flightNumber,
           meetingType,
@@ -564,6 +571,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
     setTime('')
     setReturnDate('')
     setReturnTime('')
+    setReturnDestination('')
     setPassengers(2)
     setCustomerName('')
     setCustomerEmail('')
@@ -897,6 +905,27 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   {/* Round Trip fields */}
                   {tripType === 'round-trip' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="sm:col-span-2">
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Return Destination
+                        </label>
+                        <select
+                          value={returnDestination || pickup}
+                          onChange={(e) => setReturnDestination(e.target.value)}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base`}
+                          style={INPUT_STYLE}
+                        >
+                          {pickup && <option value={pickup}>{pickup} (same as pickup)</option>}
+                          {availableReturnDestinations.map((loc) => (
+                            <option key={loc} value={loc}>
+                              {loc}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                          Where the return trip drops you off — doesn't have to be where you started.
+                        </p>
+                      </div>
                       <div>
                         <label className={LABEL_CLASS} style={LABEL_COLOR}>
                           Return Date
@@ -1267,6 +1296,12 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         <div>
                           <p className="text-[var(--gold)] text-xs mb-1 uppercase tracking-widest font-bold">Drop off Date</p>
                           <p className="text-white font-medium">{returnDate} at {returnTime}</p>
+                        </div>
+                      )}
+                      {tripType === 'round-trip' && (
+                        <div>
+                          <p className="text-[var(--gold)] text-xs mb-1 uppercase tracking-widest font-bold">Return Drop-off</p>
+                          <p className="text-white font-medium truncate" title={returnDestination || pickup}>{returnDestination || pickup}</p>
                         </div>
                       )}
                       <div>

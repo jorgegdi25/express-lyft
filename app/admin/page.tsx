@@ -115,6 +115,7 @@ interface Lead {
   time?: string
   return_date?: string
   return_time?: string
+  return_destination?: string | null
   amount_usd?: number
   amount_paid?: number
   amount_remaining?: number
@@ -556,6 +557,10 @@ export default function AdminPage() {
     time: '',
     returnDate: '',
     returnTime: '',
+    // Empty = "same as the outbound pickup" (old assumed behavior) — a guest
+    // dropped at the port doesn't necessarily come back to the hotel, often
+    // it's the airport instead, so this lets staff pick a different one.
+    returnDestination: '',
     amountUsd: 0,
     tripType: 'one-way' as 'one-way' | 'round-trip',
     airline: '',
@@ -703,6 +708,18 @@ export default function AdminPage() {
     return options
   }, [routePrices, newLead.hotelSlug])
 
+  // Every distinct location known for this hotel — used to let staff pick a
+  // return destination other than the outbound pickup (e.g. Port → Airport
+  // instead of Port → Hotel).
+  const returnDestinationOptions = useMemo(() => {
+    const hotelRoutes = routePrices.filter((r) => !newLead.hotelSlug || r.hotel_slug === newLead.hotelSlug)
+    const locations = new Set<string>()
+    for (const r of hotelRoutes) { locations.add(r.pickup); locations.add(r.destination) }
+    locations.delete(newLead.destination)
+    locations.delete(newLead.pickup)
+    return Array.from(locations)
+  }, [routePrices, newLead.hotelSlug, newLead.destination, newLead.pickup])
+
   interface PricingSettings {
     surcharge_type: 'fixed' | 'percentage';
     surcharge_amount: number;
@@ -744,13 +761,14 @@ export default function AdminPage() {
     const outbound = Math.ceil(applyTimeSurcharge(outboundBase, newLead.time, pricingSettings))
     let total = outbound
     if (newLead.tripType === 'round-trip') {
-      const returnBase = lookupRoutePrice(newLead.destination, newLead.pickup, newLead.vehicleType, newLead.hotelSlug) ?? outboundBase
+      const returnDestination = newLead.returnDestination || newLead.pickup
+      const returnBase = lookupRoutePrice(newLead.destination, returnDestination, newLead.vehicleType, newLead.hotelSlug) ?? outboundBase
       const returnLeg = Math.ceil(applyTimeSurcharge(returnBase, newLead.returnTime || newLead.time, pricingSettings))
       total = outbound + returnLeg
     }
     setNewLead((prev) => (prev.routeMode === 'preset' ? { ...prev, amountUsd: total } : prev))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newLead.routeMode, newLead.pickup, newLead.destination, newLead.vehicleType, newLead.tripType, newLead.hotelSlug, newLead.time, newLead.returnTime, routePrices, pricingSettings])
+  }, [newLead.routeMode, newLead.pickup, newLead.destination, newLead.vehicleType, newLead.tripType, newLead.hotelSlug, newLead.time, newLead.returnTime, newLead.returnDestination, routePrices, pricingSettings])
 
   // Revenue computations
   const revenueStats = useMemo(() => {
@@ -1542,6 +1560,7 @@ export default function AdminPage() {
         ...newLead,
         pickup: newLead.serviceType === 'transport' ? newLead.pickup.trim() : '',
         destination: newLead.serviceType === 'transport' ? newLead.destination.trim() : '',
+        returnDestination: newLead.tripType === 'round-trip' ? (newLead.returnDestination || newLead.pickup).trim() : '',
         serviceDetail,
         status: resolvedStatus,
         amountPaid,
@@ -4115,6 +4134,17 @@ export default function AdminPage() {
                     {newLead.tripType === 'round-trip' && (
                       <>
                         <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Destination</label>
+                          <select
+                            value={newLead.returnDestination || newLead.pickup}
+                            onChange={(e) => setNewLead({ ...newLead, returnDestination: e.target.value })}
+                            className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors"
+                          >
+                            {newLead.pickup && <option value={newLead.pickup}>{newLead.pickup} (same as pickup)</option>}
+                            {returnDestinationOptions.map((loc) => (<option key={loc} value={loc}>{loc}</option>))}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
                           <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Date *</label>
                           <CalendarDatePicker
                             value={newLead.returnDate}
@@ -5666,6 +5696,12 @@ export default function AdminPage() {
                           <div>
                             <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Drop off Date & Time</p>
                             <p className="text-sm text-white font-medium">{formatDateUS(viewingLead.return_date)} at {viewingLead.return_time}</p>
+                          </div>
+                        )}
+                        {viewingLead.trip_type === 'round-trip' && (
+                          <div>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Return Drop-off</p>
+                            <p className="text-sm text-white font-medium">{viewingLead.return_destination || viewingLead.pickup}</p>
                           </div>
                         )}
                         {viewingLead.service_type && viewingLead.service_type !== 'transport' ? (

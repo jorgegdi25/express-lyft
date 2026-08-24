@@ -96,7 +96,7 @@ async function calculateLegPrice(
   return Math.ceil(applyTimeSurcharge(basePrice, legTime, surcharge))
 }
 
-async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number, durationMinutes: number, time: string, returnTime?: string) {
+async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number, durationMinutes: number, time: string, returnTime?: string, returnDestination?: string) {
   const pickupTrim = pickup.trim()
   const destinationTrim = destination.trim()
   const surcharge = await getSurchargeConfig()
@@ -110,8 +110,13 @@ async function calculatePrice(hotelSlug: string, pickup: string, destination: st
   // Round trip: price each direction independently and add them up, instead of
   // doubling the outbound price — hotel->airport and airport->hotel can (and often
   // do) cost different amounts. Each leg's own pickup time decides its own
-  // time-of-day surcharge (e.g. daytime outbound, night-time return).
-  const returnPrice = await calculateLegPrice(hotelSlug, destinationTrim, pickupTrim, vehicleType, distanceMiles, durationMinutes, returnTime || time, surcharge)
+  // time-of-day surcharge (e.g. daytime outbound, night-time return). The
+  // return leg doesn't have to go back to the original pickup — a guest who
+  // came from the hotel often returns to the airport instead, not the hotel
+  // (see returnDestination) — so it defaults to the outbound pickup only
+  // when the caller doesn't specify one.
+  const returnDestinationTrim = (returnDestination || pickupTrim).trim()
+  const returnPrice = await calculateLegPrice(hotelSlug, destinationTrim, returnDestinationTrim, vehicleType, distanceMiles, durationMinutes, returnTime || time, surcharge)
   return outboundPrice + returnPrice
 }
 
@@ -243,6 +248,7 @@ export async function POST(req: NextRequest) {
       time,
       returnDate,
       returnTime,
+      returnDestination,
       estimatedTotal,
       amountUsd,
       tripType,
@@ -321,7 +327,7 @@ export async function POST(req: NextRequest) {
       leadStatus = 'hotel_b2b'
       isDeposit = false
     } else if (!isAdmin) {
-      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0, durationMinutes || 0, time || '', returnTime)
+      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0, durationMinutes || 0, time || '', returnTime, returnDestination)
       let expectedFee = 0;
       if (meetingType === 'meet_greet') {
         expectedFee = 25;
@@ -379,6 +385,7 @@ export async function POST(req: NextRequest) {
       time,
       return_date: returnDate,
       return_time: returnTime,
+      return_destination: tripType === 'round-trip' ? (returnDestination || pickup || null) : null,
       amount_usd: finalAmount,
       trip_type: tripType,
       status: leadStatus,
@@ -560,6 +567,7 @@ export async function PUT(req: NextRequest) {
       pickup, destination, vehicleType, vehicle_type,
       passengers, date, time, 
       returnDate, returnTime, return_date, return_time,
+      returnDestination, return_destination,
       amountUsd, tripType, assigned_driver_id,
       airline, flightNumber, flight_number,
       meetingType, meeting_type, meetGreetFee, meet_greet_fee,
@@ -586,6 +594,7 @@ export async function PUT(req: NextRequest) {
     if (time !== undefined) updates.time = time
     if (returnDate !== undefined || return_date !== undefined) updates.return_date = returnDate || return_date
     if (returnTime !== undefined || return_time !== undefined) updates.return_time = returnTime || return_time
+    if (returnDestination !== undefined || return_destination !== undefined) updates.return_destination = returnDestination || return_destination
     if (amountUsd !== undefined) updates.amount_usd = amountUsd
     if (tripType !== undefined) updates.trip_type = tripType
     if (assigned_driver_id !== undefined) updates.assigned_driver_id = assigned_driver_id

@@ -68,7 +68,7 @@ Notes: ${lead.notes || 'None'}
     let eventTime = lead.time;
 
     if (isReturnTrip) {
-      summary = `Return: ${lead.customer_name} - ${lead.destination} → ${lead.pickup}`;
+      summary = `Return: ${lead.customer_name} - ${lead.destination} → ${lead.return_destination || lead.pickup}`;
       eventDate = lead.return_date;
       eventTime = lead.return_time;
       description = "** RETURN TRIP **\n\n" + description;
@@ -138,7 +138,7 @@ Notes: ${lead.notes || 'None'}
     let eventTime = lead.time;
 
     if (isReturnTrip) {
-      summary = `Return: ${lead.customer_name} - ${lead.destination} → ${lead.pickup}`;
+      summary = `Return: ${lead.customer_name} - ${lead.destination} → ${lead.return_destination || lead.pickup}`;
       eventDate = lead.return_date;
       eventTime = lead.return_time;
       description = "** RETURN TRIP **\n\n" + description;
