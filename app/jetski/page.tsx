@@ -52,6 +52,16 @@ const FEATURES = [
 export default function JetskiPage() {
   return (
     <main className="min-h-screen" style={{ background: '#0a0a0a' }}>
+      {/* ── Header ───────────────────────────────────────────── */}
+      <header
+        className="w-full px-4 md:px-8 py-4 flex items-center sticky top-0 z-50 backdrop-blur-md"
+        style={{ background: 'rgba(10,10,10,0.88)', borderBottom: '1px solid #1a1a1a' }}
+      >
+        <a href="/">
+          <Image src="/logo.webp" alt="Express Lyft" width={180} height={48} className="h-9 md:h-11 w-auto object-contain" />
+        </a>
+      </header>
+
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative w-full min-h-[70vh] flex items-center justify-center py-24 overflow-hidden">
         <div className="absolute inset-0 w-full h-full z-0">
