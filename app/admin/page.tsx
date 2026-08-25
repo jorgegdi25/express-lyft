@@ -5361,7 +5361,7 @@ export default function AdminPage() {
                               key={l.id + (isReturnLeg ? '-return' : '')}
                               onClick={() => setViewingLead(l)}
                               title={[
-                                `${l.customer_name} • ${l.pickup} → ${l.destination}`,
+                                `${l.customer_name} • ${isReturnLeg ? `${l.destination} → ${l.return_destination || l.pickup}` : `${l.pickup} → ${l.destination}`}`,
                                 (l.airline || l.flight_number) ? `Flight: ${[l.airline, l.flight_number].filter(Boolean).join(' ')}` : null,
                                 (l.car_seats_requested ?? 0) > 0 ? `${l.car_seats_requested} car seat(s)` : null,
                                 (l.luggage_count ?? 0) > 0 ? `${l.luggage_count} bag(s)` : null,
@@ -5369,7 +5369,7 @@ export default function AdminPage() {
                               className="text-left text-[10px] px-1.5 py-0.5 rounded truncate hover:brightness-125 transition-all"
                               style={{ background: `${STATUS_DOT[l.status || '']}20`, color: STATUS_DOT[l.status || ''] || 'var(--text-dim)', borderLeft: `2px solid ${STATUS_DOT[l.status || '']}` }}
                             >
-                              {isReturnLeg ? '↩ ' : ''}{l.time || l.return_time} {l.customer_name}
+                              {isReturnLeg ? '↩ ' : ''}{(isReturnLeg ? l.return_time : l.time) || 'TBD'} {l.customer_name}
                             </button>
                           )
                         })}
@@ -5623,9 +5623,9 @@ export default function AdminPage() {
                             style={{ background: `${STATUS_DOT[l.status || '']}15`, borderLeft: `2px solid ${STATUS_DOT[l.status || '']}`, opacity: l.trip_completed ? 0.5 : 1 }}
                           >
                             <p className="text-sm font-bold text-white truncate" style={l.trip_completed ? { textDecoration: 'line-through' } : undefined}>
-                              {l.trip_completed ? '✓ ' : isReturnLeg ? '↩ ' : ''}{l.time || l.return_time} — {l.customer_name}
+                              {l.trip_completed ? '✓ ' : isReturnLeg ? '↩ ' : ''}{(isReturnLeg ? l.return_time : l.time) || 'TBD'} — {l.customer_name}
                             </p>
-                            <p className="text-xs text-[var(--text-muted)] truncate">{l.pickup} → {l.destination}</p>
+                            <p className="text-xs text-[var(--text-muted)] truncate">{isReturnLeg ? `${l.destination} → ${l.return_destination || l.pickup}` : `${l.pickup} → ${l.destination}`}</p>
                             {(l.airline || l.flight_number || (l.car_seats_requested ?? 0) > 0 || (l.luggage_count ?? 0) > 0) && (
                               <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-[var(--gold)]">
                                 {(l.airline || l.flight_number) && (
