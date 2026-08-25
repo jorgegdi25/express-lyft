@@ -116,6 +116,7 @@ interface Lead {
   return_date?: string
   return_time?: string
   return_destination?: string | null
+  trip_completed?: boolean
   amount_usd?: number
   amount_paid?: number
   amount_remaining?: number
@@ -5407,40 +5408,62 @@ export default function AdminPage() {
 
                 if (groupLeads.length === 0) return null
 
+                const pendingLeads = groupLeads.filter(l => !l.trip_completed)
+                const completedLeads = groupLeads.filter(l => l.trip_completed)
+
+                const renderTripRow = (lead: Lead) => {
+                  const driver = drivers.find(d => d.id === lead.assigned_driver_id)
+                  return (
+                    <div key={lead.id} className="p-4 rounded-lg flex items-center justify-between gap-3" style={{ background: 'var(--surface)', opacity: lead.trip_completed ? 0.55 : 1 }}>
+                      <div className="flex items-center gap-4 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => updateLead(lead.id, { trip_completed: !lead.trip_completed })}
+                          title={lead.trip_completed ? 'Mark as not done' : 'Mark trip as done'}
+                          className="w-6 h-6 rounded-md border flex items-center justify-center shrink-0 transition-colors"
+                          style={lead.trip_completed ? { background: 'var(--gold)', borderColor: 'var(--gold)' } : { borderColor: 'var(--border-soft)' }}
+                        >
+                          {lead.trip_completed && <Check size={14} strokeWidth={3} color="var(--bg-deep)" />}
+                        </button>
+                        <div className="w-16 h-16 bg-[var(--bg-deep)] rounded flex flex-col items-center justify-center border border-[var(--border-soft)] shrink-0">
+                          <span className="text-xs text-[var(--text-muted)] uppercase">{formatDateUS(lead.date || '')}</span>
+                          <span className="text-sm font-bold text-white">{lead.time}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-white font-bold truncate" style={lead.trip_completed ? { textDecoration: 'line-through' } : undefined}>{lead.pickup} <span className="text-[var(--text-faint)] font-normal mx-1">→</span> {lead.destination}</p>
+                          <p className="text-xs text-[var(--text-muted)] mt-1">{lead.customer_name} • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}</p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        {driver ? (
+                          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--gold)] bg-[#B8960C]/10 text-[var(--gold-light)] text-xs font-bold">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                            {driver.name}
+                          </div>
+                        ) : (
+                          <span className="inline-block px-3 py-1 rounded-full border border-[var(--border-soft)] bg-[#222] text-[var(--text-muted)] text-xs font-bold">
+                            UNASSIGNED
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                }
+
                 return (
                   <section key={dayGroup} className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
-                    <h3 className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">{dayGroup}</h3>
+                    <h3 className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">
+                      {dayGroup}{completedLeads.length > 0 && <span className="normal-case font-normal text-[var(--text-faint)]"> — {completedLeads.length}/{groupLeads.length} done</span>}
+                    </h3>
                     <div className="flex flex-col gap-3">
-                      {groupLeads.map(lead => {
-                        const driver = drivers.find(d => d.id === lead.assigned_driver_id)
-                        return (
-                          <div key={lead.id} className="p-4 rounded-lg flex items-center justify-between" style={{ background: 'var(--surface)' }}>
-                            <div className="flex items-center gap-4">
-                              <div className="w-16 h-16 bg-[var(--bg-deep)] rounded flex flex-col items-center justify-center border border-[var(--border-soft)]">
-                                <span className="text-xs text-[var(--text-muted)] uppercase">{formatDateUS(lead.date || '')}</span>
-                                <span className="text-sm font-bold text-white">{lead.time}</span>
-                              </div>
-                              <div>
-                                <p className="text-white font-bold">{lead.pickup} <span className="text-[var(--text-faint)] font-normal mx-1">→</span> {lead.destination}</p>
-                                <p className="text-xs text-[var(--text-muted)] mt-1">{lead.customer_name} • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              {driver ? (
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--gold)] bg-[#B8960C]/10 text-[var(--gold-light)] text-xs font-bold">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                                  {driver.name}
-                                </div>
-                              ) : (
-                                <span className="inline-block px-3 py-1 rounded-full border border-[var(--border-soft)] bg-[#222] text-[var(--text-muted)] text-xs font-bold">
-                                  UNASSIGNED
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
+                      {pendingLeads.map(renderTripRow)}
                     </div>
+                    {completedLeads.length > 0 && (
+                      <div className="flex flex-col gap-3 mt-5 pt-5" style={{ borderTop: '1px dashed var(--border-soft)' }}>
+                        <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-faint)]">Completed</p>
+                        {completedLeads.map(renderTripRow)}
+                      </div>
+                    )}
                   </section>
                 )
               })}
@@ -5597,10 +5620,10 @@ export default function AdminPage() {
                             key={l.id + (isReturnLeg ? '-return' : '')}
                             onClick={() => { setViewingLead(l); setViewingDay(null); }}
                             className="text-left px-3 py-2.5 rounded-lg hover:brightness-125 transition-all"
-                            style={{ background: `${STATUS_DOT[l.status || '']}15`, borderLeft: `2px solid ${STATUS_DOT[l.status || '']}` }}
+                            style={{ background: `${STATUS_DOT[l.status || '']}15`, borderLeft: `2px solid ${STATUS_DOT[l.status || '']}`, opacity: l.trip_completed ? 0.5 : 1 }}
                           >
-                            <p className="text-sm font-bold text-white truncate">
-                              {isReturnLeg ? '↩ ' : ''}{l.time || l.return_time} — {l.customer_name}
+                            <p className="text-sm font-bold text-white truncate" style={l.trip_completed ? { textDecoration: 'line-through' } : undefined}>
+                              {l.trip_completed ? '✓ ' : isReturnLeg ? '↩ ' : ''}{l.time || l.return_time} — {l.customer_name}
                             </p>
                             <p className="text-xs text-[var(--text-muted)] truncate">{l.pickup} → {l.destination}</p>
                             {(l.airline || l.flight_number || (l.car_seats_requested ?? 0) > 0 || (l.luggage_count ?? 0) > 0) && (
@@ -5810,6 +5833,13 @@ export default function AdminPage() {
                     </button>
                     <button onClick={() => { setEditingLead(viewingLead); setViewingLead(null); }} className="px-4 py-2 rounded-lg text-sm font-bold border border-[var(--border-soft)] text-white hover:bg-[#222] transition-colors">
                       Edit
+                    </button>
+                    <button
+                      onClick={() => { updateLead(viewingLead.id, { trip_completed: !viewingLead.trip_completed }); setViewingLead({ ...viewingLead, trip_completed: !viewingLead.trip_completed }) }}
+                      className="px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
+                      style={viewingLead.trip_completed ? { border: '1px solid var(--border-soft)', color: 'var(--text-muted)' } : { background: 'var(--gold)', color: 'var(--bg-deep)' }}
+                    >
+                      <Check size={14} /> {viewingLead.trip_completed ? 'Undo Trip Done' : 'Mark Trip Done'}
                     </button>
                     {/* Only the processor actually picked for this reservation gets buttons —
                         no point showing a Stripe link next to a QuickBooks one when it's one or

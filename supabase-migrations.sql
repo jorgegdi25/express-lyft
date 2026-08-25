@@ -221,3 +221,8 @@ ALTER TABLE pricing_settings ADD COLUMN IF NOT EXISTS payment_provider text DEFA
 -- assumed behavior, so existing rows and any caller that doesn't send this
 -- keep working unchanged.
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS return_destination text;
+
+-- Manual "did this trip actually happen" checkbox for Dispatch, independent
+-- of payment status (paid != done — dispatch needs to track whether the
+-- driver actually completed the trip, not just whether it was charged).
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_completed boolean DEFAULT false;
