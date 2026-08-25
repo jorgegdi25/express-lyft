@@ -17,6 +17,11 @@ const TIME_SLOTS = ['10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3
 const MEETING_ADDRESS = '919 N Birch Rd, Fort Lauderdale, FL 33304'
 const MEETING_ADDRESS_MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MEETING_ADDRESS)}`
 
+// TODO: replace with the real jet ski business phone/WhatsApp number once
+// the client provides one — this currently reuses the main Express Lyft line.
+const WHATSAPP_NUMBER = '19546236207'
+const PHONE_DISPLAY = '954-623-6207'
+
 const FEATURES = [
   {
     title: 'Hourly Time Slots',
@@ -54,12 +59,31 @@ export default function JetskiPage() {
     <main className="min-h-screen" style={{ background: '#0a0a0a' }}>
       {/* ── Header ───────────────────────────────────────────── */}
       <header
-        className="w-full px-4 md:px-8 py-4 flex items-center sticky top-0 z-50 backdrop-blur-md"
+        className="w-full px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-50 backdrop-blur-md"
         style={{ background: 'rgba(10,10,10,0.88)', borderBottom: '1px solid #1a1a1a' }}
       >
         <a href="/">
           <Image src="/logo.webp" alt="Express Lyft" width={180} height={48} className="h-9 md:h-11 w-auto object-contain" />
         </a>
+
+        <div className="flex items-center gap-3">
+          <a
+            href="tel:+19546236207"
+            className="hidden sm:block text-sm font-semibold hover:text-[#D4AF37] transition-colors"
+            style={{ color: '#ccc' }}
+          >
+            {PHONE_DISPLAY}
+          </a>
+          <a
+            href={`https://wa.me/${WHATSAPP_NUMBER}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110"
+            style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+          >
+            WhatsApp Us
+          </a>
+        </div>
       </header>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
