@@ -576,6 +576,12 @@ export default function AdminPage() {
     fullyPaid: true,
     amountPaid: 0,
     agentName: '',
+    // Trips already covered by a hotel's promo package (guest doesn't pay
+    // Express Lyft directly) — forces status to 'hotel_b2b' on submit so it
+    // reliably lands on the Dispatch calendar and the Hotel Bookings tab,
+    // instead of depending on someone remembering to pick the right payment
+    // source. See CAMBIOS_CRM notes on the calendar-visibility bug this fixes.
+    isHotelPackage: false,
     serviceType: 'transport' as 'transport' | 'jet_ski' | 'boat',
     watercraftPackage: '',
     watercraftDuration: '',
@@ -1537,7 +1543,15 @@ export default function AdminPage() {
       let amountPaid = 0
       let amountRemaining = 0
 
-      if (isExternalPayment) {
+      if (newLead.isHotelPackage) {
+        // Hotel already covered this via its package deal — no invoice to
+        // send, so this must land as 'hotel_b2b' (not the 'new' default,
+        // which the Dispatch calendar and Hotel Bookings tab both filter
+        // out) regardless of whatever Payment Source was left selected.
+        resolvedStatus = 'hotel_b2b'
+        amountPaid = newLead.amountUsd
+        amountRemaining = 0
+      } else if (isExternalPayment) {
         if (newLead.fullyPaid) {
           resolvedStatus = 'paid'
           amountPaid = newLead.amountUsd
@@ -4039,6 +4053,10 @@ export default function AdminPage() {
                         <option value="">— Select Hotel —</option>
                         {hotelOptions.map((slug) => (<option key={slug} value={slug}>{slug}</option>))}
                       </select>
+                      <label className="flex items-center gap-2 text-xs text-[var(--text-subtle)] mt-1">
+                        <input type="checkbox" checked={newLead.isHotelPackage} onChange={(e) => setNewLead({ ...newLead, isHotelPackage: e.target.checked })} />
+                        🏨 Prepaid Hotel Package (B2B) — hotel already covered this, no invoicing needed
+                      </label>
                     </div>
                     {newLead.serviceType === 'transport' && (
                       <div className="flex flex-col gap-1.5">
@@ -4289,6 +4307,12 @@ export default function AdminPage() {
                   </div>
 
                   <div className="mb-5 pt-5 border-t border-[var(--border)]">
+                    {newLead.isHotelPackage ? (
+                      <p className="text-xs text-[var(--text-faint)]">
+                        🏨 Marked as a Hotel B2B package trip — no invoice or payment link will be sent. It'll be saved as <span className="text-[var(--gold-light)] font-bold">Hotel B2B</span> and show up immediately on the Dispatch calendar and the Hotel Bookings tab under {newLead.hotelSlug || 'the selected hotel'}.
+                      </p>
+                    ) : (
+                    <>
                     <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Payment Source</label>
                     <div className="flex gap-2 mb-4">
                       {(['quickbooks', 'stripe', 'external', 'cash'] as const).map((src) => (
@@ -4332,6 +4356,8 @@ export default function AdminPage() {
                         )}
                       </div>
                     )}
+                    </>
+                    )}
                   </div>
 
                   <div className="flex gap-4 pt-6 border-t border-[var(--border)]">
@@ -4352,7 +4378,7 @@ export default function AdminPage() {
                       className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
                       style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                     >
-                      {addingLead ? 'Saving…' : (newLead.paymentSource === 'quickbooks' || newLead.paymentSource === 'stripe') ? '+ Add Reservation' : '+ Add Paid Reservation'}
+                      {addingLead ? 'Saving…' : newLead.isHotelPackage ? '+ Add Hotel B2B Reservation' : (newLead.paymentSource === 'quickbooks' || newLead.paymentSource === 'stripe') ? '+ Add Reservation' : '+ Add Paid Reservation'}
                     </button>
                     <button onClick={() => setShowAddLeadModal(false)} className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest border border-[var(--border-soft)] text-[var(--text-subtle)] hover:text-white hover:border-[#555] transition-all">
                       Cancel
