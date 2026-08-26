@@ -6,6 +6,7 @@ import { calculateDistanceAmount, applyTimeSurcharge, SurchargeConfig } from '@/
 import { flTaxRateIds, FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { createAndSendInvoice } from '@/lib/quickbooks'
 import { checkDiscountCode, redeemDiscountCode } from '@/lib/discountCodes'
+import { jetskiPackagePrice, jetskiMachineCount, JETSKI_TRANSPORT_PRICES, JETSKI_MAX_MACHINES_PER_SLOT, JetskiTransportOption } from '@/lib/jetskiPricing'
 
 export const dynamic = 'force-dynamic'
 
@@ -272,15 +273,23 @@ export async function POST(req: NextRequest) {
       discountCode,
       agentName,
       serviceType,
-      serviceDetail
+      serviceDetail,
+      watercraftPackage,
+      watercraftDuration,
+      jetskiTransport,
     } = body
 
     if (!hotelSlug) return NextResponse.json({ error: 'Missing hotelSlug' }, { status: 400 })
 
-
     // Check if the request is from an authenticated admin
     const authHeader = req.headers.get('authorization')
     const isAdmin = authHeader?.startsWith('Bearer ') && authHeader.split('Bearer ')[1] === process.env.ADMIN_PASSWORD
+
+    // Public jet ski bookings from /jetski — the only non-admin path that's
+    // allowed to set service_type to something other than 'transport'. Price
+    // is always recomputed from the real catalog below (§ "Determine target
+    // price"), never trusted from the client, same as transport pricing.
+    const isPublicJetski = !isAdmin && serviceType === 'jet_ski'
 
     // The CRM's "Add Reservation" modal already disables submit without a
     // date/time, but enforce it here too — a reservation with no date/time
@@ -293,6 +302,9 @@ export async function POST(req: NextRequest) {
       if (tripType === 'round-trip' && (!returnDate || !returnTime)) {
         return NextResponse.json({ error: 'Missing return date or time for round trip' }, { status: 400 })
       }
+    }
+    if (isPublicJetski && (!date || !time || !watercraftPackage || !watercraftDuration)) {
+      return NextResponse.json({ error: 'Missing date, time, or jet ski package' }, { status: 400 })
     }
 
     // Determine target price
@@ -326,6 +338,39 @@ export async function POST(req: NextRequest) {
       finalAmount = 0;
       leadStatus = 'hotel_b2b'
       isDeposit = false
+    } else if (isPublicJetski) {
+      // Price always comes from the real catalog server-side — the client's
+      // total is display-only and never trusted, same principle as the
+      // transport branch below, just against a flat package lookup instead
+      // of calculatePrice().
+      const packagePrice = jetskiPackagePrice(watercraftPackage, watercraftDuration)
+      if (packagePrice === null) {
+        return NextResponse.json({ error: 'Unknown jet ski package or duration' }, { status: 400 })
+      }
+      const transportOption: JetskiTransportOption = jetskiTransport in JETSKI_TRANSPORT_PRICES ? jetskiTransport : 'none'
+      const transportAddon = JETSKI_TRANSPORT_PRICES[transportOption]
+      finalAmount = packagePrice + transportAddon
+      isDeposit = false
+
+      // Soft capacity check (same trade-off as the Stay module: a read-then-
+      // insert race is possible under simultaneous bookings, but the client
+      // explicitly said overflow should be handled by a phone call anyway,
+      // so a hard atomic lock isn't worth the added complexity here).
+      const machinesRequested = jetskiMachineCount(watercraftPackage)
+      const { data: sameSlotLeads } = await supabaseAdmin
+        .from('leads')
+        .select('service_detail')
+        .eq('service_type', 'jet_ski')
+        .eq('date', date)
+        .eq('time', time)
+        .not('status', 'in', '(cancelled,quote_requested)')
+      const machinesBooked = (sameSlotLeads || []).reduce(
+        (sum, l) => sum + jetskiMachineCount(String(l.service_detail || '').split(' — ')[0]),
+        0
+      )
+      if (machinesBooked + machinesRequested > JETSKI_MAX_MACHINES_PER_SLOT) {
+        return NextResponse.json({ error: 'That time slot is fully booked online — please call or WhatsApp us to check availability.' }, { status: 409 })
+      }
     } else if (!isAdmin) {
       const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0, durationMinutes || 0, time || '', returnTime, returnDestination)
       let expectedFee = 0;
@@ -371,14 +416,24 @@ export async function POST(req: NextRequest) {
       : (settings?.payment_provider === 'quickbooks' ? 'quickbooks' : 'stripe')
     const isPaidNow = leadStatus === 'paid' || leadStatus === 'deposit_paid' || leadStatus === 'hotel_b2b'
 
+    // Built server-side (not trusted from the client) so the machine-count
+    // parsing in the capacity check above always matches what's actually
+    // stored — the "PackageName — Duration" prefix must stay exactly in
+    // that shape, extra info goes after a different separator.
+    const jetskiServiceDetail = isPublicJetski
+      ? `${watercraftPackage} — ${watercraftDuration}` +
+        (jetskiTransport === 'one_way' ? ' | One-way transport ($10)' : jetskiTransport === 'round_trip' ? ' | Round trip transport ($20)' : '') +
+        (body.bornAfterCutoff === 'yes' ? ' | Boater safety course required (driver born 1988+)' : '')
+      : null
+
     const { data, error } = await supabaseAdmin.from('leads').insert({
       hotel_slug: hotelSlug,
       customer_name: customerName,
       customer_email: customerEmail,
       customer_phone: customerPhone,
       customer_country: customerCountry,
-      pickup,
-      destination,
+      pickup: isPublicJetski ? '' : pickup,
+      destination: isPublicJetski ? '' : destination,
       vehicle_type: vehicleType,
       passengers: passengers || 1,
       date,
@@ -402,11 +457,11 @@ export async function POST(req: NextRequest) {
       // check that already gates external_platform/paid_at above.
       booking_source: isAdmin ? 'manual' : 'website',
       created_by: isAdmin ? (agentName || null) : null,
-      // Only the admin "Add Reservation" flow can pick a service other than
-      // transport (Jet Ski / Boat rentals) — the public site never sends
-      // this, so it always defaults to 'transport' there.
-      service_type: isAdmin && serviceType ? serviceType : 'transport',
-      service_detail: isAdmin ? (serviceDetail || null) : null,
+      // Only admin "Add Reservation" and the public /jetski page can pick a
+      // service other than transport — every other public submission still
+      // always defaults to 'transport'.
+      service_type: isAdmin && serviceType ? serviceType : isPublicJetski ? 'jet_ski' : 'transport',
+      service_detail: isAdmin ? (serviceDetail || null) : jetskiServiceDetail,
       airline,
       flight_number: flightNumber,
       meeting_type: meetingType || 'curbside',
@@ -461,8 +516,12 @@ export async function POST(req: NextRequest) {
     }
 
     const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const successUrl = isPromo ? `${origin}/promo/${hotelSlug}/success?lead_id=${data.id}&session_id={CHECKOUT_SESSION_ID}` : `${origin}/hotel/${hotelSlug}/success?lead_id=${data.id}&session_id={CHECKOUT_SESSION_ID}`
-    const cancelUrl = isPromo ? `${origin}/promo/${hotelSlug}` : `${origin}/hotel/${hotelSlug}`
+    const successUrl = isPublicJetski
+      ? `${origin}/jetski?success=true&lead_id=${data.id}&session_id={CHECKOUT_SESSION_ID}`
+      : isPromo ? `${origin}/promo/${hotelSlug}/success?lead_id=${data.id}&session_id={CHECKOUT_SESSION_ID}` : `${origin}/hotel/${hotelSlug}/success?lead_id=${data.id}&session_id={CHECKOUT_SESSION_ID}`
+    const cancelUrl = isPublicJetski
+      ? `${origin}/jetski#book`
+      : isPromo ? `${origin}/promo/${hotelSlug}` : `${origin}/hotel/${hotelSlug}`
 
     if (isPromo || paymentMode === 'quote') {
       // Return success without URL so the frontend shows the inline success modal instead of redirecting
@@ -470,12 +529,16 @@ export async function POST(req: NextRequest) {
     }
 
     const chargeAmount = isDeposit ? depositAmount : finalAmount
-    const productName = isDeposit
-      ? `Express Lyft Deposit (20%): ${pickup} to ${destination}`
-      : `Express Lyft Reservation: ${pickup} to ${destination}`
-    const productDesc = isDeposit
-      ? `${date} at ${time} | ${vehicleType} | ${passengers} passengers | Deposit: $${chargeAmount} of $${finalAmount} total`
-      : `${date} at ${time} | ${vehicleType} | ${passengers} passengers`
+    const productName = isPublicJetski
+      ? `Express Lyft Jet Ski Rental: ${watercraftPackage}`
+      : isDeposit
+        ? `Express Lyft Deposit (20%): ${pickup} to ${destination}`
+        : `Express Lyft Reservation: ${pickup} to ${destination}`
+    const productDesc = isPublicJetski
+      ? `${jetskiServiceDetail} — ${date} at ${time}`
+      : isDeposit
+        ? `${date} at ${time} | ${vehicleType} | ${passengers} passengers | Deposit: $${chargeAmount} of $${finalAmount} total`
+        : `${date} at ${time} | ${vehicleType} | ${passengers} passengers`
 
     if (settings?.payment_provider === 'quickbooks') {
       try {

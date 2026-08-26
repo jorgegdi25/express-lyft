@@ -84,6 +84,8 @@ async function fulfillPaidLead(leadData: any, amountPaid: number, taxAmount: num
           date: leadData.date || 'N/A',
           time: leadData.time || 'N/A',
           vehicleType: leadData.vehicle_type || 'N/A',
+          serviceType: leadData.service_type,
+          serviceDetail: leadData.service_detail,
           amount: String(amountPaid),
           taxAmount: String(taxAmount),
           paymentType: 'full',

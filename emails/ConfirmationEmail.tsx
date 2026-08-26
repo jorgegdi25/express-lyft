@@ -22,6 +22,8 @@ interface ConfirmationEmailProps {
   date: string;
   time: string;
   vehicleType: string;
+  serviceType?: string | null;
+  serviceDetail?: string | null;
   amount: string;
   taxAmount?: string;
   paymentType?: 'full' | 'deposit';
@@ -47,6 +49,8 @@ export const ConfirmationEmail = ({
   date,
   time,
   vehicleType,
+  serviceType,
+  serviceDetail,
   amount,
   taxAmount,
   paymentType = 'full',
@@ -84,12 +88,20 @@ export const ConfirmationEmail = ({
             <strong>Confirmation:</strong> {bookingId.slice(0, 8).toUpperCase()}
           </Text>
 
-          <Text style={detailItem}>
-            <strong>From:</strong> {pickup}
-          </Text>
-          <Text style={detailItem}>
-            <strong>To:</strong> {destination}
-          </Text>
+          {serviceType && serviceType !== 'transport' ? (
+            <Text style={detailItem}>
+              <strong>Service:</strong> {serviceDetail || (serviceType === 'jet_ski' ? 'Jet Ski Rental' : 'Boat Rental')}
+            </Text>
+          ) : (
+            <>
+              <Text style={detailItem}>
+                <strong>From:</strong> {pickup}
+              </Text>
+              <Text style={detailItem}>
+                <strong>To:</strong> {destination}
+              </Text>
+            </>
+          )}
           <Hr style={hr} />
           <Text style={detailItem}>
             <strong>Scheduled (Pick up):</strong> {date} at {time}
@@ -119,9 +131,11 @@ export const ConfirmationEmail = ({
               <strong>Luggage:</strong> {luggageCount}
             </Text>
           ) : null}
-          <Text style={detailItem}>
-            <strong>Vehicle:</strong> {vehicleType}
-          </Text>
+          {(!serviceType || serviceType === 'transport') && (
+            <Text style={detailItem}>
+              <strong>Vehicle:</strong> {vehicleType}
+            </Text>
+          )}
           <Text style={detailItem}>
             <strong>Subtotal:</strong> ${amount} USD
           </Text>
