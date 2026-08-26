@@ -54,7 +54,8 @@ const FEATURES = [
   },
 ]
 
-export default function JetskiPage() {
+export default function JetskiPage({ searchParams }: { searchParams: { success?: string } }) {
+  const showSuccess = searchParams.success === 'true'
   return (
     <main className="min-h-screen" style={{ background: '#0a0a0a' }}>
       {/* ── Header ───────────────────────────────────────────── */}
@@ -176,7 +177,21 @@ export default function JetskiPage() {
           <p className="text-sm text-[#888]">Pick a date, time, and whether you need a ride — we&apos;ll confirm the rest with you directly.</p>
         </div>
         <div className="rounded-2xl p-4 md:p-6" style={{ background: '#111111', border: '1px solid #1a1a1a', boxShadow: '0 24px 60px rgba(0,0,0,0.4)' }}>
-          <JetskiBookingWidget timeSlots={TIME_SLOTS} meetingAddress={MEETING_ADDRESS} />
+          {showSuccess ? (
+            <div className="text-center py-12 px-4">
+              <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(184,150,12,0.15)', border: '1px solid rgba(184,150,12,0.4)' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>You&apos;re Booked!</h3>
+              <p className="text-sm text-[#999] max-w-md mx-auto">
+                A confirmation email is on its way. See you at {MEETING_ADDRESS} for your time slot.
+              </p>
+            </div>
+          ) : (
+            <JetskiBookingWidget timeSlots={TIME_SLOTS} meetingAddress={MEETING_ADDRESS} />
+          )}
         </div>
       </section>
     </main>

@@ -1,12 +1,8 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
-
-// TODO: replace with the real jet ski business phone/WhatsApp number once
-// the client provides one — this currently reuses the main Express Lyft line.
-const WHATSAPP_NUMBER = '19546236207'
 
 // From the client's real price sheet. Boats/yacht charters are on the same
 // sheet but out of scope here unless the client asks to expand beyond jet
@@ -15,10 +11,13 @@ const WHATSAPP_NUMBER = '19546236207'
 type JetskiType = 'single' | 'double' | 'two_machines'
 type Duration = '1hr' | '2hr' | 'half_day' | 'full_day'
 
-const JETSKI_TYPES: { value: JetskiType; label: string; note: string; machines: number }[] = [
-  { value: 'single', label: 'Single Jet Ski', note: '1 rider', machines: 1 },
-  { value: 'double', label: 'Double Jet Ski', note: '2-seater — 2 riders, 1 machine', machines: 1 },
-  { value: 'two_machines', label: 'Two Jet Skis', note: '2 separate machines', machines: 2 },
+// `catalogName` must match the package name keys in lib/jetskiPricing.ts
+// exactly — the server re-prices (and derives machine count) by looking up
+// this exact string, it never trusts the amount computed here.
+const JETSKI_TYPES: { value: JetskiType; label: string; note: string; machines: number; catalogName: string }[] = [
+  { value: 'single', label: 'Single Jet Ski', note: '1 rider', machines: 1, catalogName: 'Single Jet Ski' },
+  { value: 'double', label: 'Double Jet Ski', note: '2-seater — 2 riders, 1 machine', machines: 1, catalogName: 'Double Jet Ski (2-seater)' },
+  { value: 'two_machines', label: 'Two Jet Skis', note: '2 separate machines', machines: 2, catalogName: 'Two Jet Skis (two machines)' },
 ]
 
 const DURATIONS: { value: Duration; label: string }[] = [
@@ -72,6 +71,9 @@ export default function JetskiBookingWidget({ timeSlots, meetingAddress }: { tim
   const [bornAfterCutoff, setBornAfterCutoff] = useState<BornAfterCutoff>(null)
   const [courseAck, setCourseAck] = useState(false)
 
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
   function selectJetskiType(type: JetskiType) {
     setJetskiType(type)
     const stillValid = DURATIONS.filter(d => RENTAL_PRICING[type][d.value] !== undefined)
@@ -88,23 +90,45 @@ export default function JetskiBookingWidget({ timeSlots, meetingAddress }: { tim
 
   const jetskiTypeLabel = JETSKI_TYPES.find(t => t.value === jetskiType)!.label
   const durationLabel = DURATIONS.find(d => d.value === duration)!.label
+  const catalogName = JETSKI_TYPES.find(t => t.value === jetskiType)!.catalogName
 
-  const whatsappUrl = useMemo(() => {
-    const lines = [
-      `Hi! I'd like to reserve a jet ski.`,
-      `Date: ${date}`,
-      `Start time: ${timeSlot}`,
-      `Rental: ${jetskiTypeLabel} — ${durationLabel}`,
-      `Transport: ${transport === 'none' ? 'None' : transport === 'one_way' ? 'One-way ($10)' : 'Round trip ($20)'}`,
-      `Estimated total: $${total}`,
-      `Driver born ${COURSE_CUTOFF_YEAR}+: ${bornAfterCutoff === 'yes' ? 'Yes — will complete boater safety course' : 'No'}`,
-      `Name: ${name}`,
-      `Email: ${email}`,
-      `Phone: ${phone}`,
-      `Meeting address: ${meetingAddress}`,
-    ]
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join('\n'))}`
-  }, [date, timeSlot, jetskiTypeLabel, durationLabel, transport, total, bornAfterCutoff, name, email, phone, meetingAddress])
+  async function handleReserve() {
+    if (!canSubmit || submitting) return
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hotelSlug: 'jetski',
+          serviceType: 'jet_ski',
+          watercraftPackage: catalogName,
+          watercraftDuration: durationLabel,
+          jetskiTransport: transport,
+          bornAfterCutoff,
+          date,
+          time: timeSlot,
+          customerName: name,
+          customerEmail: email,
+          customerPhone: phone,
+          estimatedTotal: total,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        setSubmitError(data.error || 'Something went wrong — please try again or WhatsApp us.')
+        return
+      }
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch {
+      setSubmitError('Network error — please try again or WhatsApp us.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -324,9 +348,10 @@ export default function JetskiBookingWidget({ timeSlots, meetingAddress }: { tim
           </div>
           <div className="h-px my-1" style={{ background: '#2a2a2a' }} />
           <div className="flex justify-between text-white font-bold text-base">
-            <span>Estimated Total</span>
+            <span>Subtotal</span>
             <span>${total}</span>
           </div>
+          <p className="text-xs text-[#888]">Plus 7% FL sales tax, calculated at checkout.</p>
           <p className="text-xs text-[#888]">
             {bornAfterCutoff === null
               ? `May not include the $${COURSE_PRICE.toFixed(2)} boater safety course — depends on the driver's birth year.`
@@ -336,23 +361,24 @@ export default function JetskiBookingWidget({ timeSlots, meetingAddress }: { tim
           </p>
         </div>
 
-        <a
-          href={canSubmit ? whatsappUrl : undefined}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-disabled={!canSubmit}
-          onClick={e => { if (!canSubmit) e.preventDefault() }}
+        <button
+          type="button"
+          onClick={handleReserve}
+          disabled={!canSubmit || submitting}
           className="w-full text-center px-6 py-3.5 rounded-xl text-sm font-bold uppercase tracking-wider transition-all"
           style={
-            canSubmit
+            canSubmit && !submitting
               ? { background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a', cursor: 'pointer' }
               : { background: '#2a2a2a', color: '#666', cursor: 'not-allowed' }
           }
         >
-          Reserve via WhatsApp
-        </a>
+          {submitting ? 'Redirecting to payment…' : 'Continue to Payment'}
+        </button>
         {!canSubmit && (
           <p className="text-xs text-center text-[#888]">Fill in your name, email, phone, and the driver&apos;s birth year question to continue.</p>
+        )}
+        {submitError && (
+          <p className="text-xs text-center" style={{ color: '#f87171' }}>{submitError}</p>
         )}
       </div>
       </div>
