@@ -9,8 +9,9 @@ export const metadata = {
   description: 'Hourly jet ski rentals in Miami. Pick a time slot, add hotel transportation, and reserve online in minutes.',
 }
 
-const HERO_IMAGE_URL =
-  'https://images.unsplash.com/photo-1554132267-d06483b00adc?auto=format&fit=crop&w=1800&q=80'
+// Client's real photo (converted from the original 2.8MB PNG to WebP,
+// ~356KB) — replaces the placeholder Unsplash stock shot.
+const HERO_IMAGE_URL = '/jetski-hero.webp'
 
 const TIME_SLOTS = ['10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM']
 
@@ -90,7 +91,7 @@ export default function JetskiPage({ searchParams }: { searchParams: { success?:
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative w-full min-h-[70vh] flex items-center justify-center py-24 overflow-hidden">
         <div className="absolute inset-0 w-full h-full z-0">
-          <Image src={HERO_IMAGE_URL} alt="Jet ski rider on the water" fill priority unoptimized className="object-cover" />
+          <Image src={HERO_IMAGE_URL} alt="Jet ski rider on the water" fill priority className="object-cover" />
           <div className="absolute inset-0 bg-black/70 z-10" />
         </div>
 
