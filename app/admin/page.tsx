@@ -115,6 +115,8 @@ interface Lead {
   time?: string
   return_date?: string
   return_time?: string
+  return_pickup?: string | null
+  return_destination?: string | null
   amount_usd?: number
   amount_paid?: number
   amount_remaining?: number
@@ -556,6 +558,9 @@ export default function AdminPage() {
     time: '',
     returnDate: '',
     returnTime: '',
+    sameReturnRoute: true,
+    returnPickup: '',
+    returnDestination: '',
     amountUsd: 0,
     tripType: 'one-way' as 'one-way' | 'round-trip',
     airline: '',
@@ -1524,6 +1529,10 @@ export default function AdminPage() {
         ...newLead,
         pickup: newLead.serviceType === 'transport' ? newLead.pickup.trim() : '',
         destination: newLead.serviceType === 'transport' ? newLead.destination.trim() : '',
+        // Blank these out when the toggle is back to "same as outbound" so a
+        // route typed in before flipping it off never gets sent stale.
+        returnPickup: newLead.tripType === 'round-trip' && !newLead.sameReturnRoute ? newLead.returnPickup.trim() : '',
+        returnDestination: newLead.tripType === 'round-trip' && !newLead.sameReturnRoute ? newLead.returnDestination.trim() : '',
         serviceDetail,
         status: resolvedStatus,
         amountPaid,
@@ -4091,6 +4100,28 @@ export default function AdminPage() {
                     </div>
                   </div>
 
+                  {newLead.tripType === 'round-trip' && newLead.serviceType === 'transport' && (
+                    <div className="mb-5">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Return Route</label>
+                      <div className="flex gap-2 mb-3">
+                        <button type="button" onClick={() => setNewLead({ ...newLead, sameReturnRoute: true, returnPickup: '', returnDestination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.sameReturnRoute ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                          Same as Outbound, Reversed
+                        </button>
+                        <button type="button" onClick={() => setNewLead({ ...newLead, sameReturnRoute: false })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={!newLead.sameReturnRoute ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                          Different Return Route
+                        </button>
+                      </div>
+                      {newLead.sameReturnRoute ? (
+                        <p className="text-xs text-[var(--text-faint)]">Return leg: {newLead.destination || '—'} → {newLead.pickup || '—'} (outbound reversed)</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <input type="text" placeholder="Return Pickup (e.g. Marlins Park)" value={newLead.returnPickup} onChange={(e) => setNewLead({ ...newLead, returnPickup: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                          <input type="text" placeholder="Return Destination (e.g. Fort Lauderdale Airport)" value={newLead.returnDestination} onChange={(e) => setNewLead({ ...newLead, returnDestination: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5 pt-5 border-t border-[var(--border)]">
                     {newLead.serviceType === 'transport' && (
                       <>
@@ -4249,7 +4280,9 @@ export default function AdminPage() {
                         !newLead.time ||
                         !newLead.agentName ||
                         (newLead.serviceType === 'transport'
-                          ? !newLead.pickup || !newLead.destination || (newLead.tripType === 'round-trip' && (!newLead.returnDate || !newLead.returnTime))
+                          ? !newLead.pickup || !newLead.destination
+                            || (newLead.tripType === 'round-trip' && (!newLead.returnDate || !newLead.returnTime))
+                            || (newLead.tripType === 'round-trip' && !newLead.sameReturnRoute && (!newLead.returnPickup.trim() || !newLead.returnDestination.trim()))
                           : !newLead.watercraftPackage || !newLead.watercraftDuration)
                       }
                       className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
@@ -4492,6 +4525,9 @@ export default function AdminPage() {
                     <span>{formatDateUS(l.date)} · {l.time || '—'}</span>
                     {l.trip_type === 'round-trip' && l.return_date && (
                       <span style={{ color: 'var(--gold)' }}>Return {formatDateUS(l.return_date)} · {l.return_time || '—'}</span>
+                    )}
+                    {l.trip_type === 'round-trip' && l.return_pickup && l.return_destination && (
+                      <span style={{ color: 'var(--gold)' }}>Return route: {l.return_pickup} → {l.return_destination}</span>
                     )}
                     {(!l.service_type || l.service_type === 'transport') && (
                       <span>{l.passengers || 1} PAX · <span className="font-bold" style={{ color: 'var(--gold-light)' }}>{VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}</span></span>
@@ -5609,9 +5645,18 @@ export default function AdminPage() {
                           </div>
                         ) : (
                           <div>
-                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Route</p>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">
+                              {viewingLead.trip_type === 'round-trip' ? 'Outbound Route' : 'Route'}
+                            </p>
                             <p className="text-sm text-white"><span className="text-[var(--gold)]">•</span> {viewingLead.pickup}</p>
                             <p className="text-sm text-white"><span className="text-[var(--gold-light)]">↓</span> {viewingLead.destination}</p>
+                          </div>
+                        )}
+                        {viewingLead.trip_type === 'round-trip' && viewingLead.return_pickup && viewingLead.return_destination && (
+                          <div>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Return Route</p>
+                            <p className="text-sm text-white"><span className="text-[var(--gold)]">•</span> {viewingLead.return_pickup}</p>
+                            <p className="text-sm text-white"><span className="text-[var(--gold-light)]">↓</span> {viewingLead.return_destination}</p>
                           </div>
                         )}
                       </div>

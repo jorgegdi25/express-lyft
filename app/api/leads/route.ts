@@ -259,14 +259,19 @@ export async function POST(req: NextRequest) {
       customerEmail, 
       customerPhone, 
       customerCountry,
-      pickup, 
-      destination, 
+      pickup,
+      destination,
       vehicleType,
       passengers,
       date,
       time,
       returnDate,
       returnTime,
+      // Only set when the admin enters an asymmetric return leg (e.g.
+      // Hotel→Stadium out, Stadium→Airport back) — null/omitted means the
+      // return leg is the outbound pair reversed, same as it's always been.
+      returnPickup,
+      returnDestination,
       estimatedTotal,
       amountUsd,
       tripType,
@@ -318,6 +323,9 @@ export async function POST(req: NextRequest) {
       }
       if (tripType === 'round-trip' && (!returnDate || !returnTime)) {
         return NextResponse.json({ error: 'Missing return date or time for round trip' }, { status: 400 })
+      }
+      if (Boolean(returnPickup) !== Boolean(returnDestination)) {
+        return NextResponse.json({ error: 'Return pickup and destination must both be set, or both left blank' }, { status: 400 })
       }
       // Client asked (27 ago 2026) that the 4-machine hourly cap block her
       // own manual entries too, not just the public site — no 2-hour notice
@@ -454,6 +462,10 @@ export async function POST(req: NextRequest) {
       time,
       return_date: returnDate,
       return_time: returnTime,
+      // Admin-only, like external_platform/paid_at above — the public site
+      // has no UI for this yet.
+      return_pickup: isAdmin ? (returnPickup || null) : null,
+      return_destination: isAdmin ? (returnDestination || null) : null,
       amount_usd: finalAmount,
       trip_type: tripType,
       status: leadStatus,
@@ -688,6 +700,7 @@ export async function PUT(req: NextRequest) {
       pickup, destination, vehicleType, vehicle_type,
       passengers, date, time, 
       returnDate, returnTime, return_date, return_time,
+      returnPickup, return_pickup, returnDestination, return_destination,
       amountUsd, tripType, assigned_driver_id,
       airline, flightNumber, flight_number,
       meetingType, meeting_type, meetGreetFee, meet_greet_fee,
@@ -714,6 +727,8 @@ export async function PUT(req: NextRequest) {
     if (time !== undefined) updates.time = time
     if (returnDate !== undefined || return_date !== undefined) updates.return_date = returnDate || return_date
     if (returnTime !== undefined || return_time !== undefined) updates.return_time = returnTime || return_time
+    if (returnPickup !== undefined || return_pickup !== undefined) updates.return_pickup = returnPickup || return_pickup || null
+    if (returnDestination !== undefined || return_destination !== undefined) updates.return_destination = returnDestination || return_destination || null
     if (amountUsd !== undefined) updates.amount_usd = amountUsd
     if (tripType !== undefined) updates.trip_type = tripType
     if (assigned_driver_id !== undefined) updates.assigned_driver_id = assigned_driver_id
