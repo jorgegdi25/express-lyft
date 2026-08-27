@@ -75,6 +75,101 @@ export default async function StayPage() {
 
   return (
     <main className="min-h-screen" style={{ background: '#0a0a0a' }}>
+      {/* ── Header — same as the hotel pages, so Stay doesn't feel like a
+          separate, unbranded site (logo + concierge line + WhatsApp) ──── */}
+      <header
+        className="w-full px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-50 backdrop-blur-md"
+        style={{ background: 'rgba(17,17,17,0.88)', borderBottom: '1px solid #1e1e1e' }}
+      >
+        <div className="flex items-center">
+          <Image
+            src="/logo.webp"
+            alt="Express Lyft"
+            width={180}
+            height={48}
+            className="h-9 md:h-11 w-auto object-contain"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 md:gap-4 lg:gap-6">
+          {/* Schedule */}
+          <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a]">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span className="text-[11px] font-semibold text-[#AAAAAA] tracking-wide uppercase">
+              Daily 8:00 AM — 10:00 PM
+            </span>
+          </div>
+
+          {/* Desktop Toll-Free Phone Call */}
+          <div className="hidden lg:flex flex-col items-end">
+            <span className="text-[10px] uppercase tracking-[1px] font-semibold" style={{ color: '#888888' }}>
+              Concierge Line
+            </span>
+            <a
+              href="tel:+18889737896"
+              className="text-sm font-bold hover:text-[#B8960C] transition-colors"
+              style={{ color: '#FFFFFF' }}
+            >
+              +1 (888) 973-7896
+            </a>
+          </div>
+
+          {/* Desktop WhatsApp Contact */}
+          <div className="hidden md:flex flex-col items-end">
+            <span className="text-[10px] uppercase tracking-[1px] font-semibold text-[#22c55e] flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-[#22c55e] animate-pulse"></span>
+              WhatsApp Us
+            </span>
+            <a
+              href="https://wa.me/19546236207"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-bold hover:text-green-400 transition-colors"
+              style={{ color: '#FFFFFF' }}
+            >
+              954-623-6207
+            </a>
+          </div>
+
+          {/* Mobile phone call icon */}
+          <a
+            href="tel:+18889737896"
+            className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center"
+            style={{ border: '1px solid #2a2a2a' }}
+            aria-label="Call toll-free"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8960C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+          </a>
+
+          {/* Mobile WhatsApp chat icon */}
+          <a
+            href="https://wa.me/19546236207"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center"
+            style={{ border: '1px solid #2a2a2a' }}
+            aria-label="WhatsApp us"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+          </a>
+
+          {/* CTA button */}
+          <a
+            href="#book"
+            className="px-3.5 md:px-5 py-2 rounded-xl text-xs md:text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95"
+            style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
+          >
+            Book a Room
+          </a>
+        </div>
+      </header>
+
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative w-full min-h-[70vh] flex items-center justify-center py-24 overflow-hidden">
         <div className="absolute inset-0 w-full h-full z-0">

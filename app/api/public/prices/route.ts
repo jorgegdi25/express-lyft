@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     supabaseAdmin.from('pricing_settings').select('*').eq('id', 1).maybeSingle(),
   ])
 
-  const prices: Record<string, { base: number, per_mile: number, per_minute: number, min_price: number, max_price: number, multiplier: number }> = {
+  const pricingParams: Record<string, { base: number, per_mile: number, per_minute: number, min_price: number, max_price: number, multiplier: number }> = {
     sedan_suv: { base: 120, per_mile: 3.50, per_minute: 0.30, min_price: 15, max_price: 120, multiplier: 1.0 },
     suburban: { base: 150, per_mile: 5.00, per_minute: 0.40, min_price: 25, max_price: 150, multiplier: 1.0 },
     sprinter: { base: 260, per_mile: 6.00, per_minute: 0.50, min_price: 50, max_price: 260, multiplier: 1.0 },
@@ -29,18 +29,29 @@ export async function GET(req: NextRequest) {
 
   if (pricingRes.data) {
     for (const row of pricingRes.data) {
-      if (row.vehicle_type in prices) {
-        prices[row.vehicle_type] = {
+      if (row.vehicle_type in pricingParams) {
+        pricingParams[row.vehicle_type] = {
           base: row.price_usd,
-          per_mile: row.price_per_mile || prices[row.vehicle_type].per_mile,
-          per_minute: row.price_per_minute || prices[row.vehicle_type].per_minute,
-          min_price: row.min_price || prices[row.vehicle_type].min_price,
-          max_price: row.max_price || prices[row.vehicle_type].max_price,
-          multiplier: row.multiplier || prices[row.vehicle_type].multiplier,
+          per_mile: row.price_per_mile || pricingParams[row.vehicle_type].per_mile,
+          per_minute: row.price_per_minute || pricingParams[row.vehicle_type].per_minute,
+          min_price: row.min_price || pricingParams[row.vehicle_type].min_price,
+          max_price: row.max_price || pricingParams[row.vehicle_type].max_price,
+          multiplier: row.multiplier || pricingParams[row.vehicle_type].multiplier,
         }
       }
     }
   }
+
+  // BookingForm/MainMapBookingForm/HeroSection all expect `prices` as a flat
+  // number per vehicle type (matching the shape app/hotel/[slug]/page.tsx
+  // passes for the initial server render) — they use it both as the
+  // starting-rate display and as the fallback when a route has no configured
+  // price for a direction. Sending the detailed {base, per_mile, ...} object
+  // here silently corrupted that fallback into an object, producing $NaN
+  // totals for any route pair with no exact/reverse pricing row.
+  const prices = Object.fromEntries(
+    Object.entries(pricingParams).map(([vehicleType, params]) => [vehicleType, params.base])
+  )
 
   const response = NextResponse.json({
     prices,
