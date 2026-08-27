@@ -6,7 +6,28 @@ import { calculateDistanceAmount, applyTimeSurcharge, SurchargeConfig } from '@/
 import { flTaxRateIds, FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { createAndSendInvoice } from '@/lib/quickbooks'
 import { checkDiscountCode, redeemDiscountCode } from '@/lib/discountCodes'
-import { jetskiPackagePrice, jetskiMachineCount, JETSKI_TRANSPORT_PRICES, JETSKI_MAX_MACHINES_PER_SLOT, JetskiTransportOption } from '@/lib/jetskiPricing'
+import { jetskiPackagePrice, jetskiMachineCount, JETSKI_TRANSPORT_PRICES, JETSKI_MAX_MACHINES_PER_SLOT, JetskiTransportOption, JETSKI_MIN_NOTICE_MINUTES, nyNowPlusMinutes, jetskiSlotSortKey } from '@/lib/jetskiPricing'
+
+// Shared by both the public /jetski checkout and the admin "Add Reservation"
+// modal (the client explicitly asked that a full hour block her manual
+// entries too, not just the public site) — soft check, same trade-off as
+// the Stay module's room count: a read-then-insert race is possible under
+// simultaneous bookings, but overflow is meant to be handled by a phone
+// call anyway, so a hard atomic lock isn't worth the added complexity.
+async function jetskiSlotHasRoom(date: string, time: string, machinesRequested: number): Promise<boolean> {
+  const { data: sameSlotLeads } = await supabaseAdmin
+    .from('leads')
+    .select('service_detail')
+    .eq('service_type', 'jet_ski')
+    .eq('date', date)
+    .eq('time', time)
+    .not('status', 'in', '(cancelled,quote_requested)')
+  const machinesBooked = (sameSlotLeads || []).reduce(
+    (sum, l) => sum + jetskiMachineCount(String(l.service_detail || '').split(' — ')[0]),
+    0
+  )
+  return machinesBooked + machinesRequested <= JETSKI_MAX_MACHINES_PER_SLOT
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -296,9 +317,21 @@ export async function POST(req: NextRequest) {
       if (tripType === 'round-trip' && (!returnDate || !returnTime)) {
         return NextResponse.json({ error: 'Missing return date or time for round trip' }, { status: 400 })
       }
+      // Client asked (27 ago 2026) that the 4-machine hourly cap block her
+      // own manual entries too, not just the public site — no 2-hour notice
+      // requirement here though, staff can still fit in a last-minute call.
+      if (serviceType === 'jet_ski' && watercraftPackage) {
+        const hasRoom = await jetskiSlotHasRoom(date, time, jetskiMachineCount(watercraftPackage))
+        if (!hasRoom) {
+          return NextResponse.json({ error: `That time slot is fully booked (4 jet skis already reserved for ${time}) — pick another hour.` }, { status: 409 })
+        }
+      }
     }
     if (isPublicJetski && (!date || !time || !watercraftPackage || !watercraftDuration)) {
       return NextResponse.json({ error: 'Missing date, time, or jet ski package' }, { status: 400 })
+    }
+    if (isPublicJetski && jetskiSlotSortKey(date, time) < nyNowPlusMinutes(JETSKI_MIN_NOTICE_MINUTES)) {
+      return NextResponse.json({ error: `Online bookings need at least ${JETSKI_MIN_NOTICE_MINUTES / 60} hours' notice — please call or WhatsApp us for a sooner slot.` }, { status: 400 })
     }
 
     // Determine target price
@@ -346,23 +379,8 @@ export async function POST(req: NextRequest) {
       finalAmount = packagePrice + transportAddon
       isDeposit = false
 
-      // Soft capacity check (same trade-off as the Stay module: a read-then-
-      // insert race is possible under simultaneous bookings, but the client
-      // explicitly said overflow should be handled by a phone call anyway,
-      // so a hard atomic lock isn't worth the added complexity here).
-      const machinesRequested = jetskiMachineCount(watercraftPackage)
-      const { data: sameSlotLeads } = await supabaseAdmin
-        .from('leads')
-        .select('service_detail')
-        .eq('service_type', 'jet_ski')
-        .eq('date', date)
-        .eq('time', time)
-        .not('status', 'in', '(cancelled,quote_requested)')
-      const machinesBooked = (sameSlotLeads || []).reduce(
-        (sum, l) => sum + jetskiMachineCount(String(l.service_detail || '').split(' — ')[0]),
-        0
-      )
-      if (machinesBooked + machinesRequested > JETSKI_MAX_MACHINES_PER_SLOT) {
+      const hasRoom = await jetskiSlotHasRoom(date, time, jetskiMachineCount(watercraftPackage))
+      if (!hasRoom) {
         return NextResponse.json({ error: 'That time slot is fully booked online — please call or WhatsApp us to check availability.' }, { status: 409 })
       }
     } else if (!isAdmin) {

@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
+import { jetskiSlotSortKey, nyNowPlusMinutes, JETSKI_MIN_NOTICE_MINUTES } from '@/lib/jetskiPricing'
 
 // From the client's real price sheet. Boats/yacht charters are on the same
 // sheet but out of scope here unless the client asks to expand beyond jet
@@ -59,7 +60,24 @@ function todayNY(): string {
 
 export default function JetskiBookingWidget({ timeSlots, meetingAddress }: { timeSlots: string[]; meetingAddress: string }) {
   const [date, setDate] = useState(todayNY())
-  const [timeSlot, setTimeSlot] = useState(timeSlots[0])
+
+  // Client requirement (27 ago 2026): online bookings need at least 2 hours'
+  // notice. For today this trims the list; for any future date every slot
+  // passes since the date prefix alone already sorts later than "now".
+  const availableTimeSlots = timeSlots.filter(
+    slot => jetskiSlotSortKey(date, slot) >= nyNowPlusMinutes(JETSKI_MIN_NOTICE_MINUTES)
+  )
+  const [timeSlot, setTimeSlot] = useState(() => availableTimeSlots[0])
+  useEffect(() => {
+    if (!timeSlot || !availableTimeSlots.includes(timeSlot)) {
+      setTimeSlot(availableTimeSlots[0])
+    }
+    // Only re-sync when the date (and therefore the eligible slot list)
+    // changes — not on every render, or picking a slot near the cutoff
+    // could get silently reset out from under the user.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date])
+
   const [jetskiType, setJetskiType] = useState<JetskiType>('single')
   const availableDurations = DURATIONS.filter(d => RENTAL_PRICING[jetskiType][d.value] !== undefined)
   const [duration, setDuration] = useState<Duration>('1hr')
@@ -86,7 +104,7 @@ export default function JetskiBookingWidget({ timeSlots, meetingAddress }: { tim
   const total = rentalCost + transportCost
 
   const courseRequired = bornAfterCutoff === 'yes'
-  const canSubmit = Boolean(name.trim() && email.trim() && phone && bornAfterCutoff && (!courseRequired || courseAck))
+  const canSubmit = Boolean(timeSlot && name.trim() && email.trim() && phone && bornAfterCutoff && (!courseRequired || courseAck))
 
   const jetskiTypeLabel = JETSKI_TYPES.find(t => t.value === jetskiType)!.label
   const durationLabel = DURATIONS.find(d => d.value === duration)!.label
@@ -159,23 +177,34 @@ export default function JetskiBookingWidget({ timeSlots, meetingAddress }: { tim
 
         <div>
           <label className={LABEL_CLASS} style={LABEL_COLOR}>Time Slot</label>
-          <div className="flex flex-wrap gap-2">
-            {timeSlots.map(slot => (
-              <button
-                key={slot}
-                type="button"
-                onClick={() => setTimeSlot(slot)}
-                className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-                style={
-                  timeSlot === slot
-                    ? { background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }
-                    : { background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc' }
-                }
-              >
-                {slot}
-              </button>
-            ))}
-          </div>
+          {availableTimeSlots.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {availableTimeSlots.map(slot => (
+                <button
+                  key={slot}
+                  type="button"
+                  onClick={() => setTimeSlot(slot)}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                  style={
+                    timeSlot === slot
+                      ? { background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }
+                      : { background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc' }
+                  }
+                >
+                  {slot}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: '#D4AF37' }}>
+              No slots left today with {JETSKI_MIN_NOTICE_MINUTES / 60} hours&apos; notice — pick another date, or call/WhatsApp us for a sooner slot.
+            </p>
+          )}
+          {availableTimeSlots.length > 0 && availableTimeSlots.length < timeSlots.length && (
+            <p className="text-xs mt-2 text-[#888]">
+              Online bookings need at least {JETSKI_MIN_NOTICE_MINUTES / 60} hours&apos; notice — earlier slots aren&apos;t shown.
+            </p>
+          )}
         </div>
 
         <div>
