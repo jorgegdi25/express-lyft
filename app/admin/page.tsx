@@ -4294,6 +4294,34 @@ export default function AdminPage() {
                       Cancel
                     </button>
                   </div>
+                  {(() => {
+                    if (addingLead) return null
+                    const missing: string[] = []
+                    if (!newLead.customerName) missing.push('Customer Name')
+                    if (!newLead.hotelSlug) missing.push('Hotel')
+                    if (!newLead.amountUsd) missing.push('Total ($)')
+                    if (!newLead.date) missing.push('Date')
+                    if (!newLead.time) missing.push('Time')
+                    if (!newLead.agentName) missing.push('Sales Agent')
+                    if (newLead.serviceType === 'transport') {
+                      if (!newLead.pickup) missing.push('Pickup')
+                      if (!newLead.destination) missing.push('Destination')
+                      if (newLead.tripType === 'round-trip') {
+                        if (!newLead.returnDate) missing.push('Return Date')
+                        if (!newLead.returnTime) missing.push('Return Time')
+                        if (!newLead.sameReturnRoute && !newLead.returnPickup.trim()) missing.push('Return Pickup')
+                        if (!newLead.sameReturnRoute && !newLead.returnDestination.trim()) missing.push('Return Destination')
+                      }
+                    } else {
+                      if (!newLead.watercraftPackage) missing.push('Package')
+                      if (!newLead.watercraftDuration) missing.push('Duration')
+                    }
+                    return missing.length > 0 ? (
+                      <p className="text-xs mt-2" style={{ color: 'var(--gold-light)' }}>
+                        Missing: {missing.join(', ')}
+                      </p>
+                    ) : null
+                  })()}
                 </div>
               </div>
             )}
