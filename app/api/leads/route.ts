@@ -7,6 +7,8 @@ import { flTaxRateIds, FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { createAndSendInvoice } from '@/lib/quickbooks'
 import { checkDiscountCode, redeemDiscountCode } from '@/lib/discountCodes'
 import { jetskiPackagePrice, jetskiMachineCount, JETSKI_TRANSPORT_PRICES, JETSKI_MAX_MACHINES_PER_SLOT, JetskiTransportOption, JETSKI_MIN_NOTICE_MINUTES, nyNowPlusMinutes, jetskiSlotSortKey } from '@/lib/jetskiPricing'
+import { resend, sendOwnerNotification } from '@/lib/resend'
+import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
 
 // Shared by both the public /jetski checkout and the admin "Add Reservation"
 // modal (the client explicitly asked that a full hour block her manual
@@ -519,6 +521,51 @@ export async function POST(req: NextRequest) {
             .eq('id', data.id);
         }
       } catch(e) { console.error('Calendar err', e) }
+    }
+
+    // Admin marked this reservation as already paid at creation (cash,
+    // Zelle, another platform) — that never touches Stripe/QuickBooks, so
+    // it never fires their webhooks either, and the guest would otherwise
+    // get no confirmation email at all. Mirrors fulfillPaidLead()'s email
+    // step, just triggered from here instead of a payment webhook. Never
+    // throws — a failed email shouldn't fail the reservation itself.
+    if (isAdmin && isPaidNow && data?.customer_email) {
+      try {
+        if (resend) {
+          await resend.emails.send({
+            from: 'Express Lyft <book@explyft.com>',
+            to: [data.customer_email],
+            subject: 'Reservation Confirmed & Paid - Express Lyft',
+            react: ConfirmationEmail({
+              customerName: data.customer_name || 'Valued Guest',
+              bookingId: data.id || 'CONFIRMED',
+              pickup: data.pickup || 'N/A',
+              destination: data.destination || 'N/A',
+              date: data.date || 'N/A',
+              time: data.time || 'N/A',
+              vehicleType: data.vehicle_type || 'N/A',
+              serviceType: data.service_type,
+              serviceDetail: data.service_detail,
+              amount: String(finalAmountPaid || data.amount_usd || 0),
+              paymentType: data.payment_type === 'deposit' ? 'deposit' : 'full',
+              amountRemaining: data.payment_type === 'deposit' ? String(data.amount_remaining || 0) : undefined,
+              airline: data.airline,
+              flightNumber: data.flight_number,
+              meetingType: data.meeting_type,
+              carSeatsRequested: data.car_seats_requested,
+              luggageCount: data.luggage_count,
+              notes: data.notes,
+              receiptUrl: null,
+              tripType: data.trip_type,
+              returnDate: data.return_date,
+              returnTime: data.return_time,
+            }),
+          })
+        }
+        await sendOwnerNotification(data, { isDeposit: data.payment_type === 'deposit', amountPaid: finalAmountPaid, totalAmount: data.amount_usd })
+      } catch (emailErr) {
+        console.error('[leads] Failed to send confirmation for manually-paid admin reservation', data.id, emailErr)
+      }
     }
 
     // If request is from admin, do not create a Stripe checkout session
