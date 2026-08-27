@@ -68,13 +68,7 @@ Notes: ${lead.notes || 'None'}
     let eventTime = lead.time;
 
     if (isReturnTrip) {
-      // return_pickup/return_destination are only set when the admin
-      // entered an asymmetric return leg (e.g. Hotel→Stadium out,
-      // Stadium→Airport back) — null for every normal round trip, where
-      // the return leg is just the outbound pair reversed, same as always.
-      const returnFrom = lead.return_pickup || lead.destination;
-      const returnTo = lead.return_destination || lead.pickup;
-      summary = `Return: ${lead.customer_name} - ${returnFrom} → ${returnTo}`;
+      summary = `Return: ${lead.customer_name} - ${lead.destination} → ${lead.return_destination || lead.pickup}`;
       eventDate = lead.return_date;
       eventTime = lead.return_time;
       description = "** RETURN TRIP **\n\n" + description;
@@ -144,13 +138,7 @@ Notes: ${lead.notes || 'None'}
     let eventTime = lead.time;
 
     if (isReturnTrip) {
-      // return_pickup/return_destination are only set when the admin
-      // entered an asymmetric return leg (e.g. Hotel→Stadium out,
-      // Stadium→Airport back) — null for every normal round trip, where
-      // the return leg is just the outbound pair reversed, same as always.
-      const returnFrom = lead.return_pickup || lead.destination;
-      const returnTo = lead.return_destination || lead.pickup;
-      summary = `Return: ${lead.customer_name} - ${returnFrom} → ${returnTo}`;
+      summary = `Return: ${lead.customer_name} - ${lead.destination} → ${lead.return_destination || lead.pickup}`;
       eventDate = lead.return_date;
       eventTime = lead.return_time;
       description = "** RETURN TRIP **\n\n" + description;

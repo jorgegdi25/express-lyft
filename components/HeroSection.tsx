@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 
 interface HeroSectionProps {
   vehicleType: 'sedan_suv' | 'suburban' | 'sprinter' | 'minibus' | 'coachbus'
@@ -94,9 +95,16 @@ export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroS
               href="https://www.sixt.com/partners/expresslyft2371/"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-10 py-4 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 shadow-2xl text-center w-full sm:w-auto"
+              className="flex items-center justify-center gap-3 pl-3 pr-8 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 shadow-2xl text-center w-full sm:w-auto"
               style={{ background: 'transparent', border: '1px solid var(--gold-light)', color: 'var(--gold-light)' }}
             >
+              <Image
+                src="/sixt-logo.png"
+                alt="Sixt"
+                width={34}
+                height={34}
+                className="rounded-[9px] shadow-[0_2px_8px_rgba(0,0,0,0.5)] shrink-0"
+              />
               Rent a Car with Sixt
             </a>
           </div>

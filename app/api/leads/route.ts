@@ -10,12 +10,6 @@ import { jetskiPackagePrice, jetskiMachineCount, JETSKI_TRANSPORT_PRICES, JETSKI
 import { resend, sendOwnerNotification } from '@/lib/resend'
 import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
 
-// Shared by both the public /jetski checkout and the admin "Add Reservation"
-// modal (the client explicitly asked that a full hour block her manual
-// entries too, not just the public site) — soft check, same trade-off as
-// the Stay module's room count: a read-then-insert race is possible under
-// simultaneous bookings, but overflow is meant to be handled by a phone
-// call anyway, so a hard atomic lock isn't worth the added complexity.
 // A manually-paid reservation (Payment Source: External Platform/Cash at
 // creation, or a status dropdown flipped to Paid afterward) never touches
 // Stripe/QuickBooks, so their webhooks — the only place this email/owner
@@ -62,6 +56,12 @@ async function sendManualPaidConfirmation(lead: any, amountPaid: number) {
   }
 }
 
+// Shared by both the public /jetski checkout and the admin "Add Reservation"
+// modal (the client explicitly asked that a full hour block her manual
+// entries too, not just the public site) — soft check, same trade-off as
+// the Stay module's room count: a read-then-insert race is possible under
+// simultaneous bookings, but overflow is meant to be handled by a phone
+// call anyway, so a hard atomic lock isn't worth the added complexity.
 async function jetskiSlotHasRoom(date: string, time: string, machinesRequested: number): Promise<boolean> {
   const { data: sameSlotLeads } = await supabaseAdmin
     .from('leads')
@@ -166,7 +166,7 @@ async function calculateLegPrice(
   return Math.ceil(applyTimeSurcharge(basePrice, legTime, surcharge))
 }
 
-async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number, durationMinutes: number, time: string, returnTime?: string) {
+async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number, durationMinutes: number, time: string, returnTime?: string, returnDestination?: string) {
   const pickupTrim = pickup.trim()
   const destinationTrim = destination.trim()
   const surcharge = await getSurchargeConfig()
@@ -180,8 +180,13 @@ async function calculatePrice(hotelSlug: string, pickup: string, destination: st
   // Round trip: price each direction independently and add them up, instead of
   // doubling the outbound price — hotel->airport and airport->hotel can (and often
   // do) cost different amounts. Each leg's own pickup time decides its own
-  // time-of-day surcharge (e.g. daytime outbound, night-time return).
-  const returnPrice = await calculateLegPrice(hotelSlug, destinationTrim, pickupTrim, vehicleType, distanceMiles, durationMinutes, returnTime || time, surcharge)
+  // time-of-day surcharge (e.g. daytime outbound, night-time return). The
+  // return leg doesn't have to go back to the original pickup — a guest who
+  // came from the hotel often returns to the airport instead, not the hotel
+  // (see returnDestination) — so it defaults to the outbound pickup only
+  // when the caller doesn't specify one.
+  const returnDestinationTrim = (returnDestination || pickupTrim).trim()
+  const returnPrice = await calculateLegPrice(hotelSlug, destinationTrim, returnDestinationTrim, vehicleType, distanceMiles, durationMinutes, returnTime || time, surcharge)
   return outboundPrice + returnPrice
 }
 
@@ -305,18 +310,14 @@ export async function POST(req: NextRequest) {
       customerEmail, 
       customerPhone, 
       customerCountry,
-      pickup,
-      destination,
+      pickup, 
+      destination, 
       vehicleType,
       passengers,
       date,
       time,
       returnDate,
       returnTime,
-      // Only set when the admin enters an asymmetric return leg (e.g.
-      // Hotel→Stadium out, Stadium→Airport back) — null/omitted means the
-      // return leg is the outbound pair reversed, same as it's always been.
-      returnPickup,
       returnDestination,
       estimatedTotal,
       amountUsd,
@@ -369,9 +370,6 @@ export async function POST(req: NextRequest) {
       }
       if (tripType === 'round-trip' && (!returnDate || !returnTime)) {
         return NextResponse.json({ error: 'Missing return date or time for round trip' }, { status: 400 })
-      }
-      if (Boolean(returnPickup) !== Boolean(returnDestination)) {
-        return NextResponse.json({ error: 'Return pickup and destination must both be set, or both left blank' }, { status: 400 })
       }
       // Client asked (27 ago 2026) that the 4-machine hourly cap block her
       // own manual entries too, not just the public site — no 2-hour notice
@@ -440,7 +438,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'That time slot is fully booked online — please call or WhatsApp us to check availability.' }, { status: 409 })
       }
     } else if (!isAdmin) {
-      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0, durationMinutes || 0, time || '', returnTime)
+      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0, durationMinutes || 0, time || '', returnTime, returnDestination)
       let expectedFee = 0;
       if (meetingType === 'meet_greet') {
         expectedFee = 25;
@@ -508,10 +506,7 @@ export async function POST(req: NextRequest) {
       time,
       return_date: returnDate,
       return_time: returnTime,
-      // Admin-only, like external_platform/paid_at above — the public site
-      // has no UI for this yet.
-      return_pickup: isAdmin ? (returnPickup || null) : null,
-      return_destination: isAdmin ? (returnDestination || null) : null,
+      return_destination: tripType === 'round-trip' ? (returnDestination || pickup || null) : null,
       amount_usd: finalAmount,
       trip_type: tripType,
       status: leadStatus,
@@ -705,7 +700,7 @@ export async function PUT(req: NextRequest) {
       pickup, destination, vehicleType, vehicle_type,
       passengers, date, time, 
       returnDate, returnTime, return_date, return_time,
-      returnPickup, return_pickup, returnDestination, return_destination,
+      returnDestination, return_destination,
       amountUsd, tripType, assigned_driver_id,
       airline, flightNumber, flight_number,
       meetingType, meeting_type, meetGreetFee, meet_greet_fee,
@@ -713,6 +708,7 @@ export async function PUT(req: NextRequest) {
       luggageCount, luggage_count,
       waitTimeMinutes, wait_time_minutes,
       waitTimeFee, wait_time_fee,
+      trip_completed,
       created_by
     } = body
 
@@ -729,7 +725,7 @@ export async function PUT(req: NextRequest) {
       previousStatus = existing?.status ?? null
     }
 
-    const updates: Record<string, string | number | null> = {}
+    const updates: Record<string, string | number | boolean | null> = {}
     if (status !== undefined) updates.status = status
     if (notes !== undefined) updates.notes = notes
     if (customerName !== undefined || customer_name !== undefined) updates.customer_name = customerName || customer_name
@@ -743,8 +739,7 @@ export async function PUT(req: NextRequest) {
     if (time !== undefined) updates.time = time
     if (returnDate !== undefined || return_date !== undefined) updates.return_date = returnDate || return_date
     if (returnTime !== undefined || return_time !== undefined) updates.return_time = returnTime || return_time
-    if (returnPickup !== undefined || return_pickup !== undefined) updates.return_pickup = returnPickup || return_pickup || null
-    if (returnDestination !== undefined || return_destination !== undefined) updates.return_destination = returnDestination || return_destination || null
+    if (returnDestination !== undefined || return_destination !== undefined) updates.return_destination = returnDestination || return_destination
     if (amountUsd !== undefined) updates.amount_usd = amountUsd
     if (tripType !== undefined) updates.trip_type = tripType
     if (assigned_driver_id !== undefined) updates.assigned_driver_id = assigned_driver_id
@@ -756,6 +751,7 @@ export async function PUT(req: NextRequest) {
     if (luggageCount !== undefined || luggage_count !== undefined) updates.luggage_count = luggageCount || luggage_count
     if (waitTimeMinutes !== undefined || wait_time_minutes !== undefined) updates.wait_time_minutes = waitTimeMinutes || wait_time_minutes
     if (waitTimeFee !== undefined || wait_time_fee !== undefined) updates.wait_time_fee = waitTimeFee || wait_time_fee
+    if (trip_completed !== undefined) updates.trip_completed = trip_completed
     // Lets the CRM retroactively attach a sales agent to a manual lead that
     // predates that field (or fix a wrong pick) — see the Edit modal's
     // "Sales Agent" section, only shown for booking_source: 'manual' rows.

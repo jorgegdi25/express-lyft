@@ -213,3 +213,16 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS quickbooks_invoice_status text;
 -- this does not affect the admin's manual "Send via QuickBooks" button on
 -- existing leads, which is independent of this setting.
 ALTER TABLE pricing_settings ADD COLUMN IF NOT EXISTS payment_provider text DEFAULT 'stripe';
+
+-- Round trip return leg's actual destination — a guest dropped at the port
+-- doesn't necessarily come back to the hotel (often it's the airport
+-- instead), so the return leg needs its own destination instead of always
+-- assuming it's the original pickup. Null means "same as pickup", the old
+-- assumed behavior, so existing rows and any caller that doesn't send this
+-- keep working unchanged.
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS return_destination text;
+
+-- Manual "did this trip actually happen" checkbox for Dispatch, independent
+-- of payment status (paid != done — dispatch needs to track whether the
+-- driver actually completed the trip, not just whether it was charged).
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_completed boolean DEFAULT false;

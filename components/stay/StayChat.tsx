@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
-import { Check } from 'lucide-react'
+import { Check, Clock, Star } from 'lucide-react'
 import type { StayHotel } from '@/app/stay/page'
 import { STAY_LODGING_TAX_RATE_PERCENT } from '@/lib/stayTax'
 
@@ -39,6 +39,15 @@ function to12Hour(time24: string): string {
   h = h % 12
   if (h === 0) h = 12
   return `${h}:${mStr} ${ampm}`
+}
+
+const URGENCY_KEY = 'stay_urgency_start'
+const URGENCY_SECONDS = 10 * 60
+
+function formatMMSS(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60)
+  const s = totalSeconds % 60
+  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 // Quick presets computed in NY time so "ASAP" means something real.
@@ -76,6 +85,24 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
   const [discountChecking, setDiscountChecking] = useState(false)
   const [discountError, setDiscountError] = useState<string | null>(null)
   const [qbWaitingBookingId, setQbWaitingBookingId] = useState<string | null>(null)
+
+  // One 10-minute countdown per browser session (sessionStorage, not tied to
+  // price) — a gentle nudge to finish booking, not a real inventory hold.
+  const [urgencySecondsLeft, setUrgencySecondsLeft] = useState<number | null>(null)
+  useEffect(() => {
+    let start = Number(sessionStorage.getItem(URGENCY_KEY))
+    if (!start) {
+      start = Date.now()
+      sessionStorage.setItem(URGENCY_KEY, String(start))
+    }
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - start) / 1000)
+      setUrgencySecondsLeft(Math.max(0, URGENCY_SECONDS - elapsed))
+    }
+    tick()
+    const interval = setInterval(tick, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   // QuickBooks' hosted invoice page has no "return to merchant" redirect,
   // so payment opens in a separate tab and we poll here — the guest never
@@ -270,6 +297,18 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
         </div>
       )}
 
+      {(step === 'details' || step === 'checkout') && urgencySecondsLeft !== null && urgencySecondsLeft > 0 && (
+        <div
+          className="flex items-center justify-center gap-3 py-3.5 px-5 rounded-xl text-center"
+          style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', boxShadow: '0 6px 24px rgba(212,175,55,0.4)' }}
+        >
+          <Clock size={20} className="shrink-0 animate-pulse" style={{ color: '#0a0a0a' }} />
+          <p className="text-sm font-bold leading-snug" style={{ color: '#0a0a0a' }}>
+            Your reservation is held for <span className="text-lg font-extrabold tabular-nums">{formatMMSS(urgencySecondsLeft)}</span> — complete your booking now to lock it in.
+          </p>
+        </div>
+      )}
+
       {step === 'details' && (
         <div className="rounded-2xl p-5 flex flex-col gap-5" style={CARD_STYLE}>
           <div>
@@ -277,39 +316,47 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
             {hotels.length === 0 ? (
               <p className="text-sm text-[#888] text-center py-8">No rooms available right now — please call {PHONE_DISPLAY} and we'll help directly.</p>
             ) : (
-              <div className="flex flex-col gap-3">
-                {hotels.map(h => (
-                  <button
-                    key={h.id}
-                    type="button"
-                    onClick={() => { setSelectedHotel(h); setRoomQty(1) }}
-                    className="text-left rounded-xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99]"
-                    style={selectedHotel?.id === h.id ? { background: '#161616', border: '2px solid #D4AF37' } : { background: '#161616', border: '1px solid #2a2a2a' }}
-                  >
-                    <div className="relative w-full aspect-[16/7]" style={{ background: '#222' }}>
-                      {h.photo_url && <Image src={h.photo_url} alt={h.name} fill className="object-cover" unoptimized />}
-                      {h.rooms_available <= 3 ? (
-                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(239,68,68,0.9)', color: '#fff' }}>
-                          Only {h.rooms_available} left tonight
-                        </div>
-                      ) : (
-                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(74,222,128,0.9)', color: '#0a0a0a' }}>
-                          Available
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between p-4">
-                      <div>
-                        <p className="text-white font-bold text-lg" style={{ fontFamily: 'Georgia, serif' }}>{h.name}</p>
-                        <p className="text-xs" style={{ color: '#4ade80' }}>Airport transportation included</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {hotels.map((h, i) => {
+                  const isFeatured = i === 0
+                  return (
+                    <button
+                      key={h.id}
+                      type="button"
+                      onClick={() => { setSelectedHotel(h); setRoomQty(1) }}
+                      className={`text-left rounded-xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99] flex flex-col ${isFeatured ? 'sm:col-span-2' : ''}`}
+                      style={selectedHotel?.id === h.id ? { background: '#161616', border: '2px solid #D4AF37' } : { background: '#161616', border: '1px solid #2a2a2a' }}
+                    >
+                      <div className={`relative w-full ${isFeatured ? 'aspect-[21/9]' : 'aspect-[4/3]'}`} style={{ background: '#222' }}>
+                        {h.photo_url && <Image src={h.photo_url} alt={h.name} fill className="object-cover" unoptimized />}
+                        {isFeatured && (
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider" style={{ background: 'rgba(212,175,55,0.95)', color: '#0a0a0a' }}>
+                            <Star size={13} fill="#0a0a0a" /> Featured
+                          </div>
+                        )}
+                        {h.rooms_available <= 3 ? (
+                          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(239,68,68,0.9)', color: '#fff' }}>
+                            Only {h.rooms_available} left tonight
+                          </div>
+                        ) : (
+                          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(74,222,128,0.9)', color: '#0a0a0a' }}>
+                            Available
+                          </div>
+                        )}
                       </div>
-                      <p className="text-right">
-                        <span className="text-[#D4AF37] font-bold text-xl">${h.price}</span>
-                        <span className="block text-xs text-[#888]">/night</span>
-                      </p>
-                    </div>
-                  </button>
-                ))}
+                      <div className="flex items-start justify-between gap-3 p-4 flex-1">
+                        <div className="min-w-0">
+                          <p className={`text-white font-bold leading-snug line-clamp-2 ${isFeatured ? 'text-xl' : 'text-base'}`} style={{ fontFamily: 'Georgia, serif' }}>{h.name}</p>
+                          <p className="text-xs mt-1" style={{ color: '#4ade80' }}>Airport transportation included</p>
+                        </div>
+                        <p className="text-right shrink-0">
+                          <span className={`text-[#D4AF37] font-bold ${isFeatured ? 'text-2xl' : 'text-lg'}`}>${h.price}</span>
+                          <span className="block text-xs text-[#888]">/night</span>
+                        </p>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>

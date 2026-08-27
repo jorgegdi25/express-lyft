@@ -115,8 +115,8 @@ interface Lead {
   time?: string
   return_date?: string
   return_time?: string
-  return_pickup?: string | null
   return_destination?: string | null
+  trip_completed?: boolean
   amount_usd?: number
   amount_paid?: number
   amount_remaining?: number
@@ -558,8 +558,9 @@ export default function AdminPage() {
     time: '',
     returnDate: '',
     returnTime: '',
-    sameReturnRoute: true,
-    returnPickup: '',
+    // Empty = "same as the outbound pickup" (old assumed behavior) — a guest
+    // dropped at the port doesn't necessarily come back to the hotel, often
+    // it's the airport instead, so this lets staff pick a different one.
     returnDestination: '',
     amountUsd: 0,
     tripType: 'one-way' as 'one-way' | 'round-trip',
@@ -575,6 +576,12 @@ export default function AdminPage() {
     fullyPaid: true,
     amountPaid: 0,
     agentName: '',
+    // Trips already covered by a hotel's promo package (guest doesn't pay
+    // Express Lyft directly) — forces status to 'hotel_b2b' on submit so it
+    // reliably lands on the Dispatch calendar and the Hotel Bookings tab,
+    // instead of depending on someone remembering to pick the right payment
+    // source. See CAMBIOS_CRM notes on the calendar-visibility bug this fixes.
+    isHotelPackage: false,
     serviceType: 'transport' as 'transport' | 'jet_ski' | 'boat',
     watercraftPackage: '',
     watercraftDuration: '',
@@ -708,6 +715,18 @@ export default function AdminPage() {
     return options
   }, [routePrices, newLead.hotelSlug])
 
+  // Every distinct location known for this hotel — used to let staff pick a
+  // return destination other than the outbound pickup (e.g. Port → Airport
+  // instead of Port → Hotel).
+  const returnDestinationOptions = useMemo(() => {
+    const hotelRoutes = routePrices.filter((r) => !newLead.hotelSlug || r.hotel_slug === newLead.hotelSlug)
+    const locations = new Set<string>()
+    for (const r of hotelRoutes) { locations.add(r.pickup); locations.add(r.destination) }
+    locations.delete(newLead.destination)
+    locations.delete(newLead.pickup)
+    return Array.from(locations)
+  }, [routePrices, newLead.hotelSlug, newLead.destination, newLead.pickup])
+
   interface PricingSettings {
     surcharge_type: 'fixed' | 'percentage';
     surcharge_amount: number;
@@ -749,13 +768,14 @@ export default function AdminPage() {
     const outbound = Math.ceil(applyTimeSurcharge(outboundBase, newLead.time, pricingSettings))
     let total = outbound
     if (newLead.tripType === 'round-trip') {
-      const returnBase = lookupRoutePrice(newLead.destination, newLead.pickup, newLead.vehicleType, newLead.hotelSlug) ?? outboundBase
+      const returnDestination = newLead.returnDestination || newLead.pickup
+      const returnBase = lookupRoutePrice(newLead.destination, returnDestination, newLead.vehicleType, newLead.hotelSlug) ?? outboundBase
       const returnLeg = Math.ceil(applyTimeSurcharge(returnBase, newLead.returnTime || newLead.time, pricingSettings))
       total = outbound + returnLeg
     }
     setNewLead((prev) => (prev.routeMode === 'preset' ? { ...prev, amountUsd: total } : prev))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newLead.routeMode, newLead.pickup, newLead.destination, newLead.vehicleType, newLead.tripType, newLead.hotelSlug, newLead.time, newLead.returnTime, routePrices, pricingSettings])
+  }, [newLead.routeMode, newLead.pickup, newLead.destination, newLead.vehicleType, newLead.tripType, newLead.hotelSlug, newLead.time, newLead.returnTime, newLead.returnDestination, routePrices, pricingSettings])
 
   // Revenue computations
   const revenueStats = useMemo(() => {
@@ -1030,6 +1050,24 @@ export default function AdminPage() {
   const [savingStayHotel, setSavingStayHotel] = useState(false)
   const emptyStayHotel = { name: '', photo_url: '', price: 189, transport_amount: 45, rooms_available: 5, active: true, sort_order: 100 }
   const [newStayHotel, setNewStayHotel] = useState(emptyStayHotel)
+  const [uploadingNewPhoto, setUploadingNewPhoto] = useState(false)
+  const [uploadingEditPhoto, setUploadingEditPhoto] = useState(false)
+
+  async function uploadStayPhoto(file: File): Promise<string | null> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch('/api/admin/upload', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${password}` },
+      body: formData,
+    })
+    const data = await res.json().catch(() => null)
+    if (!res.ok) {
+      alert(data?.error || 'Upload failed')
+      return null
+    }
+    return data.url as string
+  }
 
   async function fetchStayData(pw: string) {
     const res = await fetch(`/api/admin/stay-hotels?t=${Date.now()}`, {
@@ -1505,7 +1543,15 @@ export default function AdminPage() {
       let amountPaid = 0
       let amountRemaining = 0
 
-      if (isExternalPayment) {
+      if (newLead.isHotelPackage) {
+        // Hotel already covered this via its package deal — no invoice to
+        // send, so this must land as 'hotel_b2b' (not the 'new' default,
+        // which the Dispatch calendar and Hotel Bookings tab both filter
+        // out) regardless of whatever Payment Source was left selected.
+        resolvedStatus = 'hotel_b2b'
+        amountPaid = newLead.amountUsd
+        amountRemaining = 0
+      } else if (isExternalPayment) {
         if (newLead.fullyPaid) {
           resolvedStatus = 'paid'
           amountPaid = newLead.amountUsd
@@ -1529,10 +1575,7 @@ export default function AdminPage() {
         ...newLead,
         pickup: newLead.serviceType === 'transport' ? newLead.pickup.trim() : '',
         destination: newLead.serviceType === 'transport' ? newLead.destination.trim() : '',
-        // Blank these out when the toggle is back to "same as outbound" so a
-        // route typed in before flipping it off never gets sent stale.
-        returnPickup: newLead.tripType === 'round-trip' && !newLead.sameReturnRoute ? newLead.returnPickup.trim() : '',
-        returnDestination: newLead.tripType === 'round-trip' && !newLead.sameReturnRoute ? newLead.returnDestination.trim() : '',
+        returnDestination: newLead.tripType === 'round-trip' ? (newLead.returnDestination || newLead.pickup).trim() : '',
         serviceDetail,
         status: resolvedStatus,
         amountPaid,
@@ -2831,7 +2874,32 @@ export default function AdminPage() {
                 <h3 className="text-sm font-bold text-[var(--gold-light)] uppercase tracking-wider">New Stay Hotel</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <input placeholder="Name" value={newStayHotel.name} onChange={e => setNewStayHotel({ ...newStayHotel, name: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
-                  <input placeholder="Photo URL" value={newStayHotel.photo_url} onChange={e => setNewStayHotel({ ...newStayHotel, photo_url: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                  <div className="flex flex-col gap-2 md:col-span-2">
+                    <div className="flex items-center gap-2">
+                      <input placeholder="Photo URL" value={newStayHotel.photo_url} onChange={e => setNewStayHotel({ ...newStayHotel, photo_url: e.target.value })} className="flex-1 px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                      <label className="px-3 py-2 rounded-lg text-xs font-bold uppercase cursor-pointer text-[var(--gold-light)] border border-[#B8960C]/40 whitespace-nowrap">
+                        {uploadingNewPhoto ? 'Uploading…' : 'Upload'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={uploadingNewPhoto}
+                          onChange={async e => {
+                            const file = e.target.files?.[0]
+                            e.target.value = ''
+                            if (!file) return
+                            setUploadingNewPhoto(true)
+                            const url = await uploadStayPhoto(file)
+                            setUploadingNewPhoto(false)
+                            if (url) setNewStayHotel(prev => ({ ...prev, photo_url: url }))
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {newStayHotel.photo_url && (
+                      <img src={newStayHotel.photo_url} alt="" className="h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
+                    )}
+                  </div>
                   <input type="number" placeholder="Price per room/night ($)" value={newStayHotel.price} onChange={e => setNewStayHotel({ ...newStayHotel, price: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                   <input type="number" placeholder="Transport portion ($)" value={newStayHotel.transport_amount} onChange={e => setNewStayHotel({ ...newStayHotel, transport_amount: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                   <input type="number" placeholder="Rooms available" value={newStayHotel.rooms_available} onChange={e => setNewStayHotel({ ...newStayHotel, rooms_available: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
@@ -2863,7 +2931,30 @@ export default function AdminPage() {
                           <input value={edit.name} onChange={e => setEditingStayHotel({ ...edit, name: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                         </label>
                         <label className="flex flex-col gap-1 col-span-2">Photo URL
-                          <input value={edit.photo_url || ''} onChange={e => setEditingStayHotel({ ...edit, photo_url: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                          <div className="flex items-center gap-2">
+                            <input value={edit.photo_url || ''} onChange={e => setEditingStayHotel({ ...edit, photo_url: e.target.value })} className="flex-1 px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                            <label className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase cursor-pointer text-[var(--gold-light)] border border-[#B8960C]/40 whitespace-nowrap">
+                              {uploadingEditPhoto ? 'Uploading…' : 'Upload'}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={uploadingEditPhoto}
+                                onChange={async e => {
+                                  const file = e.target.files?.[0]
+                                  e.target.value = ''
+                                  if (!file) return
+                                  setUploadingEditPhoto(true)
+                                  const url = await uploadStayPhoto(file)
+                                  setUploadingEditPhoto(false)
+                                  if (url) setEditingStayHotel({ ...edit, photo_url: url })
+                                }}
+                              />
+                            </label>
+                          </div>
+                          {edit.photo_url && (
+                            <img src={edit.photo_url} alt="" className="mt-1 h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
+                          )}
                         </label>
                         <label className="flex flex-col gap-1">Price/night ($)
                           <input type="number" value={edit.price} onChange={e => setEditingStayHotel({ ...edit, price: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
@@ -3962,6 +4053,10 @@ export default function AdminPage() {
                         <option value="">— Select Hotel —</option>
                         {hotelOptions.map((slug) => (<option key={slug} value={slug}>{slug}</option>))}
                       </select>
+                      <label className="flex items-center gap-2 text-xs text-[var(--text-subtle)] mt-1">
+                        <input type="checkbox" checked={newLead.isHotelPackage} onChange={(e) => setNewLead({ ...newLead, isHotelPackage: e.target.checked })} />
+                        🏨 Prepaid Hotel Package (B2B) — hotel already covered this, no invoicing needed
+                      </label>
                     </div>
                     {newLead.serviceType === 'transport' && (
                       <div className="flex flex-col gap-1.5">
@@ -4058,6 +4153,17 @@ export default function AdminPage() {
                     {newLead.tripType === 'round-trip' && (
                       <>
                         <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Destination</label>
+                          <select
+                            value={newLead.returnDestination || newLead.pickup}
+                            onChange={(e) => setNewLead({ ...newLead, returnDestination: e.target.value })}
+                            className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors"
+                          >
+                            {newLead.pickup && <option value={newLead.pickup}>{newLead.pickup} (same as pickup)</option>}
+                            {returnDestinationOptions.map((loc) => (<option key={loc} value={loc}>{loc}</option>))}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
                           <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Date *</label>
                           <CalendarDatePicker
                             value={newLead.returnDate}
@@ -4099,28 +4205,6 @@ export default function AdminPage() {
                       )}
                     </div>
                   </div>
-
-                  {newLead.tripType === 'round-trip' && newLead.serviceType === 'transport' && (
-                    <div className="mb-5">
-                      <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Return Route</label>
-                      <div className="flex gap-2 mb-3">
-                        <button type="button" onClick={() => setNewLead({ ...newLead, sameReturnRoute: true, returnPickup: '', returnDestination: '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={newLead.sameReturnRoute ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                          Same as Outbound, Reversed
-                        </button>
-                        <button type="button" onClick={() => setNewLead({ ...newLead, sameReturnRoute: false })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={!newLead.sameReturnRoute ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                          Different Return Route
-                        </button>
-                      </div>
-                      {newLead.sameReturnRoute ? (
-                        <p className="text-xs text-[var(--text-faint)]">Return leg: {newLead.destination || '—'} → {newLead.pickup || '—'} (outbound reversed)</p>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                          <input type="text" placeholder="Return Pickup (e.g. Marlins Park)" value={newLead.returnPickup} onChange={(e) => setNewLead({ ...newLead, returnPickup: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
-                          <input type="text" placeholder="Return Destination (e.g. Fort Lauderdale Airport)" value={newLead.returnDestination} onChange={(e) => setNewLead({ ...newLead, returnDestination: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5 pt-5 border-t border-[var(--border)]">
                     {newLead.serviceType === 'transport' && (
@@ -4223,6 +4307,12 @@ export default function AdminPage() {
                   </div>
 
                   <div className="mb-5 pt-5 border-t border-[var(--border)]">
+                    {newLead.isHotelPackage ? (
+                      <p className="text-xs text-[var(--text-faint)]">
+                        🏨 Marked as a Hotel B2B package trip — no invoice or payment link will be sent. It'll be saved as <span className="text-[var(--gold-light)] font-bold">Hotel B2B</span> and show up immediately on the Dispatch calendar and the Hotel Bookings tab under {newLead.hotelSlug || 'the selected hotel'}.
+                      </p>
+                    ) : (
+                    <>
                     <label className="text-sm font-semibold text-[var(--text-subtle)] mb-2 block">Payment Source</label>
                     <div className="flex gap-2 mb-4">
                       {(['quickbooks', 'stripe', 'external', 'cash'] as const).map((src) => (
@@ -4266,6 +4356,8 @@ export default function AdminPage() {
                         )}
                       </div>
                     )}
+                    </>
+                    )}
                   </div>
 
                   <div className="flex gap-4 pt-6 border-t border-[var(--border)]">
@@ -4280,15 +4372,13 @@ export default function AdminPage() {
                         !newLead.time ||
                         !newLead.agentName ||
                         (newLead.serviceType === 'transport'
-                          ? !newLead.pickup || !newLead.destination
-                            || (newLead.tripType === 'round-trip' && (!newLead.returnDate || !newLead.returnTime))
-                            || (newLead.tripType === 'round-trip' && !newLead.sameReturnRoute && (!newLead.returnPickup.trim() || !newLead.returnDestination.trim()))
+                          ? !newLead.pickup || !newLead.destination || (newLead.tripType === 'round-trip' && (!newLead.returnDate || !newLead.returnTime))
                           : !newLead.watercraftPackage || !newLead.watercraftDuration)
                       }
                       className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-40"
                       style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
                     >
-                      {addingLead ? 'Saving…' : (newLead.paymentSource === 'quickbooks' || newLead.paymentSource === 'stripe') ? '+ Add Reservation' : '+ Add Paid Reservation'}
+                      {addingLead ? 'Saving…' : newLead.isHotelPackage ? '+ Add Hotel B2B Reservation' : (newLead.paymentSource === 'quickbooks' || newLead.paymentSource === 'stripe') ? '+ Add Reservation' : '+ Add Paid Reservation'}
                     </button>
                     <button onClick={() => setShowAddLeadModal(false)} className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-widest border border-[var(--border-soft)] text-[var(--text-subtle)] hover:text-white hover:border-[#555] transition-all">
                       Cancel
@@ -4309,8 +4399,6 @@ export default function AdminPage() {
                       if (newLead.tripType === 'round-trip') {
                         if (!newLead.returnDate) missing.push('Return Date')
                         if (!newLead.returnTime) missing.push('Return Time')
-                        if (!newLead.sameReturnRoute && !newLead.returnPickup.trim()) missing.push('Return Pickup')
-                        if (!newLead.sameReturnRoute && !newLead.returnDestination.trim()) missing.push('Return Destination')
                       }
                     } else {
                       if (!newLead.watercraftPackage) missing.push('Package')
@@ -4396,24 +4484,10 @@ export default function AdminPage() {
                           <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Time</label>
                           <input type="text" placeholder="e.g. 2:00 PM" value={editingLead.return_time || ''} onChange={(e) => setEditingLead({...editingLead, return_time: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                         </div>
-                        <div className="flex flex-col gap-2 md:col-span-2">
-                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Route</label>
-                          <div className="flex gap-2 mb-1">
-                            <button type="button" onClick={() => setEditingLead({ ...editingLead, return_pickup: null, return_destination: null })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={!editingLead.return_pickup && !editingLead.return_destination ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                              Same as Outbound, Reversed
-                            </button>
-                            <button type="button" onClick={() => setEditingLead({ ...editingLead, return_pickup: editingLead.return_pickup || '', return_destination: editingLead.return_destination || '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={(editingLead.return_pickup || editingLead.return_destination) ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                              Different Return Route
-                            </button>
-                          </div>
-                          {editingLead.return_pickup || editingLead.return_destination ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                              <input type="text" placeholder="Return Pickup" value={editingLead.return_pickup || ''} onChange={(e) => setEditingLead({...editingLead, return_pickup: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
-                              <input type="text" placeholder="Return Destination" value={editingLead.return_destination || ''} onChange={(e) => setEditingLead({...editingLead, return_destination: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
-                            </div>
-                          ) : (
-                            <p className="text-xs text-[var(--text-faint)]">Return leg: {editingLead.destination || '—'} → {editingLead.pickup || '—'} (outbound reversed)</p>
-                          )}
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Destination</label>
+                          <input type="text" placeholder={editingLead.pickup || 'Same as pickup'} value={editingLead.return_destination || ''} onChange={(e) => setEditingLead({...editingLead, return_destination: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                          <p className="text-xs text-[var(--text-faint)]">Blank = same as pickup ({editingLead.pickup || '—'}).</p>
                         </div>
                       </>
                     )}
@@ -4510,8 +4584,7 @@ export default function AdminPage() {
                           time: editingLead.time,
                           return_date: editingLead.return_date,
                           return_time: editingLead.return_time,
-                          return_pickup: editingLead.trip_type === 'round-trip' ? (editingLead.return_pickup || null) : null,
-                          return_destination: editingLead.trip_type === 'round-trip' ? (editingLead.return_destination || null) : null,
+                          return_destination: editingLead.return_destination || null,
                           airline: editingLead.airline,
                           flight_number: editingLead.flight_number,
                           meeting_type: editingLead.meeting_type,
@@ -4593,8 +4666,8 @@ export default function AdminPage() {
                     {l.trip_type === 'round-trip' && l.return_date && (
                       <span style={{ color: 'var(--gold)' }}>Return {formatDateUS(l.return_date)} · {l.return_time || '—'}</span>
                     )}
-                    {l.trip_type === 'round-trip' && l.return_pickup && l.return_destination && (
-                      <span style={{ color: 'var(--gold)' }}>Return route: {l.return_pickup} → {l.return_destination}</span>
+                    {l.trip_type === 'round-trip' && l.return_destination && (
+                      <span style={{ color: 'var(--gold)' }}>Drops off: {l.return_destination}</span>
                     )}
                     {(!l.service_type || l.service_type === 'transport') && (
                       <span>{l.passengers || 1} PAX · <span className="font-bold" style={{ color: 'var(--gold-light)' }}>{VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}</span></span>
@@ -5367,7 +5440,7 @@ export default function AdminPage() {
                               key={l.id + (isReturnLeg ? '-return' : '')}
                               onClick={() => setViewingLead(l)}
                               title={[
-                                `${l.customer_name} • ${l.pickup} → ${l.destination}`,
+                                `${l.customer_name} • ${isReturnLeg ? `${l.destination} → ${l.return_destination || l.pickup}` : `${l.pickup} → ${l.destination}`}`,
                                 (l.airline || l.flight_number) ? `Flight: ${[l.airline, l.flight_number].filter(Boolean).join(' ')}` : null,
                                 (l.car_seats_requested ?? 0) > 0 ? `${l.car_seats_requested} car seat(s)` : null,
                                 (l.luggage_count ?? 0) > 0 ? `${l.luggage_count} bag(s)` : null,
@@ -5375,7 +5448,7 @@ export default function AdminPage() {
                               className="text-left text-[10px] px-1.5 py-0.5 rounded truncate hover:brightness-125 transition-all"
                               style={{ background: `${STATUS_DOT[l.status || '']}20`, color: STATUS_DOT[l.status || ''] || 'var(--text-dim)', borderLeft: `2px solid ${STATUS_DOT[l.status || '']}` }}
                             >
-                              {isReturnLeg ? '↩ ' : ''}{l.time || l.return_time} {l.customer_name}
+                              {isReturnLeg ? '↩ ' : ''}{(isReturnLeg ? l.return_time : l.time) || 'TBD'} {l.customer_name}
                             </button>
                           )
                         })}
@@ -5414,40 +5487,62 @@ export default function AdminPage() {
 
                 if (groupLeads.length === 0) return null
 
+                const pendingLeads = groupLeads.filter(l => !l.trip_completed)
+                const completedLeads = groupLeads.filter(l => l.trip_completed)
+
+                const renderTripRow = (lead: Lead) => {
+                  const driver = drivers.find(d => d.id === lead.assigned_driver_id)
+                  return (
+                    <div key={lead.id} className="p-4 rounded-lg flex items-center justify-between gap-3" style={{ background: 'var(--surface)', opacity: lead.trip_completed ? 0.55 : 1 }}>
+                      <div className="flex items-center gap-4 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => updateLead(lead.id, { trip_completed: !lead.trip_completed })}
+                          title={lead.trip_completed ? 'Mark as not done' : 'Mark trip as done'}
+                          className="w-6 h-6 rounded-md border flex items-center justify-center shrink-0 transition-colors"
+                          style={lead.trip_completed ? { background: 'var(--gold)', borderColor: 'var(--gold)' } : { borderColor: 'var(--border-soft)' }}
+                        >
+                          {lead.trip_completed && <Check size={14} strokeWidth={3} color="var(--bg-deep)" />}
+                        </button>
+                        <div className="w-16 h-16 bg-[var(--bg-deep)] rounded flex flex-col items-center justify-center border border-[var(--border-soft)] shrink-0">
+                          <span className="text-xs text-[var(--text-muted)] uppercase">{formatDateUS(lead.date || '')}</span>
+                          <span className="text-sm font-bold text-white">{lead.time}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-white font-bold truncate" style={lead.trip_completed ? { textDecoration: 'line-through' } : undefined}>{lead.pickup} <span className="text-[var(--text-faint)] font-normal mx-1">→</span> {lead.destination}</p>
+                          <p className="text-xs text-[var(--text-muted)] mt-1">{lead.customer_name} • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}</p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        {driver ? (
+                          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--gold)] bg-[#B8960C]/10 text-[var(--gold-light)] text-xs font-bold">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                            {driver.name}
+                          </div>
+                        ) : (
+                          <span className="inline-block px-3 py-1 rounded-full border border-[var(--border-soft)] bg-[#222] text-[var(--text-muted)] text-xs font-bold">
+                            UNASSIGNED
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                }
+
                 return (
                   <section key={dayGroup} className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
-                    <h3 className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">{dayGroup}</h3>
+                    <h3 className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">
+                      {dayGroup}{completedLeads.length > 0 && <span className="normal-case font-normal text-[var(--text-faint)]"> — {completedLeads.length}/{groupLeads.length} done</span>}
+                    </h3>
                     <div className="flex flex-col gap-3">
-                      {groupLeads.map(lead => {
-                        const driver = drivers.find(d => d.id === lead.assigned_driver_id)
-                        return (
-                          <div key={lead.id} className="p-4 rounded-lg flex items-center justify-between" style={{ background: 'var(--surface)' }}>
-                            <div className="flex items-center gap-4">
-                              <div className="w-16 h-16 bg-[var(--bg-deep)] rounded flex flex-col items-center justify-center border border-[var(--border-soft)]">
-                                <span className="text-xs text-[var(--text-muted)] uppercase">{formatDateUS(lead.date || '')}</span>
-                                <span className="text-sm font-bold text-white">{lead.time}</span>
-                              </div>
-                              <div>
-                                <p className="text-white font-bold">{lead.pickup} <span className="text-[var(--text-faint)] font-normal mx-1">→</span> {lead.destination}</p>
-                                <p className="text-xs text-[var(--text-muted)] mt-1">{lead.customer_name} • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              {driver ? (
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--gold)] bg-[#B8960C]/10 text-[var(--gold-light)] text-xs font-bold">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                                  {driver.name}
-                                </div>
-                              ) : (
-                                <span className="inline-block px-3 py-1 rounded-full border border-[var(--border-soft)] bg-[#222] text-[var(--text-muted)] text-xs font-bold">
-                                  UNASSIGNED
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
+                      {pendingLeads.map(renderTripRow)}
                     </div>
+                    {completedLeads.length > 0 && (
+                      <div className="flex flex-col gap-3 mt-5 pt-5" style={{ borderTop: '1px dashed var(--border-soft)' }}>
+                        <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-faint)]">Completed</p>
+                        {completedLeads.map(renderTripRow)}
+                      </div>
+                    )}
                   </section>
                 )
               })}
@@ -5604,12 +5699,12 @@ export default function AdminPage() {
                             key={l.id + (isReturnLeg ? '-return' : '')}
                             onClick={() => { setViewingLead(l); setViewingDay(null); }}
                             className="text-left px-3 py-2.5 rounded-lg hover:brightness-125 transition-all"
-                            style={{ background: `${STATUS_DOT[l.status || '']}15`, borderLeft: `2px solid ${STATUS_DOT[l.status || '']}` }}
+                            style={{ background: `${STATUS_DOT[l.status || '']}15`, borderLeft: `2px solid ${STATUS_DOT[l.status || '']}`, opacity: l.trip_completed ? 0.5 : 1 }}
                           >
-                            <p className="text-sm font-bold text-white truncate">
-                              {isReturnLeg ? '↩ ' : ''}{l.time || l.return_time} — {l.customer_name}
+                            <p className="text-sm font-bold text-white truncate" style={l.trip_completed ? { textDecoration: 'line-through' } : undefined}>
+                              {l.trip_completed ? '✓ ' : isReturnLeg ? '↩ ' : ''}{(isReturnLeg ? l.return_time : l.time) || 'TBD'} — {l.customer_name}
                             </p>
-                            <p className="text-xs text-[var(--text-muted)] truncate">{l.pickup} → {l.destination}</p>
+                            <p className="text-xs text-[var(--text-muted)] truncate">{isReturnLeg ? `${l.destination} → ${l.return_destination || l.pickup}` : `${l.pickup} → ${l.destination}`}</p>
                             {(l.airline || l.flight_number || (l.car_seats_requested ?? 0) > 0 || (l.luggage_count ?? 0) > 0) && (
                               <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-[var(--gold)]">
                                 {(l.airline || l.flight_number) && (
@@ -5705,6 +5800,12 @@ export default function AdminPage() {
                             <p className="text-sm text-white font-medium">{formatDateUS(viewingLead.return_date)} at {viewingLead.return_time}</p>
                           </div>
                         )}
+                        {viewingLead.trip_type === 'round-trip' && (
+                          <div>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Return Drop-off</p>
+                            <p className="text-sm text-white font-medium">{viewingLead.return_destination || viewingLead.pickup}</p>
+                          </div>
+                        )}
                         {viewingLead.service_type && viewingLead.service_type !== 'transport' ? (
                           <div>
                             <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Service</p>
@@ -5712,18 +5813,9 @@ export default function AdminPage() {
                           </div>
                         ) : (
                           <div>
-                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">
-                              {viewingLead.trip_type === 'round-trip' ? 'Outbound Route' : 'Route'}
-                            </p>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Route</p>
                             <p className="text-sm text-white"><span className="text-[var(--gold)]">•</span> {viewingLead.pickup}</p>
                             <p className="text-sm text-white"><span className="text-[var(--gold-light)]">↓</span> {viewingLead.destination}</p>
-                          </div>
-                        )}
-                        {viewingLead.trip_type === 'round-trip' && viewingLead.return_pickup && viewingLead.return_destination && (
-                          <div>
-                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Return Route</p>
-                            <p className="text-sm text-white"><span className="text-[var(--gold)]">•</span> {viewingLead.return_pickup}</p>
-                            <p className="text-sm text-white"><span className="text-[var(--gold-light)]">↓</span> {viewingLead.return_destination}</p>
                           </div>
                         )}
                       </div>
@@ -5820,6 +5912,13 @@ export default function AdminPage() {
                     </button>
                     <button onClick={() => { setEditingLead(viewingLead); setViewingLead(null); }} className="px-4 py-2 rounded-lg text-sm font-bold border border-[var(--border-soft)] text-white hover:bg-[#222] transition-colors">
                       Edit
+                    </button>
+                    <button
+                      onClick={() => { updateLead(viewingLead.id, { trip_completed: !viewingLead.trip_completed }); setViewingLead({ ...viewingLead, trip_completed: !viewingLead.trip_completed }) }}
+                      className="px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
+                      style={viewingLead.trip_completed ? { border: '1px solid var(--border-soft)', color: 'var(--text-muted)' } : { background: 'var(--gold)', color: 'var(--bg-deep)' }}
+                    >
+                      <Check size={14} /> {viewingLead.trip_completed ? 'Undo Trip Done' : 'Mark Trip Done'}
                     </button>
                     {/* Only the processor actually picked for this reservation gets buttons —
                         no point showing a Stripe link next to a QuickBooks one when it's one or
