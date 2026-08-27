@@ -173,8 +173,8 @@ export default async function StayPage() {
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative w-full min-h-[70vh] flex items-center justify-center py-24 overflow-hidden">
         <div className="absolute inset-0 w-full h-full z-0">
-          <Image src="/gallery/miami.webp" alt="" fill priority className="object-cover" />
-          <div className="absolute inset-0 bg-black/70 z-10" />
+          <Image src="/gallery/stay-hero.png" alt="" fill priority className="object-cover" />
+          <div className="absolute inset-0 bg-black/45 z-10" />
         </div>
 
         <div className="relative z-20 max-w-3xl mx-auto px-4 md:px-6 flex flex-col items-center text-center gap-6">
