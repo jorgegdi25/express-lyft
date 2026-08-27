@@ -4382,6 +4382,41 @@ export default function AdminPage() {
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Destination</label>
                       <input type="text" value={editingLead.destination || ''} onChange={(e) => setEditingLead({...editingLead, destination: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
+                    {editingLead.trip_type === 'round-trip' && (
+                      <>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Date</label>
+                          <CalendarDatePicker
+                            value={editingLead.return_date || ''}
+                            onChange={(v) => setEditingLead({ ...editingLead, return_date: v })}
+                            className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors text-left flex items-center justify-between gap-2"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Time</label>
+                          <input type="text" placeholder="e.g. 2:00 PM" value={editingLead.return_time || ''} onChange={(e) => setEditingLead({...editingLead, return_time: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                        </div>
+                        <div className="flex flex-col gap-2 md:col-span-2">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Route</label>
+                          <div className="flex gap-2 mb-1">
+                            <button type="button" onClick={() => setEditingLead({ ...editingLead, return_pickup: null, return_destination: null })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={!editingLead.return_pickup && !editingLead.return_destination ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                              Same as Outbound, Reversed
+                            </button>
+                            <button type="button" onClick={() => setEditingLead({ ...editingLead, return_pickup: editingLead.return_pickup || '', return_destination: editingLead.return_destination || '' })} className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors" style={(editingLead.return_pickup || editingLead.return_destination) ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                              Different Return Route
+                            </button>
+                          </div>
+                          {editingLead.return_pickup || editingLead.return_destination ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                              <input type="text" placeholder="Return Pickup" value={editingLead.return_pickup || ''} onChange={(e) => setEditingLead({...editingLead, return_pickup: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                              <input type="text" placeholder="Return Destination" value={editingLead.return_destination || ''} onChange={(e) => setEditingLead({...editingLead, return_destination: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                            </div>
+                          ) : (
+                            <p className="text-xs text-[var(--text-faint)]">Return leg: {editingLead.destination || '—'} → {editingLead.pickup || '—'} (outbound reversed)</p>
+                          )}
+                        </div>
+                      </>
+                    )}
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Airline</label>
                       <input type="text" value={editingLead.airline || ''} onChange={(e) => setEditingLead({...editingLead, airline: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
@@ -4473,6 +4508,10 @@ export default function AdminPage() {
                           trip_type: editingLead.trip_type,
                           date: editingLead.date,
                           time: editingLead.time,
+                          return_date: editingLead.return_date,
+                          return_time: editingLead.return_time,
+                          return_pickup: editingLead.trip_type === 'round-trip' ? (editingLead.return_pickup || null) : null,
+                          return_destination: editingLead.trip_type === 'round-trip' ? (editingLead.return_destination || null) : null,
                           airline: editingLead.airline,
                           flight_number: editingLead.flight_number,
                           meeting_type: editingLead.meeting_type,
