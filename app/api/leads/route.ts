@@ -6,7 +6,76 @@ import { calculateDistanceAmount, applyTimeSurcharge, SurchargeConfig } from '@/
 import { flTaxRateIds, FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { createAndSendInvoice } from '@/lib/quickbooks'
 import { checkDiscountCode, redeemDiscountCode } from '@/lib/discountCodes'
-import { jetskiPackagePrice, jetskiMachineCount, JETSKI_TRANSPORT_PRICES, JETSKI_MAX_MACHINES_PER_SLOT, JetskiTransportOption } from '@/lib/jetskiPricing'
+import { jetskiPackagePrice, jetskiMachineCount, JETSKI_TRANSPORT_PRICES, JETSKI_MAX_MACHINES_PER_SLOT, JetskiTransportOption, JETSKI_MIN_NOTICE_MINUTES, nyNowPlusMinutes, jetskiSlotSortKey } from '@/lib/jetskiPricing'
+import { resend, sendOwnerNotification } from '@/lib/resend'
+import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
+
+// A manually-paid reservation (Payment Source: External Platform/Cash at
+// creation, or a status dropdown flipped to Paid afterward) never touches
+// Stripe/QuickBooks, so their webhooks — the only place this email/owner
+// notification were wired up — never fire. Mirrors fulfillPaidLead()'s
+// email step, just triggered from the admin API instead of a payment
+// webhook. Never throws — a failed email shouldn't fail the reservation.
+async function sendManualPaidConfirmation(lead: any, amountPaid: number) {
+  if (!lead?.customer_email) return
+  try {
+    if (resend) {
+      await resend.emails.send({
+        from: 'Express Lyft <book@explyft.com>',
+        to: [lead.customer_email],
+        subject: 'Reservation Confirmed & Paid - Express Lyft',
+        react: ConfirmationEmail({
+          customerName: lead.customer_name || 'Valued Guest',
+          bookingId: lead.id || 'CONFIRMED',
+          pickup: lead.pickup || 'N/A',
+          destination: lead.destination || 'N/A',
+          date: lead.date || 'N/A',
+          time: lead.time || 'N/A',
+          vehicleType: lead.vehicle_type || 'N/A',
+          serviceType: lead.service_type,
+          serviceDetail: lead.service_detail,
+          amount: String(amountPaid || lead.amount_usd || 0),
+          paymentType: lead.payment_type === 'deposit' ? 'deposit' : 'full',
+          amountRemaining: lead.payment_type === 'deposit' ? String(lead.amount_remaining || 0) : undefined,
+          airline: lead.airline,
+          flightNumber: lead.flight_number,
+          meetingType: lead.meeting_type,
+          carSeatsRequested: lead.car_seats_requested,
+          luggageCount: lead.luggage_count,
+          notes: lead.notes,
+          receiptUrl: null,
+          tripType: lead.trip_type,
+          returnDate: lead.return_date,
+          returnTime: lead.return_time,
+        }),
+      })
+    }
+    await sendOwnerNotification(lead, { isDeposit: lead.payment_type === 'deposit', amountPaid, totalAmount: lead.amount_usd })
+  } catch (emailErr) {
+    console.error('[leads] Failed to send confirmation for manually-paid reservation', lead.id, emailErr)
+  }
+}
+
+// Shared by both the public /jetski checkout and the admin "Add Reservation"
+// modal (the client explicitly asked that a full hour block her manual
+// entries too, not just the public site) — soft check, same trade-off as
+// the Stay module's room count: a read-then-insert race is possible under
+// simultaneous bookings, but overflow is meant to be handled by a phone
+// call anyway, so a hard atomic lock isn't worth the added complexity.
+async function jetskiSlotHasRoom(date: string, time: string, machinesRequested: number): Promise<boolean> {
+  const { data: sameSlotLeads } = await supabaseAdmin
+    .from('leads')
+    .select('service_detail')
+    .eq('service_type', 'jet_ski')
+    .eq('date', date)
+    .eq('time', time)
+    .not('status', 'in', '(cancelled,quote_requested)')
+  const machinesBooked = (sameSlotLeads || []).reduce(
+    (sum, l) => sum + jetskiMachineCount(String(l.service_detail || '').split(' — ')[0]),
+    0
+  )
+  return machinesBooked + machinesRequested <= JETSKI_MAX_MACHINES_PER_SLOT
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -302,9 +371,21 @@ export async function POST(req: NextRequest) {
       if (tripType === 'round-trip' && (!returnDate || !returnTime)) {
         return NextResponse.json({ error: 'Missing return date or time for round trip' }, { status: 400 })
       }
+      // Client asked (27 ago 2026) that the 4-machine hourly cap block her
+      // own manual entries too, not just the public site — no 2-hour notice
+      // requirement here though, staff can still fit in a last-minute call.
+      if (serviceType === 'jet_ski' && watercraftPackage) {
+        const hasRoom = await jetskiSlotHasRoom(date, time, jetskiMachineCount(watercraftPackage))
+        if (!hasRoom) {
+          return NextResponse.json({ error: `That time slot is fully booked (4 jet skis already reserved for ${time}) — pick another hour.` }, { status: 409 })
+        }
+      }
     }
     if (isPublicJetski && (!date || !time || !watercraftPackage || !watercraftDuration)) {
       return NextResponse.json({ error: 'Missing date, time, or jet ski package' }, { status: 400 })
+    }
+    if (isPublicJetski && jetskiSlotSortKey(date, time) < nyNowPlusMinutes(JETSKI_MIN_NOTICE_MINUTES)) {
+      return NextResponse.json({ error: `Online bookings need at least ${JETSKI_MIN_NOTICE_MINUTES / 60} hours' notice — please call or WhatsApp us for a sooner slot.` }, { status: 400 })
     }
 
     // Determine target price
@@ -352,23 +433,8 @@ export async function POST(req: NextRequest) {
       finalAmount = packagePrice + transportAddon
       isDeposit = false
 
-      // Soft capacity check (same trade-off as the Stay module: a read-then-
-      // insert race is possible under simultaneous bookings, but the client
-      // explicitly said overflow should be handled by a phone call anyway,
-      // so a hard atomic lock isn't worth the added complexity here).
-      const machinesRequested = jetskiMachineCount(watercraftPackage)
-      const { data: sameSlotLeads } = await supabaseAdmin
-        .from('leads')
-        .select('service_detail')
-        .eq('service_type', 'jet_ski')
-        .eq('date', date)
-        .eq('time', time)
-        .not('status', 'in', '(cancelled,quote_requested)')
-      const machinesBooked = (sameSlotLeads || []).reduce(
-        (sum, l) => sum + jetskiMachineCount(String(l.service_detail || '').split(' — ')[0]),
-        0
-      )
-      if (machinesBooked + machinesRequested > JETSKI_MAX_MACHINES_PER_SLOT) {
+      const hasRoom = await jetskiSlotHasRoom(date, time, jetskiMachineCount(watercraftPackage))
+      if (!hasRoom) {
         return NextResponse.json({ error: 'That time slot is fully booked online — please call or WhatsApp us to check availability.' }, { status: 409 })
       }
     } else if (!isAdmin) {
@@ -510,6 +576,10 @@ export async function POST(req: NextRequest) {
       } catch(e) { console.error('Calendar err', e) }
     }
 
+    if (isAdmin && isPaidNow && data?.customer_email) {
+      await sendManualPaidConfirmation(data, finalAmountPaid)
+    }
+
     // If request is from admin, do not create a Stripe checkout session
     if (isAdmin) {
       return NextResponse.json({ success: true, lead: data })
@@ -644,6 +714,17 @@ export async function PUT(req: NextRequest) {
 
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
 
+    // Needed to detect a genuine transition INTO a paid state below (e.g.
+    // the status dropdown flipped from 'new' to 'paid') — without this we
+    // can't tell that apart from an edit to an already-paid lead, which
+    // would otherwise re-send the confirmation email on every save.
+    const PAID_STATUSES = ['paid', 'deposit_paid', 'hotel_b2b']
+    let previousStatus: string | null = null
+    if (status !== undefined) {
+      const { data: existing } = await supabaseAdmin.from('leads').select('status').eq('id', id).maybeSingle()
+      previousStatus = existing?.status ?? null
+    }
+
     const updates: Record<string, string | number | boolean | null> = {}
     if (status !== undefined) updates.status = status
     if (notes !== undefined) updates.notes = notes
@@ -709,6 +790,18 @@ export async function PUT(req: NextRequest) {
         }
       } catch (e) {
         console.error('Error syncing calendar on update:', e);
+      }
+
+      // Fresh transition into a paid state (e.g. the status dropdown flipped
+      // from 'new' to 'paid') — same gap as the creation-time "mark as
+      // already paid" path: this never touches Stripe/QuickBooks, so their
+      // webhooks never fire. Guarded by previousStatus so re-saving an
+      // already-paid lead doesn't re-send the email every time.
+      if (
+        PAID_STATUSES.includes(updatedLead.status) &&
+        !PAID_STATUSES.includes(previousStatus || '')
+      ) {
+        await sendManualPaidConfirmation(updatedLead, updatedLead.amount_paid ?? updatedLead.amount_usd)
       }
     }
 

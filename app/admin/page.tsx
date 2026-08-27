@@ -4384,6 +4384,32 @@ export default function AdminPage() {
                       Cancel
                     </button>
                   </div>
+                  {(() => {
+                    if (addingLead) return null
+                    const missing: string[] = []
+                    if (!newLead.customerName) missing.push('Customer Name')
+                    if (!newLead.hotelSlug) missing.push('Hotel')
+                    if (!newLead.amountUsd) missing.push('Total ($)')
+                    if (!newLead.date) missing.push('Date')
+                    if (!newLead.time) missing.push('Time')
+                    if (!newLead.agentName) missing.push('Sales Agent')
+                    if (newLead.serviceType === 'transport') {
+                      if (!newLead.pickup) missing.push('Pickup')
+                      if (!newLead.destination) missing.push('Destination')
+                      if (newLead.tripType === 'round-trip') {
+                        if (!newLead.returnDate) missing.push('Return Date')
+                        if (!newLead.returnTime) missing.push('Return Time')
+                      }
+                    } else {
+                      if (!newLead.watercraftPackage) missing.push('Package')
+                      if (!newLead.watercraftDuration) missing.push('Duration')
+                    }
+                    return missing.length > 0 ? (
+                      <p className="text-xs mt-2" style={{ color: 'var(--gold-light)' }}>
+                        Missing: {missing.join(', ')}
+                      </p>
+                    ) : null
+                  })()}
                 </div>
               </div>
             )}
@@ -4444,6 +4470,27 @@ export default function AdminPage() {
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Destination</label>
                       <input type="text" value={editingLead.destination || ''} onChange={(e) => setEditingLead({...editingLead, destination: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
+                    {editingLead.trip_type === 'round-trip' && (
+                      <>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Date</label>
+                          <CalendarDatePicker
+                            value={editingLead.return_date || ''}
+                            onChange={(v) => setEditingLead({ ...editingLead, return_date: v })}
+                            className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors text-left flex items-center justify-between gap-2"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Time</label>
+                          <input type="text" placeholder="e.g. 2:00 PM" value={editingLead.return_time || ''} onChange={(e) => setEditingLead({...editingLead, return_time: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Destination</label>
+                          <input type="text" placeholder={editingLead.pickup || 'Same as pickup'} value={editingLead.return_destination || ''} onChange={(e) => setEditingLead({...editingLead, return_destination: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                          <p className="text-xs text-[var(--text-faint)]">Blank = same as pickup ({editingLead.pickup || '—'}).</p>
+                        </div>
+                      </>
+                    )}
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Airline</label>
                       <input type="text" value={editingLead.airline || ''} onChange={(e) => setEditingLead({...editingLead, airline: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
@@ -4535,6 +4582,9 @@ export default function AdminPage() {
                           trip_type: editingLead.trip_type,
                           date: editingLead.date,
                           time: editingLead.time,
+                          return_date: editingLead.return_date,
+                          return_time: editingLead.return_time,
+                          return_destination: editingLead.return_destination || null,
                           airline: editingLead.airline,
                           flight_number: editingLead.flight_number,
                           meeting_type: editingLead.meeting_type,
@@ -4615,6 +4665,9 @@ export default function AdminPage() {
                     <span>{formatDateUS(l.date)} · {l.time || '—'}</span>
                     {l.trip_type === 'round-trip' && l.return_date && (
                       <span style={{ color: 'var(--gold)' }}>Return {formatDateUS(l.return_date)} · {l.return_time || '—'}</span>
+                    )}
+                    {l.trip_type === 'round-trip' && l.return_destination && (
+                      <span style={{ color: 'var(--gold)' }}>Drops off: {l.return_destination}</span>
                     )}
                     {(!l.service_type || l.service_type === 'transport') && (
                       <span>{l.passengers || 1} PAX · <span className="font-bold" style={{ color: 'var(--gold-light)' }}>{VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}</span></span>
