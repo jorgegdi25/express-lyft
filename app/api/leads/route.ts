@@ -709,7 +709,7 @@ export async function PUT(req: NextRequest) {
       waitTimeMinutes, wait_time_minutes,
       waitTimeFee, wait_time_fee,
       trip_completed,
-      created_by
+      created_by, booking_source
     } = body
 
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
@@ -752,9 +752,12 @@ export async function PUT(req: NextRequest) {
     if (waitTimeMinutes !== undefined || wait_time_minutes !== undefined) updates.wait_time_minutes = waitTimeMinutes || wait_time_minutes
     if (waitTimeFee !== undefined || wait_time_fee !== undefined) updates.wait_time_fee = waitTimeFee || wait_time_fee
     if (trip_completed !== undefined) updates.trip_completed = trip_completed
-    // Lets the CRM retroactively attach a sales agent to a manual lead that
-    // predates that field (or fix a wrong pick) — see the Edit modal's
-    // "Sales Agent" section, only shown for booking_source: 'manual' rows.
+    // Lets the CRM retroactively fix the origin/agent on a lead that predates
+    // those fields (e.g. July, before booking_source existed) or correct a
+    // wrong pick — see the Edit modal's "Booking Origin" section. Setting the
+    // origin back to 'website' is what un-hides those rows from / re-files
+    // them in the Commissions "Manual Bookings by Agent" breakdown.
+    if (booking_source !== undefined) updates.booking_source = booking_source
     if (created_by !== undefined) updates.created_by = created_by
 
     const { data, error } = await supabaseAdmin
@@ -819,11 +822,25 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const { data, error } = await supabaseAdmin
+    // Default: the 200 most recent leads (keeps the main CRM payload small).
+    // With ?from=&to= (ISO dates), return everything created in that window
+    // instead — the Commissions / calendar views need a full month even when
+    // it's older than the last 200 rows, otherwise past months read as $0.
+    const from = req.nextUrl.searchParams.get('from')
+    const to = req.nextUrl.searchParams.get('to')
+
+    let query = supabaseAdmin
       .from('leads')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(200)
+
+    if (from && to) {
+      query = query.gte('created_at', from).lt('created_at', to).limit(5000)
+    } else {
+      query = query.limit(200)
+    }
+
+    const { data, error } = await query
 
     if (error) throw error
     return NextResponse.json(data)

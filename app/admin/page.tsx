@@ -528,6 +528,12 @@ export default function AdminPage() {
   const [calendarMonth, setCalendarMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
   const [commissionMonth, setCommissionMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
   const COMMISSION_PER_BOOKING = 2
+  // The main CRM only loads the last ~200 leads, so an older month (e.g. July)
+  // reads as $0 on the Commissions tab. These hold a full fetch scoped to the
+  // month being viewed; null = not loaded yet, fall back to the global lists.
+  const [commissionLeads, setCommissionLeads] = useState<Lead[] | null>(null)
+  const [commissionStay, setCommissionStay] = useState<StayBookingAdmin[] | null>(null)
+  const [commissionLoading, setCommissionLoading] = useState(false)
 
   const [metrics, setMetrics] = useState<any>(null)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -1015,6 +1021,7 @@ export default function AdminPage() {
     id: string
     name: string
     photo_url: string | null
+    room_photo_url: string | null
     price: number
     transport_amount: number
     rooms_available: number
@@ -1048,10 +1055,12 @@ export default function AdminPage() {
   const [editingStayHotel, setEditingStayHotel] = useState<StayHotelAdmin | null>(null)
   const [addingStayHotel, setAddingStayHotel] = useState(false)
   const [savingStayHotel, setSavingStayHotel] = useState(false)
-  const emptyStayHotel = { name: '', photo_url: '', price: 189, transport_amount: 45, rooms_available: 5, active: true, sort_order: 100 }
+  const emptyStayHotel = { name: '', photo_url: '', room_photo_url: '', price: 189, transport_amount: 45, rooms_available: 5, active: true, sort_order: 100 }
   const [newStayHotel, setNewStayHotel] = useState(emptyStayHotel)
   const [uploadingNewPhoto, setUploadingNewPhoto] = useState(false)
   const [uploadingEditPhoto, setUploadingEditPhoto] = useState(false)
+  const [uploadingNewRoomPhoto, setUploadingNewRoomPhoto] = useState(false)
+  const [uploadingEditRoomPhoto, setUploadingEditRoomPhoto] = useState(false)
 
   async function uploadStayPhoto(file: File): Promise<string | null> {
     const formData = new FormData()
@@ -1329,6 +1338,32 @@ export default function AdminPage() {
     }, 30000)
     return () => clearInterval(interval)
   }, [authed, password])
+
+  // Load a full month of leads + Stay bookings whenever the Commissions tab is
+  // open, so months older than the last ~200 leads still total correctly.
+  useEffect(() => {
+    if (!authed || activeTab !== 'commissions') return
+    const y = commissionMonth.getFullYear()
+    const m = commissionMonth.getMonth()
+    // pad a day on each side so a booking near the month edge (UTC vs local)
+    // still comes back and lands in the right calendar cell.
+    const from = new Date(Date.UTC(y, m, 1) - 86400000).toISOString()
+    const to = new Date(Date.UTC(y, m + 1, 1) + 86400000).toISOString()
+    const qs = `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&t=${Date.now()}`
+    let cancelled = false
+    setCommissionLoading(true)
+    Promise.all([
+      fetch(`/api/leads?${qs}`, { headers: { authorization: `Bearer ${password}` }, cache: 'no-store' })
+        .then(r => (r.ok ? r.json() : [])).catch(() => []),
+      fetch(`/api/admin/stay-hotels?${qs}`, { headers: { authorization: `Bearer ${password}` }, cache: 'no-store' })
+        .then(r => (r.ok ? r.json() : { bookings: [] })).catch(() => ({ bookings: [] })),
+    ]).then(([ld, sd]) => {
+      if (cancelled) return
+      setCommissionLeads(Array.isArray(ld) ? ld : [])
+      setCommissionStay(Array.isArray(sd?.bookings) ? sd.bookings : [])
+    }).finally(() => { if (!cancelled) setCommissionLoading(false) })
+    return () => { cancelled = true }
+  }, [authed, password, activeTab, commissionMonth])
 
   useEffect(() => {
     if (!authed) return
@@ -2900,6 +2935,32 @@ export default function AdminPage() {
                       <img src={newStayHotel.photo_url} alt="" className="h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
                     )}
                   </div>
+                  <div className="flex flex-col gap-2 md:col-span-2">
+                    <div className="flex items-center gap-2">
+                      <input placeholder="Room Photo URL (optional — shows as a 2nd slide)" value={newStayHotel.room_photo_url} onChange={e => setNewStayHotel({ ...newStayHotel, room_photo_url: e.target.value })} className="flex-1 px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                      <label className="px-3 py-2 rounded-lg text-xs font-bold uppercase cursor-pointer text-[var(--gold-light)] border border-[#B8960C]/40 whitespace-nowrap">
+                        {uploadingNewRoomPhoto ? 'Uploading…' : 'Upload'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={uploadingNewRoomPhoto}
+                          onChange={async e => {
+                            const file = e.target.files?.[0]
+                            e.target.value = ''
+                            if (!file) return
+                            setUploadingNewRoomPhoto(true)
+                            const url = await uploadStayPhoto(file)
+                            setUploadingNewRoomPhoto(false)
+                            if (url) setNewStayHotel(prev => ({ ...prev, room_photo_url: url }))
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {newStayHotel.room_photo_url && (
+                      <img src={newStayHotel.room_photo_url} alt="" className="h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
+                    )}
+                  </div>
                   <input type="number" placeholder="Price per room/night ($)" value={newStayHotel.price} onChange={e => setNewStayHotel({ ...newStayHotel, price: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                   <input type="number" placeholder="Transport portion ($)" value={newStayHotel.transport_amount} onChange={e => setNewStayHotel({ ...newStayHotel, transport_amount: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                   <input type="number" placeholder="Rooms available" value={newStayHotel.rooms_available} onChange={e => setNewStayHotel({ ...newStayHotel, rooms_available: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
@@ -2954,6 +3015,32 @@ export default function AdminPage() {
                           </div>
                           {edit.photo_url && (
                             <img src={edit.photo_url} alt="" className="mt-1 h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
+                          )}
+                        </label>
+                        <label className="flex flex-col gap-1 col-span-2">Room Photo URL (optional — shows as a 2nd slide)
+                          <div className="flex items-center gap-2">
+                            <input value={edit.room_photo_url || ''} onChange={e => setEditingStayHotel({ ...edit, room_photo_url: e.target.value })} className="flex-1 px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                            <label className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase cursor-pointer text-[var(--gold-light)] border border-[#B8960C]/40 whitespace-nowrap">
+                              {uploadingEditRoomPhoto ? 'Uploading…' : 'Upload'}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={uploadingEditRoomPhoto}
+                                onChange={async e => {
+                                  const file = e.target.files?.[0]
+                                  e.target.value = ''
+                                  if (!file) return
+                                  setUploadingEditRoomPhoto(true)
+                                  const url = await uploadStayPhoto(file)
+                                  setUploadingEditRoomPhoto(false)
+                                  if (url) setEditingStayHotel({ ...edit, room_photo_url: url })
+                                }}
+                              />
+                            </label>
+                          </div>
+                          {edit.room_photo_url && (
+                            <img src={edit.room_photo_url} alt="" className="mt-1 h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
                           )}
                         </label>
                         <label className="flex flex-col gap-1">Price/night ($)
@@ -4531,37 +4618,58 @@ export default function AdminPage() {
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Wait Time Fee ($)</label>
                       <input type="number" value={editingLead.wait_time_fee ?? ''} onChange={(e) => setEditingLead({...editingLead, wait_time_fee: e.target.value === '' ? undefined : parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
-                    {editingLead.booking_source === 'manual' && (
-                      <div className="flex flex-col gap-2 md:col-span-2">
-                        <label className="text-sm font-semibold text-[var(--text-subtle)]">Sales Agent</label>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setEditingLead({ ...editingLead, created_by: null })}
-                            className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors border border-dashed"
-                            style={!editingLead.created_by ? { background: 'var(--bg-deep)', color: 'var(--text-subtle)', borderColor: 'var(--text-subtle)' } : { background: 'transparent', color: 'var(--text-faint)', borderColor: 'var(--border)' }}
-                          >
-                            Unassigned
-                          </button>
-                          {salesAgents.filter((a) => a.active).map((agent) => {
-                            const c = agentColorOf(salesAgents, agent.name)
-                            return (
-                              <button
-                                key={agent.id}
-                                type="button"
-                                onClick={() => setEditingLead({ ...editingLead, created_by: agent.name })}
-                                className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2"
-                                style={editingLead.created_by === agent.name ? { background: c.bg, color: c.fg, border: `1px solid ${c.border}` } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-                              >
-                                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.dot }} />
-                                {agent.name}
-                              </button>
-                            )
-                          })}
-                        </div>
-                        <p className="text-xs text-[var(--text-faint)]">Fixes old manual reservations that don't have an agent attached yet — doesn't affect the commissions breakdown for other bookings.</p>
+                    <div className="flex flex-col gap-2 md:col-span-2">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Booking Origin</label>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditingLead({ ...editingLead, booking_source: 'website', created_by: null })}
+                          className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors"
+                          style={editingLead.booking_source !== 'manual' ? { background: 'var(--gold)', color: 'var(--bg-deep)', border: '1px solid var(--gold)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                        >
+                          Website
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingLead({ ...editingLead, booking_source: 'manual' })}
+                          className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors"
+                          style={editingLead.booking_source === 'manual' ? { background: 'var(--gold)', color: 'var(--bg-deep)', border: '1px solid var(--gold)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                        >
+                          Manual (agent)
+                        </button>
                       </div>
-                    )}
+                      {editingLead.booking_source === 'manual' && (
+                        <>
+                          <label className="text-sm font-semibold text-[var(--text-subtle)] mt-2">Sales Agent</label>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingLead({ ...editingLead, created_by: null })}
+                              className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors border border-dashed"
+                              style={!editingLead.created_by ? { background: 'var(--bg-deep)', color: 'var(--text-subtle)', borderColor: 'var(--text-subtle)' } : { background: 'transparent', color: 'var(--text-faint)', borderColor: 'var(--border)' }}
+                            >
+                              Unassigned
+                            </button>
+                            {salesAgents.filter((a) => a.active).map((agent) => {
+                              const c = agentColorOf(salesAgents, agent.name)
+                              return (
+                                <button
+                                  key={agent.id}
+                                  type="button"
+                                  onClick={() => setEditingLead({ ...editingLead, created_by: agent.name })}
+                                  className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2"
+                                  style={editingLead.created_by === agent.name ? { background: c.bg, color: c.fg, border: `1px solid ${c.border}` } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                                >
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.dot }} />
+                                  {agent.name}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </>
+                      )}
+                      <p className="text-xs text-[var(--text-faint)]">Corrige reservas viejas cargadas antes de que existiera este campo (ej. julio). Cambiarlo actualiza el desglose de Commissions: “Website” la saca del conteo por agente, “Manual” + agente se la acredita.</p>
+                    </div>
                   </div>
                   <div className="flex gap-4 pt-4 border-t border-[var(--border)]">
                     <button
@@ -4593,6 +4701,7 @@ export default function AdminPage() {
                           luggage_count: editingLead.luggage_count ?? 0,
                           wait_time_minutes: editingLead.wait_time_minutes ?? 0,
                           wait_time_fee: editingLead.wait_time_fee ?? 0,
+                          booking_source: editingLead.booking_source,
                           created_by: editingLead.created_by
                         })
                         setEditingLead(null)
@@ -5232,6 +5341,12 @@ export default function AdminPage() {
           // booking_source is set once, at creation, from who actually
           // submitted the request (see isAdmin in app/api/leads/route.ts),
           // so it can't drift after the fact the way payment method can.
+          // Use the month-scoped fetch when it's in (covers old months the
+          // 200-row global list drops); fall back to the global lists on first
+          // paint / while loading.
+          const cLeads = commissionLeads ?? leads
+          const cStay = commissionStay ?? stayBookings
+
           const commissionsByDay: Record<string, { total: number; web: number; other: number }> = {}
           const bump = (key: string, isWeb: boolean) => {
             if (!key) return
@@ -5240,12 +5355,12 @@ export default function AdminPage() {
             if (isWeb) commissionsByDay[key].web += 1
             else commissionsByDay[key].other += 1
           }
-          leads.forEach(l => {
+          cLeads.forEach(l => {
             if (l.status === 'paid' || l.status === 'deposit_paid') {
               bump((l.created_at || '').slice(0, 10), l.booking_source !== 'manual')
             }
           })
-          stayBookings.forEach(b => {
+          cStay.forEach(b => {
             if (b.status === 'paid' || b.status === 'paid_overbooked') {
               bump((b.created_at || '').slice(0, 10), true)
             }
@@ -5262,7 +5377,7 @@ export default function AdminPage() {
           // applied to it by hand.
           const monthDateSet = new Set(monthDays.map(d => d.dateStr))
           const agentSummary: Record<string, { count: number; revenue: number }> = {}
-          leads.forEach(l => {
+          cLeads.forEach(l => {
             if (
               l.booking_source === 'manual' &&
               (l.status === 'paid' || l.status === 'deposit_paid') &&
@@ -5281,7 +5396,10 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Commissions</h1>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>${COMMISSION_PER_BOOKING} per paid booking, by the date it came in.</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  ${COMMISSION_PER_BOOKING} per paid booking, by the date it came in.
+                  {commissionLoading && <span className="ml-2" style={{ color: 'var(--text-faint)' }}>· loading month…</span>}
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 <button

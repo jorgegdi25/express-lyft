@@ -19,11 +19,18 @@ export async function GET(req: NextRequest) {
     .order('sort_order', { ascending: true })
   if (hotelsErr) return NextResponse.json({ error: hotelsErr.message }, { status: 500 })
 
-  const { data: bookings, error: bookingsErr } = await supabaseAdmin
+  // Default: 200 most recent. With ?from=&to= (ISO dates), return the whole
+  // window instead so the Commissions view can total an older month.
+  const from = req.nextUrl.searchParams.get('from')
+  const to = req.nextUrl.searchParams.get('to')
+  let bookingsQuery = supabaseAdmin
     .from('stay_bookings')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(200)
+  bookingsQuery = from && to
+    ? bookingsQuery.gte('created_at', from).lt('created_at', to).limit(5000)
+    : bookingsQuery.limit(200)
+  const { data: bookings, error: bookingsErr } = await bookingsQuery
   if (bookingsErr) return NextResponse.json({ error: bookingsErr.message }, { status: 500 })
 
   return NextResponse.json({ hotels, bookings })
@@ -33,7 +40,7 @@ export async function POST(req: NextRequest) {
   if (!(await isAuthorized(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { name, photo_url, price, transport_amount, rooms_available, active, sort_order } = body
+  const { name, photo_url, room_photo_url, price, transport_amount, rooms_available, active, sort_order } = body
   if (!name || price === undefined) return NextResponse.json({ error: 'Missing name or price' }, { status: 400 })
 
   const { data, error } = await supabaseAdmin
@@ -41,6 +48,7 @@ export async function POST(req: NextRequest) {
     .insert({
       name,
       photo_url: photo_url || null,
+      room_photo_url: room_photo_url || null,
       price,
       transport_amount: transport_amount || 0,
       rooms_available: rooms_available ?? 0,
@@ -59,12 +67,13 @@ export async function PUT(req: NextRequest) {
   if (!(await isAuthorized(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { id, name, photo_url, price, transport_amount, rooms_available, active, sort_order } = body
+  const { id, name, photo_url, room_photo_url, price, transport_amount, rooms_available, active, sort_order } = body
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
   const updates: Record<string, any> = { updated_at: new Date().toISOString() }
   if (name !== undefined) updates.name = name
   if (photo_url !== undefined) updates.photo_url = photo_url
+  if (room_photo_url !== undefined) updates.room_photo_url = room_photo_url
   if (price !== undefined) updates.price = price
   if (transport_amount !== undefined) updates.transport_amount = transport_amount
   if (rooms_available !== undefined) updates.rooms_available = rooms_available
