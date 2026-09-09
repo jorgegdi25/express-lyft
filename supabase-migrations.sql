@@ -226,3 +226,8 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS return_destination text;
 -- of payment status (paid != done — dispatch needs to track whether the
 -- driver actually completed the trip, not just whether it was charged).
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS trip_completed boolean DEFAULT false;
+
+-- Second photo per Stay hotel — a room interior shot shown alongside the
+-- existing exterior/pool `photo_url` as a 2-slide carousel on the hotel
+-- card, instead of just the one static exterior photo.
+ALTER TABLE stay_hotels ADD COLUMN IF NOT EXISTS room_photo_url text;

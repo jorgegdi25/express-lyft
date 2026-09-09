@@ -17,6 +17,7 @@ export interface StayHotel {
   id: string
   name: string
   photo_url: string | null
+  room_photo_url: string | null
   price: number
   rooms_available: number
   sort_order: number
@@ -25,7 +26,7 @@ export interface StayHotel {
 async function getStayHotels(): Promise<StayHotel[]> {
   const { data } = await supabaseAdmin
     .from('stay_hotels')
-    .select('id, name, photo_url, price, rooms_available, sort_order')
+    .select('id, name, photo_url, room_photo_url, price, rooms_available, sort_order')
     .eq('active', true)
     .gt('rooms_available', 0)
     .order('sort_order', { ascending: true })
