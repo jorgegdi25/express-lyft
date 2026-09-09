@@ -535,6 +535,18 @@ export default function AdminPage() {
   const [commissionStay, setCommissionStay] = useState<StayBookingAdmin[] | null>(null)
   const [commissionLoading, setCommissionLoading] = useState(false)
 
+  // Income Report tab — same story as Commissions: the global lists only hold
+  // the last ~200 rows, so the report does its own windowed fetch (?from=&to=)
+  // and totals whatever comes back. 'month' = the month navigator, 'custom' =
+  // the two date pickers.
+  const [reportMode, setReportMode] = useState<'month' | 'custom'>('month')
+  const [reportMonth, setReportMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
+  const [reportFrom, setReportFrom] = useState(() => { const d = new Date(); d.setDate(1); return d.toLocaleDateString('en-CA') })
+  const [reportTo, setReportTo] = useState(() => new Date().toLocaleDateString('en-CA'))
+  const [reportLeads, setReportLeads] = useState<Lead[] | null>(null)
+  const [reportStay, setReportStay] = useState<StayBookingAdmin[] | null>(null)
+  const [reportLoading, setReportLoading] = useState(false)
+
   const [metrics, setMetrics] = useState<any>(null)
   const [leads, setLeads] = useState<Lead[]>([])
   const [addingLead, setAddingLead] = useState(false)
@@ -895,6 +907,182 @@ export default function AdminPage() {
       topRoutes
     }
   }, [bookings])
+
+  // Income Report computations — web vs. manual, then broken down by service
+  // (Transport / Jet Ski / Boat / Hotel B2B / Hotel Stays) and by hotel.
+  // Keyed off created_at (when the reservation came in), matching the windowed
+  // fetch above and the Commissions tab. Only paid / deposit / hotel_b2b rows
+  // count as income.
+  const SERVICE_LABELS_ES: Record<string, string> = {
+    transport: 'Transporte',
+    jet_ski: 'Jet Ski',
+    boat: 'Bote',
+    hotel_b2b: 'Hoteles (facturación B2B)',
+    stay: 'Estancias de hotel (habitación)',
+  }
+  const reportStats = useMemo(() => {
+    const rl = reportLeads ?? []
+    const rs = reportStay ?? []
+
+    const collected = (l: Lead) => {
+      if (l.status === 'paid' || l.status === 'hotel_b2b') return l.amount_usd || 0
+      if (l.status === 'deposit_paid') return l.amount_paid || 0
+      return 0
+    }
+    const pendingOf = (l: Lead) => (l.status === 'deposit_paid' ? (l.amount_remaining || 0) : 0)
+
+    // Inclusive YYYY-MM-DD window bounds (drop the padding days the fetch adds).
+    let rFrom: string
+    let rTo: string
+    if (reportMode === 'month') {
+      const y = reportMonth.getFullYear()
+      const m = reportMonth.getMonth()
+      rFrom = `${y}-${String(m + 1).padStart(2, '0')}-01`
+      const lastDay = new Date(y, m + 1, 0).getDate()
+      rTo = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    } else {
+      rFrom = reportFrom
+      rTo = reportTo
+    }
+    const inWindow = (ts?: string | null) => {
+      const d = (ts || '').slice(0, 10)
+      return !!d && d >= rFrom && d <= rTo
+    }
+
+    const svcOf = (l: Lead): string => {
+      if (l.status === 'hotel_b2b') return 'hotel_b2b'
+      if (l.service_type === 'jet_ski') return 'jet_ski'
+      if (l.service_type === 'boat') return 'boat'
+      return 'transport'
+    }
+
+    const SERVICES = ['transport', 'jet_ski', 'boat', 'hotel_b2b', 'stay']
+    const blank = () => ({ web: { count: 0, revenue: 0 }, manual: { count: 0, revenue: 0 } })
+    const byService: Record<string, ReturnType<typeof blank>> = {}
+    SERVICES.forEach((s) => { byService[s] = blank() })
+    const byChannel = { web: { count: 0, revenue: 0 }, manual: { count: 0, revenue: 0 } }
+    const byAgent: Record<string, { count: number; revenue: number }> = {}
+    const byHotel: Record<string, { count: number; revenue: number }> = {}
+    let pendingTotal = 0
+    let taxTotal = 0
+
+    const paidLeads = rl.filter((l) =>
+      (l.status === 'paid' || l.status === 'deposit_paid' || l.status === 'hotel_b2b') &&
+      inWindow(l.created_at)
+    )
+    const paidStay = rs.filter((b) =>
+      (b.status === 'paid' || b.status === 'paid_overbooked') &&
+      inWindow(b.created_at)
+    )
+
+    paidLeads.forEach((l) => {
+      const rev = collected(l)
+      const chan: 'web' | 'manual' = l.booking_source === 'manual' ? 'manual' : 'web'
+      const svc = svcOf(l)
+      byService[svc][chan].count += 1
+      byService[svc][chan].revenue += rev
+      byChannel[chan].count += 1
+      byChannel[chan].revenue += rev
+      if (chan === 'manual') {
+        const a = l.created_by || 'Sin agente'
+        if (!byAgent[a]) byAgent[a] = { count: 0, revenue: 0 }
+        byAgent[a].count += 1
+        byAgent[a].revenue += rev
+      }
+      const h = (l.hotel_slug || '').trim() || '(sin hotel)'
+      if (!byHotel[h]) byHotel[h] = { count: 0, revenue: 0 }
+      byHotel[h].count += 1
+      byHotel[h].revenue += rev
+      pendingTotal += pendingOf(l)
+      taxTotal += l.tax_collected || 0
+    })
+
+    paidStay.forEach((b) => {
+      const rev = (b.room_amount || 0) + (b.transport_amount || 0)
+      // Stay bookings are always guest self-service — they count as web.
+      byService.stay.web.count += 1
+      byService.stay.web.revenue += rev
+      byChannel.web.count += 1
+      byChannel.web.revenue += rev
+      const h = (b.hotel_name || '').trim() || '(sin hotel)'
+      if (!byHotel[h]) byHotel[h] = { count: 0, revenue: 0 }
+      byHotel[h].count += 1
+      byHotel[h].revenue += rev
+      taxTotal += b.tax_collected || 0
+    })
+
+    const totalRevenue = byChannel.web.revenue + byChannel.manual.revenue
+    const totalCount = byChannel.web.count + byChannel.manual.count
+
+    const serviceRows = SERVICES.map((s) => ({
+      key: s,
+      label: SERVICE_LABELS_ES[s] || s,
+      web: byService[s].web,
+      manual: byService[s].manual,
+      total: {
+        count: byService[s].web.count + byService[s].manual.count,
+        revenue: byService[s].web.revenue + byService[s].manual.revenue,
+      },
+    })).filter((r) => r.total.count > 0)
+
+    const agentRows = Object.entries(byAgent).sort((a, b) => b[1].revenue - a[1].revenue)
+    const hotelRows = Object.entries(byHotel).sort((a, b) => b[1].revenue - a[1].revenue)
+
+    const csvRows = [
+      ...paidLeads.map((l) => ({
+        date: (l.created_at || '').slice(0, 10),
+        channel: l.booking_source === 'manual' ? 'Manual' : 'Web',
+        agent: l.booking_source === 'manual' ? (l.created_by || 'Sin agente') : '',
+        service: SERVICE_LABELS_ES[svcOf(l)] || svcOf(l),
+        hotel: (l.hotel_slug || '').trim(),
+        customer: l.customer_name || '',
+        status: l.status || '',
+        collected: collected(l),
+        pending: pendingOf(l),
+      })),
+      ...paidStay.map((b) => ({
+        date: (b.created_at || '').slice(0, 10),
+        channel: 'Web',
+        agent: '',
+        service: SERVICE_LABELS_ES.stay,
+        hotel: (b.hotel_name || '').trim(),
+        customer: b.guest_name || '',
+        status: b.status,
+        collected: (b.room_amount || 0) + (b.transport_amount || 0),
+        pending: 0,
+      })),
+    ].sort((a, b) => a.date.localeCompare(b.date))
+
+    return {
+      rFrom, rTo, totalRevenue, totalCount, pendingTotal, taxTotal,
+      byChannel, serviceRows, agentRows, hotelRows, csvRows,
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reportLeads, reportStay, reportMode, reportMonth, reportFrom, reportTo])
+
+  function downloadReportCsv() {
+    const { csvRows, rFrom, rTo, totalRevenue, pendingTotal } = reportStats
+    const esc = (v: string | number) => {
+      const s = String(v ?? '')
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+    }
+    const header = ['Fecha', 'Canal', 'Agente', 'Servicio', 'Hotel', 'Cliente', 'Estado', 'Cobrado USD', 'Pendiente USD']
+    const lines = [
+      header.join(','),
+      ...csvRows.map((r) => [r.date, r.channel, r.agent, r.service, r.hotel, r.customer, r.status, r.collected, r.pending].map(esc).join(',')),
+      '',
+      [`Total ${rFrom} a ${rTo}`, '', '', '', '', '', '', totalRevenue, pendingTotal].map(esc).join(','),
+    ]
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `reporte-ingresos_${rFrom}_a_${rTo}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
 
   /* -- API Fetchers -- */
 
@@ -1364,6 +1552,41 @@ export default function AdminPage() {
     }).finally(() => { if (!cancelled) setCommissionLoading(false) })
     return () => { cancelled = true }
   }, [authed, password, activeTab, commissionMonth])
+
+  // Windowed data load for the Income Report tab — same ?from=&to= endpoints
+  // the Commissions view uses (they return the whole range, not just the last
+  // 200 rows), so an older month or a custom quarter still totals correctly.
+  useEffect(() => {
+    if (!authed || activeTab !== 'reports') return
+    let fromISO: string
+    let toISO: string
+    if (reportMode === 'month') {
+      const y = reportMonth.getFullYear()
+      const m = reportMonth.getMonth()
+      // pad a day each side so a row near the edge (UTC vs local) still comes back
+      fromISO = new Date(Date.UTC(y, m, 1) - 86400000).toISOString()
+      toISO = new Date(Date.UTC(y, m + 1, 1) + 86400000).toISOString()
+    } else {
+      if (!reportFrom || !reportTo) return
+      fromISO = new Date(`${reportFrom}T00:00:00.000Z`).toISOString()
+      // +1 day so the whole "to" day is included (created_at carries a time)
+      toISO = new Date(new Date(`${reportTo}T00:00:00.000Z`).getTime() + 86400000).toISOString()
+    }
+    const qs = `from=${encodeURIComponent(fromISO)}&to=${encodeURIComponent(toISO)}&t=${Date.now()}`
+    let cancelled = false
+    setReportLoading(true)
+    Promise.all([
+      fetch(`/api/leads?${qs}`, { headers: { authorization: `Bearer ${password}` }, cache: 'no-store' })
+        .then(r => (r.ok ? r.json() : [])).catch(() => []),
+      fetch(`/api/admin/stay-hotels?${qs}`, { headers: { authorization: `Bearer ${password}` }, cache: 'no-store' })
+        .then(r => (r.ok ? r.json() : { bookings: [] })).catch(() => ({ bookings: [] })),
+    ]).then(([ld, sd]) => {
+      if (cancelled) return
+      setReportLeads(Array.isArray(ld) ? ld : [])
+      setReportStay(Array.isArray(sd?.bookings) ? sd.bookings : [])
+    }).finally(() => { if (!cancelled) setReportLoading(false) })
+    return () => { cancelled = true }
+  }, [authed, password, activeTab, reportMode, reportMonth, reportFrom, reportTo])
 
   useEffect(() => {
     if (!authed) return
@@ -2135,6 +2358,7 @@ export default function AdminPage() {
         { key: 'clients', label: 'Frequent Flyers', icon: <IconClients /> },
         { key: 'reviews', label: 'Reviews', icon: <IconReviews />, getBadge: () => reviews.filter(r => r.status === 'pending').length },
         { key: 'revenue', label: 'Revenue Dashboard', icon: <IconRevenue /> },
+        { key: 'reports', label: 'Reporte de Ingresos', icon: <Receipt size={20} /> },
       ] as SidebarItem[]
     }
   ]
@@ -5160,6 +5384,185 @@ export default function AdminPage() {
                 </table>
               </div>
             </section>
+          </div>
+        )}
+
+        {/* ------- INCOME REPORT TAB ------- */}
+        {activeTab === 'reports' && (
+          <div className="flex flex-col gap-8">
+            <div className="flex items-start justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Reporte de Ingresos</h1>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Ingresos por la web vs. manuales, desglosados por servicio y por hotel.
+                  {reportLoading && <span className="ml-2" style={{ color: 'var(--text-faint)' }}>· cargando…</span>}
+                </p>
+              </div>
+              <button
+                onClick={downloadReportCsv}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
+                style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+              >
+                ↓ Descargar CSV
+              </button>
+            </div>
+
+            {/* Range controls */}
+            <section className="rounded-xl p-4 flex flex-wrap items-center gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <div className="flex rounded-lg overflow-hidden border border-[var(--border)]">
+                <button
+                  onClick={() => setReportMode('month')}
+                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors"
+                  style={reportMode === 'month' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)' }}
+                >Mes</button>
+                <button
+                  onClick={() => setReportMode('custom')}
+                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors"
+                  style={reportMode === 'custom' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)' }}
+                >Rango</button>
+              </div>
+
+              {reportMode === 'month' ? (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => { const d = new Date(reportMonth); d.setMonth(d.getMonth() - 1); setReportMonth(d) }}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors"
+                    aria-label="Mes anterior"
+                  >&larr;</button>
+                  <span className="text-sm font-bold text-white min-w-[150px] text-center capitalize" style={{ fontFamily: 'Georgia, serif' }}>
+                    {reportMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button
+                    onClick={() => { const d = new Date(reportMonth); d.setMonth(d.getMonth() + 1); setReportMonth(d) }}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors"
+                    aria-label="Mes siguiente"
+                  >&rarr;</button>
+                  <button
+                    onClick={() => { const d = new Date(); d.setDate(1); setReportMonth(d) }}
+                    className="px-3 py-2 rounded-lg border border-[var(--border)] text-xs font-bold uppercase tracking-wider text-[var(--text-subtle)] hover:text-[var(--gold-light)] hover:border-[var(--gold)] transition-colors"
+                  >Mes actual</button>
+                </div>
+              ) : (
+                <CalendarRangeFilter
+                  from={reportFrom}
+                  to={reportTo}
+                  onChange={(f, t) => { setReportFrom(f); setReportTo(t) }}
+                />
+              )}
+              <span className="text-xs text-[var(--text-faint)] ml-auto">{reportStats.rFrom} → {reportStats.rTo}</span>
+            </section>
+
+            {/* Summary cards */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[
+                { label: 'Ingresos totales', value: reportStats.totalRevenue, color: '#4ade80', caption: `${reportStats.totalCount} reserva${reportStats.totalCount === 1 ? '' : 's'}` },
+                { label: 'Por la web', value: reportStats.byChannel.web.revenue, color: '#60a5fa', caption: `${reportStats.byChannel.web.count} reserva${reportStats.byChannel.web.count === 1 ? '' : 's'}` },
+                { label: 'Manuales (agentes)', value: reportStats.byChannel.manual.revenue, color: '#c084fc', caption: `${reportStats.byChannel.manual.count} reserva${reportStats.byChannel.manual.count === 1 ? '' : 's'}` },
+                { label: 'Pendiente de cobro', value: reportStats.pendingTotal, color: '#FBBF24', caption: 'saldos de depósito' },
+              ].map((c) => (
+                <div key={c.label} className="rounded-xl p-6 flex flex-col gap-2" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-muted)]">{c.label}</p>
+                  <p className="text-3xl font-bold" style={{ color: c.color }}>${c.value.toLocaleString()}</p>
+                  <p className="text-xs text-[var(--text-faint)]">{c.caption}</p>
+                </div>
+              ))}
+            </section>
+
+            {/* By service × channel */}
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Ingresos por servicio</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ color: 'var(--text-muted)' }}>
+                      <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Servicio</th>
+                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Web</th>
+                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Manual</th>
+                      <th className="text-right py-2 pl-4 text-xs uppercase tracking-widest font-medium">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportStats.serviceRows.map((r) => (
+                      <tr key={r.key} style={{ borderTop: '1px solid var(--surface)' }}>
+                        <td className="py-3 pr-4 text-white font-bold text-xs">{r.label}</td>
+                        <td className="py-3 px-4 text-right text-[var(--text-subtle)]">${r.web.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.web.count})</span></td>
+                        <td className="py-3 px-4 text-right text-[var(--text-subtle)]">${r.manual.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.manual.count})</span></td>
+                        <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${r.total.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.total.count})</span></td>
+                      </tr>
+                    ))}
+                    {reportStats.serviceRows.length === 0 && (
+                      <tr><td colSpan={4} className="py-4 text-center text-[var(--text-muted)] text-xs italic">Sin ingresos en este periodo.</td></tr>
+                    )}
+                  </tbody>
+                  {reportStats.serviceRows.length > 0 && (
+                    <tfoot>
+                      <tr style={{ borderTop: '2px solid var(--surface)' }}>
+                        <td className="py-3 pr-4 text-xs uppercase font-bold text-[var(--text-muted)]">Total</td>
+                        <td className="py-3 px-4 text-right font-bold text-white">${reportStats.byChannel.web.revenue.toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right font-bold text-white">${reportStats.byChannel.manual.revenue.toLocaleString()}</td>
+                        <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${reportStats.totalRevenue.toLocaleString()}</td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </section>
+
+            {/* Manual by agent */}
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Ingresos manuales por agente</p>
+              {reportStats.agentRows.length === 0 ? (
+                <p className="text-sm italic text-[var(--text-faint)]">Sin reservas manuales en este periodo.</p>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  {reportStats.agentRows.map(([agent, s]) => (
+                    <div key={agent} className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-white flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: agentColorOf(salesAgents, agent).dot }} />
+                        {agent}
+                      </span>
+                      <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                        {s.count} reserva{s.count === 1 ? '' : 's'} · <span className="font-bold" style={{ color: '#4ade80' }}>${s.revenue.toLocaleString()}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* By hotel */}
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Ingresos por hotel</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ color: 'var(--text-muted)' }}>
+                      <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Hotel</th>
+                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Reservas</th>
+                      <th className="text-right py-2 pl-4 text-xs uppercase tracking-widest font-medium">Ingresos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportStats.hotelRows.map(([hotel, s]) => (
+                      <tr key={hotel} style={{ borderTop: '1px solid var(--surface)' }}>
+                        <td className="py-3 pr-4 text-white font-bold text-xs">{hotel}</td>
+                        <td className="py-3 px-4 text-right text-[var(--text-subtle)] font-bold text-xs">{s.count}</td>
+                        <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${s.revenue.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                    {reportStats.hotelRows.length === 0 && (
+                      <tr><td colSpan={3} className="py-4 text-center text-[var(--text-muted)] text-xs italic">Sin datos.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <p className="text-xs text-[var(--text-faint)]">
+              Los ingresos se cuentan por la fecha en que entró la reserva y solo incluyen reservas pagadas o con depósito.
+              &ldquo;Cobrado&rdquo; es lo recibido hasta ahora; en las reservas con depósito solo suma el anticipo.
+              Las estancias de hotel (habitaciones de /stay) siempre cuentan como web.
+            </p>
           </div>
         )}
 
