@@ -539,9 +539,11 @@ export default function AdminPage() {
   // the last ~200 rows, so the report does its own windowed fetch (?from=&to=)
   // and totals whatever comes back. 'month' = the month navigator, 'custom' =
   // the two date pickers.
-  const [reportMode, setReportMode] = useState<'month' | 'custom'>('month')
+  // Default to a wide custom range (last 12 months) so the tab opens with
+  // data instead of an empty current-month view.
+  const [reportMode, setReportMode] = useState<'month' | 'custom'>('custom')
   const [reportMonth, setReportMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
-  const [reportFrom, setReportFrom] = useState(() => { const d = new Date(); d.setDate(1); return d.toLocaleDateString('en-CA') })
+  const [reportFrom, setReportFrom] = useState(() => { const d = new Date(); d.setDate(1); d.setFullYear(d.getFullYear() - 1); return d.toLocaleDateString('en-CA') })
   const [reportTo, setReportTo] = useState(() => new Date().toLocaleDateString('en-CA'))
   const [reportLeads, setReportLeads] = useState<Lead[] | null>(null)
   const [reportStay, setReportStay] = useState<StayBookingAdmin[] | null>(null)
@@ -913,12 +915,12 @@ export default function AdminPage() {
   // Keyed off created_at (when the reservation came in), matching the windowed
   // fetch above and the Commissions tab. Only paid / deposit / hotel_b2b rows
   // count as income.
-  const SERVICE_LABELS_ES: Record<string, string> = {
-    transport: 'Transporte',
+  const REPORT_SERVICE_LABELS: Record<string, string> = {
+    transport: 'Transport',
     jet_ski: 'Jet Ski',
-    boat: 'Bote',
-    hotel_b2b: 'Hoteles (facturación B2B)',
-    stay: 'Estancias de hotel (habitación)',
+    boat: 'Boat',
+    hotel_b2b: 'Hotels (B2B billing)',
+    stay: 'Hotel stays (rooms)',
   }
   const reportStats = useMemo(() => {
     const rl = reportLeads ?? []
@@ -984,12 +986,12 @@ export default function AdminPage() {
       byChannel[chan].count += 1
       byChannel[chan].revenue += rev
       if (chan === 'manual') {
-        const a = l.created_by || 'Sin agente'
+        const a = l.created_by || 'No agent'
         if (!byAgent[a]) byAgent[a] = { count: 0, revenue: 0 }
         byAgent[a].count += 1
         byAgent[a].revenue += rev
       }
-      const h = (l.hotel_slug || '').trim() || '(sin hotel)'
+      const h = (l.hotel_slug || '').trim() || '(no hotel)'
       if (!byHotel[h]) byHotel[h] = { count: 0, revenue: 0 }
       byHotel[h].count += 1
       byHotel[h].revenue += rev
@@ -1004,7 +1006,7 @@ export default function AdminPage() {
       byService.stay.web.revenue += rev
       byChannel.web.count += 1
       byChannel.web.revenue += rev
-      const h = (b.hotel_name || '').trim() || '(sin hotel)'
+      const h = (b.hotel_name || '').trim() || '(no hotel)'
       if (!byHotel[h]) byHotel[h] = { count: 0, revenue: 0 }
       byHotel[h].count += 1
       byHotel[h].revenue += rev
@@ -1016,7 +1018,7 @@ export default function AdminPage() {
 
     const serviceRows = SERVICES.map((s) => ({
       key: s,
-      label: SERVICE_LABELS_ES[s] || s,
+      label: REPORT_SERVICE_LABELS[s] || s,
       web: byService[s].web,
       manual: byService[s].manual,
       total: {
@@ -1032,8 +1034,8 @@ export default function AdminPage() {
       ...paidLeads.map((l) => ({
         date: (l.created_at || '').slice(0, 10),
         channel: l.booking_source === 'manual' ? 'Manual' : 'Web',
-        agent: l.booking_source === 'manual' ? (l.created_by || 'Sin agente') : '',
-        service: SERVICE_LABELS_ES[svcOf(l)] || svcOf(l),
+        agent: l.booking_source === 'manual' ? (l.created_by || 'No agent') : '',
+        service: REPORT_SERVICE_LABELS[svcOf(l)] || svcOf(l),
         hotel: (l.hotel_slug || '').trim(),
         customer: l.customer_name || '',
         status: l.status || '',
@@ -1044,7 +1046,7 @@ export default function AdminPage() {
         date: (b.created_at || '').slice(0, 10),
         channel: 'Web',
         agent: '',
-        service: SERVICE_LABELS_ES.stay,
+        service: REPORT_SERVICE_LABELS.stay,
         hotel: (b.hotel_name || '').trim(),
         customer: b.guest_name || '',
         status: b.status,
@@ -1066,18 +1068,18 @@ export default function AdminPage() {
       const s = String(v ?? '')
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
     }
-    const header = ['Fecha', 'Canal', 'Agente', 'Servicio', 'Hotel', 'Cliente', 'Estado', 'Cobrado USD', 'Pendiente USD']
+    const header = ['Date', 'Channel', 'Agent', 'Service', 'Hotel', 'Customer', 'Status', 'Collected USD', 'Pending USD']
     const lines = [
       header.join(','),
       ...csvRows.map((r) => [r.date, r.channel, r.agent, r.service, r.hotel, r.customer, r.status, r.collected, r.pending].map(esc).join(',')),
       '',
-      [`Total ${rFrom} a ${rTo}`, '', '', '', '', '', '', totalRevenue, pendingTotal].map(esc).join(','),
+      [`Total ${rFrom} to ${rTo}`, '', '', '', '', '', '', totalRevenue, pendingTotal].map(esc).join(','),
     ]
     const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `reporte-ingresos_${rFrom}_a_${rTo}.csv`
+    a.download = `income-report_${rFrom}_to_${rTo}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -2358,7 +2360,7 @@ export default function AdminPage() {
         { key: 'clients', label: 'Frequent Flyers', icon: <IconClients /> },
         { key: 'reviews', label: 'Reviews', icon: <IconReviews />, getBadge: () => reviews.filter(r => r.status === 'pending').length },
         { key: 'revenue', label: 'Revenue Dashboard', icon: <IconRevenue /> },
-        { key: 'reports', label: 'Reporte de Ingresos', icon: <Receipt size={20} /> },
+        { key: 'reports', label: 'Income Report', icon: <Receipt size={20} /> },
       ] as SidebarItem[]
     }
   ]
@@ -5392,10 +5394,10 @@ export default function AdminPage() {
           <div className="flex flex-col gap-8">
             <div className="flex items-start justify-between flex-wrap gap-4">
               <div>
-                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Reporte de Ingresos</h1>
+                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Income Report</h1>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Ingresos por la web vs. manuales, desglosados por servicio y por hotel.
-                  {reportLoading && <span className="ml-2" style={{ color: 'var(--text-faint)' }}>· cargando…</span>}
+                  Website vs. manual income, broken down by service and by hotel.
+                  {reportLoading && <span className="ml-2" style={{ color: 'var(--text-faint)' }}>· loading…</span>}
                 </p>
               </div>
               <button
@@ -5403,7 +5405,7 @@ export default function AdminPage() {
                 className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
                 style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
               >
-                ↓ Descargar CSV
+                ↓ Download CSV
               </button>
             </div>
 
@@ -5414,12 +5416,12 @@ export default function AdminPage() {
                   onClick={() => setReportMode('month')}
                   className="px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors"
                   style={reportMode === 'month' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)' }}
-                >Mes</button>
+                >Month</button>
                 <button
                   onClick={() => setReportMode('custom')}
                   className="px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors"
                   style={reportMode === 'custom' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)' }}
-                >Rango</button>
+                >Range</button>
               </div>
 
               {reportMode === 'month' ? (
@@ -5427,27 +5429,52 @@ export default function AdminPage() {
                   <button
                     onClick={() => { const d = new Date(reportMonth); d.setMonth(d.getMonth() - 1); setReportMonth(d) }}
                     className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors"
-                    aria-label="Mes anterior"
+                    aria-label="Previous month"
                   >&larr;</button>
-                  <span className="text-sm font-bold text-white min-w-[150px] text-center capitalize" style={{ fontFamily: 'Georgia, serif' }}>
-                    {reportMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                  <span className="text-sm font-bold text-white min-w-[150px] text-center" style={{ fontFamily: 'Georgia, serif' }}>
+                    {reportMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </span>
                   <button
                     onClick={() => { const d = new Date(reportMonth); d.setMonth(d.getMonth() + 1); setReportMonth(d) }}
                     className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors"
-                    aria-label="Mes siguiente"
+                    aria-label="Next month"
                   >&rarr;</button>
                   <button
                     onClick={() => { const d = new Date(); d.setDate(1); setReportMonth(d) }}
                     className="px-3 py-2 rounded-lg border border-[var(--border)] text-xs font-bold uppercase tracking-wider text-[var(--text-subtle)] hover:text-[var(--gold-light)] hover:border-[var(--gold)] transition-colors"
-                  >Mes actual</button>
+                  >This month</button>
                 </div>
               ) : (
-                <CalendarRangeFilter
-                  from={reportFrom}
-                  to={reportTo}
-                  onChange={(f, t) => { setReportFrom(f); setReportTo(t) }}
-                />
+                <div className="flex items-center gap-3 flex-wrap">
+                  <CalendarRangeFilter
+                    from={reportFrom}
+                    to={reportTo}
+                    onChange={(f, t) => { setReportFrom(f); setReportTo(t) }}
+                  />
+                  <div className="flex items-center gap-1.5">
+                    {([
+                      { label: 'This month', months: 0 },
+                      { label: 'Last 3 months', months: 3 },
+                      { label: 'Last 12 months', months: 12 },
+                      { label: 'This year', months: -1 },
+                    ] as const).map((q) => (
+                      <button
+                        key={q.label}
+                        onClick={() => {
+                          const now = new Date()
+                          const to = now.toLocaleDateString('en-CA')
+                          let from: Date
+                          if (q.months === -1) from = new Date(now.getFullYear(), 0, 1)
+                          else if (q.months === 0) from = new Date(now.getFullYear(), now.getMonth(), 1)
+                          else { from = new Date(now.getFullYear(), now.getMonth(), 1); from.setMonth(from.getMonth() - q.months + 1) }
+                          setReportFrom(from.toLocaleDateString('en-CA'))
+                          setReportTo(to)
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg border border-[var(--border)] text-[11px] font-bold uppercase tracking-wider text-[var(--text-subtle)] hover:text-[var(--gold-light)] hover:border-[var(--gold)] transition-colors"
+                      >{q.label}</button>
+                    ))}
+                  </div>
+                </div>
               )}
               <span className="text-xs text-[var(--text-faint)] ml-auto">{reportStats.rFrom} → {reportStats.rTo}</span>
             </section>
@@ -5455,10 +5482,10 @@ export default function AdminPage() {
             {/* Summary cards */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
-                { label: 'Ingresos totales', value: reportStats.totalRevenue, color: '#4ade80', caption: `${reportStats.totalCount} reserva${reportStats.totalCount === 1 ? '' : 's'}` },
-                { label: 'Por la web', value: reportStats.byChannel.web.revenue, color: '#60a5fa', caption: `${reportStats.byChannel.web.count} reserva${reportStats.byChannel.web.count === 1 ? '' : 's'}` },
-                { label: 'Manuales (agentes)', value: reportStats.byChannel.manual.revenue, color: '#c084fc', caption: `${reportStats.byChannel.manual.count} reserva${reportStats.byChannel.manual.count === 1 ? '' : 's'}` },
-                { label: 'Pendiente de cobro', value: reportStats.pendingTotal, color: '#FBBF24', caption: 'saldos de depósito' },
+                { label: 'Total income', value: reportStats.totalRevenue, color: '#4ade80', caption: `${reportStats.totalCount} booking${reportStats.totalCount === 1 ? '' : 's'}` },
+                { label: 'From the website', value: reportStats.byChannel.web.revenue, color: '#60a5fa', caption: `${reportStats.byChannel.web.count} booking${reportStats.byChannel.web.count === 1 ? '' : 's'}` },
+                { label: 'Manual (agents)', value: reportStats.byChannel.manual.revenue, color: '#c084fc', caption: `${reportStats.byChannel.manual.count} booking${reportStats.byChannel.manual.count === 1 ? '' : 's'}` },
+                { label: 'Pending collection', value: reportStats.pendingTotal, color: '#FBBF24', caption: 'outstanding deposit balances' },
               ].map((c) => (
                 <div key={c.label} className="rounded-xl p-6 flex flex-col gap-2" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                   <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-muted)]">{c.label}</p>
@@ -5470,13 +5497,13 @@ export default function AdminPage() {
 
             {/* By service × channel */}
             <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
-              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Ingresos por servicio</p>
+              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Income by service</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ color: 'var(--text-muted)' }}>
-                      <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Servicio</th>
-                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Web</th>
+                      <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Service</th>
+                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Website</th>
                       <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Manual</th>
                       <th className="text-right py-2 pl-4 text-xs uppercase tracking-widest font-medium">Total</th>
                     </tr>
@@ -5491,7 +5518,7 @@ export default function AdminPage() {
                       </tr>
                     ))}
                     {reportStats.serviceRows.length === 0 && (
-                      <tr><td colSpan={4} className="py-4 text-center text-[var(--text-muted)] text-xs italic">Sin ingresos en este periodo.</td></tr>
+                      <tr><td colSpan={4} className="py-4 text-center text-[var(--text-muted)] text-xs italic">No income in this period.</td></tr>
                     )}
                   </tbody>
                   {reportStats.serviceRows.length > 0 && (
@@ -5510,9 +5537,9 @@ export default function AdminPage() {
 
             {/* Manual by agent */}
             <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
-              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Ingresos manuales por agente</p>
+              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Manual income by agent</p>
               {reportStats.agentRows.length === 0 ? (
-                <p className="text-sm italic text-[var(--text-faint)]">Sin reservas manuales en este periodo.</p>
+                <p className="text-sm italic text-[var(--text-faint)]">No manual bookings in this period.</p>
               ) : (
                 <div className="flex flex-col gap-2.5">
                   {reportStats.agentRows.map(([agent, s]) => (
@@ -5522,7 +5549,7 @@ export default function AdminPage() {
                         {agent}
                       </span>
                       <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                        {s.count} reserva{s.count === 1 ? '' : 's'} · <span className="font-bold" style={{ color: '#4ade80' }}>${s.revenue.toLocaleString()}</span>
+                        {s.count} booking{s.count === 1 ? '' : 's'} · <span className="font-bold" style={{ color: '#4ade80' }}>${s.revenue.toLocaleString()}</span>
                       </span>
                     </div>
                   ))}
@@ -5532,14 +5559,14 @@ export default function AdminPage() {
 
             {/* By hotel */}
             <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
-              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Ingresos por hotel</p>
+              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Income by hotel</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ color: 'var(--text-muted)' }}>
                       <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Hotel</th>
-                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Reservas</th>
-                      <th className="text-right py-2 pl-4 text-xs uppercase tracking-widest font-medium">Ingresos</th>
+                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Bookings</th>
+                      <th className="text-right py-2 pl-4 text-xs uppercase tracking-widest font-medium">Income</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -5551,7 +5578,7 @@ export default function AdminPage() {
                       </tr>
                     ))}
                     {reportStats.hotelRows.length === 0 && (
-                      <tr><td colSpan={3} className="py-4 text-center text-[var(--text-muted)] text-xs italic">Sin datos.</td></tr>
+                      <tr><td colSpan={3} className="py-4 text-center text-[var(--text-muted)] text-xs italic">No data.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -5559,9 +5586,9 @@ export default function AdminPage() {
             </section>
 
             <p className="text-xs text-[var(--text-faint)]">
-              Los ingresos se cuentan por la fecha en que entró la reserva y solo incluyen reservas pagadas o con depósito.
-              &ldquo;Cobrado&rdquo; es lo recibido hasta ahora; en las reservas con depósito solo suma el anticipo.
-              Las estancias de hotel (habitaciones de /stay) siempre cuentan como web.
+              Income is counted by the date the booking came in, and only includes paid or deposit bookings.
+              &ldquo;Collected&rdquo; is what has been received so far; for deposit bookings only the deposit is added.
+              Hotel stays (rooms booked through /stay) always count as website.
             </p>
           </div>
         )}
