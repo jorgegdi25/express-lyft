@@ -1041,7 +1041,7 @@ export default function AdminPage() {
     const csvRows = [
       ...paidLeads.map((l) => ({
         date: (l.created_at || '').slice(0, 10),
-        channel: l.booking_source === 'manual' ? 'Manual' : 'Web',
+        channel: l.booking_source === 'manual' ? 'Manual' : 'Website',
         agent: l.booking_source === 'manual' ? (l.created_by || 'No agent') : '',
         service: REPORT_SERVICE_LABELS[svcOf(l)] || svcOf(l),
         hotel: (l.hotel_slug || '').trim(),
@@ -1052,7 +1052,7 @@ export default function AdminPage() {
       })),
       ...paidStay.map((b) => ({
         date: (b.created_at || '').slice(0, 10),
-        channel: 'Web',
+        channel: 'Website',
         agent: '',
         service: REPORT_SERVICE_LABELS.stay,
         hotel: (b.hotel_name || '').trim(),
@@ -5650,6 +5650,56 @@ export default function AdminPage() {
                     ))}
                     {reportStats.hotelRows.length === 0 && (
                       <tr><td colSpan={3} className="py-4 text-center text-[var(--text-muted)] text-xs italic">No data.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            {/* Every booking, one row each */}
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+                <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Bookings <span className="text-[var(--text-faint)]">({reportStats.csvRows.length})</span>
+                </p>
+                <p className="text-xs text-[var(--text-faint)]">&ldquo;Download CSV&rdquo; (top right) exports exactly this list.</p>
+              </div>
+              <div className="overflow-x-auto max-h-[520px] overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0" style={{ background: 'var(--bg)' }}>
+                    <tr style={{ color: 'var(--text-muted)' }}>
+                      <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Date</th>
+                      <th className="text-left py-2 px-4 text-xs uppercase tracking-widest font-medium">Channel</th>
+                      <th className="text-left py-2 px-4 text-xs uppercase tracking-widest font-medium">Service</th>
+                      <th className="text-left py-2 px-4 text-xs uppercase tracking-widest font-medium">Hotel</th>
+                      <th className="text-left py-2 px-4 text-xs uppercase tracking-widest font-medium">Customer</th>
+                      <th className="text-left py-2 px-4 text-xs uppercase tracking-widest font-medium">Agent</th>
+                      <th className="text-left py-2 px-4 text-xs uppercase tracking-widest font-medium">Status</th>
+                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Collected</th>
+                      <th className="text-right py-2 pl-4 text-xs uppercase tracking-widest font-medium">Pending</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...reportStats.csvRows].reverse().map((r, i) => (
+                      <tr key={i} style={{ borderTop: '1px solid var(--surface)' }}>
+                        <td className="py-2.5 pr-4 whitespace-nowrap text-[var(--text-subtle)] text-xs">{formatDateUS(r.date)}</td>
+                        <td className="py-2.5 px-4">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded" style={{
+                            background: r.channel === 'Manual' ? 'rgba(192,132,252,0.12)' : 'rgba(96,165,250,0.12)',
+                            color: r.channel === 'Manual' ? '#c084fc' : '#60a5fa',
+                          }}>{r.channel}</span>
+                        </td>
+                        <td className="py-2.5 px-4 text-white text-xs">{r.service}</td>
+                        <td className="py-2.5 px-4 text-[var(--text-subtle)] text-xs">{r.hotel || '—'}</td>
+                        <td className="py-2.5 px-4 text-[var(--text-subtle)] text-xs">{r.customer || '—'}</td>
+                        <td className="py-2.5 px-4 text-[var(--text-subtle)] text-xs">{r.agent || '—'}</td>
+                        <td className="py-2.5 px-4 text-[var(--text-faint)] text-xs">{r.status.replace(/_/g, ' ')}</td>
+                        <td className="py-2.5 px-4 text-right font-bold text-xs" style={{ color: '#4ade80' }}>${r.collected.toLocaleString()}</td>
+                        <td className="py-2.5 pl-4 text-right text-xs" style={{ color: r.pending ? '#FBBF24' : 'var(--text-faint)' }}>{r.pending ? `$${r.pending.toLocaleString()}` : '—'}</td>
+                      </tr>
+                    ))}
+                    {reportStats.csvRows.length === 0 && (
+                      <tr><td colSpan={9} className="py-4 text-center text-[var(--text-muted)] text-xs italic">No bookings in this period.</td></tr>
                     )}
                   </tbody>
                 </table>
