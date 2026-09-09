@@ -548,6 +548,9 @@ export default function AdminPage() {
   const [reportLeads, setReportLeads] = useState<Lead[] | null>(null)
   const [reportStay, setReportStay] = useState<StayBookingAdmin[] | null>(null)
   const [reportLoading, setReportLoading] = useState(false)
+  // Channel filter for the whole report: everything, only website bookings,
+  // or only manually-entered ones.
+  const [reportChannel, setReportChannel] = useState<'all' | 'web' | 'manual'>('all')
 
   const [metrics, setMetrics] = useState<any>(null)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -968,11 +971,16 @@ export default function AdminPage() {
     let pendingTotal = 0
     let taxTotal = 0
 
+    const keepChannel = (isManual: boolean) =>
+      reportChannel === 'all' || (reportChannel === 'manual') === isManual
+
     const paidLeads = rl.filter((l) =>
       (l.status === 'paid' || l.status === 'deposit_paid' || l.status === 'hotel_b2b') &&
-      inWindow(l.created_at)
+      inWindow(l.created_at) &&
+      keepChannel(l.booking_source === 'manual')
     )
-    const paidStay = rs.filter((b) =>
+    // Stay bookings are always website; drop them entirely when filtering to manual.
+    const paidStay = reportChannel === 'manual' ? [] : rs.filter((b) =>
       (b.status === 'paid' || b.status === 'paid_overbooked') &&
       inWindow(b.created_at)
     )
@@ -1057,13 +1065,14 @@ export default function AdminPage() {
 
     return {
       rFrom, rTo, totalRevenue, totalCount, pendingTotal, taxTotal,
+      channel: reportChannel,
       byChannel, serviceRows, agentRows, hotelRows, csvRows,
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reportLeads, reportStay, reportMode, reportMonth, reportFrom, reportTo])
+  }, [reportLeads, reportStay, reportMode, reportMonth, reportFrom, reportTo, reportChannel])
 
   function downloadReportCsv() {
-    const { csvRows, rFrom, rTo, totalRevenue, pendingTotal } = reportStats
+    const { csvRows, rFrom, rTo, totalRevenue, pendingTotal, channel } = reportStats
     const esc = (v: string | number) => {
       const s = String(v ?? '')
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
@@ -1079,7 +1088,7 @@ export default function AdminPage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `income-report_${rFrom}_to_${rTo}.csv`
+    a.download = `income-report${channel === 'all' ? '' : '-' + channel}_${rFrom}_to_${rTo}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -5396,7 +5405,11 @@ export default function AdminPage() {
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Income Report</h1>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Website vs. manual income, broken down by service and by hotel.
+                  {reportChannel === 'web'
+                    ? 'Income from bookings made directly on the website, by service and by hotel.'
+                    : reportChannel === 'manual'
+                    ? 'Income from bookings entered manually by an agent, by service and by hotel.'
+                    : 'Website vs. manual income, broken down by service and by hotel.'}
                   {reportLoading && <span className="ml-2" style={{ color: 'var(--text-faint)' }}>· loading…</span>}
                 </p>
               </div>
@@ -5476,20 +5489,43 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
+
+              <div className="flex rounded-lg overflow-hidden border border-[var(--border)]">
+                {([
+                  { key: 'all', label: 'All' },
+                  { key: 'web', label: 'Website' },
+                  { key: 'manual', label: 'Manual' },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={() => setReportChannel(opt.key)}
+                    className="px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors"
+                    style={reportChannel === opt.key ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)' }}
+                  >{opt.label}</button>
+                ))}
+              </div>
+
               <span className="text-xs text-[var(--text-faint)] ml-auto">{reportStats.rFrom} → {reportStats.rTo}</span>
             </section>
 
             {/* Summary cards */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {[
-                { label: 'Total income', value: reportStats.totalRevenue, color: '#4ade80', caption: `${reportStats.totalCount} booking${reportStats.totalCount === 1 ? '' : 's'}` },
-                { label: 'From the website', value: reportStats.byChannel.web.revenue, color: '#60a5fa', caption: `${reportStats.byChannel.web.count} booking${reportStats.byChannel.web.count === 1 ? '' : 's'}` },
-                { label: 'Manual (agents)', value: reportStats.byChannel.manual.revenue, color: '#c084fc', caption: `${reportStats.byChannel.manual.count} booking${reportStats.byChannel.manual.count === 1 ? '' : 's'}` },
-                { label: 'Pending collection', value: reportStats.pendingTotal, color: '#FBBF24', caption: 'outstanding deposit balances' },
-              ].map((c) => (
+            <section className={`grid grid-cols-1 sm:grid-cols-2 gap-5 ${reportChannel === 'all' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+              {(reportChannel === 'all'
+                ? [
+                    { label: 'Total income', value: reportStats.totalRevenue, color: '#4ade80', caption: `${reportStats.totalCount} booking${reportStats.totalCount === 1 ? '' : 's'}` },
+                    { label: 'From the website', value: reportStats.byChannel.web.revenue, color: '#60a5fa', caption: `${reportStats.byChannel.web.count} booking${reportStats.byChannel.web.count === 1 ? '' : 's'}` },
+                    { label: 'Manual (agents)', value: reportStats.byChannel.manual.revenue, color: '#c084fc', caption: `${reportStats.byChannel.manual.count} booking${reportStats.byChannel.manual.count === 1 ? '' : 's'}` },
+                    { label: 'Pending collection', value: reportStats.pendingTotal, color: '#FBBF24', caption: 'outstanding deposit balances' },
+                  ]
+                : [
+                    { label: reportChannel === 'web' ? 'Website income' : 'Manual income', value: reportStats.totalRevenue, color: reportChannel === 'web' ? '#60a5fa' : '#c084fc', caption: `${reportStats.totalCount} booking${reportStats.totalCount === 1 ? '' : 's'}` },
+                    { label: 'Bookings', value: reportStats.totalCount, color: '#4ade80', caption: 'in this period', isCount: true },
+                    { label: 'Pending collection', value: reportStats.pendingTotal, color: '#FBBF24', caption: 'outstanding deposit balances' },
+                  ]
+              ).map((c) => (
                 <div key={c.label} className="rounded-xl p-6 flex flex-col gap-2" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                   <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-muted)]">{c.label}</p>
-                  <p className="text-3xl font-bold" style={{ color: c.color }}>${c.value.toLocaleString()}</p>
+                  <p className="text-3xl font-bold" style={{ color: c.color }}>{('isCount' in c && c.isCount) ? c.value.toLocaleString() : `$${c.value.toLocaleString()}`}</p>
                   <p className="text-xs text-[var(--text-faint)]">{c.caption}</p>
                 </div>
               ))}
@@ -5499,43 +5535,77 @@ export default function AdminPage() {
             <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Income by service</p>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ color: 'var(--text-muted)' }}>
-                      <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Service</th>
-                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Website</th>
-                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Manual</th>
-                      <th className="text-right py-2 pl-4 text-xs uppercase tracking-widest font-medium">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reportStats.serviceRows.map((r) => (
-                      <tr key={r.key} style={{ borderTop: '1px solid var(--surface)' }}>
-                        <td className="py-3 pr-4 text-white font-bold text-xs">{r.label}</td>
-                        <td className="py-3 px-4 text-right text-[var(--text-subtle)]">${r.web.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.web.count})</span></td>
-                        <td className="py-3 px-4 text-right text-[var(--text-subtle)]">${r.manual.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.manual.count})</span></td>
-                        <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${r.total.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.total.count})</span></td>
+                {reportStats.channel === 'all' ? (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ color: 'var(--text-muted)' }}>
+                        <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Service</th>
+                        <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Website</th>
+                        <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Manual</th>
+                        <th className="text-right py-2 pl-4 text-xs uppercase tracking-widest font-medium">Total</th>
                       </tr>
-                    ))}
-                    {reportStats.serviceRows.length === 0 && (
-                      <tr><td colSpan={4} className="py-4 text-center text-[var(--text-muted)] text-xs italic">No income in this period.</td></tr>
+                    </thead>
+                    <tbody>
+                      {reportStats.serviceRows.map((r) => (
+                        <tr key={r.key} style={{ borderTop: '1px solid var(--surface)' }}>
+                          <td className="py-3 pr-4 text-white font-bold text-xs">{r.label}</td>
+                          <td className="py-3 px-4 text-right text-[var(--text-subtle)]">${r.web.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.web.count})</span></td>
+                          <td className="py-3 px-4 text-right text-[var(--text-subtle)]">${r.manual.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.manual.count})</span></td>
+                          <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${r.total.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.total.count})</span></td>
+                        </tr>
+                      ))}
+                      {reportStats.serviceRows.length === 0 && (
+                        <tr><td colSpan={4} className="py-4 text-center text-[var(--text-muted)] text-xs italic">No income in this period.</td></tr>
+                      )}
+                    </tbody>
+                    {reportStats.serviceRows.length > 0 && (
+                      <tfoot>
+                        <tr style={{ borderTop: '2px solid var(--surface)' }}>
+                          <td className="py-3 pr-4 text-xs uppercase font-bold text-[var(--text-muted)]">Total</td>
+                          <td className="py-3 px-4 text-right font-bold text-white">${reportStats.byChannel.web.revenue.toLocaleString()}</td>
+                          <td className="py-3 px-4 text-right font-bold text-white">${reportStats.byChannel.manual.revenue.toLocaleString()}</td>
+                          <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${reportStats.totalRevenue.toLocaleString()}</td>
+                        </tr>
+                      </tfoot>
                     )}
-                  </tbody>
-                  {reportStats.serviceRows.length > 0 && (
-                    <tfoot>
-                      <tr style={{ borderTop: '2px solid var(--surface)' }}>
-                        <td className="py-3 pr-4 text-xs uppercase font-bold text-[var(--text-muted)]">Total</td>
-                        <td className="py-3 px-4 text-right font-bold text-white">${reportStats.byChannel.web.revenue.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-right font-bold text-white">${reportStats.byChannel.manual.revenue.toLocaleString()}</td>
-                        <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${reportStats.totalRevenue.toLocaleString()}</td>
+                  </table>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ color: 'var(--text-muted)' }}>
+                        <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Service</th>
+                        <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Bookings</th>
+                        <th className="text-right py-2 pl-4 text-xs uppercase tracking-widest font-medium">{reportStats.channel === 'web' ? 'Website income' : 'Manual income'}</th>
                       </tr>
-                    </tfoot>
-                  )}
-                </table>
+                    </thead>
+                    <tbody>
+                      {reportStats.serviceRows.map((r) => (
+                        <tr key={r.key} style={{ borderTop: '1px solid var(--surface)' }}>
+                          <td className="py-3 pr-4 text-white font-bold text-xs">{r.label}</td>
+                          <td className="py-3 px-4 text-right text-[var(--text-subtle)] font-bold text-xs">{r.total.count}</td>
+                          <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${r.total.revenue.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                      {reportStats.serviceRows.length === 0 && (
+                        <tr><td colSpan={3} className="py-4 text-center text-[var(--text-muted)] text-xs italic">No income in this period.</td></tr>
+                      )}
+                    </tbody>
+                    {reportStats.serviceRows.length > 0 && (
+                      <tfoot>
+                        <tr style={{ borderTop: '2px solid var(--surface)' }}>
+                          <td className="py-3 pr-4 text-xs uppercase font-bold text-[var(--text-muted)]">Total</td>
+                          <td className="py-3 px-4 text-right font-bold text-white">{reportStats.totalCount}</td>
+                          <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${reportStats.totalRevenue.toLocaleString()}</td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                )}
               </div>
             </section>
 
-            {/* Manual by agent */}
+            {/* Manual by agent — not shown when filtering to website-only */}
+            {reportStats.channel !== 'web' && (
             <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Manual income by agent</p>
               {reportStats.agentRows.length === 0 ? (
@@ -5556,6 +5626,7 @@ export default function AdminPage() {
                 </div>
               )}
             </section>
+            )}
 
             {/* By hotel */}
             <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
