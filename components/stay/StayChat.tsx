@@ -50,6 +50,78 @@ function formatMMSS(totalSeconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+// A hotel's card — a small auto-advancing slideshow between the exterior
+// photo and a room interior shot when both exist, otherwise just the one
+// static photo (unchanged behavior for hotels without a room photo yet).
+function HotelCard({ h, isFeatured, selected, onSelect }: { h: StayHotel; isFeatured: boolean; selected: boolean; onSelect: () => void }) {
+  const slides = [h.photo_url, h.room_photo_url].filter((s): s is string => !!s)
+  const [slide, setSlide] = useState(0)
+
+  useEffect(() => {
+    if (slides.length < 2) return
+    const interval = setInterval(() => setSlide(s => (s + 1) % slides.length), 3500)
+    return () => clearInterval(interval)
+  }, [slides.length])
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`text-left rounded-xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99] flex flex-col ${isFeatured ? 'sm:col-span-2' : ''}`}
+      style={selected ? { background: '#161616', border: '2px solid #D4AF37' } : { background: '#161616', border: '1px solid #2a2a2a' }}
+    >
+      <div className={`relative w-full ${isFeatured ? 'aspect-[21/9]' : 'aspect-[4/3]'}`} style={{ background: '#222' }}>
+        {slides.map((src, idx) => (
+          <Image
+            key={src}
+            src={src}
+            alt={h.name}
+            fill
+            className="object-cover transition-opacity duration-700"
+            style={{ opacity: idx === slide ? 1 : 0 }}
+            unoptimized
+          />
+        ))}
+        {slides.length > 1 && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+            {slides.map((_, idx) => (
+              <span
+                key={idx}
+                className="w-1.5 h-1.5 rounded-full transition-colors"
+                style={{ background: idx === slide ? '#D4AF37' : 'rgba(255,255,255,0.45)' }}
+              />
+            ))}
+          </div>
+        )}
+        {isFeatured && (
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider" style={{ background: 'rgba(212,175,55,0.95)', color: '#0a0a0a' }}>
+            <Star size={13} fill="#0a0a0a" /> Featured
+          </div>
+        )}
+        {h.rooms_available <= 3 ? (
+          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(239,68,68,0.9)', color: '#fff' }}>
+            Only {h.rooms_available} left tonight
+          </div>
+        ) : (
+          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(74,222,128,0.9)', color: '#0a0a0a' }}>
+            Available
+          </div>
+        )}
+      </div>
+      <div className="flex items-start justify-between gap-3 p-4 flex-1">
+        <div className="min-w-0">
+          <p className={`text-white font-bold leading-snug line-clamp-2 ${isFeatured ? 'text-xl' : 'text-base'}`} style={{ fontFamily: 'Georgia, serif' }}>{h.name}</p>
+          <p className="text-xs mt-1" style={{ color: '#4ade80' }}>Airport transportation included</p>
+        </div>
+        <p className="text-right shrink-0">
+          <span className={`text-[#D4AF37] font-bold ${isFeatured ? 'text-2xl' : 'text-lg'}`}>${h.price}</span>
+          <span className="block text-xs text-[#888]">/night</span>
+        </p>
+      </div>
+    </button>
+  )
+}
+
 // Quick presets computed in NY time so "ASAP" means something real.
 function presetTime(minutesFromNow: number): { label: string; value24: string } {
   const now = new Date()
@@ -317,46 +389,15 @@ export default function StayChat({ hotels }: { hotels: StayHotel[] }) {
               <p className="text-sm text-[#888] text-center py-8">No rooms available right now — please call {PHONE_DISPLAY} and we'll help directly.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {hotels.map((h, i) => {
-                  const isFeatured = i === 0
-                  return (
-                    <button
-                      key={h.id}
-                      type="button"
-                      onClick={() => { setSelectedHotel(h); setRoomQty(1) }}
-                      className={`text-left rounded-xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99] flex flex-col ${isFeatured ? 'sm:col-span-2' : ''}`}
-                      style={selectedHotel?.id === h.id ? { background: '#161616', border: '2px solid #D4AF37' } : { background: '#161616', border: '1px solid #2a2a2a' }}
-                    >
-                      <div className={`relative w-full ${isFeatured ? 'aspect-[21/9]' : 'aspect-[4/3]'}`} style={{ background: '#222' }}>
-                        {h.photo_url && <Image src={h.photo_url} alt={h.name} fill className="object-cover" unoptimized />}
-                        {isFeatured && (
-                          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider" style={{ background: 'rgba(212,175,55,0.95)', color: '#0a0a0a' }}>
-                            <Star size={13} fill="#0a0a0a" /> Featured
-                          </div>
-                        )}
-                        {h.rooms_available <= 3 ? (
-                          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(239,68,68,0.9)', color: '#fff' }}>
-                            Only {h.rooms_available} left tonight
-                          </div>
-                        ) : (
-                          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(74,222,128,0.9)', color: '#0a0a0a' }}>
-                            Available
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-start justify-between gap-3 p-4 flex-1">
-                        <div className="min-w-0">
-                          <p className={`text-white font-bold leading-snug line-clamp-2 ${isFeatured ? 'text-xl' : 'text-base'}`} style={{ fontFamily: 'Georgia, serif' }}>{h.name}</p>
-                          <p className="text-xs mt-1" style={{ color: '#4ade80' }}>Airport transportation included</p>
-                        </div>
-                        <p className="text-right shrink-0">
-                          <span className={`text-[#D4AF37] font-bold ${isFeatured ? 'text-2xl' : 'text-lg'}`}>${h.price}</span>
-                          <span className="block text-xs text-[#888]">/night</span>
-                        </p>
-                      </div>
-                    </button>
-                  )
-                })}
+                {hotels.map((h, i) => (
+                  <HotelCard
+                    key={h.id}
+                    h={h}
+                    isFeatured={i === 0}
+                    selected={selectedHotel?.id === h.id}
+                    onSelect={() => { setSelectedHotel(h); setRoomQty(1) }}
+                  />
+                ))}
               </div>
             )}
           </div>

@@ -528,6 +528,24 @@ export default function AdminPage() {
   const [calendarMonth, setCalendarMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
   const [commissionMonth, setCommissionMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
   const COMMISSION_PER_BOOKING = 2
+  // The main CRM only loads the last ~200 leads, so an older month (e.g. July)
+  // reads as $0 on the Commissions tab. These hold a full fetch scoped to the
+  // month being viewed; null = not loaded yet, fall back to the global lists.
+  const [commissionLeads, setCommissionLeads] = useState<Lead[] | null>(null)
+  const [commissionStay, setCommissionStay] = useState<StayBookingAdmin[] | null>(null)
+  const [commissionLoading, setCommissionLoading] = useState(false)
+
+  // Income Report tab — same story as Commissions: the global lists only hold
+  // the last ~200 rows, so the report does its own windowed fetch (?from=&to=)
+  // and totals whatever comes back. 'month' = the month navigator, 'custom' =
+  // the two date pickers.
+  const [reportMode, setReportMode] = useState<'month' | 'custom'>('month')
+  const [reportMonth, setReportMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
+  const [reportFrom, setReportFrom] = useState(() => { const d = new Date(); d.setDate(1); return d.toLocaleDateString('en-CA') })
+  const [reportTo, setReportTo] = useState(() => new Date().toLocaleDateString('en-CA'))
+  const [reportLeads, setReportLeads] = useState<Lead[] | null>(null)
+  const [reportStay, setReportStay] = useState<StayBookingAdmin[] | null>(null)
+  const [reportLoading, setReportLoading] = useState(false)
 
   const [metrics, setMetrics] = useState<any>(null)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -890,6 +908,182 @@ export default function AdminPage() {
     }
   }, [bookings])
 
+  // Income Report computations — web vs. manual, then broken down by service
+  // (Transport / Jet Ski / Boat / Hotel B2B / Hotel Stays) and by hotel.
+  // Keyed off created_at (when the reservation came in), matching the windowed
+  // fetch above and the Commissions tab. Only paid / deposit / hotel_b2b rows
+  // count as income.
+  const SERVICE_LABELS_ES: Record<string, string> = {
+    transport: 'Transporte',
+    jet_ski: 'Jet Ski',
+    boat: 'Bote',
+    hotel_b2b: 'Hoteles (facturación B2B)',
+    stay: 'Estancias de hotel (habitación)',
+  }
+  const reportStats = useMemo(() => {
+    const rl = reportLeads ?? []
+    const rs = reportStay ?? []
+
+    const collected = (l: Lead) => {
+      if (l.status === 'paid' || l.status === 'hotel_b2b') return l.amount_usd || 0
+      if (l.status === 'deposit_paid') return l.amount_paid || 0
+      return 0
+    }
+    const pendingOf = (l: Lead) => (l.status === 'deposit_paid' ? (l.amount_remaining || 0) : 0)
+
+    // Inclusive YYYY-MM-DD window bounds (drop the padding days the fetch adds).
+    let rFrom: string
+    let rTo: string
+    if (reportMode === 'month') {
+      const y = reportMonth.getFullYear()
+      const m = reportMonth.getMonth()
+      rFrom = `${y}-${String(m + 1).padStart(2, '0')}-01`
+      const lastDay = new Date(y, m + 1, 0).getDate()
+      rTo = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    } else {
+      rFrom = reportFrom
+      rTo = reportTo
+    }
+    const inWindow = (ts?: string | null) => {
+      const d = (ts || '').slice(0, 10)
+      return !!d && d >= rFrom && d <= rTo
+    }
+
+    const svcOf = (l: Lead): string => {
+      if (l.status === 'hotel_b2b') return 'hotel_b2b'
+      if (l.service_type === 'jet_ski') return 'jet_ski'
+      if (l.service_type === 'boat') return 'boat'
+      return 'transport'
+    }
+
+    const SERVICES = ['transport', 'jet_ski', 'boat', 'hotel_b2b', 'stay']
+    const blank = () => ({ web: { count: 0, revenue: 0 }, manual: { count: 0, revenue: 0 } })
+    const byService: Record<string, ReturnType<typeof blank>> = {}
+    SERVICES.forEach((s) => { byService[s] = blank() })
+    const byChannel = { web: { count: 0, revenue: 0 }, manual: { count: 0, revenue: 0 } }
+    const byAgent: Record<string, { count: number; revenue: number }> = {}
+    const byHotel: Record<string, { count: number; revenue: number }> = {}
+    let pendingTotal = 0
+    let taxTotal = 0
+
+    const paidLeads = rl.filter((l) =>
+      (l.status === 'paid' || l.status === 'deposit_paid' || l.status === 'hotel_b2b') &&
+      inWindow(l.created_at)
+    )
+    const paidStay = rs.filter((b) =>
+      (b.status === 'paid' || b.status === 'paid_overbooked') &&
+      inWindow(b.created_at)
+    )
+
+    paidLeads.forEach((l) => {
+      const rev = collected(l)
+      const chan: 'web' | 'manual' = l.booking_source === 'manual' ? 'manual' : 'web'
+      const svc = svcOf(l)
+      byService[svc][chan].count += 1
+      byService[svc][chan].revenue += rev
+      byChannel[chan].count += 1
+      byChannel[chan].revenue += rev
+      if (chan === 'manual') {
+        const a = l.created_by || 'Sin agente'
+        if (!byAgent[a]) byAgent[a] = { count: 0, revenue: 0 }
+        byAgent[a].count += 1
+        byAgent[a].revenue += rev
+      }
+      const h = (l.hotel_slug || '').trim() || '(sin hotel)'
+      if (!byHotel[h]) byHotel[h] = { count: 0, revenue: 0 }
+      byHotel[h].count += 1
+      byHotel[h].revenue += rev
+      pendingTotal += pendingOf(l)
+      taxTotal += l.tax_collected || 0
+    })
+
+    paidStay.forEach((b) => {
+      const rev = (b.room_amount || 0) + (b.transport_amount || 0)
+      // Stay bookings are always guest self-service — they count as web.
+      byService.stay.web.count += 1
+      byService.stay.web.revenue += rev
+      byChannel.web.count += 1
+      byChannel.web.revenue += rev
+      const h = (b.hotel_name || '').trim() || '(sin hotel)'
+      if (!byHotel[h]) byHotel[h] = { count: 0, revenue: 0 }
+      byHotel[h].count += 1
+      byHotel[h].revenue += rev
+      taxTotal += b.tax_collected || 0
+    })
+
+    const totalRevenue = byChannel.web.revenue + byChannel.manual.revenue
+    const totalCount = byChannel.web.count + byChannel.manual.count
+
+    const serviceRows = SERVICES.map((s) => ({
+      key: s,
+      label: SERVICE_LABELS_ES[s] || s,
+      web: byService[s].web,
+      manual: byService[s].manual,
+      total: {
+        count: byService[s].web.count + byService[s].manual.count,
+        revenue: byService[s].web.revenue + byService[s].manual.revenue,
+      },
+    })).filter((r) => r.total.count > 0)
+
+    const agentRows = Object.entries(byAgent).sort((a, b) => b[1].revenue - a[1].revenue)
+    const hotelRows = Object.entries(byHotel).sort((a, b) => b[1].revenue - a[1].revenue)
+
+    const csvRows = [
+      ...paidLeads.map((l) => ({
+        date: (l.created_at || '').slice(0, 10),
+        channel: l.booking_source === 'manual' ? 'Manual' : 'Web',
+        agent: l.booking_source === 'manual' ? (l.created_by || 'Sin agente') : '',
+        service: SERVICE_LABELS_ES[svcOf(l)] || svcOf(l),
+        hotel: (l.hotel_slug || '').trim(),
+        customer: l.customer_name || '',
+        status: l.status || '',
+        collected: collected(l),
+        pending: pendingOf(l),
+      })),
+      ...paidStay.map((b) => ({
+        date: (b.created_at || '').slice(0, 10),
+        channel: 'Web',
+        agent: '',
+        service: SERVICE_LABELS_ES.stay,
+        hotel: (b.hotel_name || '').trim(),
+        customer: b.guest_name || '',
+        status: b.status,
+        collected: (b.room_amount || 0) + (b.transport_amount || 0),
+        pending: 0,
+      })),
+    ].sort((a, b) => a.date.localeCompare(b.date))
+
+    return {
+      rFrom, rTo, totalRevenue, totalCount, pendingTotal, taxTotal,
+      byChannel, serviceRows, agentRows, hotelRows, csvRows,
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reportLeads, reportStay, reportMode, reportMonth, reportFrom, reportTo])
+
+  function downloadReportCsv() {
+    const { csvRows, rFrom, rTo, totalRevenue, pendingTotal } = reportStats
+    const esc = (v: string | number) => {
+      const s = String(v ?? '')
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+    }
+    const header = ['Fecha', 'Canal', 'Agente', 'Servicio', 'Hotel', 'Cliente', 'Estado', 'Cobrado USD', 'Pendiente USD']
+    const lines = [
+      header.join(','),
+      ...csvRows.map((r) => [r.date, r.channel, r.agent, r.service, r.hotel, r.customer, r.status, r.collected, r.pending].map(esc).join(',')),
+      '',
+      [`Total ${rFrom} a ${rTo}`, '', '', '', '', '', '', totalRevenue, pendingTotal].map(esc).join(','),
+    ]
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `reporte-ingresos_${rFrom}_a_${rTo}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
   /* -- API Fetchers -- */
 
   function timeAgo(dateStr: string) {
@@ -1015,6 +1209,7 @@ export default function AdminPage() {
     id: string
     name: string
     photo_url: string | null
+    room_photo_url: string | null
     price: number
     transport_amount: number
     rooms_available: number
@@ -1048,10 +1243,12 @@ export default function AdminPage() {
   const [editingStayHotel, setEditingStayHotel] = useState<StayHotelAdmin | null>(null)
   const [addingStayHotel, setAddingStayHotel] = useState(false)
   const [savingStayHotel, setSavingStayHotel] = useState(false)
-  const emptyStayHotel = { name: '', photo_url: '', price: 189, transport_amount: 45, rooms_available: 5, active: true, sort_order: 100 }
+  const emptyStayHotel = { name: '', photo_url: '', room_photo_url: '', price: 189, transport_amount: 45, rooms_available: 5, active: true, sort_order: 100 }
   const [newStayHotel, setNewStayHotel] = useState(emptyStayHotel)
   const [uploadingNewPhoto, setUploadingNewPhoto] = useState(false)
   const [uploadingEditPhoto, setUploadingEditPhoto] = useState(false)
+  const [uploadingNewRoomPhoto, setUploadingNewRoomPhoto] = useState(false)
+  const [uploadingEditRoomPhoto, setUploadingEditRoomPhoto] = useState(false)
 
   async function uploadStayPhoto(file: File): Promise<string | null> {
     const formData = new FormData()
@@ -1329,6 +1526,67 @@ export default function AdminPage() {
     }, 30000)
     return () => clearInterval(interval)
   }, [authed, password])
+
+  // Load a full month of leads + Stay bookings whenever the Commissions tab is
+  // open, so months older than the last ~200 leads still total correctly.
+  useEffect(() => {
+    if (!authed || activeTab !== 'commissions') return
+    const y = commissionMonth.getFullYear()
+    const m = commissionMonth.getMonth()
+    // pad a day on each side so a booking near the month edge (UTC vs local)
+    // still comes back and lands in the right calendar cell.
+    const from = new Date(Date.UTC(y, m, 1) - 86400000).toISOString()
+    const to = new Date(Date.UTC(y, m + 1, 1) + 86400000).toISOString()
+    const qs = `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&t=${Date.now()}`
+    let cancelled = false
+    setCommissionLoading(true)
+    Promise.all([
+      fetch(`/api/leads?${qs}`, { headers: { authorization: `Bearer ${password}` }, cache: 'no-store' })
+        .then(r => (r.ok ? r.json() : [])).catch(() => []),
+      fetch(`/api/admin/stay-hotels?${qs}`, { headers: { authorization: `Bearer ${password}` }, cache: 'no-store' })
+        .then(r => (r.ok ? r.json() : { bookings: [] })).catch(() => ({ bookings: [] })),
+    ]).then(([ld, sd]) => {
+      if (cancelled) return
+      setCommissionLeads(Array.isArray(ld) ? ld : [])
+      setCommissionStay(Array.isArray(sd?.bookings) ? sd.bookings : [])
+    }).finally(() => { if (!cancelled) setCommissionLoading(false) })
+    return () => { cancelled = true }
+  }, [authed, password, activeTab, commissionMonth])
+
+  // Windowed data load for the Income Report tab — same ?from=&to= endpoints
+  // the Commissions view uses (they return the whole range, not just the last
+  // 200 rows), so an older month or a custom quarter still totals correctly.
+  useEffect(() => {
+    if (!authed || activeTab !== 'reports') return
+    let fromISO: string
+    let toISO: string
+    if (reportMode === 'month') {
+      const y = reportMonth.getFullYear()
+      const m = reportMonth.getMonth()
+      // pad a day each side so a row near the edge (UTC vs local) still comes back
+      fromISO = new Date(Date.UTC(y, m, 1) - 86400000).toISOString()
+      toISO = new Date(Date.UTC(y, m + 1, 1) + 86400000).toISOString()
+    } else {
+      if (!reportFrom || !reportTo) return
+      fromISO = new Date(`${reportFrom}T00:00:00.000Z`).toISOString()
+      // +1 day so the whole "to" day is included (created_at carries a time)
+      toISO = new Date(new Date(`${reportTo}T00:00:00.000Z`).getTime() + 86400000).toISOString()
+    }
+    const qs = `from=${encodeURIComponent(fromISO)}&to=${encodeURIComponent(toISO)}&t=${Date.now()}`
+    let cancelled = false
+    setReportLoading(true)
+    Promise.all([
+      fetch(`/api/leads?${qs}`, { headers: { authorization: `Bearer ${password}` }, cache: 'no-store' })
+        .then(r => (r.ok ? r.json() : [])).catch(() => []),
+      fetch(`/api/admin/stay-hotels?${qs}`, { headers: { authorization: `Bearer ${password}` }, cache: 'no-store' })
+        .then(r => (r.ok ? r.json() : { bookings: [] })).catch(() => ({ bookings: [] })),
+    ]).then(([ld, sd]) => {
+      if (cancelled) return
+      setReportLeads(Array.isArray(ld) ? ld : [])
+      setReportStay(Array.isArray(sd?.bookings) ? sd.bookings : [])
+    }).finally(() => { if (!cancelled) setReportLoading(false) })
+    return () => { cancelled = true }
+  }, [authed, password, activeTab, reportMode, reportMonth, reportFrom, reportTo])
 
   useEffect(() => {
     if (!authed) return
@@ -2100,6 +2358,7 @@ export default function AdminPage() {
         { key: 'clients', label: 'Frequent Flyers', icon: <IconClients /> },
         { key: 'reviews', label: 'Reviews', icon: <IconReviews />, getBadge: () => reviews.filter(r => r.status === 'pending').length },
         { key: 'revenue', label: 'Revenue Dashboard', icon: <IconRevenue /> },
+        { key: 'reports', label: 'Reporte de Ingresos', icon: <Receipt size={20} /> },
       ] as SidebarItem[]
     }
   ]
@@ -2900,6 +3159,32 @@ export default function AdminPage() {
                       <img src={newStayHotel.photo_url} alt="" className="h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
                     )}
                   </div>
+                  <div className="flex flex-col gap-2 md:col-span-2">
+                    <div className="flex items-center gap-2">
+                      <input placeholder="Room Photo URL (optional — shows as a 2nd slide)" value={newStayHotel.room_photo_url} onChange={e => setNewStayHotel({ ...newStayHotel, room_photo_url: e.target.value })} className="flex-1 px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                      <label className="px-3 py-2 rounded-lg text-xs font-bold uppercase cursor-pointer text-[var(--gold-light)] border border-[#B8960C]/40 whitespace-nowrap">
+                        {uploadingNewRoomPhoto ? 'Uploading…' : 'Upload'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={uploadingNewRoomPhoto}
+                          onChange={async e => {
+                            const file = e.target.files?.[0]
+                            e.target.value = ''
+                            if (!file) return
+                            setUploadingNewRoomPhoto(true)
+                            const url = await uploadStayPhoto(file)
+                            setUploadingNewRoomPhoto(false)
+                            if (url) setNewStayHotel(prev => ({ ...prev, room_photo_url: url }))
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {newStayHotel.room_photo_url && (
+                      <img src={newStayHotel.room_photo_url} alt="" className="h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
+                    )}
+                  </div>
                   <input type="number" placeholder="Price per room/night ($)" value={newStayHotel.price} onChange={e => setNewStayHotel({ ...newStayHotel, price: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                   <input type="number" placeholder="Transport portion ($)" value={newStayHotel.transport_amount} onChange={e => setNewStayHotel({ ...newStayHotel, transport_amount: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                   <input type="number" placeholder="Rooms available" value={newStayHotel.rooms_available} onChange={e => setNewStayHotel({ ...newStayHotel, rooms_available: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
@@ -2954,6 +3239,32 @@ export default function AdminPage() {
                           </div>
                           {edit.photo_url && (
                             <img src={edit.photo_url} alt="" className="mt-1 h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
+                          )}
+                        </label>
+                        <label className="flex flex-col gap-1 col-span-2">Room Photo URL (optional — shows as a 2nd slide)
+                          <div className="flex items-center gap-2">
+                            <input value={edit.room_photo_url || ''} onChange={e => setEditingStayHotel({ ...edit, room_photo_url: e.target.value })} className="flex-1 px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                            <label className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase cursor-pointer text-[var(--gold-light)] border border-[#B8960C]/40 whitespace-nowrap">
+                              {uploadingEditRoomPhoto ? 'Uploading…' : 'Upload'}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={uploadingEditRoomPhoto}
+                                onChange={async e => {
+                                  const file = e.target.files?.[0]
+                                  e.target.value = ''
+                                  if (!file) return
+                                  setUploadingEditRoomPhoto(true)
+                                  const url = await uploadStayPhoto(file)
+                                  setUploadingEditRoomPhoto(false)
+                                  if (url) setEditingStayHotel({ ...edit, room_photo_url: url })
+                                }}
+                              />
+                            </label>
+                          </div>
+                          {edit.room_photo_url && (
+                            <img src={edit.room_photo_url} alt="" className="mt-1 h-20 w-32 object-cover rounded-lg border border-[var(--border)]" />
                           )}
                         </label>
                         <label className="flex flex-col gap-1">Price/night ($)
@@ -4531,37 +4842,58 @@ export default function AdminPage() {
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Wait Time Fee ($)</label>
                       <input type="number" value={editingLead.wait_time_fee ?? ''} onChange={(e) => setEditingLead({...editingLead, wait_time_fee: e.target.value === '' ? undefined : parseInt(e.target.value)})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                     </div>
-                    {editingLead.booking_source === 'manual' && (
-                      <div className="flex flex-col gap-2 md:col-span-2">
-                        <label className="text-sm font-semibold text-[var(--text-subtle)]">Sales Agent</label>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setEditingLead({ ...editingLead, created_by: null })}
-                            className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors border border-dashed"
-                            style={!editingLead.created_by ? { background: 'var(--bg-deep)', color: 'var(--text-subtle)', borderColor: 'var(--text-subtle)' } : { background: 'transparent', color: 'var(--text-faint)', borderColor: 'var(--border)' }}
-                          >
-                            Unassigned
-                          </button>
-                          {salesAgents.filter((a) => a.active).map((agent) => {
-                            const c = agentColorOf(salesAgents, agent.name)
-                            return (
-                              <button
-                                key={agent.id}
-                                type="button"
-                                onClick={() => setEditingLead({ ...editingLead, created_by: agent.name })}
-                                className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2"
-                                style={editingLead.created_by === agent.name ? { background: c.bg, color: c.fg, border: `1px solid ${c.border}` } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-                              >
-                                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.dot }} />
-                                {agent.name}
-                              </button>
-                            )
-                          })}
-                        </div>
-                        <p className="text-xs text-[var(--text-faint)]">Fixes old manual reservations that don't have an agent attached yet — doesn't affect the commissions breakdown for other bookings.</p>
+                    <div className="flex flex-col gap-2 md:col-span-2">
+                      <label className="text-sm font-semibold text-[var(--text-subtle)]">Booking Origin</label>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditingLead({ ...editingLead, booking_source: 'website', created_by: null })}
+                          className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors"
+                          style={editingLead.booking_source !== 'manual' ? { background: 'var(--gold)', color: 'var(--bg-deep)', border: '1px solid var(--gold)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                        >
+                          Website
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingLead({ ...editingLead, booking_source: 'manual' })}
+                          className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors"
+                          style={editingLead.booking_source === 'manual' ? { background: 'var(--gold)', color: 'var(--bg-deep)', border: '1px solid var(--gold)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                        >
+                          Manual (agent)
+                        </button>
                       </div>
-                    )}
+                      {editingLead.booking_source === 'manual' && (
+                        <>
+                          <label className="text-sm font-semibold text-[var(--text-subtle)] mt-2">Sales Agent</label>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingLead({ ...editingLead, created_by: null })}
+                              className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors border border-dashed"
+                              style={!editingLead.created_by ? { background: 'var(--bg-deep)', color: 'var(--text-subtle)', borderColor: 'var(--text-subtle)' } : { background: 'transparent', color: 'var(--text-faint)', borderColor: 'var(--border)' }}
+                            >
+                              Unassigned
+                            </button>
+                            {salesAgents.filter((a) => a.active).map((agent) => {
+                              const c = agentColorOf(salesAgents, agent.name)
+                              return (
+                                <button
+                                  key={agent.id}
+                                  type="button"
+                                  onClick={() => setEditingLead({ ...editingLead, created_by: agent.name })}
+                                  className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2"
+                                  style={editingLead.created_by === agent.name ? { background: c.bg, color: c.fg, border: `1px solid ${c.border}` } : { background: 'var(--bg-deep)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                                >
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.dot }} />
+                                  {agent.name}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </>
+                      )}
+                      <p className="text-xs text-[var(--text-faint)]">Corrige reservas viejas cargadas antes de que existiera este campo (ej. julio). Cambiarlo actualiza el desglose de Commissions: “Website” la saca del conteo por agente, “Manual” + agente se la acredita.</p>
+                    </div>
                   </div>
                   <div className="flex gap-4 pt-4 border-t border-[var(--border)]">
                     <button
@@ -4593,6 +4925,7 @@ export default function AdminPage() {
                           luggage_count: editingLead.luggage_count ?? 0,
                           wait_time_minutes: editingLead.wait_time_minutes ?? 0,
                           wait_time_fee: editingLead.wait_time_fee ?? 0,
+                          booking_source: editingLead.booking_source,
                           created_by: editingLead.created_by
                         })
                         setEditingLead(null)
@@ -5054,6 +5387,185 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* ------- INCOME REPORT TAB ------- */}
+        {activeTab === 'reports' && (
+          <div className="flex flex-col gap-8">
+            <div className="flex items-start justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Reporte de Ingresos</h1>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Ingresos por la web vs. manuales, desglosados por servicio y por hotel.
+                  {reportLoading && <span className="ml-2" style={{ color: 'var(--text-faint)' }}>· cargando…</span>}
+                </p>
+              </div>
+              <button
+                onClick={downloadReportCsv}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:brightness-110"
+                style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+              >
+                ↓ Descargar CSV
+              </button>
+            </div>
+
+            {/* Range controls */}
+            <section className="rounded-xl p-4 flex flex-wrap items-center gap-3" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <div className="flex rounded-lg overflow-hidden border border-[var(--border)]">
+                <button
+                  onClick={() => setReportMode('month')}
+                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors"
+                  style={reportMode === 'month' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)' }}
+                >Mes</button>
+                <button
+                  onClick={() => setReportMode('custom')}
+                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors"
+                  style={reportMode === 'custom' ? { background: 'var(--gold)', color: 'var(--bg-deep)' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)' }}
+                >Rango</button>
+              </div>
+
+              {reportMode === 'month' ? (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => { const d = new Date(reportMonth); d.setMonth(d.getMonth() - 1); setReportMonth(d) }}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors"
+                    aria-label="Mes anterior"
+                  >&larr;</button>
+                  <span className="text-sm font-bold text-white min-w-[150px] text-center capitalize" style={{ fontFamily: 'Georgia, serif' }}>
+                    {reportMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button
+                    onClick={() => { const d = new Date(reportMonth); d.setMonth(d.getMonth() + 1); setReportMonth(d) }}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors"
+                    aria-label="Mes siguiente"
+                  >&rarr;</button>
+                  <button
+                    onClick={() => { const d = new Date(); d.setDate(1); setReportMonth(d) }}
+                    className="px-3 py-2 rounded-lg border border-[var(--border)] text-xs font-bold uppercase tracking-wider text-[var(--text-subtle)] hover:text-[var(--gold-light)] hover:border-[var(--gold)] transition-colors"
+                  >Mes actual</button>
+                </div>
+              ) : (
+                <CalendarRangeFilter
+                  from={reportFrom}
+                  to={reportTo}
+                  onChange={(f, t) => { setReportFrom(f); setReportTo(t) }}
+                />
+              )}
+              <span className="text-xs text-[var(--text-faint)] ml-auto">{reportStats.rFrom} → {reportStats.rTo}</span>
+            </section>
+
+            {/* Summary cards */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[
+                { label: 'Ingresos totales', value: reportStats.totalRevenue, color: '#4ade80', caption: `${reportStats.totalCount} reserva${reportStats.totalCount === 1 ? '' : 's'}` },
+                { label: 'Por la web', value: reportStats.byChannel.web.revenue, color: '#60a5fa', caption: `${reportStats.byChannel.web.count} reserva${reportStats.byChannel.web.count === 1 ? '' : 's'}` },
+                { label: 'Manuales (agentes)', value: reportStats.byChannel.manual.revenue, color: '#c084fc', caption: `${reportStats.byChannel.manual.count} reserva${reportStats.byChannel.manual.count === 1 ? '' : 's'}` },
+                { label: 'Pendiente de cobro', value: reportStats.pendingTotal, color: '#FBBF24', caption: 'saldos de depósito' },
+              ].map((c) => (
+                <div key={c.label} className="rounded-xl p-6 flex flex-col gap-2" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+                  <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-muted)]">{c.label}</p>
+                  <p className="text-3xl font-bold" style={{ color: c.color }}>${c.value.toLocaleString()}</p>
+                  <p className="text-xs text-[var(--text-faint)]">{c.caption}</p>
+                </div>
+              ))}
+            </section>
+
+            {/* By service × channel */}
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Ingresos por servicio</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ color: 'var(--text-muted)' }}>
+                      <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Servicio</th>
+                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Web</th>
+                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Manual</th>
+                      <th className="text-right py-2 pl-4 text-xs uppercase tracking-widest font-medium">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportStats.serviceRows.map((r) => (
+                      <tr key={r.key} style={{ borderTop: '1px solid var(--surface)' }}>
+                        <td className="py-3 pr-4 text-white font-bold text-xs">{r.label}</td>
+                        <td className="py-3 px-4 text-right text-[var(--text-subtle)]">${r.web.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.web.count})</span></td>
+                        <td className="py-3 px-4 text-right text-[var(--text-subtle)]">${r.manual.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.manual.count})</span></td>
+                        <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${r.total.revenue.toLocaleString()} <span className="text-[10px] text-[var(--text-faint)]">({r.total.count})</span></td>
+                      </tr>
+                    ))}
+                    {reportStats.serviceRows.length === 0 && (
+                      <tr><td colSpan={4} className="py-4 text-center text-[var(--text-muted)] text-xs italic">Sin ingresos en este periodo.</td></tr>
+                    )}
+                  </tbody>
+                  {reportStats.serviceRows.length > 0 && (
+                    <tfoot>
+                      <tr style={{ borderTop: '2px solid var(--surface)' }}>
+                        <td className="py-3 pr-4 text-xs uppercase font-bold text-[var(--text-muted)]">Total</td>
+                        <td className="py-3 px-4 text-right font-bold text-white">${reportStats.byChannel.web.revenue.toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right font-bold text-white">${reportStats.byChannel.manual.revenue.toLocaleString()}</td>
+                        <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${reportStats.totalRevenue.toLocaleString()}</td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </section>
+
+            {/* Manual by agent */}
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Ingresos manuales por agente</p>
+              {reportStats.agentRows.length === 0 ? (
+                <p className="text-sm italic text-[var(--text-faint)]">Sin reservas manuales en este periodo.</p>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  {reportStats.agentRows.map(([agent, s]) => (
+                    <div key={agent} className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-white flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: agentColorOf(salesAgents, agent).dot }} />
+                        {agent}
+                      </span>
+                      <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                        {s.count} reserva{s.count === 1 ? '' : 's'} · <span className="font-bold" style={{ color: '#4ade80' }}>${s.revenue.toLocaleString()}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* By hotel */}
+            <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
+              <p className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">Ingresos por hotel</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ color: 'var(--text-muted)' }}>
+                      <th className="text-left py-2 pr-4 text-xs uppercase tracking-widest font-medium">Hotel</th>
+                      <th className="text-right py-2 px-4 text-xs uppercase tracking-widest font-medium">Reservas</th>
+                      <th className="text-right py-2 pl-4 text-xs uppercase tracking-widest font-medium">Ingresos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportStats.hotelRows.map(([hotel, s]) => (
+                      <tr key={hotel} style={{ borderTop: '1px solid var(--surface)' }}>
+                        <td className="py-3 pr-4 text-white font-bold text-xs">{hotel}</td>
+                        <td className="py-3 px-4 text-right text-[var(--text-subtle)] font-bold text-xs">{s.count}</td>
+                        <td className="py-3 pl-4 text-right font-bold" style={{ color: '#4ade80' }}>${s.revenue.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                    {reportStats.hotelRows.length === 0 && (
+                      <tr><td colSpan={3} className="py-4 text-center text-[var(--text-muted)] text-xs italic">Sin datos.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <p className="text-xs text-[var(--text-faint)]">
+              Los ingresos se cuentan por la fecha en que entró la reserva y solo incluyen reservas pagadas o con depósito.
+              &ldquo;Cobrado&rdquo; es lo recibido hasta ahora; en las reservas con depósito solo suma el anticipo.
+              Las estancias de hotel (habitaciones de /stay) siempre cuentan como web.
+            </p>
+          </div>
+        )}
+
         {/* ------- DRIVERS TAB ------- */}
         {activeTab === 'drivers' && (
           <div className="flex flex-col gap-8">
@@ -5232,6 +5744,12 @@ export default function AdminPage() {
           // booking_source is set once, at creation, from who actually
           // submitted the request (see isAdmin in app/api/leads/route.ts),
           // so it can't drift after the fact the way payment method can.
+          // Use the month-scoped fetch when it's in (covers old months the
+          // 200-row global list drops); fall back to the global lists on first
+          // paint / while loading.
+          const cLeads = commissionLeads ?? leads
+          const cStay = commissionStay ?? stayBookings
+
           const commissionsByDay: Record<string, { total: number; web: number; other: number }> = {}
           const bump = (key: string, isWeb: boolean) => {
             if (!key) return
@@ -5240,12 +5758,12 @@ export default function AdminPage() {
             if (isWeb) commissionsByDay[key].web += 1
             else commissionsByDay[key].other += 1
           }
-          leads.forEach(l => {
+          cLeads.forEach(l => {
             if (l.status === 'paid' || l.status === 'deposit_paid') {
               bump((l.created_at || '').slice(0, 10), l.booking_source !== 'manual')
             }
           })
-          stayBookings.forEach(b => {
+          cStay.forEach(b => {
             if (b.status === 'paid' || b.status === 'paid_overbooked') {
               bump((b.created_at || '').slice(0, 10), true)
             }
@@ -5262,7 +5780,7 @@ export default function AdminPage() {
           // applied to it by hand.
           const monthDateSet = new Set(monthDays.map(d => d.dateStr))
           const agentSummary: Record<string, { count: number; revenue: number }> = {}
-          leads.forEach(l => {
+          cLeads.forEach(l => {
             if (
               l.booking_source === 'manual' &&
               (l.status === 'paid' || l.status === 'deposit_paid') &&
@@ -5281,7 +5799,10 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Commissions</h1>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>${COMMISSION_PER_BOOKING} per paid booking, by the date it came in.</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  ${COMMISSION_PER_BOOKING} per paid booking, by the date it came in.
+                  {commissionLoading && <span className="ml-2" style={{ color: 'var(--text-faint)' }}>· loading month…</span>}
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 <button
