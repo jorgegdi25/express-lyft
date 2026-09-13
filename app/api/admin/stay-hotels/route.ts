@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   if (!(await isAuthorized(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { name, photo_url, room_photo_url, price, transport_amount, rooms_available, active, sort_order } = body
+  const { name, photo_url, room_photo_url, price, transport_amount, rooms_available, active, sort_order, zone, category } = body
   if (!name || price === undefined) return NextResponse.json({ error: 'Missing name or price' }, { status: 400 })
 
   const { data, error } = await supabaseAdmin
@@ -54,6 +54,8 @@ export async function POST(req: NextRequest) {
       rooms_available: rooms_available ?? 0,
       active: active ?? true,
       sort_order: sort_order ?? 100,
+      zone: zone || null,
+      category: category || null,
     })
     .select()
     .single()
@@ -67,7 +69,7 @@ export async function PUT(req: NextRequest) {
   if (!(await isAuthorized(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { id, name, photo_url, room_photo_url, price, transport_amount, rooms_available, active, sort_order } = body
+  const { id, name, photo_url, room_photo_url, price, transport_amount, rooms_available, active, sort_order, zone, category } = body
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
   const updates: Record<string, any> = { updated_at: new Date().toISOString() }
@@ -79,6 +81,8 @@ export async function PUT(req: NextRequest) {
   if (rooms_available !== undefined) updates.rooms_available = rooms_available
   if (active !== undefined) updates.active = active
   if (sort_order !== undefined) updates.sort_order = sort_order
+  if (zone !== undefined) updates.zone = zone
+  if (category !== undefined) updates.category = category
 
   const { data, error } = await supabaseAdmin
     .from('stay_hotels')

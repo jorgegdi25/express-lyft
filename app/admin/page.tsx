@@ -1226,6 +1226,8 @@ export default function AdminPage() {
     rooms_available: number
     active: boolean
     sort_order: number
+    zone?: string | null
+    category?: string | null
   }
 
   interface StayBookingAdmin {
@@ -1254,12 +1256,26 @@ export default function AdminPage() {
   const [editingStayHotel, setEditingStayHotel] = useState<StayHotelAdmin | null>(null)
   const [addingStayHotel, setAddingStayHotel] = useState(false)
   const [savingStayHotel, setSavingStayHotel] = useState(false)
-  const emptyStayHotel = { name: '', photo_url: '', room_photo_url: '', price: 189, transport_amount: 45, rooms_available: 5, active: true, sort_order: 100 }
+  const emptyStayHotel = { name: '', photo_url: '', room_photo_url: '', price: 189, transport_amount: 45, rooms_available: 5, active: true, sort_order: 100, zone: '', category: '' }
   const [newStayHotel, setNewStayHotel] = useState(emptyStayHotel)
   const [uploadingNewPhoto, setUploadingNewPhoto] = useState(false)
   const [uploadingEditPhoto, setUploadingEditPhoto] = useState(false)
   const [uploadingNewRoomPhoto, setUploadingNewRoomPhoto] = useState(false)
   const [uploadingEditRoomPhoto, setUploadingEditRoomPhoto] = useState(false)
+  const STAY_ZONES = ['Playa / frente al mar', 'Aeropuerto / puerto / marina', 'Centro / Las Olas', 'Norte / Cypress Creek', 'Otros Fort Lauderdale']
+  const STAY_CATEGORIES = ['Hotel / resort', 'Alojamiento', 'Apartamentos / alquiler', 'Motel', 'Guesthouse']
+  const [stayNameFilter, setStayNameFilter] = useState('')
+  const [stayZoneFilter, setStayZoneFilter] = useState('all')
+  const [stayCategoryFilter, setStayCategoryFilter] = useState('all')
+  const [stayActiveFilter, setStayActiveFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const filteredStayHotels = stayHotels.filter(h => {
+    if (stayNameFilter.trim() && !h.name.toLowerCase().includes(stayNameFilter.trim().toLowerCase())) return false
+    if (stayZoneFilter !== 'all' && h.zone !== stayZoneFilter) return false
+    if (stayCategoryFilter !== 'all' && h.category !== stayCategoryFilter) return false
+    if (stayActiveFilter === 'active' && !h.active) return false
+    if (stayActiveFilter === 'inactive' && h.active) return false
+    return true
+  })
 
   async function uploadStayPhoto(file: File): Promise<string | null> {
     const formData = new FormData()
@@ -3200,6 +3216,14 @@ export default function AdminPage() {
                   <input type="number" placeholder="Transport portion ($)" value={newStayHotel.transport_amount} onChange={e => setNewStayHotel({ ...newStayHotel, transport_amount: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                   <input type="number" placeholder="Rooms available" value={newStayHotel.rooms_available} onChange={e => setNewStayHotel({ ...newStayHotel, rooms_available: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                   <input type="number" placeholder="Sort order (0 = first)" value={newStayHotel.sort_order} onChange={e => setNewStayHotel({ ...newStayHotel, sort_order: Number(e.target.value) })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
+                  <select value={newStayHotel.zone} onChange={e => setNewStayHotel({ ...newStayHotel, zone: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]">
+                    <option value="">Zone (optional)</option>
+                    {STAY_ZONES.map(z => <option key={z} value={z}>{z}</option>)}
+                  </select>
+                  <select value={newStayHotel.category} onChange={e => setNewStayHotel({ ...newStayHotel, category: e.target.value })} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]">
+                    <option value="">Type (optional)</option>
+                    {STAY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
                 <div className="flex gap-3 mt-2">
                   <button disabled={savingStayHotel} onClick={() => saveStayHotel(newStayHotel)} className="px-4 py-2 rounded-lg text-xs font-bold uppercase" style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}>Save</button>
@@ -3208,8 +3232,31 @@ export default function AdminPage() {
               </div>
             )}
 
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                placeholder="Search by name…"
+                value={stayNameFilter}
+                onChange={e => setStayNameFilter(e.target.value)}
+                className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)] flex-1 min-w-[180px]"
+              />
+              <select value={stayZoneFilter} onChange={e => setStayZoneFilter(e.target.value)} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]">
+                <option value="all">All zones</option>
+                {STAY_ZONES.map(z => <option key={z} value={z}>{z}</option>)}
+              </select>
+              <select value={stayCategoryFilter} onChange={e => setStayCategoryFilter(e.target.value)} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]">
+                <option value="all">All types</option>
+                {STAY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select value={stayActiveFilter} onChange={e => setStayActiveFilter(e.target.value as 'all' | 'active' | 'inactive')} className="px-3 py-2 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]">
+                <option value="all">Active + Inactive</option>
+                <option value="active">Active only</option>
+                <option value="inactive">Inactive only</option>
+              </select>
+              <span className="text-xs text-[var(--text-faint)] whitespace-nowrap">{filteredStayHotels.length} of {stayHotels.length}</span>
+            </div>
+
             <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {stayHotels.map(hotel => {
+              {filteredStayHotels.map(hotel => {
                 const isEditing = editingStayHotel?.id === hotel.id
                 const edit = isEditing ? editingStayHotel : hotel
                 return (
@@ -3290,6 +3337,18 @@ export default function AdminPage() {
                         <label className="flex flex-col gap-1">Sort order
                           <input type="number" value={edit.sort_order} onChange={e => setEditingStayHotel({ ...edit, sort_order: Number(e.target.value) })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]" />
                         </label>
+                        <label className="flex flex-col gap-1">Zone
+                          <select value={edit.zone || ''} onChange={e => setEditingStayHotel({ ...edit, zone: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]">
+                            <option value="">—</option>
+                            {STAY_ZONES.map(z => <option key={z} value={z}>{z}</option>)}
+                          </select>
+                        </label>
+                        <label className="flex flex-col gap-1">Type
+                          <select value={edit.category || ''} onChange={e => setEditingStayHotel({ ...edit, category: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm text-white bg-black/40 border border-[var(--border)]">
+                            <option value="">—</option>
+                            {STAY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </label>
                         <label className="flex items-center gap-2 col-span-2 mt-1">
                           <input type="checkbox" checked={edit.active} onChange={e => setEditingStayHotel({ ...edit, active: e.target.checked })} />
                           Active (visible on stay.explyft.com)
@@ -3306,6 +3365,8 @@ export default function AdminPage() {
                           <div><p className="text-[var(--text-faint)] text-xs">Rooms left</p><p className="text-white font-semibold">{hotel.rooms_available}</p></div>
                           <div><p className="text-[var(--text-faint)] text-xs">Transport portion</p><p className="text-white font-semibold">${hotel.transport_amount}</p></div>
                           <div><p className="text-[var(--text-faint)] text-xs">Order</p><p className="text-white font-semibold">{hotel.sort_order}</p></div>
+                          <div><p className="text-[var(--text-faint)] text-xs">Zone</p><p className="text-white font-semibold">{hotel.zone || '—'}</p></div>
+                          <div><p className="text-[var(--text-faint)] text-xs">Type</p><p className="text-white font-semibold">{hotel.category || '—'}</p></div>
                         </div>
                         <div className="flex gap-2 mt-1">
                           <button onClick={() => setEditingStayHotel(hotel)} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase text-[var(--gold-light)] border border-[#B8960C]/40">Edit</button>
@@ -3319,6 +3380,9 @@ export default function AdminPage() {
               })}
               {stayHotels.length === 0 && !addingStayHotel && (
                 <p className="text-sm text-[#555] italic">No Stay hotels yet — click "+ Add Hotel" to create one.</p>
+              )}
+              {stayHotels.length > 0 && filteredStayHotels.length === 0 && (
+                <p className="text-sm text-[#555] italic">No hotels match this filter.</p>
               )}
             </section>
 
