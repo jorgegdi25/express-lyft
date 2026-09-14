@@ -1262,8 +1262,8 @@ export default function AdminPage() {
   const [uploadingEditPhoto, setUploadingEditPhoto] = useState(false)
   const [uploadingNewRoomPhoto, setUploadingNewRoomPhoto] = useState(false)
   const [uploadingEditRoomPhoto, setUploadingEditRoomPhoto] = useState(false)
-  const STAY_ZONES = ['Playa / frente al mar', 'Aeropuerto / puerto / marina', 'Centro / Las Olas', 'Norte / Cypress Creek', 'Otros Fort Lauderdale']
-  const STAY_CATEGORIES = ['Hotel / resort', 'Alojamiento', 'Apartamentos / alquiler', 'Motel', 'Guesthouse']
+  const STAY_ZONES = ['Beach / Waterfront', 'Airport / Port / Marina', 'Downtown / Las Olas', 'North / Cypress Creek', 'Other Fort Lauderdale']
+  const STAY_CATEGORIES = ['Hotel / Resort', 'Lodging', 'Apartments / Rentals', 'Motel', 'Guesthouse']
   const [stayNameFilter, setStayNameFilter] = useState('')
   const [stayZoneFilter, setStayZoneFilter] = useState('all')
   const [stayCategoryFilter, setStayCategoryFilter] = useState('all')
