@@ -105,7 +105,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
             >
               <span>{v.shortLabel}</span>
               <span style={{ fontSize: '0.7rem', color: isSelected ? 'var(--gold-accent)' : (isDisabled ? 'var(--border-soft)' : 'var(--text-faint)') }}>
-                {v.type === 'coachbus' || v.type === 'minibus' ? 'Quote' : `$${prices[v.type]}`}
+                {v.type === 'coachbus' || v.type === 'minibus' ? 'Quote' : `$${Math.round(prices[v.type] * (1 + FL_TAX_RATE_PERCENT / 100))}`}
               </span>
             </button>
           )
@@ -123,10 +123,10 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
         >
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'var(--gold)' }}>
-              Base Rate
+              Estimated Total
             </p>
             <p className="text-xs" style={{ color: '#777777' }}>
-              One-way transfer + {FL_TAX_RATE_PERCENT}% FL sales tax
+              One-way transfer, taxes &amp; fees included
             </p>
           </div>
           <span

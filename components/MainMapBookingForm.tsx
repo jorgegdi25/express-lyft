@@ -1128,7 +1128,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
                             Estimated Total
                           </p>
                           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            ${total} + {FL_TAX_RATE_PERCENT}% FL sales tax
+                            One-way transfer, taxes &amp; fees included
                           </p>
                           {tripType === 'round-trip' && (
                             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Round trip included</p>
