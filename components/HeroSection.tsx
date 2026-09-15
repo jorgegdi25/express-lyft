@@ -6,6 +6,7 @@ interface HeroSectionProps {
   vehicleType: 'sedan_suv' | 'suburban' | 'sprinter' | 'minibus' | 'coachbus'
   basePrice: number
   hotelSlug?: string
+  showBookingCta?: boolean
 }
 
 const vehicleLabels: Record<string, string> = {
@@ -16,7 +17,8 @@ const vehicleLabels: Record<string, string> = {
   coachbus: '55 Passenger Bus',
 }
 
-export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroSectionProps) {
+export default function HeroSection({ vehicleType, basePrice, hotelSlug, showBookingCta }: HeroSectionProps) {
+  const useBookingForm = Boolean(hotelSlug) || Boolean(showBookingCta)
   const [livePrice, setLivePrice] = useState(basePrice)
 
   useEffect(() => {
@@ -83,13 +85,13 @@ export default function HeroSection({ vehicleType, basePrice, hotelSlug }: HeroS
           {/* CTA row */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4 w-full">
             <a
-              href={hotelSlug ? "#booking-form" : "https://wa.me/19546236207"}
-              target={hotelSlug ? undefined : "_blank"}
-              rel={hotelSlug ? undefined : "noopener noreferrer"}
+              href={useBookingForm ? "#booking-form" : "https://wa.me/19546236207"}
+              target={useBookingForm ? undefined : "_blank"}
+              rel={useBookingForm ? undefined : "noopener noreferrer"}
               className="px-10 py-4 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 shadow-2xl text-center w-full sm:w-auto"
               style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
             >
-              {hotelSlug ? "Book Now" : "WhatsApp Us"}
+              {useBookingForm ? "Book Now" : "WhatsApp Us"}
             </a>
             <a
               href="https://www.sixt.com/partners/expresslyft2371/"

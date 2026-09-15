@@ -231,7 +231,7 @@ export default async function HomePage({ searchParams }: { searchParams: { succe
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <HeroSection vehicleType="sedan_suv" basePrice={prices.sedan_suv.base} />
+      <HeroSection vehicleType="sedan_suv" basePrice={prices.sedan_suv.base} showBookingCta={isPruebas} />
 
       {/* ── Map Booking Form (Only for pruebas.explyft.com) ─────── */}
       {isPruebas && (
