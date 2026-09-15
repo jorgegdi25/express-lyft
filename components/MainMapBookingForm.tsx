@@ -77,7 +77,10 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
         })
         if (res.ok) {
           const data = await res.json()
-          if (data.prices) setLivePrices(data.prices)
+          // pricingParams carries the full {base, per_mile, per_minute, ...}
+          // shape this form needs for calculateDistanceAmount — data.prices
+          // is just the flattened base rate used by BookingForm/HeroSection.
+          if (data.pricingParams) setLivePrices(data.pricingParams)
           if (data.surcharge) setSurcharge(data.surcharge)
           if (typeof data.depositsEnabled === 'boolean') setDepositsEnabled(data.depositsEnabled)
         }

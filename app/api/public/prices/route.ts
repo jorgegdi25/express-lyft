@@ -55,6 +55,11 @@ export async function GET(req: NextRequest) {
 
   const response = NextResponse.json({
     prices,
+    // Full per-vehicle rate objects (base/per_mile/per_minute/min/max/multiplier)
+    // for MainMapBookingForm's distance-based calculateDistanceAmount — the
+    // flattened `prices` above only carries the base rate and isn't enough
+    // to price a route by miles/minutes.
+    pricingParams,
     routePrices: routePricingRes.data || [],
     hotel: hotelRes.data || null,
     surcharge: surchargeRes.data || null,
