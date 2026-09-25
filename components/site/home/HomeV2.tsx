@@ -1,6 +1,6 @@
 import SiteHeader, { MobileActionBar } from '../SiteHeader'
 import SiteFooter from '../SiteFooter'
-import { getStartingPrices } from '@/lib/site/data'
+import { getStartingPrices, getPricingParams } from '@/lib/site/data'
 import { getApprovedReviews, toTestimonials } from '@/lib/reviews'
 import {
   Hero,
@@ -19,12 +19,12 @@ import {
 // Express Lyft 2.0 home. Story order: what & book → trust → services →
 // experience → fleet → local → B2B → reviews → how → FAQ → close.
 export default async function HomeV2() {
-  const [prices, reviews] = await Promise.all([getStartingPrices(), getApprovedReviews(undefined, 15)])
+  const [prices, pricingParams, reviews] = await Promise.all([getStartingPrices(), getPricingParams(), getApprovedReviews(undefined, 15)])
 
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <SiteHeader overlay />
-      <Hero />
+      <SiteHeader overlay bookHref="#booking-form" />
+      <Hero prices={pricingParams} />
       <TrustStrip />
       <ServicesSection />
       <JourneySection />
@@ -36,7 +36,7 @@ export default async function HomeV2() {
       <FaqSection />
       <FinalCta />
       <SiteFooter />
-      <MobileActionBar />
+      <MobileActionBar bookHref="#booking-form" />
     </main>
   )
 }

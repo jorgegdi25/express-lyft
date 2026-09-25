@@ -19,7 +19,7 @@ const LOCATIONS = [
   { label: 'Orlando', href: '/orlando', note: 'Expanding' },
 ]
 
-export default function SiteHeader({ overlay = false }: { overlay?: boolean }) {
+export default function SiteHeader({ overlay = false, bookHref = '/book' }: { overlay?: boolean; bookHref?: string }) {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const [menu, setMenu] = useState<'services' | 'locations' | null>(null)
@@ -128,7 +128,7 @@ export default function SiteHeader({ overlay = false }: { overlay?: boolean }) {
               <WhatsAppIcon size={17} />
             </a>
             <Link
-              href="/book"
+              href={bookHref}
               className="hidden sm:inline-flex items-center gap-2 px-4 md:px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.12em] hover:brightness-110 transition"
               style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
             >
@@ -158,7 +158,7 @@ export default function SiteHeader({ overlay = false }: { overlay?: boolean }) {
         <div className="lg:hidden fixed inset-0 z-40 pt-[68px] overflow-y-auto" style={{ background: '#0c0c0c' }}>
           <div className="px-5 py-6 flex flex-col gap-8">
             <Link
-              href="/book"
+              href={bookHref}
               onClick={() => setOpen(false)}
               className="w-full text-center py-4 rounded-xl text-sm font-bold uppercase tracking-[0.12em]"
               style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
@@ -198,15 +198,27 @@ export default function SiteHeader({ overlay = false }: { overlay?: boolean }) {
 }
 
 // Fixed bottom bar on phones: booking is always one tap away.
-export function MobileActionBar({ hideBook = false }: { hideBook?: boolean }) {
+export function MobileActionBar({ hideBook = false, bookHref = '/book' }: { hideBook?: boolean; bookHref?: string }) {
+  // When the booking form is on this page, get out of its way while it's on screen.
+  const [formVisible, setFormVisible] = useState(false)
+  useEffect(() => {
+    if (!bookHref.startsWith('#')) return
+    const el = document.querySelector(bookHref)
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setFormVisible(e.isIntersecting), { threshold: 0.05 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [bookHref])
+
   return (
     <div
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 px-3 pt-2 pb-[calc(8px+env(safe-area-inset-bottom))] flex gap-2"
+      className={`md:hidden fixed bottom-0 inset-x-0 z-40 px-3 pt-2 pb-[calc(8px+env(safe-area-inset-bottom))] flex gap-2 transition-transform duration-300 ${formVisible ? 'translate-y-full' : ''}`}
       style={{ background: 'linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0.92) 30%)' }}
+      aria-hidden={formVisible}
     >
       {!hideBook && (
         <Link
-          href="/book"
+          href={bookHref}
           className="flex-1 h-12 rounded-xl flex items-center justify-center text-[13px] font-bold uppercase tracking-[0.12em]"
           style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
         >

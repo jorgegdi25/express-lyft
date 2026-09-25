@@ -7,45 +7,48 @@ import type { StartingPrices } from '@/lib/site/data'
 import type { Testimonial } from '@/components/Testimonials'
 import { Arrow, ButtonLink, Container, Eyebrow, Heading, PhoneIcon, WhatsAppIcon } from '../ui'
 import Reveal from '../Reveal'
-import TripStarter from '../TripStarter'
+import MainMapBookingForm from '@/components/MainMapBookingForm'
 import FleetShowcase from '../FleetShowcase'
 import ReviewsGrid from '../ReviewsGrid'
 import FaqList from '../FaqList'
 import HeroMedia from './HeroMedia'
 import RouteMap from '../RouteMap'
 
-/* ── 02 HERO ─────────────────────────────────────────────────────── */
-export function Hero() {
+/* ── 02 HERO + BOOKING ───────────────────────────────────────────── */
+// The real booking engine (Google Maps route, live prices, Stripe/QuickBooks
+// checkout) sits right under the hero, overlapping the photo.
+export function Hero({ prices }: { prices: Record<string, any> }) {
   return (
-    <section className="relative min-h-[100svh] flex flex-col justify-end overflow-hidden pt-28 pb-6 md:pb-10">
-      <HeroMedia video="/hero-video-final3.mp4" poster="/gallery/aeropuerto.webp" alt="Express Lyft driver waiting at the Miami airport curb" />
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(8,8,8,0.88) 0%, rgba(8,8,8,0.55) 45%, rgba(8,8,8,0.15) 100%)' }} />
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(0deg, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0) 45%)' }} />
+    <>
+      <section className="relative min-h-[72svh] md:min-h-[74svh] flex flex-col justify-end overflow-hidden pt-28 pb-36 md:pb-40">
+        <HeroMedia video="/hero-video-final3.mp4" poster="/gallery/aeropuerto.webp" alt="Express Lyft driver waiting at the Miami airport curb" />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(8,8,8,0.88) 0%, rgba(8,8,8,0.55) 45%, rgba(8,8,8,0.15) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(0deg, rgba(10,10,10,1) 0%, rgba(10,10,10,0) 40%)' }} />
 
-      <Container className="relative w-full">
-        <div className="max-w-2xl">
-          <p className="text-[11px] md:text-xs font-bold uppercase tracking-[3.5px]" style={{ color: 'var(--gold-light)' }}>
-            Private transportation · Miami & South Florida
-          </p>
-          <h1 className="font-display font-bold text-white text-[42px] leading-[1.02] md:text-6xl lg:text-7xl mt-4 tracking-[-0.015em]">
-            From arrival to destination, <span style={{ color: 'var(--gold-light)' }}>handled.</span>
-          </h1>
-          <p className="mt-5 text-base md:text-lg text-white/80 max-w-xl leading-relaxed">
-            Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
-          </p>
-        </div>
+        <Container className="relative w-full">
+          <div className="max-w-2xl">
+            <p className="text-[11px] md:text-xs font-bold uppercase tracking-[3.5px]" style={{ color: 'var(--gold-light)' }}>
+              Private transportation · Miami & South Florida
+            </p>
+            <h1 className="font-display font-bold text-white text-[40px] leading-[1.03] md:text-6xl lg:text-7xl mt-4 tracking-[-0.015em]">
+              From arrival to destination, <span style={{ color: 'var(--gold-light)' }}>handled.</span>
+            </h1>
+            <p className="mt-5 text-base md:text-lg text-white/80 max-w-xl leading-relaxed">
+              Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
+            </p>
+            <p className="mt-5 text-sm text-white/60 flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span>Prefer to talk to someone?</span>
+              <a href={CONTACT.phoneHref} className="inline-flex items-center gap-1.5 text-white hover:text-[var(--gold-light)]"><PhoneIcon size={14} />{CONTACT.phoneDisplay}</a>
+              <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-white hover:text-[#25D366]"><WhatsAppIcon size={14} />WhatsApp</a>
+            </p>
+          </div>
+        </Container>
+      </section>
 
-        <div className="mt-8 md:mt-10">
-          <TripStarter variant="bar" />
-        </div>
-
-        <p className="mt-4 text-sm text-white/60 flex flex-wrap items-center gap-x-4 gap-y-1">
-          <span>Prefer to talk to someone?</span>
-          <a href={CONTACT.phoneHref} className="inline-flex items-center gap-1.5 text-white hover:text-[var(--gold-light)]"><PhoneIcon size={14} />{CONTACT.phoneDisplay}</a>
-          <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-white hover:text-[#25D366]"><WhatsAppIcon size={14} />WhatsApp</a>
-        </p>
-      </Container>
-    </section>
+      <div className="relative -mt-28 md:-mt-36 pb-10 md:pb-14" style={{ background: 'linear-gradient(180deg, transparent 0, transparent 7rem, var(--bg-deep) 7rem)' }}>
+        <MainMapBookingForm prices={prices} variant="hero" hideHeader />
+      </div>
+    </>
   )
 }
 
@@ -345,7 +348,7 @@ export function HowItWorks() {
             <Eyebrow>How it works</Eyebrow>
             <Heading className="text-4xl md:text-5xl">Booked in a few minutes.</Heading>
           </div>
-          <ButtonLink href="/book">Book a ride <Arrow /></ButtonLink>
+          <ButtonLink href="#booking-form">Book a ride <Arrow /></ButtonLink>
         </div>
         <ol className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
           {STEPS.map((s, i) => (
@@ -396,7 +399,7 @@ export function FinalCta() {
           <Heading className="text-4xl md:text-6xl">Your ride is ready when you are.</Heading>
           <p className="mt-5 text-base md:text-lg text-white/75">Book online in a few minutes, or talk to a real person on our team.</p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <ButtonLink href="/book" size="lg">Book a ride <Arrow /></ButtonLink>
+            <ButtonLink href="#booking-form" size="lg">Book a ride <Arrow /></ButtonLink>
             <ButtonLink href={CONTACT.phoneHref} variant="outline" size="lg"><PhoneIcon size={15} /> Call us</ButtonLink>
             <ButtonLink href={CONTACT.whatsappHref} variant="outline" size="lg"><WhatsAppIcon size={15} className="text-[#25D366]" /> WhatsApp</ButtonLink>
           </div>

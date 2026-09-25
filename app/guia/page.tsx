@@ -246,8 +246,8 @@ export default function GuiaPage() {
             <ol className="steps">
               <li className="step">
                 <div className="step-body">
-                  <h3>Abre el sitio de pruebas y pulsa &quot;Book a Ride&quot;</h3>
-                  <p>El formulario con el mapa ahora vive en su propia página, <code>pruebas.explyft.com/book</code>. También puedes llegar desde la portada rellenando Pickup y Destination y pulsando &quot;See vehicles &amp; prices&quot;.</p>
+                  <h3>Abre el sitio de pruebas: el formulario está justo debajo de la portada</h3>
+                  <p>Es el panel con las pestañas Airport Transfer / Cruise Port / Point to Point / Groups &amp; Events y el mapa a la derecha. También está en su propia página, <code>pruebas.explyft.com/book</code>.</p>
                 </div>
               </li>
               <li className="step">

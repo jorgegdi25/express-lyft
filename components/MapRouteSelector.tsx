@@ -13,6 +13,16 @@ interface MapRouteSelectorProps {
   onRouteCalculated: (data: RouteData) => void;
   initialPickup?: string;
   initialDestination?: string;
+  // Fill an address from outside (e.g. "MIA" / "PortMiami" chips). Bump
+  // `nonce` to apply the same value twice.
+  preset?: { pickup?: string; destination?: string; nonce: number };
+  // Custom arrangement of the two inputs and the map (used by the home
+  // booking panel, which puts the map in its own column).
+  renderLayout?: (parts: { pickupInput: React.ReactNode; dropoffInput: React.ReactNode; map: React.ReactNode }) => React.ReactNode;
+  mapClassName?: string;
+  compact?: boolean;
+  pickupPlaceholder?: string;
+  destinationPlaceholder?: string;
 }
 
 interface Suggestion {
@@ -105,7 +115,7 @@ async function fetchRoute(origin: { lat: number; lng: number }, destination: { l
   return data.routes?.[0] || null;
 }
 
-export default function MapRouteSelector({ onRouteCalculated, initialPickup, initialDestination }: MapRouteSelectorProps) {
+export default function MapRouteSelector({ onRouteCalculated, initialPickup, initialDestination, preset, renderLayout, mapClassName, compact, pickupPlaceholder, destinationPlaceholder }: MapRouteSelectorProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const mapRef = useRef<any>(null);
@@ -288,29 +298,43 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
     };
   }, []);
 
-  // Resolve addresses handed over from the corporate site (/book?pickup=…)
-  // into coordinates once, so the route and price appear without retyping.
+  // Turn a typed/handed-over address into coordinates (biased to South
+  // Florida) so the route and price appear without using autocomplete.
+  const resolveAddress = (address: string, apply: (c: { lat: number; lng: number }) => void) => {
+    if (!geocoderRef.current) return;
+    geocoderRef.current.geocode(
+      { address, bounds: SOUTH_FLORIDA_BOUNDS, region: 'us' },
+      (results: any, status: string) => {
+        if (status !== 'OK' || !results?.[0]) return;
+        const loc = results[0].geometry.location;
+        apply({ lat: loc.lat(), lng: loc.lng() });
+      }
+    );
+  };
+
+  // Addresses handed over from the corporate site (/book?pickup=…) — once.
   useEffect(() => {
-    if (!isLoaded || !geocoderRef.current) return;
-    const resolve = (address: string, apply: (c: { lat: number; lng: number }, formatted: string) => void) => {
-      geocoderRef.current.geocode(
-        { address, bounds: SOUTH_FLORIDA_BOUNDS, region: 'us' },
-        (results: any, status: string) => {
-          if (status !== 'OK' || !results?.[0]) return;
-          const loc = results[0].geometry.location;
-          apply({ lat: loc.lat(), lng: loc.lng() }, results[0].formatted_address);
-        }
-      );
-    };
-    if (initialPickup && !currentPickupCoords.current) {
-      resolve(initialPickup, (c) => setPickupCoords(c));
-    }
-    if (initialDestination && !currentDropoffCoords.current) {
-      resolve(initialDestination, (c) => setDropoffCoords(c));
-    }
-    // Only on first load — later edits go through autocomplete as usual.
+    if (!isLoaded) return;
+    if (initialPickup && !currentPickupCoords.current) resolveAddress(initialPickup, setPickupCoords);
+    if (initialDestination && !currentDropoffCoords.current) resolveAddress(initialDestination, setDropoffCoords);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded]);
+
+  // Quick-fill from outside (service tab chips).
+  useEffect(() => {
+    if (!preset || !isLoaded) return;
+    if (preset.pickup) {
+      setPickupText(preset.pickup);
+      setPickupSuggestions([]);
+      resolveAddress(preset.pickup, setPickupCoords);
+    }
+    if (preset.destination) {
+      setDropoffText(preset.destination);
+      setDropoffSuggestions([]);
+      resolveAddress(preset.destination, setDropoffCoords);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preset?.nonce, isLoaded]);
 
   // Manage pickup marker
   useEffect(() => {
@@ -434,10 +458,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
     borderColor: 'var(--border-soft)',
   };
 
-  return (
-    <div className="flex flex-col gap-4">
-      {/* Address inputs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  const pickupInput = (
         <div className="relative">
           <label className="text-sm font-semibold mb-2 block" style={{ color: '#BBBBBB' }}>
             Pickup Location
@@ -445,7 +466,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
           <input
             type="text"
             value={pickupText}
-            placeholder="Pickup location (e.g., Miami Airport)"
+            placeholder={pickupPlaceholder || 'Pickup location (e.g., Miami Airport)'}
             className="w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)] placeholder-[var(--text-faint)]"
             style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: 'var(--text)' }}
             onChange={(e) => handlePickupChange(e.target.value)}
@@ -470,11 +491,14 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
               ))}
             </div>
           )}
-          <p className="text-[11px] text-[var(--text-muted)] mt-1.5 flex items-center gap-1">
+          {!compact && (<p className="text-[11px] text-[var(--text-muted)] mt-1.5 flex items-center gap-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
             Green marker (click map or drag to set)
-          </p>
+          </p>)}
         </div>
+  );
+
+  const dropoffInput = (
         <div className="relative">
           <label className="text-sm font-semibold mb-2 block" style={{ color: '#BBBBBB' }}>
             Destination
@@ -482,7 +506,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
           <input
             type="text"
             value={dropoffText}
-            placeholder="Destination (e.g., B Ocean Resort)"
+            placeholder={destinationPlaceholder || 'Destination (e.g., B Ocean Resort)'}
             className="w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)] placeholder-[var(--text-faint)]"
             style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: 'var(--text)' }}
             onChange={(e) => handleDropoffChange(e.target.value)}
@@ -507,22 +531,38 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
               ))}
             </div>
           )}
-          <p className="text-[11px] text-[var(--text-muted)] mt-1.5 flex items-center gap-1">
+          {!compact && (<p className="text-[11px] text-[var(--text-muted)] mt-1.5 flex items-center gap-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
             Red marker (click map or drag to set)
-          </p>
+          </p>)}
         </div>
-      </div>
+  );
 
-      {/* Map Container */}
+  const map = (
+    <>
       <div
         ref={mapContainerRef}
-        className="w-full h-[300px] md:h-[400px] rounded-xl overflow-hidden border border-[var(--border-soft)] cursor-pointer"
+        className={mapClassName || 'w-full h-[300px] md:h-[400px] rounded-xl overflow-hidden border border-[var(--border-soft)] cursor-pointer'}
         title="Click anywhere on the map to set a location, or drag the markers"
       />
       {mapError && (
         <p className="text-sm text-red-400">{mapError}</p>
       )}
+    </>
+  );
+
+  if (renderLayout) return <>{renderLayout({ pickupInput, dropoffInput, map })}</>;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Address inputs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {pickupInput}
+        {dropoffInput}
+      </div>
+
+      {/* Map Container */}
+      {map}
     </div>
   );
 }
