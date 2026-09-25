@@ -246,8 +246,8 @@ export default function GuiaPage() {
             <ol className="steps">
               <li className="step">
                 <div className="step-body">
-                  <h3>Abre el sitio de pruebas y baja hasta &quot;Book Your Luxury Ride&quot;</h3>
-                  <p>Es la sección con el mapa, justo debajo del video de portada.</p>
+                  <h3>Abre el sitio de pruebas y pulsa &quot;Book a Ride&quot;</h3>
+                  <p>El formulario con el mapa ahora vive en su propia página, <code>pruebas.explyft.com/book</code>. También puedes llegar desde la portada rellenando Pickup y Destination y pulsando &quot;See vehicles &amp; prices&quot;.</p>
                 </div>
               </li>
               <li className="step">

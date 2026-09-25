@@ -288,6 +288,30 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
     };
   }, []);
 
+  // Resolve addresses handed over from the corporate site (/book?pickup=…)
+  // into coordinates once, so the route and price appear without retyping.
+  useEffect(() => {
+    if (!isLoaded || !geocoderRef.current) return;
+    const resolve = (address: string, apply: (c: { lat: number; lng: number }, formatted: string) => void) => {
+      geocoderRef.current.geocode(
+        { address, bounds: SOUTH_FLORIDA_BOUNDS, region: 'us' },
+        (results: any, status: string) => {
+          if (status !== 'OK' || !results?.[0]) return;
+          const loc = results[0].geometry.location;
+          apply({ lat: loc.lat(), lng: loc.lng() }, results[0].formatted_address);
+        }
+      );
+    };
+    if (initialPickup && !currentPickupCoords.current) {
+      resolve(initialPickup, (c) => setPickupCoords(c));
+    }
+    if (initialDestination && !currentDropoffCoords.current) {
+      resolve(initialDestination, (c) => setDropoffCoords(c));
+    }
+    // Only on first load — later edits go through autocomplete as usual.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded]);
+
   // Manage pickup marker
   useEffect(() => {
     if (!isLoaded || !mapRef.current) return;

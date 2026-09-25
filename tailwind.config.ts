@@ -40,6 +40,9 @@ const config: Config = {
           dim: "var(--text-dim)",
         },
       },
+      fontFamily: {
+        display: ['"Playfair Display"', 'Georgia', 'serif'],
+      },
       keyframes: {
         marquee: {
           '0%': { transform: 'translateX(0%)' },

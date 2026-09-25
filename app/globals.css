@@ -30,6 +30,44 @@
   --text-subtle: #AAAAAA;
   --text-faint: #666666;
   --text-dim: #999999;
+
+  /* Light "sand" surface for the corporate site's rhythm sections */
+  --sand: #F4EFE6;
+  --sand-deep: #EAE2D3;
+  --sand-line: #DDD3C1;
+  --ink-dark: #17140F;
+  --ink-dark-muted: #5F574A;
+}
+
+/* ── Corporate site (Express Lyft 2.0) ─────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+@keyframes route-draw {
+  from { stroke-dashoffset: var(--route-length, 600); }
+  to { stroke-dashoffset: 0; }
+}
+.route-draw {
+  stroke-dasharray: var(--route-length, 600);
+  stroke-dashoffset: var(--route-length, 600);
+}
+.is-visible .route-draw,
+.route-draw.is-visible {
+  animation: route-draw 1.8s cubic-bezier(.6,.1,.2,1) forwards;
+}
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .route-draw { stroke-dashoffset: 0; animation: none !important; }
 }
 
 html {

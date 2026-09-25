@@ -53,7 +53,25 @@ const INPUT_STYLE = { background: 'var(--bg-alt)', border: '1px solid var(--bord
 
 // Removed global todayStr to prevent hydration mismatches
 
-export default function MainMapBookingForm({ prices: serverPrices }: { prices: any }) {
+export interface BookingPrefill {
+  pickup?: string
+  destination?: string
+  date?: string
+  passengers?: number
+  vehicle?: VehicleType
+}
+
+export default function MainMapBookingForm({
+  prices: serverPrices,
+  initial,
+  hideHeader = false,
+}: {
+  prices: any
+  // Values handed over from the corporate site (hero trip starter, popular
+  // routes, "Book this vehicle") via /book query params.
+  initial?: BookingPrefill
+  hideHeader?: boolean
+}) {
   // Live data fetched client-side to bypass Next.js server cache
   const [livePrices, setLivePrices] = useState(serverPrices)
   const [surcharge, setSurcharge] = useState<SurchargeConfig | null>(null)
@@ -117,13 +135,13 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
   }, [dynamicLocations, false])
 
   const [tripType, setTripType] = useState<TripType>(false ? 'round-trip' : 'one-way')
-  const [pickup, setPickup] = useState<string>('')
-  const [destination, setDestination] = useState<string>('')
-  const [date, setDate] = useState<string>('')
+  const [pickup, setPickup] = useState<string>(initial?.pickup || '')
+  const [destination, setDestination] = useState<string>(initial?.destination || '')
+  const [date, setDate] = useState<string>(initial?.date || '')
   const [time, setTime] = useState<string>('')
   const [returnDate, setReturnDate] = useState<string>('')
   const [returnTime, setReturnTime] = useState<string>('')
-  const [passengers, setPassengers] = useState<number>(2)
+  const [passengers, setPassengers] = useState<number>(initial?.passengers || 2)
   const [customerName, setCustomerName] = useState<string>('')
   const [customerEmail, setCustomerEmail] = useState<string>('')
   const [customerPhone, setCustomerPhone] = useState<string>('')
@@ -137,7 +155,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
-  const [selectedVehicleOverride, setSelectedVehicleOverride] = useState<VehicleType | null>(null)
+  const [selectedVehicleOverride, setSelectedVehicleOverride] = useState<VehicleType | null>(initial?.vehicle || null)
   const [step, setStep] = useState<number>(1)
   const [paymentMode, setPaymentMode] = useState<'full' | 'deposit'>('full')
 
@@ -485,7 +503,7 @@ export default function MainMapBookingForm({ prices: serverPrices }: { prices: a
     <section id="booking-form" className="w-full py-14 md:py-20 scroll-mt-20 md:scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         {/* Section header */}
-        {true && (
+        {!hideHeader && (
           <div className="text-center mb-10 md:mb-14">
             <p className="text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: 'var(--gold)' }}>
               Online Reservation
