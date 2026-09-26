@@ -91,6 +91,7 @@ export default function MainMapBookingForm({
   initial,
   hideHeader = false,
   variant = 'section',
+  onStepChange,
 }: {
   prices: any
   // Values handed over from the corporate site (hero trip starter, popular
@@ -100,6 +101,8 @@ export default function MainMapBookingForm({
   // 'hero': compact panel for the home page (service tabs, fields beside
   // the map). Steps 2–3 and all logic are identical to 'section'.
   variant?: 'section' | 'hero'
+  // Lets the home hero widen the panel once the guest moves past step 1.
+  onStepChange?: (step: number) => void
 }) {
   const isHero = variant === 'hero'
   const [guestsOpen, setGuestsOpen] = useState(false)
@@ -188,6 +191,7 @@ export default function MainMapBookingForm({
   const [isSuccess, setIsSuccess] = useState(false)
   const [selectedVehicleOverride, setSelectedVehicleOverride] = useState<VehicleType | null>(initial?.vehicle || null)
   const [step, setStep] = useState<number>(1)
+  useEffect(() => { onStepChange?.(step) }, [step, onStepChange])
   const [paymentMode, setPaymentMode] = useState<'full' | 'deposit'>('full')
 
   // If the owner turns deposits off after the guest already picked that
@@ -543,7 +547,7 @@ export default function MainMapBookingForm({
   const CELL_INPUT = 'w-full bg-transparent outline-none text-[15px] font-medium text-white placeholder:text-white/35 p-0 border-0'
   const hasRoute = distanceMiles > 0
 
-  const ROW = 'relative pl-11 pr-4 py-3 min-h-[62px] flex flex-col justify-center'
+  const ROW = 'relative pl-11 pr-4 py-2.5 min-h-[58px] flex flex-col justify-center'
   const ROW_LABEL = 'block text-[10px] font-semibold uppercase tracking-[0.18em] mb-0.5'
   const labelOverride = '[&_label]:!text-[10px] [&_label]:!font-semibold [&_label]:!uppercase [&_label]:!tracking-[0.18em] [&_label]:!mb-0.5 [&_label]:!text-[var(--gold-light)]'
 
@@ -568,76 +572,70 @@ export default function MainMapBookingForm({
           setDurationMinutes(route.durationMinutes)
         }}
         renderLayout={({ pickupInput, dropoffInput, map }) => (
-          <div className="grid lg:grid-cols-[420px_1fr] gap-4 lg:gap-5 items-stretch">
-            {/* ── Trip card ── */}
-            <div className="flex flex-col gap-3">
-              <div className="flex rounded-full p-1 self-start" style={{ background: 'rgba(255,255,255,0.05)' }}>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[15px] font-semibold text-white">Book your ride</p>
+              <div className="flex rounded-full p-1" style={{ background: 'rgba(255,255,255,0.06)' }}>
                 {(['one-way', 'round-trip'] as TripType[]).map((type) => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => setTripType(type)}
-                    className="px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors"
+                    className="px-3.5 py-1 rounded-full text-[12px] font-medium transition-colors"
                     style={{ background: tripType === type ? 'var(--text)' : 'transparent', color: tripType === type ? '#000' : 'var(--text-subtle)' }}
                   >
                     {type === 'one-way' ? 'One way' : 'Round trip'}
                   </button>
                 ))}
               </div>
+            </div>
 
-              <div className="rounded-2xl divide-y divide-white/10" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.12)' }}>
-                {/* From → To, joined by a route line */}
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-[21px] top-[31px] bottom-[31px] w-px border-l border-dashed" style={{ borderColor: 'rgba(233,213,166,0.45)' }} aria-hidden />
-                  <div className={`${ROW} ${labelOverride}`}>
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2" style={{ borderColor: 'var(--gold-light)' }} aria-hidden />
-                    {pickupInput}
-                  </div>
-                  <div className={`${ROW} ${labelOverride} border-t border-white/10`}>
-                    <svg className="absolute left-[14px] top-1/2 -translate-y-1/2" width="16" height="16" viewBox="0 0 24 24" fill="var(--gold-light)" aria-hidden><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" /></svg>
-                    {dropoffInput}
-                  </div>
+            {/* Your trip — compact route map */}
+            <div className="relative rounded-2xl overflow-hidden transition-[height] duration-500" style={{ height: hasRoute ? 190 : 150, border: '1px solid rgba(255,255,255,0.08)', background: '#111' }}>
+              {map}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-10" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.55), transparent)' }} />
+              {hasRoute ? (
+                <div className="absolute left-3 top-3 px-3 py-1.5 rounded-full text-[12px] font-semibold text-white flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(233,213,166,0.35)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--gold-light)' }} />
+                  {distanceMiles.toFixed(1)} mi · about {Math.round(durationMinutes)} min
                 </div>
+              ) : null}
+            </div>
 
-                <div className="grid grid-cols-2 divide-x divide-white/10">
-                  <div className="px-4 py-3 min-h-[62px] flex flex-col justify-center">
-                    <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Date</label>
-                    <CalendarDatePicker value={date} onChange={setDate} min={minDateStr} className={`${CELL_INPUT} text-left flex items-center justify-between gap-2`} style={{}} />
-                  </div>
-                  <div className="px-4 py-3 min-h-[62px] flex flex-col justify-center">
-                    <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Time</label>
-                    <select value={time} onChange={(e) => setTime(e.target.value)} className={`${CELL_INPUT} appearance-none cursor-pointer`} aria-label="Pickup time">
-                      <option value="">Select</option>
-                      {availableTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
+            <div className="rounded-2xl divide-y divide-white/10" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-[21px] top-[31px] bottom-[31px] w-px border-l border-dashed" style={{ borderColor: 'rgba(233,213,166,0.45)' }} aria-hidden />
+                <div className={`${ROW} ${labelOverride}`}>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2" style={{ borderColor: 'var(--gold-light)' }} aria-hidden />
+                  {pickupInput}
                 </div>
+                <div className={`${ROW} ${labelOverride} border-t border-white/10`}>
+                  <svg className="absolute left-[14px] top-1/2 -translate-y-1/2" width="16" height="16" viewBox="0 0 24 24" fill="var(--gold-light)" aria-hidden><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" /></svg>
+                  {dropoffInput}
+                </div>
+              </div>
 
-                {tripType === 'round-trip' && (
-                  <div className="grid grid-cols-2 divide-x divide-white/10">
-                    <div className="px-4 py-3 min-h-[62px] flex flex-col justify-center">
-                      <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Return date</label>
-                      <CalendarDatePicker value={returnDate} onChange={setReturnDate} min={date || minDateStr} className={`${CELL_INPUT} text-left flex items-center justify-between gap-2`} style={{}} />
-                    </div>
-                    <div className="px-4 py-3 min-h-[62px] flex flex-col justify-center">
-                      <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Return time</label>
-                      <select value={returnTime} onChange={(e) => setReturnTime(e.target.value)} className={`${CELL_INPUT} appearance-none cursor-pointer`} aria-label="Return time">
-                        <option value="">Select</option>
-                        {availableReturnTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                <div className="relative px-4 py-3 min-h-[62px] flex flex-col justify-center">
-                  <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Passengers</label>
-                  <button type="button" onClick={() => setGuestsOpen(!guestsOpen)} className={`${CELL_INPUT} text-left`} aria-expanded={guestsOpen}>
-                    {passengers} {passengers === 1 ? 'guest' : 'guests'} · {luggageCount} {luggageCount === 1 ? 'bag' : 'bags'}
+              <div className="grid grid-cols-[1.15fr_0.85fr_1fr] divide-x divide-white/10">
+                <div className="px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center">
+                  <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Date</label>
+                  <CalendarDatePicker value={date} onChange={setDate} min={minDateStr} className={`${CELL_INPUT} !text-[14px] text-left flex items-center justify-between gap-1`} style={{}} />
+                </div>
+                <div className="px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center">
+                  <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Time</label>
+                  <select value={time} onChange={(e) => setTime(e.target.value)} className={`${CELL_INPUT} !text-[14px] appearance-none cursor-pointer`} aria-label="Pickup time">
+                    <option value="">Select</option>
+                    {availableTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="relative px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center">
+                  <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Guests</label>
+                  <button type="button" onClick={() => setGuestsOpen(!guestsOpen)} className={`${CELL_INPUT} !text-[14px] text-left whitespace-nowrap`} aria-expanded={guestsOpen} aria-label="Passengers and bags">
+                    {passengers} · {luggageCount} {luggageCount === 1 ? 'bag' : 'bags'}
                   </button>
                   {guestsOpen && (
                     <>
                       <div className="fixed inset-0 z-30" onClick={() => setGuestsOpen(false)} />
-                      <div className="absolute z-40 top-full left-0 right-0 mt-2 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl" style={{ background: '#161616', border: '1px solid var(--border)' }}>
+                      <div className="absolute z-40 top-full right-0 mt-2 w-64 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl" style={{ background: '#161616', border: '1px solid var(--border)' }}>
                         <Stepper label="Passengers" value={passengers} onChange={setPassengers} min={1} max={55} />
                         <Stepper label="Bags" value={luggageCount} onChange={setLuggageCount} min={0} max={60} />
                         <button type="button" onClick={() => setGuestsOpen(false)} className="mt-1 h-10 rounded-xl text-[13px] font-semibold" style={{ background: 'var(--text)', color: '#000' }}>Done</button>
@@ -647,45 +645,43 @@ export default function MainMapBookingForm({
                 </div>
               </div>
 
-              {(error && !isUrgentRequest) && <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>}
-              {isUrgentRequest ? (
-                <>
-                  <p className="text-sm" style={{ color: '#f87171' }}>Same-day rides need at least 2 hours’ notice online — call us and we’ll arrange it.</p>
-                  <a href="tel:+18889737896" className="h-[54px] rounded-xl text-[15px] font-semibold flex items-center justify-center" style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}>
-                    Call +1 (888) 973-7896
-                  </a>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleNextStep1}
-                  className="h-[54px] rounded-xl text-[15px] font-semibold hover:brightness-105 transition flex items-center justify-center gap-2"
-                  style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}
-                >
-                  See prices
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                </button>
+              {tripType === 'round-trip' && (
+                <div className="grid grid-cols-2 divide-x divide-white/10">
+                  <div className="px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center">
+                    <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Return date</label>
+                    <CalendarDatePicker value={returnDate} onChange={setReturnDate} min={date || minDateStr} className={`${CELL_INPUT} !text-[14px] text-left flex items-center justify-between gap-1`} style={{}} />
+                  </div>
+                  <div className="px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center">
+                    <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Return time</label>
+                    <select value={returnTime} onChange={(e) => setReturnTime(e.target.value)} className={`${CELL_INPUT} !text-[14px] appearance-none cursor-pointer`} aria-label="Return time">
+                      <option value="">Select</option>
+                      {availableReturnTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </div>
               )}
-              <p className="text-center text-[12px]" style={{ color: 'var(--text-muted)' }}>Instant price · Secure online payment</p>
             </div>
 
-            {/* ── Map ── */}
-            <div className="relative rounded-2xl overflow-hidden h-[200px] lg:h-auto lg:min-h-[440px]" style={{ border: '1px solid rgba(255,255,255,0.1)', background: '#111' }}>
-              {map}
-              {hasRoute ? (
-                <div className="absolute left-4 top-4 px-3.5 py-2 rounded-full text-[13px] font-semibold text-white flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(233,213,166,0.35)' }}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--gold-light)' }} />
-                  {distanceMiles.toFixed(1)} mi · about {Math.round(durationMinutes)} min
-                </div>
-              ) : (
-                <div className="pointer-events-none absolute left-4 bottom-4 right-4 flex">
-                  <p className="px-4 py-2 rounded-full text-[13px] font-medium text-white flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(233,213,166,0.3)' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                    Your route will appear here
-                  </p>
-                </div>
-              )}
-            </div>
+            {(error && !isUrgentRequest) && <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>}
+            {isUrgentRequest ? (
+              <>
+                <p className="text-sm" style={{ color: '#f87171' }}>Same-day rides need at least 2 hours’ notice online — call us and we’ll arrange it.</p>
+                <a href="tel:+18889737896" className="h-[52px] rounded-xl text-[15px] font-semibold flex items-center justify-center" style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}>
+                  Call +1 (888) 973-7896
+                </a>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={handleNextStep1}
+                className="h-[52px] rounded-xl text-[15px] font-semibold hover:brightness-105 transition flex items-center justify-center gap-2"
+                style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}
+              >
+                See prices
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </button>
+            )}
+            <p className="text-center text-[11px]" style={{ color: 'var(--text-muted)' }}>Instant price · Secure online payment</p>
           </div>
         )}
       />
@@ -725,7 +721,7 @@ export default function MainMapBookingForm({
 
   return (
     <section id="booking-form" className={isHero ? 'relative z-10 w-full scroll-mt-24' : 'w-full py-14 md:py-20 scroll-mt-20 md:scroll-mt-24'}>
-      <div className={isHero ? 'max-w-7xl mx-auto px-3 md:px-8' : 'max-w-7xl mx-auto px-4 md:px-6'}>
+      <div className={isHero ? '' : 'max-w-7xl mx-auto px-4 md:px-6'}>
         {/* Section header */}
         {!hideHeader && (
           <div className="text-center mb-10 md:mb-14">
@@ -742,8 +738,8 @@ export default function MainMapBookingForm({
         )}
 
         <div
-          className={isHero ? 'rounded-2xl md:rounded-3xl p-3 md:p-6' : 'max-w-3xl mx-auto'}
-          style={isHero ? { background: 'rgba(17,17,17,0.94)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 40px 100px -30px rgba(0,0,0,0.9)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } : undefined}
+          className={isHero ? 'rounded-3xl p-4 md:p-5' : 'max-w-3xl mx-auto'}
+          style={isHero ? { background: 'rgba(12,12,12,0.86)', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 40px 100px -30px rgba(0,0,0,0.9)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' } : undefined}
         >
           {/* ── Booking Form ──────────────────────────────────── */}
 

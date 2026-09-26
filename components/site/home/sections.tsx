@@ -7,7 +7,7 @@ import type { StartingPrices } from '@/lib/site/data'
 import type { Testimonial } from '@/components/Testimonials'
 import { Arrow, ButtonLink, Container, Eyebrow, Heading, PhoneIcon, WhatsAppIcon } from '../ui'
 import Reveal from '../Reveal'
-import MainMapBookingForm from '@/components/MainMapBookingForm'
+import HeroBooking from './HeroBooking'
 import FleetShowcase from '../FleetShowcase'
 import ReviewsGrid from '../ReviewsGrid'
 import FaqList from '../FaqList'
@@ -15,40 +15,37 @@ import HeroMedia from './HeroMedia'
 import RouteMap from '../RouteMap'
 
 /* ── 02 HERO + BOOKING ───────────────────────────────────────────── */
-// The real booking engine (Google Maps route, live prices, Stripe/QuickBooks
-// checkout) sits right under the hero, overlapping the photo.
+// Intro on the left, the real booking engine (route map, live prices,
+// checkout) as a card on the right — all over the hero photo.
 export function Hero({ prices }: { prices: Record<string, any> }) {
+  const intro = (
+    <div className="max-w-xl">
+      <p className="text-[11px] font-medium uppercase tracking-[0.32em]" style={{ color: 'var(--gold-light)' }}>
+        Private transportation · Miami & South Florida
+      </p>
+      <h1 className="font-display font-semibold text-white text-[38px] leading-[1.08] md:text-[52px] xl:text-[60px] mt-5 tracking-[-0.025em]">
+        From arrival to destination, <span className="text-gold-gradient">handled.</span>
+      </h1>
+      <p className="mt-5 text-base md:text-lg text-white/80 leading-relaxed">
+        Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
+      </p>
+      <p className="mt-6 text-sm text-white/60 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span>Prefer to talk to someone?</span>
+        <a href={CONTACT.phoneHref} className="inline-flex items-center gap-1.5 text-white hover:text-[var(--gold-light)]"><PhoneIcon size={14} />{CONTACT.phoneDisplay}</a>
+        <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-white hover:text-[#25D366]"><WhatsAppIcon size={14} />WhatsApp</a>
+      </p>
+    </div>
+  )
+
   return (
-    <>
-      <section className="relative min-h-[72svh] md:min-h-[74svh] flex flex-col justify-end overflow-hidden pt-28 pb-36 md:pb-40">
-        <HeroMedia video="/hero-video-final3.mp4" poster="/gallery/aeropuerto.webp" alt="Express Lyft driver waiting at the Miami airport curb" />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(8,8,8,0.88) 0%, rgba(8,8,8,0.55) 45%, rgba(8,8,8,0.15) 100%)' }} />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(0deg, rgba(10,10,10,1) 0%, rgba(10,10,10,0) 40%)' }} />
-
-        <Container className="relative w-full">
-          <div className="max-w-2xl">
-            <p className="text-[11px] font-medium uppercase tracking-[0.32em]" style={{ color: 'var(--gold-light)' }}>
-              Private transportation · Miami & South Florida
-            </p>
-            <h1 className="font-display font-semibold text-white text-[38px] leading-[1.08] md:text-[56px] lg:text-[64px] mt-5 tracking-[-0.025em]">
-              From arrival to destination, <span className="text-gold-gradient">handled.</span>
-            </h1>
-            <p className="mt-5 text-base md:text-lg text-white/80 max-w-xl leading-relaxed">
-              Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
-            </p>
-            <p className="mt-5 text-sm text-white/60 flex flex-wrap items-center gap-x-4 gap-y-1">
-              <span>Prefer to talk to someone?</span>
-              <a href={CONTACT.phoneHref} className="inline-flex items-center gap-1.5 text-white hover:text-[var(--gold-light)]"><PhoneIcon size={14} />{CONTACT.phoneDisplay}</a>
-              <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-white hover:text-[#25D366]"><WhatsAppIcon size={14} />WhatsApp</a>
-            </p>
-          </div>
-        </Container>
-      </section>
-
-      <div className="relative -mt-28 md:-mt-36 pb-4 md:pb-6" style={{ background: 'linear-gradient(180deg, transparent 0, transparent 7rem, var(--bg-deep) 7rem)' }}>
-        <MainMapBookingForm prices={prices} variant="hero" hideHeader />
-      </div>
-    </>
+    <section className="relative overflow-hidden pt-28 md:pt-32 pb-12 md:pb-16 lg:min-h-[100svh] flex items-center">
+      <HeroMedia video="/hero-video-final3.mp4" poster="/gallery/aeropuerto.webp" alt="Express Lyft driver waiting at the Miami airport curb" />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(6,6,6,0.9) 0%, rgba(6,6,6,0.6) 50%, rgba(6,6,6,0.45) 100%)' }} />
+      <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: 'linear-gradient(0deg, var(--bg-deep), transparent)' }} />
+      <Container className="relative w-full">
+        <HeroBooking prices={prices} intro={intro} />
+      </Container>
+    </section>
   )
 }
 
