@@ -69,6 +69,25 @@ const DARK_MAP_STYLE = [
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d3d3d' }] },
 ];
 
+// Home booking map: quieter palette matching the brand (black / #191919).
+const BRAND_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#171717' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#6f6f6f' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#171717' }] },
+  { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative.neighborhood', stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#a3a3a3' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ visibility: 'on' }, { color: '#1b1b1b' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#262626' }] },
+  { featureType: 'road', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#333333' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0a0a0a' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3a3a3a' }] },
+];
+
 let googleMapsLoaderPromise: Promise<any> | null = null;
 
 function loadGoogleMaps(): Promise<any> {
@@ -258,13 +277,13 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
         const map = new google.maps.Map(mapContainerRef.current, {
           center: MIAMI_CENTER,
           zoom: 10,
-          styles: DARK_MAP_STYLE,
+          styles: compact ? BRAND_MAP_STYLE : DARK_MAP_STYLE,
           fullscreenControl: false,
           streetViewControl: false,
           mapTypeControl: false,
           // Compact (home) map: page scroll passes over it without Google's
           // "use ctrl + scroll to zoom" overlay.
-          ...(compact ? { scrollwheel: false, zoomControl: true } : {}),
+          ...(compact ? { scrollwheel: false, zoomControl: false, cameraControl: false, rotateControl: false, keyboardShortcuts: false, clickableIcons: false, backgroundColor: '#111111' } : {}),
         });
 
         mapRef.current = map;
@@ -386,7 +405,9 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
           position: pickupCoords,
           map: mapRef.current,
           draggable: true,
-          icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+          icon: compact
+            ? { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: '#0b0b0b', fillOpacity: 1, strokeColor: '#E9D5A6', strokeWeight: 3 }
+            : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
         });
         pickupMarkerRef.current.addListener('dragend', async () => {
           const pos = pickupMarkerRef.current.getPosition();
@@ -416,7 +437,13 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
           position: dropoffCoords,
           map: mapRef.current,
           draggable: true,
-          icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+          icon: compact
+            ? {
+                path: 'M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z',
+                fillColor: '#E9D5A6', fillOpacity: 1, strokeColor: '#0b0b0b', strokeWeight: 1,
+                scale: 1.6, anchor: new google.maps.Point(12, 22),
+              }
+            : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
         });
         dropoffMarkerRef.current.addListener('dragend', async () => {
           const pos = dropoffMarkerRef.current.getPosition();

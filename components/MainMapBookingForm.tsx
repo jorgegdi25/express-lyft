@@ -543,73 +543,101 @@ export default function MainMapBookingForm({
   const CELL_INPUT = 'w-full bg-transparent outline-none text-[15px] font-medium text-white placeholder:text-white/35 p-0 border-0'
   const hasRoute = distanceMiles > 0
 
-  const heroStep1 = (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex rounded-full p-1" style={{ background: 'rgba(255,255,255,0.05)' }}>
-          {(['one-way', 'round-trip'] as TripType[]).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => setTripType(type)}
-              className="px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors"
-              style={{ background: tripType === type ? 'var(--text)' : 'transparent', color: tripType === type ? '#000' : 'var(--text-subtle)' }}
-            >
-              {type === 'one-way' ? 'One way' : 'Round trip'}
-            </button>
-          ))}
-        </div>
-        <span className="hidden sm:inline text-[12px]" style={{ color: 'var(--text-muted)' }}>Instant price · Pay securely online</span>
-      </div>
+  const ROW = 'relative pl-11 pr-4 py-3 min-h-[62px] flex flex-col justify-center'
+  const ROW_LABEL = 'block text-[10px] font-semibold uppercase tracking-[0.18em] mb-0.5'
+  const labelOverride = '[&_label]:!text-[10px] [&_label]:!font-semibold [&_label]:!uppercase [&_label]:!tracking-[0.18em] [&_label]:!mb-0.5 [&_label]:!text-[var(--gold-light)]'
 
-      <ErrorBoundary>
-        <MapRouteSelector
-          initialPickup={pickup}
-          initialDestination={destination}
-          compact
-          popularPlaces={POPULAR_PLACES}
-          routeColor="#D9BE86"
-          labels={{ pickup: 'From', destination: 'To' }}
-          pickupPlaceholder="Airport, hotel or address"
-          destinationPlaceholder="Where are you going?"
-          inputClassName={CELL_INPUT}
-          inputStyle={{}}
-          mapClassName="w-full h-full"
-          onRouteCalculated={(route) => {
-            setPickup(route.pickup)
-            setDestination(route.destination)
-            setDistanceMiles(route.distanceMiles)
-            setDurationMinutes(route.durationMinutes)
-          }}
-          renderLayout={({ pickupInput, dropoffInput, map }) => (
-            <>
-              {/* The bar */}
-              <div
-                className="grid grid-cols-2 lg:grid-cols-[1.4fr_1.4fr_1fr_0.9fr_1fr_auto] rounded-2xl lg:items-stretch divide-white/10 [&>*]:border-white/10"
-                style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.12)' }}
-              >
-                <div className={`${CELL} col-span-2 lg:col-span-1 border-b lg:border-b-0 lg:border-r [&_label]:!text-[10px] [&_label]:!font-semibold [&_label]:!uppercase [&_label]:!tracking-[0.18em] [&_label]:!mb-1 [&_label]:!text-[var(--gold-light)]`}>{pickupInput}</div>
-                <div className={`${CELL} col-span-2 lg:col-span-1 border-b lg:border-b-0 lg:border-r [&_label]:!text-[10px] [&_label]:!font-semibold [&_label]:!uppercase [&_label]:!tracking-[0.18em] [&_label]:!mb-1 [&_label]:!text-[var(--gold-light)]`}>{dropoffInput}</div>
-                <div className={`${CELL} border-b lg:border-b-0 border-r`}>
-                  <label className={FIELD_LABEL} style={{ color: 'var(--gold-light)' }}>Date</label>
-                  <CalendarDatePicker value={date} onChange={setDate} min={minDateStr} className={`${CELL_INPUT} text-left flex items-center justify-between gap-2`} style={{}} />
+  const heroStep1 = (
+    <ErrorBoundary>
+      <MapRouteSelector
+        initialPickup={pickup}
+        initialDestination={destination}
+        compact
+        popularPlaces={POPULAR_PLACES}
+        routeColor="#D9BE86"
+        labels={{ pickup: 'From', destination: 'To' }}
+        pickupPlaceholder="Airport, hotel or address"
+        destinationPlaceholder="Where are you going?"
+        inputClassName={CELL_INPUT}
+        inputStyle={{}}
+        mapClassName="w-full h-full"
+        onRouteCalculated={(route) => {
+          setPickup(route.pickup)
+          setDestination(route.destination)
+          setDistanceMiles(route.distanceMiles)
+          setDurationMinutes(route.durationMinutes)
+        }}
+        renderLayout={({ pickupInput, dropoffInput, map }) => (
+          <div className="grid lg:grid-cols-[420px_1fr] gap-4 lg:gap-5 items-stretch">
+            {/* ── Trip card ── */}
+            <div className="flex flex-col gap-3">
+              <div className="flex rounded-full p-1 self-start" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                {(['one-way', 'round-trip'] as TripType[]).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setTripType(type)}
+                    className="px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors"
+                    style={{ background: tripType === type ? 'var(--text)' : 'transparent', color: tripType === type ? '#000' : 'var(--text-subtle)' }}
+                  >
+                    {type === 'one-way' ? 'One way' : 'Round trip'}
+                  </button>
+                ))}
+              </div>
+
+              <div className="rounded-2xl divide-y divide-white/10" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.12)' }}>
+                {/* From → To, joined by a route line */}
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-[21px] top-[31px] bottom-[31px] w-px border-l border-dashed" style={{ borderColor: 'rgba(233,213,166,0.45)' }} aria-hidden />
+                  <div className={`${ROW} ${labelOverride}`}>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2" style={{ borderColor: 'var(--gold-light)' }} aria-hidden />
+                    {pickupInput}
+                  </div>
+                  <div className={`${ROW} ${labelOverride} border-t border-white/10`}>
+                    <svg className="absolute left-[14px] top-1/2 -translate-y-1/2" width="16" height="16" viewBox="0 0 24 24" fill="var(--gold-light)" aria-hidden><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" /></svg>
+                    {dropoffInput}
+                  </div>
                 </div>
-                <div className={`${CELL} border-b lg:border-b-0 lg:border-r`}>
-                  <label className={FIELD_LABEL} style={{ color: 'var(--gold-light)' }}>Time</label>
-                  <select value={time} onChange={(e) => setTime(e.target.value)} className={`${CELL_INPUT} appearance-none cursor-pointer`} aria-label="Pickup time">
-                    <option value="">Select</option>
-                    {availableTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
+
+                <div className="grid grid-cols-2 divide-x divide-white/10">
+                  <div className="px-4 py-3 min-h-[62px] flex flex-col justify-center">
+                    <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Date</label>
+                    <CalendarDatePicker value={date} onChange={setDate} min={minDateStr} className={`${CELL_INPUT} text-left flex items-center justify-between gap-2`} style={{}} />
+                  </div>
+                  <div className="px-4 py-3 min-h-[62px] flex flex-col justify-center">
+                    <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Time</label>
+                    <select value={time} onChange={(e) => setTime(e.target.value)} className={`${CELL_INPUT} appearance-none cursor-pointer`} aria-label="Pickup time">
+                      <option value="">Select</option>
+                      {availableTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
                 </div>
-                <div className={`${CELL} col-span-2 lg:col-span-1 border-b lg:border-b-0`}>
-                  <label className={FIELD_LABEL} style={{ color: 'var(--gold-light)' }}>Passengers</label>
+
+                {tripType === 'round-trip' && (
+                  <div className="grid grid-cols-2 divide-x divide-white/10">
+                    <div className="px-4 py-3 min-h-[62px] flex flex-col justify-center">
+                      <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Return date</label>
+                      <CalendarDatePicker value={returnDate} onChange={setReturnDate} min={date || minDateStr} className={`${CELL_INPUT} text-left flex items-center justify-between gap-2`} style={{}} />
+                    </div>
+                    <div className="px-4 py-3 min-h-[62px] flex flex-col justify-center">
+                      <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Return time</label>
+                      <select value={returnTime} onChange={(e) => setReturnTime(e.target.value)} className={`${CELL_INPUT} appearance-none cursor-pointer`} aria-label="Return time">
+                        <option value="">Select</option>
+                        {availableReturnTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="relative px-4 py-3 min-h-[62px] flex flex-col justify-center">
+                  <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Passengers</label>
                   <button type="button" onClick={() => setGuestsOpen(!guestsOpen)} className={`${CELL_INPUT} text-left`} aria-expanded={guestsOpen}>
                     {passengers} {passengers === 1 ? 'guest' : 'guests'} · {luggageCount} {luggageCount === 1 ? 'bag' : 'bags'}
                   </button>
                   {guestsOpen && (
                     <>
                       <div className="fixed inset-0 z-30" onClick={() => setGuestsOpen(false)} />
-                      <div className="absolute z-40 top-full right-0 left-0 lg:left-auto lg:w-72 mt-2 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl" style={{ background: '#161616', border: '1px solid var(--border)' }}>
+                      <div className="absolute z-40 top-full left-0 right-0 mt-2 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl" style={{ background: '#161616', border: '1px solid var(--border)' }}>
                         <Stepper label="Passengers" value={passengers} onChange={setPassengers} min={1} max={55} />
                         <Stepper label="Bags" value={luggageCount} onChange={setLuggageCount} min={0} max={60} />
                         <button type="button" onClick={() => setGuestsOpen(false)} className="mt-1 h-10 rounded-xl text-[13px] font-semibold" style={{ background: 'var(--text)', color: '#000' }}>Done</button>
@@ -617,70 +645,51 @@ export default function MainMapBookingForm({
                     </>
                   )}
                 </div>
-                <div className="col-span-2 lg:col-span-1 p-2 flex">
-                  {isUrgentRequest ? (
-                    <a href="tel:+18889737896" className="w-full lg:w-auto px-6 min-h-[52px] rounded-xl text-[14px] font-semibold flex items-center justify-center text-center" style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}>
-                      Call to book
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleNextStep1}
-                      className="w-full lg:w-auto px-7 min-h-[52px] rounded-xl text-[15px] font-semibold hover:brightness-105 transition flex items-center justify-center gap-2 whitespace-nowrap"
-                      style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}
-                    >
-                      See prices
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                    </button>
-                  )}
-                </div>
               </div>
-
-              {tripType === 'round-trip' && (
-                <div className="grid grid-cols-2 lg:w-[45%] rounded-2xl overflow-hidden" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.12)' }}>
-                  <div className={`${CELL} border-r border-white/10`}>
-                    <label className={FIELD_LABEL} style={{ color: 'var(--gold-light)' }}>Return date</label>
-                    <CalendarDatePicker value={returnDate} onChange={setReturnDate} min={date || minDateStr} className={`${CELL_INPUT} text-left flex items-center justify-between gap-2`} style={{}} />
-                  </div>
-                  <div className={CELL}>
-                    <label className={FIELD_LABEL} style={{ color: 'var(--gold-light)' }}>Return time</label>
-                    <select value={returnTime} onChange={(e) => setReturnTime(e.target.value)} className={`${CELL_INPUT} appearance-none cursor-pointer`} aria-label="Return time">
-                      <option value="">Select</option>
-                      {availableReturnTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                </div>
-              )}
 
               {(error && !isUrgentRequest) && <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>}
-              {isUrgentRequest && <p className="text-sm" style={{ color: '#f87171' }}>Same-day rides need at least 2 hours’ notice online — call us and we’ll arrange it.</p>}
+              {isUrgentRequest ? (
+                <>
+                  <p className="text-sm" style={{ color: '#f87171' }}>Same-day rides need at least 2 hours’ notice online — call us and we’ll arrange it.</p>
+                  <a href="tel:+18889737896" className="h-[54px] rounded-xl text-[15px] font-semibold flex items-center justify-center" style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}>
+                    Call +1 (888) 973-7896
+                  </a>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNextStep1}
+                  className="h-[54px] rounded-xl text-[15px] font-semibold hover:brightness-105 transition flex items-center justify-center gap-2"
+                  style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}
+                >
+                  See prices
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </button>
+              )}
+              <p className="text-center text-[12px]" style={{ color: 'var(--text-muted)' }}>Instant price · Secure online payment</p>
+            </div>
 
-              {/* Route map: always visible (it's the differentiator); the route
-                  draws in and the map grows once both addresses are set. */}
-              <div
-                className="relative rounded-2xl overflow-hidden transition-[height] duration-500 ease-out"
-                style={{ height: hasRoute ? 'var(--route-map-h)' : 'var(--route-map-h-idle)', border: '1px solid rgba(255,255,255,0.1)' }}
-              >
-                {map}
-                {hasRoute ? (
-                  <div className="absolute left-3 top-3 px-3 py-1.5 rounded-full text-[12px] font-semibold text-white flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(233,213,166,0.35)' }}>
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--gold-light)' }} />
-                    {distanceMiles.toFixed(1)} mi · about {Math.round(durationMinutes)} min
-                  </div>
-                ) : (
-                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.55))' }}>
-                    <p className="px-4 py-2 rounded-full text-[13px] font-medium text-white flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(233,213,166,0.3)' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                      Enter your route to see it here
-                    </p>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        />
-      </ErrorBoundary>
-    </div>
+            {/* ── Map ── */}
+            <div className="relative rounded-2xl overflow-hidden h-[200px] lg:h-auto lg:min-h-[440px]" style={{ border: '1px solid rgba(255,255,255,0.1)', background: '#111' }}>
+              {map}
+              {hasRoute ? (
+                <div className="absolute left-4 top-4 px-3.5 py-2 rounded-full text-[13px] font-semibold text-white flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(233,213,166,0.35)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--gold-light)' }} />
+                  {distanceMiles.toFixed(1)} mi · about {Math.round(durationMinutes)} min
+                </div>
+              ) : (
+                <div className="pointer-events-none absolute left-4 bottom-4 right-4 flex">
+                  <p className="px-4 py-2 rounded-full text-[13px] font-medium text-white flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(233,213,166,0.3)' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                    Your route will appear here
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      />
+    </ErrorBoundary>
   )
 
   // Home checkout extras: moved out of step 1 to keep the bar short.
