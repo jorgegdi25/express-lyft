@@ -53,47 +53,11 @@ const INPUT_STYLE = { background: 'var(--bg-alt)', border: '1px solid var(--bord
 
 // Removed global todayStr to prevent hydration mismatches
 
-type ServiceTabId = 'airport' | 'cruise' | 'point' | 'group'
-
-// Home booking panel tabs. They only shape the form (placeholders, quick
-// picks) and label the request in the notes — pricing and the lead payload
-// are the same for every tab.
-const SERVICE_TABS: {
-  id: ServiceTabId
-  label: string
-  pickupPlaceholder: string
-  destinationPlaceholder: string
-  chips: { label: string; pickup?: string; destination?: string }[]
-  hint?: string
-}[] = [
-  {
-    id: 'airport', label: 'Airport Transfer',
-    pickupPlaceholder: 'Airport (MIA, FLL) or address', destinationPlaceholder: 'Hotel, home or address',
-    chips: [
-      { label: 'From MIA', pickup: 'Miami International Airport (MIA)' },
-      { label: 'From FLL', pickup: 'Fort Lauderdale-Hollywood International Airport (FLL)' },
-      { label: 'To MIA', destination: 'Miami International Airport (MIA)' },
-    ],
-  },
-  {
-    id: 'cruise', label: 'Cruise Port',
-    pickupPlaceholder: 'Hotel, airport or address', destinationPlaceholder: 'Cruise terminal or address',
-    chips: [
-      { label: 'To PortMiami', destination: 'PortMiami, Miami, FL' },
-      { label: 'From PortMiami', pickup: 'PortMiami, Miami, FL' },
-    ],
-  },
-  {
-    id: 'point', label: 'Point to Point',
-    pickupPlaceholder: 'Pickup address', destinationPlaceholder: 'Destination address',
-    chips: [],
-  },
-  {
-    id: 'group', label: 'Groups & Events',
-    pickupPlaceholder: 'Pickup address', destinationPlaceholder: 'Venue, hotel or address',
-    chips: [],
-    hint: 'Groups of 15+ travel in a Mini Bus or Coach Bus — we confirm availability and send you a quote.',
-  },
+const POPULAR_PLACES = [
+  { label: 'Miami International Airport (MIA)', address: 'Miami International Airport (MIA)' },
+  { label: 'Fort Lauderdale Airport (FLL)', address: 'Fort Lauderdale-Hollywood International Airport (FLL)' },
+  { label: 'PortMiami cruise terminals', address: 'PortMiami, Miami, FL' },
+  { label: 'Miami Beach', address: 'Miami Beach, FL' },
 ]
 
 function Stepper({ label, value, onChange, min, max }: { label: string; value: number; onChange: (n: number) => void; min: number; max: number }) {
@@ -138,9 +102,7 @@ export default function MainMapBookingForm({
   variant?: 'section' | 'hero'
 }) {
   const isHero = variant === 'hero'
-  const [serviceTab, setServiceTab] = useState<ServiceTabId>('airport')
-  const [preset, setPreset] = useState<{ pickup?: string; destination?: string; nonce: number } | undefined>(undefined)
-  const activeTab = SERVICE_TABS.find((t) => t.id === serviceTab)!
+  const [guestsOpen, setGuestsOpen] = useState(false)
   // Live data fetched client-side to bypass Next.js server cache
   const [livePrices, setLivePrices] = useState(serverPrices)
   const [surcharge, setSurcharge] = useState<SurchargeConfig | null>(null)
@@ -317,7 +279,7 @@ export default function MainMapBookingForm({
     }
 
     const isAirportPickup = typeof pickup === 'string' && (pickup.toLowerCase().includes('airport') || pickup.toLowerCase().includes('mia') || pickup.toLowerCase().includes('fll'))
-    if (true && isAirportPickup && (!airline.trim() || !flightNumber.trim())) {
+    if (!isHero && isAirportPickup && (!airline.trim() || !flightNumber.trim())) {
       setError('Airline and Flight Number are required for airport pickups.')
       return
     }
@@ -480,6 +442,13 @@ export default function MainMapBookingForm({
       setError('Please provide your full contact information, including phone and country.')
       return
     }
+    if (isHero) {
+      const airportPickup = /airport|\bmia\b|\bfll\b/i.test(pickup)
+      if (airportPickup && (!airline.trim() || !flightNumber.trim())) {
+        setError('Airline and flight number are required for airport pickups.')
+        return
+      }
+    }
 
     // Final luggage check just in case
     const maxLuggage = vehicleType === 'sedan_suv' ? 4 : vehicleType === 'suburban' ? 6 : vehicleType === 'sprinter' ? 14 : vehicleType === 'minibus' ? 30 : 60;
@@ -517,7 +486,7 @@ export default function MainMapBookingForm({
           meetGreetFee,
           carSeatsRequested,
           luggageCount,
-          notes: isHero ? [`[Web: ${activeTab.label}]`, notes].filter(Boolean).join(' ') : notes,
+          notes,
           paymentMode: vehicleType === 'coachbus' || vehicleType === 'minibus' ? 'quote' : paymentMode,
           distanceMiles,
           durationMinutes,
@@ -568,59 +537,43 @@ export default function MainMapBookingForm({
     setIsSuccess(false)
   }
 
-  const FIELD_LABEL = 'block text-[10px] font-bold uppercase tracking-[0.16em] mb-1.5'
-  const isAirportPickup = pickup.toLowerCase().includes('airport') || pickup.toLowerCase().includes('mia') || pickup.toLowerCase().includes('fll')
+  const FIELD_LABEL = 'block text-[10px] font-semibold uppercase tracking-[0.18em] mb-1'
+  const isAirportPickup = /airport|\bmia\b|\bfll\b/i.test(pickup)
+  const CELL = 'relative px-4 py-3 lg:py-2.5 flex flex-col justify-center min-h-[64px]'
+  const CELL_INPUT = 'w-full bg-transparent outline-none text-[15px] font-medium text-white placeholder:text-white/35 p-0 border-0'
+  const hasRoute = distanceMiles > 0
 
   const heroStep1 = (
-    <div className="flex flex-col gap-4">
-      {/* Service tabs + trip type */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        <div role="tablist" aria-label="Type of service" className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1">
-          {SERVICE_TABS.map((t) => {
-            const on = t.id === serviceTab
-            return (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                onClick={() => setServiceTab(t.id)}
-                className="shrink-0 px-4 py-2.5 rounded-xl text-[12px] md:text-[13px] font-bold uppercase tracking-[0.08em] transition-colors"
-                style={{
-                  background: on ? 'linear-gradient(135deg, var(--gold), var(--gold-light))' : 'rgba(255,255,255,0.04)',
-                  color: on ? 'var(--bg-deep)' : 'var(--text-subtle)',
-                  border: on ? '1px solid transparent' : '1px solid var(--border)',
-                }}
-              >
-                {t.label}
-              </button>
-            )
-          })}
-        </div>
-        <div className="flex rounded-xl p-1 shrink-0 self-start lg:self-auto" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex rounded-full p-1" style={{ background: 'rgba(255,255,255,0.05)' }}>
           {(['one-way', 'round-trip'] as TripType[]).map((type) => (
             <button
               key={type}
               type="button"
               onClick={() => setTripType(type)}
-              className="px-4 py-2 rounded-lg text-[12px] font-semibold transition-colors"
-              style={{ background: tripType === type ? 'var(--text)' : 'transparent', color: tripType === type ? 'var(--bg-deep)' : 'var(--text-muted)' }}
+              className="px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors"
+              style={{ background: tripType === type ? 'var(--text)' : 'transparent', color: tripType === type ? '#000' : 'var(--text-subtle)' }}
             >
               {type === 'one-way' ? 'One way' : 'Round trip'}
             </button>
           ))}
         </div>
+        <span className="hidden sm:inline text-[12px]" style={{ color: 'var(--text-muted)' }}>Instant price · Pay securely online</span>
       </div>
 
       <ErrorBoundary>
         <MapRouteSelector
           initialPickup={pickup}
           initialDestination={destination}
-          preset={preset}
           compact
-          pickupPlaceholder={activeTab.pickupPlaceholder}
-          destinationPlaceholder={activeTab.destinationPlaceholder}
-          mapClassName="w-full h-[200px] lg:h-full lg:min-h-[340px] rounded-2xl overflow-hidden border border-[var(--border-soft)] cursor-pointer"
+          popularPlaces={POPULAR_PLACES}
+          labels={{ pickup: 'From', destination: 'To' }}
+          pickupPlaceholder="Airport, hotel or address"
+          destinationPlaceholder="Where are you going?"
+          inputClassName={CELL_INPUT}
+          inputStyle={{}}
+          mapClassName="w-full h-full"
           onRouteCalculated={(route) => {
             setPickup(route.pickup)
             setDestination(route.destination)
@@ -628,156 +581,128 @@ export default function MainMapBookingForm({
             setDurationMinutes(route.durationMinutes)
           }}
           renderLayout={({ pickupInput, dropoffInput, map }) => (
-            <div className="grid lg:grid-cols-12 gap-4 lg:gap-5">
-              {/* Addresses */}
-              <div className="lg:col-span-7 flex flex-col gap-3 [&_label]:!text-[10px] [&_label]:!uppercase [&_label]:!tracking-[0.16em] [&_label]:!mb-1.5 [&_label]:!text-[var(--text-muted)]">
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {pickupInput}
-                  {dropoffInput}
+            <>
+              {/* The bar */}
+              <div
+                className="grid grid-cols-2 lg:grid-cols-[1.4fr_1.4fr_1fr_0.9fr_1fr_auto] rounded-2xl lg:items-stretch divide-white/10 [&>*]:border-white/10"
+                style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.12)' }}
+              >
+                <div className={`${CELL} col-span-2 lg:col-span-1 border-b lg:border-b-0 lg:border-r [&_label]:!text-[10px] [&_label]:!font-semibold [&_label]:!uppercase [&_label]:!tracking-[0.18em] [&_label]:!mb-1 [&_label]:!text-[var(--gold-light)]`}>{pickupInput}</div>
+                <div className={`${CELL} col-span-2 lg:col-span-1 border-b lg:border-b-0 lg:border-r [&_label]:!text-[10px] [&_label]:!font-semibold [&_label]:!uppercase [&_label]:!tracking-[0.18em] [&_label]:!mb-1 [&_label]:!text-[var(--gold-light)]`}>{dropoffInput}</div>
+                <div className={`${CELL} border-b lg:border-b-0 border-r`}>
+                  <label className={FIELD_LABEL} style={{ color: 'var(--gold-light)' }}>Date</label>
+                  <CalendarDatePicker value={date} onChange={setDate} min={minDateStr} className={`${CELL_INPUT} text-left flex items-center justify-between gap-2`} style={{}} />
                 </div>
-                {activeTab.chips.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span>Quick pick:</span>
-                    {activeTab.chips.map((c) => (
-                      <button
-                        key={c.label}
-                        type="button"
-                        onClick={() => setPreset({ pickup: c.pickup, destination: c.destination, nonce: Date.now() })}
-                        className="px-2.5 py-1 rounded-full border border-white/15 hover:border-[var(--gold-light)] hover:text-white transition-colors"
-                      >
-                        {c.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {activeTab.hint && <p className="text-xs" style={{ color: 'var(--gold-light)' }}>{activeTab.hint}</p>}
-              </div>
-
-              {/* Map (right column on desktop, under the addresses on phones) */}
-              <div className="lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 relative">
-                {map}
-                {distanceMiles > 0 && (
-                  <div className="absolute left-3 top-3 px-3 py-1.5 rounded-full text-xs font-semibold text-white" style={{ background: 'rgba(10,10,10,0.85)', border: '1px solid rgba(212,175,55,0.4)' }}>
-                    {distanceMiles.toFixed(1)} mi · ~{Math.round(durationMinutes)} min
-                  </div>
-                )}
-              </div>
-
-              {/* Date, time, people */}
-              <div className="lg:col-span-7 flex flex-col gap-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div>
-                    <label className={FIELD_LABEL} style={{ color: 'var(--text-muted)' }}>Date</label>
-                    <CalendarDatePicker
-                      value={date}
-                      onChange={setDate}
-                      min={minDateStr}
-                      className={`${INPUT_CLASS} h-[50px] text-base px-3 text-left flex items-center justify-between gap-2`}
-                      style={INPUT_STYLE}
-                    />
-                  </div>
-                  <div>
-                    <label className={FIELD_LABEL} style={{ color: 'var(--text-muted)' }}>Time</label>
-                    <select value={time} onChange={(e) => setTime(e.target.value)} className={`${INPUT_CLASS} h-[50px] text-base px-3 py-0`} style={INPUT_STYLE}>
-                      <option value="">Select</option>
-                      {availableTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <Stepper label="Passengers" value={passengers} onChange={setPassengers} min={1} max={55} />
-                  <Stepper label="Luggage" value={luggageCount} onChange={setLuggageCount} min={0} max={60} />
+                <div className={`${CELL} border-b lg:border-b-0 lg:border-r`}>
+                  <label className={FIELD_LABEL} style={{ color: 'var(--gold-light)' }}>Time</label>
+                  <select value={time} onChange={(e) => setTime(e.target.value)} className={`${CELL_INPUT} appearance-none cursor-pointer`} aria-label="Pickup time">
+                    <option value="">Select</option>
+                    {availableTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
                 </div>
-
-                {tripType === 'round-trip' && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className={FIELD_LABEL} style={{ color: 'var(--text-muted)' }}>Return date</label>
-                      <CalendarDatePicker
-                        value={returnDate}
-                        onChange={setReturnDate}
-                        min={date || minDateStr}
-                        className={`${INPUT_CLASS} h-[50px] text-base px-3 text-left flex items-center justify-between gap-2`}
-                        style={INPUT_STYLE}
-                      />
-                    </div>
-                    <div>
-                      <label className={FIELD_LABEL} style={{ color: 'var(--text-muted)' }}>Return time</label>
-                      <select value={returnTime} onChange={(e) => setReturnTime(e.target.value)} className={`${INPUT_CLASS} h-[50px] text-base px-3 py-0`} style={INPUT_STYLE}>
-                        <option value="">Select</option>
-                        {availableReturnTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {isAirportPickup && (
-                  <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: 'var(--bg-deep)', border: '1px solid var(--border-soft)' }}>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      <span className="font-semibold" style={{ color: 'var(--gold-light)' }}>Airport pickup:</span> add your flight so we can plan around your arrival (30 min free waiting).
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input type="text" placeholder="Airline *" value={airline} onChange={(e) => setAirline(e.target.value)} className={`${INPUT_CLASS} h-[48px] py-0`} style={INPUT_STYLE} aria-label="Airline" />
-                      <input type="text" placeholder="Flight number *" value={flightNumber} onChange={(e) => setFlightNumber(e.target.value)} className={`${INPUT_CLASS} h-[48px] py-0`} style={INPUT_STYLE} aria-label="Flight number" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {([['curbside', 'Curbside pickup', 'Outside arrivals'], ['meet_greet', 'Meet & Greet +$25', 'Inside with a sign']] as const).map(([val, t, d]) => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => setMeetingType(val)}
-                          className="rounded-lg px-3 py-2.5 text-left"
-                          style={{ background: meetingType === val ? 'rgba(184,150,12,0.12)' : 'transparent', border: meetingType === val ? '1px solid var(--gold)' : '1px solid var(--border-soft)' }}
-                        >
-                          <span className="block text-[13px] font-semibold text-white">{t}</span>
-                          <span className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>{d}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <details className="group rounded-xl [&_summary::-webkit-details-marker]:hidden" style={{ border: '1px solid var(--border)' }}>
-                  <summary className="list-none cursor-pointer px-4 py-3 text-[13px] font-semibold flex items-center justify-between" style={{ color: 'var(--text-subtle)' }}>
-                    Child seats & special requests <span className="text-[var(--gold-light)] transition-transform group-open:rotate-45 text-lg leading-none">+</span>
-                  </summary>
-                  <div className="px-4 pb-4 grid sm:grid-cols-3 gap-3">
-                    <Stepper label="Child seats (free)" value={carSeatsRequested} onChange={setCarSeatsRequested} min={0} max={4} />
-                    <div className="sm:col-span-2">
-                      <label className={FIELD_LABEL} style={{ color: 'var(--text-muted)' }}>Notes</label>
-                      <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Wheelchair access, extra stop, etc." className={`${INPUT_CLASS} h-[50px] py-0`} style={INPUT_STYLE} />
-                    </div>
-                  </div>
-                </details>
-
-                {error && !isUrgentRequest && (
-                  <p className="text-sm rounded-xl px-4 py-3" style={{ color: '#f87171', background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>{error}</p>
-                )}
-                {isUrgentRequest ? (
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                    <p className="text-sm flex-1" style={{ color: '#f87171' }}>Same-day rides need at least 2 hours’ notice online. Call us for an urgent ride.</p>
-                    <a href="tel:+18889737896" className="h-[52px] px-6 rounded-xl text-[13px] font-bold uppercase tracking-[0.12em] flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}>
-                      Call +1 (888) 973-7896
+                <div className={`${CELL} col-span-2 lg:col-span-1 border-b lg:border-b-0`}>
+                  <label className={FIELD_LABEL} style={{ color: 'var(--gold-light)' }}>Passengers</label>
+                  <button type="button" onClick={() => setGuestsOpen(!guestsOpen)} className={`${CELL_INPUT} text-left`} aria-expanded={guestsOpen}>
+                    {passengers} {passengers === 1 ? 'guest' : 'guests'} · {luggageCount} {luggageCount === 1 ? 'bag' : 'bags'}
+                  </button>
+                  {guestsOpen && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setGuestsOpen(false)} />
+                      <div className="absolute z-40 top-full right-0 left-0 lg:left-auto lg:w-72 mt-2 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl" style={{ background: '#161616', border: '1px solid var(--border)' }}>
+                        <Stepper label="Passengers" value={passengers} onChange={setPassengers} min={1} max={55} />
+                        <Stepper label="Bags" value={luggageCount} onChange={setLuggageCount} min={0} max={60} />
+                        <button type="button" onClick={() => setGuestsOpen(false)} className="mt-1 h-10 rounded-xl text-[13px] font-semibold" style={{ background: 'var(--text)', color: '#000' }}>Done</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="col-span-2 lg:col-span-1 p-2 flex">
+                  {isUrgentRequest ? (
+                    <a href="tel:+18889737896" className="w-full lg:w-auto px-6 min-h-[52px] rounded-xl text-[14px] font-semibold flex items-center justify-center text-center" style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}>
+                      Call to book
                     </a>
-                  </div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      More than 2 stops? <a href="https://wa.me/19546236207" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">WhatsApp us</a> or <a href="tel:+18889737896" className="underline hover:text-white">call</a>.
-                    </p>
+                  ) : (
                     <button
                       type="button"
                       onClick={handleNextStep1}
-                      className="h-[52px] px-8 rounded-xl text-[13px] font-bold uppercase tracking-[0.12em] hover:brightness-110 transition flex items-center justify-center gap-2"
-                      style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+                      className="w-full lg:w-auto px-7 min-h-[52px] rounded-xl text-[15px] font-semibold hover:brightness-105 transition flex items-center justify-center gap-2 whitespace-nowrap"
+                      style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}
                     >
-                      Find vehicles & prices →
+                      See prices
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                     </button>
+                  )}
+                </div>
+              </div>
+
+              {tripType === 'round-trip' && (
+                <div className="grid grid-cols-2 lg:w-[45%] rounded-2xl overflow-hidden" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.12)' }}>
+                  <div className={`${CELL} border-r border-white/10`}>
+                    <label className={FIELD_LABEL} style={{ color: 'var(--gold-light)' }}>Return date</label>
+                    <CalendarDatePicker value={returnDate} onChange={setReturnDate} min={date || minDateStr} className={`${CELL_INPUT} text-left flex items-center justify-between gap-2`} style={{}} />
+                  </div>
+                  <div className={CELL}>
+                    <label className={FIELD_LABEL} style={{ color: 'var(--gold-light)' }}>Return time</label>
+                    <select value={returnTime} onChange={(e) => setReturnTime(e.target.value)} className={`${CELL_INPUT} appearance-none cursor-pointer`} aria-label="Return time">
+                      <option value="">Select</option>
+                      {availableReturnTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {(error && !isUrgentRequest) && <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>}
+              {isUrgentRequest && <p className="text-sm" style={{ color: '#f87171' }}>Same-day rides need at least 2 hours’ notice online — call us and we’ll arrange it.</p>}
+
+              {/* Route preview: only once there is a route */}
+              <div
+                className="relative rounded-2xl overflow-hidden transition-[height,opacity] duration-500 ease-out"
+                style={{ height: hasRoute ? 'var(--route-map-h)' : 0, opacity: hasRoute ? 1 : 0, border: hasRoute ? '1px solid rgba(255,255,255,0.1)' : 'none' }}
+                aria-hidden={!hasRoute}
+              >
+                {map}
+                {hasRoute && (
+                  <div className="absolute left-3 top-3 px-3 py-1.5 rounded-full text-[12px] font-semibold text-white flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(233,213,166,0.35)' }}>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--gold-light)' }} />
+                    {distanceMiles.toFixed(1)} mi · about {Math.round(durationMinutes)} min
                   </div>
                 )}
               </div>
-            </div>
+            </>
           )}
         />
       </ErrorBoundary>
+    </div>
+  )
+
+  // Home checkout extras: moved out of step 1 to keep the bar short.
+  const heroExtras = (
+    <div className="flex flex-col gap-4">
+      {isAirportPickup && (
+        <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: 'var(--bg-deep)', border: '1px solid var(--border-soft)' }}>
+          <p className="text-sm font-semibold text-white">Your flight</p>
+          <p className="text-xs -mt-2" style={{ color: 'var(--text-muted)' }}>We plan the pickup around your arrival — 30 minutes of free waiting included.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <input type="text" placeholder="Airline *" value={airline} onChange={(e) => setAirline(e.target.value)} className={INPUT_CLASS} style={INPUT_STYLE} aria-label="Airline" />
+            <input type="text" placeholder="Flight number *" value={flightNumber} onChange={(e) => setFlightNumber(e.target.value)} className={INPUT_CLASS} style={INPUT_STYLE} aria-label="Flight number" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {([['curbside', 'Curbside pickup', 'Outside arrivals'], ['meet_greet', 'Meet & Greet · +$25', 'Inside with a sign']] as const).map(([val, t, d]) => (
+              <button key={val} type="button" onClick={() => setMeetingType(val)} className="rounded-lg px-3 py-2.5 text-left" style={{ background: meetingType === val ? 'rgba(233,213,166,0.08)' : 'transparent', border: meetingType === val ? '1px solid var(--gold)' : '1px solid var(--border-soft)' }}>
+                <span className="block text-[13px] font-semibold text-white">{t}</span>
+                <span className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>{d}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="grid sm:grid-cols-3 gap-3">
+        <Stepper label="Child seats (free)" value={carSeatsRequested} onChange={setCarSeatsRequested} min={0} max={4} />
+        <div className="sm:col-span-2">
+          <label className={FIELD_LABEL} style={{ color: 'var(--text-muted)' }}>Notes for your driver (optional)</label>
+          <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Wheelchair access, extra stop, etc." className={`${INPUT_CLASS} h-[50px] py-0`} style={INPUT_STYLE} />
+        </div>
+      </div>
     </div>
   )
 
@@ -1381,6 +1306,7 @@ export default function MainMapBookingForm({
                       </div>
                     </div>
                   </div>
+                  {isHero && heroExtras}
                   {/* Passenger Details */}
                   <div>
                     <label className={LABEL_CLASS} style={LABEL_COLOR}>

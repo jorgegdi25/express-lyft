@@ -1,3 +1,4 @@
+import { SITE_CLASS } from '@/lib/site/fonts'
 import SiteHeader, { MobileActionBar } from '../SiteHeader'
 import SiteFooter from '../SiteFooter'
 import { getStartingPrices, getPricingParams } from '@/lib/site/data'
@@ -11,7 +12,6 @@ import {
   LocalSection,
   PartnersSection,
   ReviewsSection,
-  HowItWorks,
   FaqSection,
   FinalCta,
 } from './sections'
@@ -22,7 +22,7 @@ export default async function HomeV2() {
   const [prices, pricingParams, reviews] = await Promise.all([getStartingPrices(), getPricingParams(), getApprovedReviews(undefined, 15)])
 
   return (
-    <main style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <main className={SITE_CLASS} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <SiteHeader overlay bookHref="#booking-form" />
       <Hero prices={pricingParams} />
       <TrustStrip />
@@ -32,7 +32,6 @@ export default async function HomeV2() {
       <LocalSection />
       <PartnersSection />
       <ReviewsSection reviews={toTestimonials(reviews)} />
-      <HowItWorks />
       <FaqSection />
       <FinalCta />
       <SiteFooter />

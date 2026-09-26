@@ -41,7 +41,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ['"Playfair Display"', 'Georgia', 'serif'],
+        display: ['var(--font-brand)', 'Montserrat', 'Arial', 'sans-serif'],
       },
       keyframes: {
         marquee: {

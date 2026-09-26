@@ -40,6 +40,50 @@
 }
 
 /* ── Corporate site (Express Lyft 2.0) ─────────────────────────── */
+/* Brand tokens from the Express Lyft brand guidelines: black #000000,
+   dark grey #191919, white and the metallic gold gradient (bronze →
+   champagne). Scoped to the corporate site so the CRM/admin keep theirs. */
+.site-v2 {
+  --gold: #C4A46B;
+  --gold-light: #E9D5A6;
+  --gold-accent: #E9D5A6;
+  --gold-deep: #8A6A36;
+  --brand-gold-gradient: linear-gradient(120deg, #9C7A43 0%, #D2B57C 28%, #F6E8C6 50%, #DCC08A 72%, #A9884F 100%);
+  --bg-deep: #000000;
+  --bg: #0B0B0B;
+  --bg-alt: #111111;
+  --bg-alt-2: #0E0E0E;
+  --surface: #191919;
+  --surface-raised: #141414;
+  --surface-alt: #1D1D1D;
+  --border: #262626;
+  --border-soft: #2E2E2E;
+  --border-faint: #1F1F1F;
+  --text-muted: #8F8F8F;
+  --text-subtle: #B5B5B5;
+  --route-map-h: 240px;
+  /* Former light "sand" sections now use the brand dark grey (#191919). */
+  --sand: #191919;
+  --sand-deep: #141414;
+  --sand-line: #2A2A2A;
+  --ink-dark: #FFFFFF;
+  --ink-dark-muted: #9A9A9A;
+  font-family: var(--font-brand), 'Montserrat', Arial, Helvetica, sans-serif;
+  background: var(--bg);
+}
+@media (min-width: 1024px) {
+  .site-v2 { --route-map-h: 300px; }
+}
+/* The shared booking form still carries inline Playfair headings — inside
+   the corporate site everything speaks Montserrat. */
+.site-v2 [style*="Playfair"] { font-family: var(--font-brand), 'Montserrat', Arial, sans-serif !important; font-weight: 600 !important; letter-spacing: -0.01em; }
+.site-v2 .text-gold-gradient {
+  background: var(--brand-gold-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .reveal {
   opacity: 0;
   transform: translateY(18px);

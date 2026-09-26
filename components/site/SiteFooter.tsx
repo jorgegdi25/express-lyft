@@ -1,4 +1,4 @@
-import Image from 'next/image'
+import Logo from './Logo'
 import Link from 'next/link'
 import { BRAND, CONTACT, OFFICES } from '@/lib/site/contact'
 import { SERVICES } from '@/lib/site/services'
@@ -9,7 +9,7 @@ export default function SiteFooter() {
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="grid grid-cols-2 md:grid-cols-12 gap-10">
           <div className="col-span-2 md:col-span-4 flex flex-col gap-4">
-            <Image src="/logo.webp" alt="Express Lyft" width={160} height={42} className="h-10 w-auto object-contain object-left mr-auto" />
+            <Logo variant="vertical" className="mr-auto" />
             <p className="text-sm leading-relaxed max-w-sm" style={{ color: 'var(--text-muted)' }}>
               Private transportation and hospitality solutions — airport, hotel and cruise port transfers, corporate travel and group transportation in South Florida.
             </p>

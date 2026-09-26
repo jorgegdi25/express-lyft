@@ -1,3 +1,4 @@
+import { SITE_CLASS } from '@/lib/site/fonts'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
@@ -40,7 +41,7 @@ export default function PageShell({
   }
 
   return (
-    <main style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <main className={SITE_CLASS} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <SiteHeader overlay={Boolean(image)} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
@@ -65,8 +66,8 @@ export default function PageShell({
           </nav>
           <div className="grid lg:grid-cols-12 gap-8 items-end">
             <div className="lg:col-span-7">
-              <p className="text-[11px] md:text-xs font-bold uppercase tracking-[3px] mb-3" style={{ color: 'var(--gold-light)' }}>{eyebrow}</p>
-              <h1 className="font-display font-bold text-white text-4xl md:text-6xl leading-[1.05] tracking-[-0.01em]">{title}</h1>
+              <p className="text-[11px] font-medium uppercase tracking-[0.32em] mb-4" style={{ color: 'var(--gold-light)' }}>{eyebrow}</p>
+              <h1 className="font-display font-semibold text-white text-4xl md:text-6xl leading-[1.05] tracking-[-0.01em]">{title}</h1>
               {intro && <p className="mt-5 text-base md:text-lg text-white/75 max-w-xl leading-relaxed">{intro}</p>}
             </div>
             {heroAside && <div className="lg:col-span-5">{heroAside}</div>}

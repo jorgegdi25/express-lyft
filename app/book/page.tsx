@@ -1,3 +1,4 @@
+import { SITE_CLASS } from '@/lib/site/fonts'
 import type { Metadata } from 'next'
 import MainMapBookingForm, { type BookingPrefill } from '@/components/MainMapBookingForm'
 import SiteHeader, { MobileActionBar } from '@/components/site/SiteHeader'
@@ -30,13 +31,13 @@ export default async function BookPage({ searchParams }: { searchParams: Record<
   }
 
   return (
-    <main style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
+    <main className={SITE_CLASS} style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
       <SiteHeader />
       <section className="pt-10 md:pt-14" style={{ background: 'var(--bg-deep)', borderBottom: '1px solid var(--surface)' }}>
         <Container className="pb-8 md:pb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[3px] mb-3" style={{ color: 'var(--gold)' }}>Book a ride</p>
-            <h1 className="font-display text-4xl md:text-5xl font-bold">Where are we taking you?</h1>
+            <p className="text-[11px] font-medium uppercase tracking-[0.32em] mb-4" style={{ color: 'var(--gold-light)' }}>Book a ride</p>
+            <h1 className="font-display text-4xl md:text-5xl font-semibold">Where are we taking you?</h1>
             <p className="mt-3 text-[15px]" style={{ color: 'var(--text-muted)' }}>
               Trip details → vehicle → checkout. You see the total before you pay.
             </p>
@@ -52,8 +53,8 @@ export default async function BookPage({ searchParams }: { searchParams: Record<
         </Container>
       </section>
 
-      <div className="-mt-4">
-        <MainMapBookingForm prices={prices} initial={initial} hideHeader />
+      <div className="pt-8 pb-6">
+        <MainMapBookingForm prices={prices} initial={initial} hideHeader variant="hero" />
       </div>
 
       <section className="pb-16">

@@ -82,7 +82,7 @@ export default async function ServicePage({ slug }: { slug: string }) {
             <ol className="mt-8 flex flex-col gap-7">
               {s.howWeHandle.map((h, i) => (
                 <li key={h.title} className="flex gap-5">
-                  <span className="font-display text-3xl font-bold shrink-0 w-10" style={{ color: 'var(--gold)' }}>{i + 1}</span>
+                  <span className="font-display text-3xl font-semibold shrink-0 w-10" style={{ color: 'var(--gold)' }}>{i + 1}</span>
                   <div>
                     <h3 className="text-lg font-semibold text-white">{h.title}</h3>
                     <p className="mt-1.5 text-[15px] leading-relaxed" style={{ color: 'var(--text-subtle)' }}>{h.text}</p>
@@ -100,19 +100,19 @@ export default async function ServicePage({ slug }: { slug: string }) {
             <Eyebrow tone="light">Vehicle options</Eyebrow>
             <Heading tone="light" className="text-3xl md:text-4xl">Choose the right size.</Heading>
           </div>
-          <Link href="/fleet" className="inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--ink-dark)' }}>Full fleet <Arrow /></Link>
+          <Link href="/fleet" className="inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--ink-dark)' }}>Full fleet <Arrow /></Link>
         </div>
         <ul className="flex gap-4 overflow-x-auto no-scrollbar snap-x -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-5">
           {vehicles.map((v) => (
-            <li key={v.type} className="snap-start shrink-0 w-[72%] sm:w-[45%] md:w-auto rounded-2xl overflow-hidden flex flex-col" style={{ background: '#fff', border: '1px solid var(--sand-line)' }}>
+            <li key={v.type} className="snap-start shrink-0 w-[72%] sm:w-[45%] md:w-auto rounded-2xl overflow-hidden flex flex-col" style={{ background: 'var(--surface-raised)', border: '1px solid var(--sand-line)' }}>
               <div className="relative aspect-[4/3]"><Image src={v.image} alt={v.name} fill sizes="(min-width:1024px) 20vw, 70vw" className="object-cover" /></div>
               <div className="p-5 flex flex-col flex-1">
-                <h3 className="font-display text-xl font-bold" style={{ color: 'var(--ink-dark)' }}>{v.name}</h3>
+                <h3 className="font-display text-xl font-semibold" style={{ color: 'var(--ink-dark)' }}>{v.name}</h3>
                 <p className="mt-1 text-sm" style={{ color: 'var(--ink-dark-muted)' }}>Up to {v.passengers} passengers · {v.luggage} bags</p>
                 <p className="mt-4 text-sm font-semibold" style={{ color: 'var(--ink-dark)' }}>
                   {v.quoteOnly || !prices[v.type] ? 'Custom quote' : `From $${prices[v.type]}`}
                 </p>
-                <Link href={`/book?vehicle=${v.type}&service=${s.slug}`} className="mt-4 inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.12em]" style={{ color: '#8C6F08' }}>
+                <Link href={`/book?vehicle=${v.type}&service=${s.slug}`} className="mt-4 inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--gold-light)' }}>
                   {v.quoteOnly ? 'Request a quote' : 'Book this vehicle'} <Arrow />
                 </Link>
               </div>

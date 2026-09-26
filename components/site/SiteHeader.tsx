@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
+import Logo from './Logo'
 import Link from 'next/link'
 import { CONTACT } from '@/lib/site/contact'
 import { SERVICES } from '@/lib/site/services'
@@ -52,7 +52,7 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
       >
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-[68px] md:h-[76px] flex items-center justify-between gap-6">
           <Link href="/" className="shrink-0" aria-label="Express Lyft home" onClick={() => setOpen(false)}>
-            <Image src="/logo.webp" alt="Express Lyft" width={180} height={48} priority className="h-9 md:h-10 w-auto object-contain" />
+            <Logo />
           </Link>
 
           {/* Desktop nav */}
@@ -129,8 +129,8 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
             </a>
             <Link
               href={bookHref}
-              className="hidden sm:inline-flex items-center gap-2 px-4 md:px-5 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.12em] hover:brightness-110 transition"
-              style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+              className="hidden sm:inline-flex items-center gap-2 px-4 md:px-5 py-2.5 rounded-xl text-[14px] font-semibold hover:brightness-110 transition"
+              style={{ background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }}
             >
               Book a Ride
             </Link>
@@ -160,8 +160,8 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
             <Link
               href={bookHref}
               onClick={() => setOpen(false)}
-              className="w-full text-center py-4 rounded-xl text-sm font-bold uppercase tracking-[0.12em]"
-              style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+              className="w-full text-center py-4 rounded-xl text-[15px] font-semibold"
+              style={{ background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }}
             >
               Book a Ride
             </Link>
@@ -219,8 +219,8 @@ export function MobileActionBar({ hideBook = false, bookHref = '/book' }: { hide
       {!hideBook && (
         <Link
           href={bookHref}
-          className="flex-1 h-12 rounded-xl flex items-center justify-center text-[13px] font-bold uppercase tracking-[0.12em]"
-          style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+          className="flex-1 h-12 rounded-xl flex items-center justify-center text-[14px] font-semibold"
+          style={{ background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }}
         >
           Book a Ride
         </Link>

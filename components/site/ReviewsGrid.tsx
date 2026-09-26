@@ -50,7 +50,7 @@ export default function ReviewsGrid({ reviews }: { reviews: Testimonial[] }) {
         <div className="mt-8 flex justify-center">
           <button
             onClick={() => setCount((c) => c + 6)}
-            className="px-6 py-3 rounded-xl text-[13px] font-bold uppercase tracking-[0.12em] text-white hover:border-[var(--gold-light)] hover:text-[var(--gold-light)] transition"
+            className="px-6 py-3 rounded-xl text-[14px] font-semibold text-white hover:border-[var(--gold-light)] hover:text-[var(--gold-light)] transition"
             style={{ border: '1px solid rgba(255,255,255,0.2)' }}
           >
             More reviews ({sorted.length - count})

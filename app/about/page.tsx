@@ -56,7 +56,7 @@ export default function AboutPage() {
         <ul className="mt-10 grid sm:grid-cols-2 lg:grid-cols-5 gap-px rounded-2xl overflow-hidden" style={{ background: 'var(--sand-line)', border: '1px solid var(--sand-line)' }}>
           {APPROACH.map((a, i) => (
             <li key={a.t} className="p-6" style={{ background: 'var(--sand)' }}>
-              <span className="font-display text-3xl font-bold" style={{ color: '#8C6F08' }}>0{i + 1}</span>
+              <span className="font-display text-3xl font-semibold" style={{ color: 'var(--gold-light)' }}>0{i + 1}</span>
               <h3 className="mt-3 text-lg font-semibold" style={{ color: 'var(--ink-dark)' }}>{a.t}</h3>
               <p className="mt-1 text-sm" style={{ color: 'var(--ink-dark-muted)' }}>{a.d}</p>
             </li>
@@ -76,7 +76,7 @@ export default function AboutPage() {
               { n: 'Dennis Rivera', r: 'Founder / Managing Director' },
             ].map((p) => (
               <li key={p.n} className="rounded-2xl p-6" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
-                <div className="w-14 h-14 rounded-full flex items-center justify-center font-display text-xl font-bold" style={{ background: 'rgba(184,150,12,0.12)', color: 'var(--gold-light)', border: '1px solid rgba(184,150,12,0.35)' }}>
+                <div className="w-14 h-14 rounded-full flex items-center justify-center font-display text-xl font-semibold" style={{ background: 'rgba(184,150,12,0.12)', color: 'var(--gold-light)', border: '1px solid rgba(184,150,12,0.35)' }}>
                   {p.n.split(' ').map((w) => w[0]).join('')}
                 </div>
                 <p className="mt-4 text-lg font-semibold text-white">{p.n}</p>

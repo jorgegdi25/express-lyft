@@ -45,13 +45,13 @@ export default function RouteMap() {
 
         {ROUTES.map((r, i) => (
           <g key={i}>
-            <path d={r.d} stroke="rgba(212,175,55,0.18)" strokeWidth="7" fill="none" strokeLinecap="round" />
+            <path d={r.d} stroke="rgba(217,190,134,0.18)" strokeWidth="7" fill="none" strokeLinecap="round" />
             <path
               d={r.d}
               pathLength={100}
               className="route-draw"
               style={{ ['--route-length' as any]: 100, animationDelay: `${r.delay}ms` }}
-              stroke="#D4AF37"
+              stroke="#D9BE86"
               strokeWidth="2.5"
               fill="none"
               strokeLinecap="round"
@@ -61,8 +61,8 @@ export default function RouteMap() {
 
         {PLACES.map((p) => (
           <g key={p.id}>
-            <circle cx={p.x} cy={p.y} r="11" fill="rgba(212,175,55,0.14)" />
-            <circle cx={p.x} cy={p.y} r="4.5" fill="#D4AF37" stroke="#141414" strokeWidth="2" />
+            <circle cx={p.x} cy={p.y} r="11" fill="rgba(217,190,134,0.14)" />
+            <circle cx={p.x} cy={p.y} r="4.5" fill="#D9BE86" stroke="#141414" strokeWidth="2" />
             <text
               x={p.anchor === 'start' ? p.x + 14 : p.x - 14}
               y={p.y - 4}

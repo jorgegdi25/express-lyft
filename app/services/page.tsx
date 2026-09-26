@@ -28,9 +28,9 @@ export default function ServicesPage() {
                   <Image src={s.image} alt={s.imageAlt} fill sizes="(min-width:768px) 20vw, 40vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
                 </div>
                 <div className="col-span-3 p-5 md:p-7 flex flex-col">
-                  <h2 className="font-display text-2xl font-bold text-white">{s.name}</h2>
+                  <h2 className="font-display text-2xl font-semibold text-white">{s.name}</h2>
                   <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{s.short}</p>
-                  <span className="mt-auto pt-4 inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--gold-light)' }}>
+                  <span className="mt-auto pt-4 inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--gold-light)' }}>
                     Learn more <Arrow />
                   </span>
                 </div>

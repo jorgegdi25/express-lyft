@@ -48,7 +48,7 @@ export default function FleetShowcase({ prices, tone = 'light' }: { prices: Star
               className="shrink-0 px-4 py-2.5 rounded-full text-[13px] font-semibold transition-colors"
               style={{
                 background: on ? ink : 'transparent',
-                color: on ? (light ? '#fff' : 'var(--bg-deep)') : ink,
+                color: on ? '#000' : ink,
                 border: `1px solid ${on ? ink : line}`,
               }}
             >
@@ -88,8 +88,8 @@ export default function FleetShowcase({ prices, tone = 'light' }: { prices: Star
         </div>
 
         <div className="lg:col-span-5 flex flex-col">
-          <p className="text-[11px] font-bold uppercase tracking-[3px]" style={{ color: light ? '#8C6F08' : 'var(--gold)' }}>{v.category}</p>
-          <h3 className="font-display text-3xl md:text-4xl font-bold mt-2" style={{ color: ink }}>{v.name}</h3>
+          <p className="text-[11px] font-bold uppercase tracking-[3px]" style={{ color: light ? 'var(--gold-light)' : 'var(--gold)' }}>{v.category}</p>
+          <h3 className="font-display text-3xl md:text-4xl font-semibold mt-2" style={{ color: ink }}>{v.name}</h3>
           <p className="mt-3 text-base leading-relaxed" style={{ color: muted }}>{v.description}</p>
 
           <dl className="mt-6 grid grid-cols-2 gap-px rounded-xl overflow-hidden" style={{ background: line, border: `1px solid ${line}` }}>
@@ -111,14 +111,14 @@ export default function FleetShowcase({ prices, tone = 'light' }: { prices: Star
           <div className="mt-auto pt-8 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-[0.14em]" style={{ color: muted }}>{v.quoteOnly ? 'Rate' : 'Starting at'}</p>
-              <p className="font-display text-4xl font-bold" style={{ color: ink }}>
+              <p className="font-display text-4xl font-semibold" style={{ color: ink }}>
                 {v.quoteOnly || !price ? 'Custom quote' : `$${price}`}
               </p>
             </div>
             <Link
               href={`/book?vehicle=${v.type}&pax=${Math.min(v.passengers, v.type === 'sedan_suv' ? 2 : v.passengers)}`}
-              className="inline-flex items-center gap-2 px-6 py-4 rounded-xl text-[13px] font-bold uppercase tracking-[0.12em] hover:brightness-110 transition"
-              style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+              className="inline-flex items-center gap-2 px-6 py-4 rounded-xl text-[14px] font-semibold hover:brightness-110 transition"
+              style={{ background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }}
             >
               {v.quoteOnly ? 'Request a quote' : 'Book this vehicle'} <Arrow />
             </Link>

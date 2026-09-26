@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-// Small building blocks for the corporate site. They encode the existing
-// Express Lyft language (gold eyebrow, Playfair headings, gold gradient
-// primary button) so each section doesn't re-inline the same styles.
+// Small building blocks for the corporate site, following the Express Lyft
+// brand guidelines: Montserrat, black / #191919 / white, and the metallic
+// gold gradient reserved for the primary action.
 
 export function Container({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`max-w-7xl mx-auto px-4 md:px-8 ${className}`}>{children}</div>
@@ -12,8 +12,8 @@ export function Container({ children, className = '' }: { children: ReactNode; c
 export function Eyebrow({ children, tone = 'dark' }: { children: ReactNode; tone?: 'dark' | 'light' }) {
   return (
     <p
-      className="text-[11px] md:text-xs font-bold uppercase tracking-[3px] mb-3"
-      style={{ color: tone === 'light' ? '#8C6F08' : 'var(--gold)' }}
+      className="text-[11px] font-medium uppercase tracking-[0.32em] mb-4"
+      style={{ color: 'var(--gold-light)' }}
     >
       {children}
     </p>
@@ -33,7 +33,7 @@ export function Heading({
 }) {
   return (
     <Tag
-      className={`font-display font-bold leading-[1.1] tracking-[-0.01em] ${className}`}
+      className={`font-display font-semibold leading-[1.12] tracking-[-0.02em] ${className}`}
       style={{ color: tone === 'light' ? 'var(--ink-dark)' : 'var(--text)' }}
     >
       {children}
@@ -44,21 +44,21 @@ export function Heading({
 type ButtonVariant = 'primary' | 'outline' | 'ghost' | 'dark'
 
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 rounded-xl text-[13px] font-bold uppercase tracking-[0.12em] transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-2 focus-visible:ring-offset-black'
+  'inline-flex items-center justify-center gap-2 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-2 focus-visible:ring-offset-black'
 
 const BUTTON_SIZES = {
-  md: 'px-5 py-3',
-  lg: 'px-7 py-4',
+  md: 'px-5 h-11',
+  lg: 'px-7 h-[52px]',
 }
 
 function variantStyle(variant: ButtonVariant): React.CSSProperties {
   switch (variant) {
     case 'primary':
-      return { background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }
+      return { background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }
     case 'outline':
       return { border: '1px solid rgba(255,255,255,0.28)', color: 'var(--text)' }
     case 'dark':
-      return { background: 'var(--ink-dark)', color: '#fff' }
+      return { background: '#fff', color: '#000' }
     default:
       return { color: 'var(--text)' }
   }
@@ -81,7 +81,7 @@ export function ButtonLink({
   external?: boolean
   'aria-label'?: string
 }) {
-  const cls = `${BUTTON_BASE} ${BUTTON_SIZES[size]} ${variant === 'primary' ? 'hover:brightness-110 shadow-[0_10px_30px_-10px_rgba(184,150,12,0.6)]' : variant === 'outline' ? 'hover:border-[var(--gold-light)] hover:text-[var(--gold-light)]' : 'hover:opacity-90'} ${className}`
+  const cls = `${BUTTON_BASE} ${BUTTON_SIZES[size]} ${variant === 'primary' ? 'hover:brightness-105' : variant === 'outline' ? 'hover:border-[var(--gold-light)] hover:text-[var(--gold-light)]' : 'hover:opacity-90'} ${className}`
   const isExternal = external ?? /^(https?:|tel:|mailto:)/.test(href)
   if (isExternal) {
     return (

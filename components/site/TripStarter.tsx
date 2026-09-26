@@ -89,8 +89,8 @@ export default function TripStarter({
         </div>
         <button
           type="submit"
-          className={`${wide} h-[52px] px-6 rounded-xl text-[13px] font-bold uppercase tracking-[0.12em] hover:brightness-110 transition whitespace-nowrap`}
-          style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+          className={`${wide} h-[52px] px-6 rounded-xl text-[14px] font-semibold hover:brightness-110 transition whitespace-nowrap`}
+          style={{ background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }}
         >
           See vehicles & prices
         </button>

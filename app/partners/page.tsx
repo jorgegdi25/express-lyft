@@ -72,7 +72,7 @@ export default async function PartnersPage() {
         <div className="grid md:grid-cols-2 gap-5">
           {AUDIENCES.map((a) => (
             <article key={a.id} id={a.id} className="rounded-2xl p-7 md:p-9 scroll-mt-28" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
-              <h2 className="font-display text-3xl font-bold text-white">{a.t}</h2>
+              <h2 className="font-display text-3xl font-semibold text-white">{a.t}</h2>
               <p className="mt-3 text-[15px] leading-relaxed" style={{ color: 'var(--text-subtle)' }}>{a.d}</p>
               <ul className="mt-6 flex flex-col gap-2.5">
                 {a.points.map((p) => (
@@ -101,7 +101,7 @@ export default async function PartnersPage() {
           <ul className="lg:col-span-7 grid sm:grid-cols-2 gap-px rounded-2xl overflow-hidden" style={{ background: 'var(--sand-line)', border: '1px solid var(--sand-line)' }}>
             {BENEFITS.map((b, i) => (
               <li key={b.t} className="p-6 md:p-8" style={{ background: 'var(--sand)' }}>
-                <span className="font-display text-3xl font-bold" style={{ color: '#8C6F08' }}>0{i + 1}</span>
+                <span className="font-display text-3xl font-semibold" style={{ color: 'var(--gold-light)' }}>0{i + 1}</span>
                 <h3 className="mt-3 text-lg font-semibold" style={{ color: 'var(--ink-dark)' }}>{b.t}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--ink-dark-muted)' }}>{b.d}</p>
               </li>
@@ -125,7 +125,7 @@ export default async function PartnersPage() {
                 ['Guests book, we drive', 'We handle vehicles, drivers, scheduling and customer service — and track eligible bookings for your rebate.'],
               ].map(([t, d], i) => (
                 <li key={t} className="flex gap-5">
-                  <span className="font-display text-3xl font-bold w-8 shrink-0" style={{ color: 'var(--gold)' }}>{i + 1}</span>
+                  <span className="font-display text-3xl font-semibold w-8 shrink-0" style={{ color: 'var(--gold)' }}>{i + 1}</span>
                   <div><h3 className="text-lg font-semibold text-white">{t}</h3><p className="mt-1 text-[15px]" style={{ color: 'var(--text-subtle)' }}>{d}</p></div>
                 </li>
               ))}

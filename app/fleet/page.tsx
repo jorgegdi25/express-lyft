@@ -28,7 +28,7 @@ export default async function FleetPage() {
       <Section tone="sand">
         <ul className="flex flex-col gap-6">
           {FLEET.map((v, i) => (
-            <li key={v.type} id={v.slug} className="grid lg:grid-cols-12 rounded-3xl overflow-hidden scroll-mt-28" style={{ background: '#fff', border: '1px solid var(--sand-line)' }}>
+            <li key={v.type} id={v.slug} className="grid lg:grid-cols-12 rounded-3xl overflow-hidden scroll-mt-28" style={{ background: 'var(--surface-raised)', border: '1px solid var(--sand-line)' }}>
               <div className={`relative lg:col-span-7 aspect-[16/10] lg:aspect-auto lg:min-h-[380px] ${i % 2 ? 'lg:order-2' : ''}`}>
                 <Image src={v.image} alt={`${v.name} — Express Lyft`} fill sizes="(min-width:1024px) 58vw, 100vw" className="object-cover" />
               </div>
@@ -44,8 +44,8 @@ export default async function FleetPage() {
                 <p className="mt-5 text-sm" style={{ color: 'var(--ink-dark-muted)' }}><strong style={{ color: 'var(--ink-dark)' }}>Best for:</strong> {v.bestFor}</p>
                 <Link
                   href={`/book?vehicle=${v.type}`}
-                  className="mt-auto pt-8 self-start inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.12em]"
-                  style={{ color: '#8C6F08' }}
+                  className="mt-auto pt-8 self-start inline-flex items-center gap-2 text-[14px] font-semibold"
+                  style={{ color: 'var(--gold-light)' }}
                 >
                   {v.quoteOnly ? 'Request a quote' : 'Book this vehicle'} <Arrow />
                 </Link>

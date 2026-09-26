@@ -27,11 +27,11 @@ export function Hero({ prices }: { prices: Record<string, any> }) {
 
         <Container className="relative w-full">
           <div className="max-w-2xl">
-            <p className="text-[11px] md:text-xs font-bold uppercase tracking-[3.5px]" style={{ color: 'var(--gold-light)' }}>
+            <p className="text-[11px] font-medium uppercase tracking-[0.32em]" style={{ color: 'var(--gold-light)' }}>
               Private transportation · Miami & South Florida
             </p>
-            <h1 className="font-display font-bold text-white text-[40px] leading-[1.03] md:text-6xl lg:text-7xl mt-4 tracking-[-0.015em]">
-              From arrival to destination, <span style={{ color: 'var(--gold-light)' }}>handled.</span>
+            <h1 className="font-display font-semibold text-white text-[38px] leading-[1.08] md:text-[56px] lg:text-[64px] mt-5 tracking-[-0.025em]">
+              From arrival to destination, <span className="text-gold-gradient">handled.</span>
             </h1>
             <p className="mt-5 text-base md:text-lg text-white/80 max-w-xl leading-relaxed">
               Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
@@ -45,7 +45,7 @@ export function Hero({ prices }: { prices: Record<string, any> }) {
         </Container>
       </section>
 
-      <div className="relative -mt-28 md:-mt-36 pb-10 md:pb-14" style={{ background: 'linear-gradient(180deg, transparent 0, transparent 7rem, var(--bg-deep) 7rem)' }}>
+      <div className="relative -mt-28 md:-mt-36 pb-4 md:pb-6" style={{ background: 'linear-gradient(180deg, transparent 0, transparent 7rem, var(--bg-deep) 7rem)' }}>
         <MainMapBookingForm prices={prices} variant="hero" hideHeader />
       </div>
     </>
@@ -120,9 +120,9 @@ function ServiceCard({ s, large = false }: { s: (typeof SERVICES)[number]; large
       <Image src={s.image} alt={s.imageAlt} fill sizes={large ? '(min-width:768px) 50vw, 100vw' : '(min-width:768px) 25vw, 100vw'} className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-[1.04]" />
       <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.88) 100%)' }} />
       <div className="absolute inset-x-0 bottom-0 p-5 md:p-7">
-        <h3 className={`font-display font-bold text-white ${large ? 'text-3xl md:text-4xl' : 'text-xl'}`}>{s.name}</h3>
+        <h3 className={`font-display font-semibold text-white ${large ? 'text-3xl md:text-4xl' : 'text-xl'}`}>{s.name}</h3>
         <p className={`mt-2 text-white/75 leading-relaxed ${large ? 'text-base max-w-md' : 'text-sm'}`}>{s.short}</p>
-        <span className="mt-4 inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--gold-light)' }}>
+        <span className="mt-4 inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--gold-light)' }}>
           Learn more <Arrow className="transition-transform group-hover:translate-x-1" />
         </span>
       </div>
@@ -169,7 +169,7 @@ export function JourneySection() {
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--text-faint)' }}>{j.k}</p>
-                <h3 className="font-display text-2xl md:text-3xl font-bold text-white mt-1">{j.t}</h3>
+                <h3 className="font-display text-2xl md:text-3xl font-semibold text-white mt-1">{j.t}</h3>
                 <p className="mt-2 text-[15px] leading-relaxed max-w-lg" style={{ color: 'var(--text-subtle)' }}>{j.d}</p>
               </Reveal>
             ))}
@@ -190,7 +190,7 @@ export function FleetSection({ prices }: { prices: StartingPrices }) {
             <Eyebrow tone="light">Our fleet</Eyebrow>
             <Heading tone="light" className="text-4xl md:text-5xl">The right vehicle for every group.</Heading>
           </div>
-          <Link href="/fleet" className="inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--ink-dark)' }}>
+          <Link href="/fleet" className="inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--ink-dark)' }}>
             Compare all vehicles <Arrow />
           </Link>
         </div>
@@ -240,7 +240,7 @@ export function LocalSection() {
                       <span className="w-8 h-px" style={{ background: 'var(--gold)' }} aria-hidden />
                       <span>{r.to}</span>
                     </span>
-                    <span className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.12em] shrink-0" style={{ color: 'var(--gold-light)' }}>
+                    <span className="inline-flex items-center gap-2 text-[14px] font-semibold shrink-0" style={{ color: 'var(--gold-light)' }}>
                       See price <Arrow className="transition-transform group-hover:translate-x-1" />
                     </span>
                   </Link>
@@ -293,11 +293,11 @@ export function PartnersSection() {
           </div>
           <div className="lg:col-span-7 grid sm:grid-cols-3 lg:grid-cols-1 gap-px rounded-2xl overflow-hidden" style={{ background: 'var(--sand-line)', border: '1px solid var(--sand-line)' }}>
             {B2B.map((b) => (
-              <Link key={b.t} href={b.href} className="group p-6 md:p-7 flex flex-col lg:flex-row gap-3 lg:gap-8 hover:bg-white transition-colors" style={{ background: 'var(--sand)' }}>
-                <h3 className="font-display text-2xl font-bold lg:w-52 shrink-0" style={{ color: 'var(--ink-dark)' }}>{b.t}</h3>
+              <Link key={b.t} href={b.href} className="group p-6 md:p-7 flex flex-col lg:flex-row gap-3 lg:gap-8 hover:bg-white/[0.03] transition-colors" style={{ background: 'var(--sand)' }}>
+                <h3 className="font-display text-2xl font-semibold lg:w-52 shrink-0" style={{ color: 'var(--ink-dark)' }}>{b.t}</h3>
                 <div className="flex-1">
                   <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink-dark-muted)' }}>{b.d}</p>
-                  <span className="mt-3 inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.12em]" style={{ color: '#8C6F08' }}>
+                  <span className="mt-3 inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--gold-light)' }}>
                     {b.cta} <Arrow className="transition-transform group-hover:translate-x-1" />
                   </span>
                 </div>
@@ -353,7 +353,7 @@ export function HowItWorks() {
         <ol className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
           {STEPS.map((s, i) => (
             <Reveal as="li" key={s.t} delay={i * 80}>
-              <span className="font-display text-5xl md:text-6xl font-bold" style={{ color: 'var(--gold)' }}>{i + 1}</span>
+              <span className="font-display text-5xl md:text-6xl font-semibold" style={{ color: 'var(--gold)' }}>{i + 1}</span>
               <h3 className="mt-3 text-lg font-semibold text-white">{s.t}</h3>
               <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{s.d}</p>
             </Reveal>
@@ -374,7 +374,7 @@ export function FaqSection() {
           <div className="lg:col-span-4">
             <Eyebrow>Questions & answers</Eyebrow>
             <Heading className="text-4xl md:text-5xl">Good to know before you ride.</Heading>
-            <Link href="/faq" className="mt-6 inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--gold-light)' }}>
+            <Link href="/faq" className="mt-6 inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--gold-light)' }}>
               All questions <Arrow />
             </Link>
           </div>

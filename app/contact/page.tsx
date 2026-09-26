@@ -34,7 +34,7 @@ export default function ContactPage() {
         <div className="mt-12 grid md:grid-cols-2 gap-5">
           {OFFICES.map((o) => (
             <address key={o.city} className="not-italic rounded-2xl p-7" style={{ border: '1px solid var(--border-faint)' }}>
-              <p className="font-display text-2xl font-bold text-white">
+              <p className="font-display text-2xl font-semibold text-white">
                 {o.city}
                 {o.status === 'expanding' && <span className="ml-3 align-middle text-[10px] font-sans uppercase tracking-wider" style={{ color: 'var(--gold-light)' }}>Expanding</span>}
               </p>

@@ -23,6 +23,12 @@ interface MapRouteSelectorProps {
   compact?: boolean;
   pickupPlaceholder?: string;
   destinationPlaceholder?: string;
+  // Look of the two address inputs (the home booking bar uses borderless cells).
+  inputClassName?: string;
+  inputStyle?: React.CSSProperties;
+  labels?: { pickup: string; destination: string };
+  // Shown when an address field is focused while empty.
+  popularPlaces?: { label: string; address: string }[];
 }
 
 interface Suggestion {
@@ -115,7 +121,7 @@ async function fetchRoute(origin: { lat: number; lng: number }, destination: { l
   return data.routes?.[0] || null;
 }
 
-export default function MapRouteSelector({ onRouteCalculated, initialPickup, initialDestination, preset, renderLayout, mapClassName, compact, pickupPlaceholder, destinationPlaceholder }: MapRouteSelectorProps) {
+export default function MapRouteSelector({ onRouteCalculated, initialPickup, initialDestination, preset, renderLayout, mapClassName, compact, pickupPlaceholder, destinationPlaceholder, inputClassName, inputStyle, labels, popularPlaces }: MapRouteSelectorProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const mapRef = useRef<any>(null);
@@ -138,6 +144,8 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
   const [dropoffText, setDropoffText] = useState(initialDestination || '');
   const [pickupSuggestions, setPickupSuggestions] = useState<Suggestion[]>([]);
   const [dropoffSuggestions, setDropoffSuggestions] = useState<Suggestion[]>([]);
+  const [focusedField, setFocusedField] = useState<'pickup' | 'dropoff' | null>(null);
+  const lastBoundsRef = useRef<any>(null);
 
   const currentPickupCoords = useRef<{ lat: number; lng: number } | null>(null);
   const currentDropoffCoords = useRef<{ lat: number; lng: number } | null>(null);
@@ -312,6 +320,33 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
     );
   };
 
+  // Keep the route framed when the map container changes size (the home
+  // booking bar reveals the map only once a route exists).
+  useEffect(() => {
+    const el = mapContainerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => {
+      if (mapRef.current && lastBoundsRef.current && el.clientHeight > 50) {
+        mapRef.current.fitBounds(lastBoundsRef.current, 40);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const pickPopular = (address: string, isPickup: boolean) => {
+    if (isPickup) {
+      setPickupText(address);
+      setPickupSuggestions([]);
+      resolveAddress(address, setPickupCoords);
+    } else {
+      setDropoffText(address);
+      setDropoffSuggestions([]);
+      resolveAddress(address, setDropoffCoords);
+    }
+    setFocusedField(null);
+  };
+
   // Addresses handed over from the corporate site (/book?pickup=…) — once.
   useEffect(() => {
     if (!isLoaded) return;
@@ -421,7 +456,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
           routePolylineRef.current = new google.maps.Polyline({
             path,
             map: mapRef.current,
-            strokeColor: '#B8960C',
+            strokeColor: '#D9BE86',
             strokeWeight: 5,
             strokeOpacity: 0.75,
           });
@@ -429,6 +464,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
         const bounds = new google.maps.LatLngBounds();
         path.forEach((p: any) => bounds.extend(p));
+        lastBoundsRef.current = bounds;
         mapRef.current.fitBounds(bounds, 50);
 
         const distanceMiles = route.distanceMeters * 0.000621371;
@@ -452,7 +488,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
   }, [pickupCoords, dropoffCoords, isLoaded]);
 
   const suggestionDropdownClass =
-    'absolute z-20 mt-1 w-full rounded-xl overflow-hidden border shadow-lg max-h-64 overflow-y-auto';
+    'absolute z-20 mt-1 w-full min-w-[280px] rounded-xl overflow-hidden border shadow-lg max-h-64 overflow-y-auto';
   const suggestionDropdownStyle = {
     background: 'var(--surface-raised)',
     borderColor: 'var(--border-soft)',
@@ -461,18 +497,34 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
   const pickupInput = (
         <div className="relative">
           <label className="text-sm font-semibold mb-2 block" style={{ color: '#BBBBBB' }}>
-            Pickup Location
+            {labels?.pickup || 'Pickup Location'}
           </label>
           <input
             type="text"
             value={pickupText}
             placeholder={pickupPlaceholder || 'Pickup location (e.g., Miami Airport)'}
-            className="w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)] placeholder-[var(--text-faint)]"
-            style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: 'var(--text)' }}
+            className={inputClassName || "w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)] placeholder-[var(--text-faint)]"}
+            style={inputStyle || { background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: 'var(--text)' }}
             onChange={(e) => handlePickupChange(e.target.value)}
-            onFocus={() => { if (pickupBlurTimeoutRef.current) clearTimeout(pickupBlurTimeoutRef.current); }}
-            onBlur={() => { pickupBlurTimeoutRef.current = setTimeout(() => setPickupSuggestions([]), 150); }}
+            onFocus={() => { if (pickupBlurTimeoutRef.current) clearTimeout(pickupBlurTimeoutRef.current); setFocusedField('pickup'); }}
+            onBlur={() => { pickupBlurTimeoutRef.current = setTimeout(() => { setPickupSuggestions([]); setFocusedField((f) => (f === 'pickup' ? null : f)); }, 150); }}
           />
+          {popularPlaces && focusedField === 'pickup' && !pickupText.trim() && pickupSuggestions.length === 0 && (
+            <div className={suggestionDropdownClass} style={suggestionDropdownStyle}>
+              <div className="px-3 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Popular</div>
+              {popularPlaces.map((p, i) => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); pickPopular(p.address, true); }}
+                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-[var(--border)] transition-colors"
+                  style={{ color: 'var(--text)', borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)' }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          )}
           {pickupSuggestions.length > 0 && (
             <div className={suggestionDropdownClass} style={suggestionDropdownStyle}>
               {pickupSuggestions.map((s, i) => (
@@ -501,18 +553,34 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
   const dropoffInput = (
         <div className="relative">
           <label className="text-sm font-semibold mb-2 block" style={{ color: '#BBBBBB' }}>
-            Destination
+            {labels?.destination || 'Destination'}
           </label>
           <input
             type="text"
             value={dropoffText}
             placeholder={destinationPlaceholder || 'Destination (e.g., B Ocean Resort)'}
-            className="w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)] placeholder-[var(--text-faint)]"
-            style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: 'var(--text)' }}
+            className={inputClassName || "w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)] placeholder-[var(--text-faint)]"}
+            style={inputStyle || { background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: 'var(--text)' }}
             onChange={(e) => handleDropoffChange(e.target.value)}
-            onFocus={() => { if (dropoffBlurTimeoutRef.current) clearTimeout(dropoffBlurTimeoutRef.current); }}
-            onBlur={() => { dropoffBlurTimeoutRef.current = setTimeout(() => setDropoffSuggestions([]), 150); }}
+            onFocus={() => { if (dropoffBlurTimeoutRef.current) clearTimeout(dropoffBlurTimeoutRef.current); setFocusedField('dropoff'); }}
+            onBlur={() => { dropoffBlurTimeoutRef.current = setTimeout(() => { setDropoffSuggestions([]); setFocusedField((f) => (f === 'dropoff' ? null : f)); }, 150); }}
           />
+          {popularPlaces && focusedField === 'dropoff' && !dropoffText.trim() && dropoffSuggestions.length === 0 && (
+            <div className={suggestionDropdownClass} style={suggestionDropdownStyle}>
+              <div className="px-3 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Popular</div>
+              {popularPlaces.map((p, i) => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); pickPopular(p.address, false); }}
+                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-[var(--border)] transition-colors"
+                  style={{ color: 'var(--text)', borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)' }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          )}
           {dropoffSuggestions.length > 0 && (
             <div className={suggestionDropdownClass} style={suggestionDropdownStyle}>
               {dropoffSuggestions.map((s, i) => (
