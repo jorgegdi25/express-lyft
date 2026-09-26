@@ -9,6 +9,13 @@ export const BRAND = {
   disclaimer: 'Express Lyft (explyft.com) is an independent transportation service and is not affiliated with Lyft, Inc.',
 }
 
+// Launch switch for Express Lyft 2.0. While false, the new site lives at
+// /home in production, explyft.com/ keeps the current page, and the new
+// pages are kept out of search engines. At launch: SITE_V2_LIVE = true and
+// SITE_HOME = '/', then point app/page.tsx at HomeV2 for every host.
+export const SITE_V2_LIVE = false
+export const SITE_HOME = SITE_V2_LIVE ? '/' : '/home'
+
 export const CONTACT = {
   phoneDisplay: '+1 (888) 973-7896',
   phoneHref: 'tel:+18889737896',

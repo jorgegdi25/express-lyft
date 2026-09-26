@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Logo from './Logo'
 import Link from 'next/link'
-import { CONTACT } from '@/lib/site/contact'
+import { CONTACT, SITE_HOME } from '@/lib/site/contact'
 import { SERVICES } from '@/lib/site/services'
 import { Arrow, PhoneIcon, WhatsAppIcon } from './ui'
 
@@ -51,7 +51,7 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
         onMouseLeave={() => setMenu(null)}
       >
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-[68px] md:h-[76px] flex items-center justify-between gap-6">
-          <Link href="/" className="shrink-0" aria-label="Express Lyft home" onClick={() => setOpen(false)}>
+          <Link href={SITE_HOME} className="shrink-0" aria-label="Express Lyft home" onClick={() => setOpen(false)}>
             <Logo />
           </Link>
 

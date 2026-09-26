@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import SiteHeader, { MobileActionBar } from './SiteHeader'
 import SiteFooter from './SiteFooter'
 import { Container } from './ui'
-import { BRAND } from '@/lib/site/contact'
+import { BRAND, SITE_HOME } from '@/lib/site/contact'
 
 // Shared chrome for the corporate inner pages: header, breadcrumb,
 // page hero, footer and the phone action bar.
@@ -28,7 +28,7 @@ export default function PageShell({
   imageAlt?: string
   heroAside?: ReactNode
 }) {
-  const crumbs = [{ label: 'Home', href: '/' }, ...breadcrumb]
+  const crumbs = [{ label: 'Home', href: SITE_HOME }, ...breadcrumb]
   const breadcrumbLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',

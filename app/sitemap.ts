@@ -1,9 +1,11 @@
 import type { MetadataRoute } from 'next'
-import { BRAND } from '@/lib/site/contact'
+import { BRAND, SITE_V2_LIVE } from '@/lib/site/contact'
 import { SERVICES } from '@/lib/site/services'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
+  // Until the 2.0 launch only the current home is listed.
+  if (!SITE_V2_LIVE) return [{ url: BRAND.url, lastModified: now, priority: 1 }]
   const pages: { path: string; priority: number }[] = [
     { path: '', priority: 1 },
     { path: '/book', priority: 0.9 },
