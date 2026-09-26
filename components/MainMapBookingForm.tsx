@@ -8,6 +8,7 @@ import ErrorBoundary from './ErrorBoundary'
 import { applyTimeSurcharge, calculateDistanceAmount, SurchargeConfig, TIME_SLOTS } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { CalendarDatePicker } from '@/components/CalendarPicker'
+import { FLEET } from '@/lib/site/fleet'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 
@@ -688,6 +689,112 @@ export default function MainMapBookingForm({
     </ErrorBoundary>
   )
 
+  // Home step 2: every vehicle class side by side, so price, capacity and
+  // bags compare at a glance. Same prices (tax included, as charged) and
+  // the same luggage check as the classic vehicle step.
+  const withTax = (n: number) => Math.round(n * (1 + FL_TAX_RATE_PERCENT / 100))
+  const isQuote = (t: VehicleType) => t === 'minibus' || t === 'coachbus'
+  const selectedFleet = FLEET.find((f) => f.type === vehicleType)!
+  const heroStep2 = (
+    <div className="flex flex-col gap-4">
+      {/* Trip summary */}
+      <div className="rounded-2xl px-4 py-3 md:px-5 flex flex-col md:flex-row md:items-center justify-between gap-2" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="min-w-0">
+          <p className="text-[14px] font-semibold text-white truncate">
+            {pickup} <span style={{ color: 'var(--gold-light)' }}>→</span> {destination}
+          </p>
+          <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            {date} · {time}{tripType === 'round-trip' ? ` · return ${returnDate} ${returnTime}` : ''} · {passengers} {passengers === 1 ? 'guest' : 'guests'} · {luggageCount} {luggageCount === 1 ? 'bag' : 'bags'}{distanceMiles > 0 ? ` · ${distanceMiles.toFixed(1)} mi` : ''}
+          </p>
+        </div>
+        <button type="button" onClick={handlePrevStep} className="self-start md:self-auto shrink-0 text-[13px] font-semibold underline underline-offset-4" style={{ color: 'var(--gold-light)' }}>
+          Edit trip
+        </button>
+      </div>
+
+      <div className="grid lg:grid-cols-[1fr_300px] gap-4 items-start">
+        <ul className="flex flex-col gap-2.5" role="radiogroup" aria-label="Choose your vehicle">
+          {FLEET.map((f) => {
+            const tooSmall = passengers > f.passengers
+            const selected = f.type === vehicleType
+            const quote = isQuote(f.type)
+            return (
+              <li key={f.type}>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  disabled={tooSmall}
+                  onClick={() => setSelectedVehicleOverride(f.type)}
+                  className="w-full text-left rounded-2xl p-2.5 pr-4 flex items-center gap-4 transition-colors disabled:cursor-not-allowed"
+                  style={{
+                    background: selected ? 'rgba(233,213,166,0.07)' : '#0b0b0b',
+                    border: selected ? '1.5px solid var(--gold)' : '1px solid rgba(255,255,255,0.1)',
+                    opacity: tooSmall ? 0.4 : 1,
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={f.image} alt="" className="w-24 h-16 sm:w-32 sm:h-20 rounded-xl object-cover shrink-0" loading="lazy" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-semibold text-white">{f.name}</p>
+                    <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                      Up to {f.passengers} · {f.luggage} bags
+                    </p>
+                    <p className="hidden sm:block text-[12px] mt-0.5 truncate" style={{ color: 'var(--text-subtle)' }}>
+                      {tooSmall ? `Too small for ${passengers} guests` : f.bestFor}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    {quote ? (
+                      <p className="text-[14px] font-semibold text-white">Quote</p>
+                    ) : (
+                      <>
+                        <p className="text-[18px] font-semibold text-white">${withTax(surchargedPrices[f.type])}</p>
+                        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{tripType === 'round-trip' ? 'each way' : 'total'}</p>
+                      </>
+                    )}
+                  </div>
+                  <span className="hidden sm:flex w-5 h-5 rounded-full items-center justify-center shrink-0" style={{ border: selected ? '6px solid var(--gold-light)' : '1.5px solid rgba(255,255,255,0.3)' }} aria-hidden />
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+
+        {/* Summary + continue */}
+        <div className="lg:sticky lg:top-24 rounded-2xl p-5 flex flex-col gap-4" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em]" style={{ color: 'var(--gold-light)' }}>Your vehicle</p>
+            <p className="mt-1 text-lg font-semibold text-white">{selectedFleet.name}</p>
+            <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>or similar · up to {selectedFleet.passengers} guests</p>
+          </div>
+          <div className="pt-4 flex items-end justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <div>
+              <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{isQuote(vehicleType) ? 'Group rate' : tripType === 'round-trip' ? 'Round trip total' : 'Total'}</p>
+              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{isQuote(vehicleType) ? 'We confirm and send a quote' : 'Taxes & fees included'}</p>
+            </div>
+            <p className="text-2xl font-semibold text-white">
+              {isQuote(vehicleType) ? 'Quote' : `$${withTax(tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice)}`}
+            </p>
+          </div>
+          {error && <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>}
+          <button
+            type="button"
+            onClick={handleNextStep2}
+            className="h-[52px] rounded-xl text-[15px] font-semibold hover:brightness-105 transition flex items-center justify-center gap-2"
+            style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}
+          >
+            Continue
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </button>
+          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            Professional drivers · Licensed & insured · Secure online payment
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+
   // Home checkout extras: moved out of step 1 to keep the bar short.
   const heroExtras = (
     <div className="flex flex-col gap-4">
@@ -695,11 +802,11 @@ export default function MainMapBookingForm({
         <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: 'var(--bg-deep)', border: '1px solid var(--border-soft)' }}>
           <p className="text-sm font-semibold text-white">Your flight</p>
           <p className="text-xs -mt-2" style={{ color: 'var(--text-muted)' }}>We plan the pickup around your arrival — 30 minutes of free waiting included.</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input type="text" placeholder="Airline *" value={airline} onChange={(e) => setAirline(e.target.value)} className={INPUT_CLASS} style={INPUT_STYLE} aria-label="Airline" />
             <input type="text" placeholder="Flight number *" value={flightNumber} onChange={(e) => setFlightNumber(e.target.value)} className={INPUT_CLASS} style={INPUT_STYLE} aria-label="Flight number" />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {([['curbside', 'Curbside pickup', 'Outside arrivals'], ['meet_greet', 'Meet & Greet · +$25', 'Inside with a sign']] as const).map(([val, t, d]) => (
               <button key={val} type="button" onClick={() => setMeetingType(val)} className="rounded-lg px-3 py-2.5 text-left" style={{ background: meetingType === val ? 'rgba(233,213,166,0.08)' : 'transparent', border: meetingType === val ? '1px solid var(--gold)' : '1px solid var(--border-soft)' }}>
                 <span className="block text-[13px] font-semibold text-white">{t}</span>
@@ -738,7 +845,7 @@ export default function MainMapBookingForm({
         )}
 
         <div
-          className={isHero ? 'rounded-3xl p-4 md:p-5' : 'max-w-3xl mx-auto'}
+          className={isHero ? 'rounded-3xl p-3 sm:p-4 md:p-5' : 'max-w-3xl mx-auto'}
           style={isHero ? { background: 'rgba(12,12,12,0.86)', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 40px 100px -30px rgba(0,0,0,0.9)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' } : undefined}
         >
           {/* ── Booking Form ──────────────────────────────────── */}
@@ -781,7 +888,7 @@ export default function MainMapBookingForm({
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className={`flex flex-col gap-6 ${isHero && step > 1 ? 'max-w-3xl mx-auto py-4' : ''}`}>
+            <form onSubmit={handleSubmit} className={`flex flex-col gap-6 ${isHero && step > 1 ? `${step === 2 ? 'max-w-5xl' : 'max-w-3xl'} mx-auto w-full py-4` : ''}`}>
               {/* Progress indicator */}
               <div className={`${isHero && step === 1 ? 'hidden' : 'flex'} items-center justify-center gap-2 mb-6 max-w-md mx-auto select-none w-full`}>
                 {(false ? [1, 3] : [1, 2, 3]).map((s, index) => {
@@ -1235,7 +1342,9 @@ export default function MainMapBookingForm({
               )}
 
               {/* Step 2: Vehicle Selection */}
-              {step === 2 && (
+              {step === 2 && isHero && heroStep2}
+
+              {step === 2 && !isHero && (
                 <div className="flex flex-col gap-6">
                   <VehicleDisplay
                     passengers={passengers}
@@ -1274,7 +1383,7 @@ export default function MainMapBookingForm({
               {/* Step 3: Contact Info & Checkout */}
               {step === 3 && (
                 <div
-                  className="rounded-2xl p-7 md:p-10 flex flex-col gap-6"
+                  className={`rounded-2xl ${isHero ? 'p-4 md:p-8' : 'p-7 md:p-10'} flex flex-col gap-6`}
                   style={{
                     background: 'var(--surface-raised)',
                     border: '1px solid var(--border)',

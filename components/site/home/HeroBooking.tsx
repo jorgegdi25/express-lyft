@@ -12,9 +12,9 @@ export default function HeroBooking({ prices, intro }: { prices: Record<string, 
   const onStepChange = useCallback((step: number) => setExpanded(step > 1), [])
 
   return (
-    <div className={`grid gap-8 lg:gap-12 items-center ${expanded ? '' : 'lg:grid-cols-[1fr_440px]'}`}>
-      <div className={expanded ? 'hidden' : ''}>{intro}</div>
-      <div className={expanded ? 'w-full' : ''}>
+    <div className={`grid grid-cols-1 gap-8 lg:gap-12 items-center ${expanded ? '' : 'lg:grid-cols-[minmax(0,1fr)_440px]'}`}>
+      <div className={`min-w-0 ${expanded ? 'hidden' : ''}`}>{intro}</div>
+      <div className="min-w-0">
         <MainMapBookingForm prices={prices} variant="hero" hideHeader onStepChange={onStepChange} />
       </div>
     </div>
