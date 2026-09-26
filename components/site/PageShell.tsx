@@ -49,8 +49,8 @@ export default function PageShell({
         {image && (
           <>
             <Image src={image} alt={imageAlt} fill priority sizes="100vw" className="object-cover" />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(8,8,8,0.9) 0%, rgba(8,8,8,0.55) 55%, rgba(8,8,8,0.2) 100%)' }} />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(0deg, rgba(10,10,10,0.9) 0%, rgba(10,10,10,0) 50%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(8,8,8,0.75) 0%, rgba(8,8,8,0.35) 55%, rgba(8,8,8,0.05) 100%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(0deg, rgba(10,10,10,0.8) 0%, rgba(10,10,10,0) 45%)' }} />
           </>
         )}
         <Container className="relative w-full">

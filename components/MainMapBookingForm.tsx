@@ -761,8 +761,8 @@ export default function MainMapBookingForm({
           })}
         </ul>
 
-        {/* Summary + continue */}
-        <div className="lg:sticky lg:top-24 rounded-2xl p-5 flex flex-col gap-4" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.1)' }}>
+        {/* Summary + continue (desktop) */}
+        <div className="hidden lg:flex lg:sticky lg:top-24 rounded-2xl p-5 flex-col gap-4" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.1)' }}>
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.18em]" style={{ color: 'var(--gold-light)' }}>Your vehicle</p>
             <p className="mt-1 text-lg font-semibold text-white">{selectedFleet.name}</p>
@@ -792,6 +792,24 @@ export default function MainMapBookingForm({
           </p>
         </div>
       </div>
+
+      {/* Phones: total + continue always in reach */}
+      <div className="lg:hidden sticky bottom-0 -mx-3 sm:-mx-4 px-3 sm:px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex items-center gap-3" style={{ background: 'linear-gradient(180deg, rgba(11,11,11,0), #0b0b0b 30%)' }}>
+        <div className="flex-1 min-w-0">
+          <p className="text-[12px] truncate" style={{ color: 'var(--text-muted)' }}>{selectedFleet.name}</p>
+          <p className="text-lg font-semibold text-white">{isQuote(vehicleType) ? 'Quote' : `$${withTax(tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice)}`}</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleNextStep2}
+          className="h-[50px] px-6 rounded-xl text-[15px] font-semibold flex items-center gap-2"
+          style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}
+        >
+          Continue
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </button>
+      </div>
+      {error && <p className="lg:hidden text-sm" style={{ color: '#f87171' }}>{error}</p>}
     </div>
   )
 

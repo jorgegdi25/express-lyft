@@ -1,6 +1,7 @@
 import { SITE_CLASS } from '@/lib/site/fonts'
 import SiteHeader, { MobileActionBar } from '../SiteHeader'
 import SiteFooter from '../SiteFooter'
+import BookingModal from '../BookingModal'
 import { getStartingPrices, getPricingParams } from '@/lib/site/data'
 import { getApprovedReviews, toTestimonials } from '@/lib/reviews'
 import {
@@ -23,8 +24,8 @@ export default async function HomeV2() {
 
   return (
     <main className={SITE_CLASS} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <SiteHeader overlay bookHref="#booking-form" />
-      <Hero prices={pricingParams} />
+      <SiteHeader overlay bookHref="#book" />
+      <Hero />
       <TrustStrip />
       <ServicesSection />
       <JourneySection />
@@ -35,7 +36,8 @@ export default async function HomeV2() {
       <FaqSection />
       <FinalCta />
       <SiteFooter />
-      <MobileActionBar bookHref="#booking-form" />
+      <MobileActionBar bookHref="#book" />
+      <BookingModal prices={pricingParams} />
     </main>
   )
 }

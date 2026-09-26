@@ -7,43 +7,44 @@ import type { StartingPrices } from '@/lib/site/data'
 import type { Testimonial } from '@/components/Testimonials'
 import { Arrow, ButtonLink, Container, Eyebrow, Heading, PhoneIcon, WhatsAppIcon } from '../ui'
 import Reveal from '../Reveal'
-import HeroBooking from './HeroBooking'
 import FleetShowcase from '../FleetShowcase'
 import ReviewsGrid from '../ReviewsGrid'
 import FaqList from '../FaqList'
 import HeroMedia from './HeroMedia'
 import RouteMap from '../RouteMap'
 
-/* ── 02 HERO + BOOKING ───────────────────────────────────────────── */
-// Intro on the left, the real booking engine (route map, live prices,
-// checkout) as a card on the right — all over the hero photo.
-export function Hero({ prices }: { prices: Record<string, any> }) {
-  const intro = (
-    <div className="max-w-xl">
-      <p className="text-[11px] font-medium uppercase tracking-[0.32em]" style={{ color: 'var(--gold-light)' }}>
-        Private transportation · Miami & South Florida
-      </p>
-      <h1 className="font-display font-semibold text-white text-[38px] leading-[1.08] md:text-[52px] xl:text-[60px] mt-5 tracking-[-0.025em]">
-        From arrival to destination, <span className="text-gold-gradient">handled.</span>
-      </h1>
-      <p className="mt-5 text-base md:text-lg text-white/80 leading-relaxed">
-        Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
-      </p>
-      <p className="mt-6 text-sm text-white/60 flex flex-wrap items-center gap-x-4 gap-y-1">
-        <span>Prefer to talk to someone?</span>
-        <a href={CONTACT.phoneHref} className="inline-flex items-center gap-1.5 text-white hover:text-[var(--gold-light)]"><PhoneIcon size={14} />{CONTACT.phoneDisplay}</a>
-        <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-white hover:text-[#25D366]"><WhatsAppIcon size={14} />WhatsApp</a>
-      </p>
-    </div>
-  )
-
+/* ── 02 HERO ─────────────────────────────────────────────────────── */
+// Full-bleed video with the intro and one clear action. "Book your ride"
+// opens the booking lightbox (components/site/BookingModal.tsx).
+export function Hero() {
   return (
-    <section className="relative overflow-hidden pt-28 md:pt-32 pb-12 md:pb-16 lg:min-h-[100svh] flex items-center">
+    <section className="relative overflow-hidden min-h-[92svh] md:min-h-[100svh] flex items-end pt-28 pb-16 md:pb-24">
       <HeroMedia video="/hero-video-final3.mp4" poster="/gallery/aeropuerto.webp" alt="Express Lyft driver waiting at the Miami airport curb" />
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(6,6,6,0.9) 0%, rgba(6,6,6,0.6) 50%, rgba(6,6,6,0.45) 100%)' }} />
-      <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: 'linear-gradient(0deg, var(--bg-deep), transparent)' }} />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(6,6,6,0.72) 0%, rgba(6,6,6,0.35) 50%, rgba(6,6,6,0.05) 100%)' }} />
+      <div className="absolute inset-x-0 bottom-0 h-2/5" style={{ background: 'linear-gradient(0deg, rgba(0,0,0,0.85), transparent)' }} />
       <Container className="relative w-full">
-        <HeroBooking prices={prices} intro={intro} />
+        <div className="max-w-2xl">
+          <p className="text-[11px] font-medium uppercase tracking-[0.32em]" style={{ color: 'var(--gold-light)' }}>
+            Private transportation · Miami & South Florida
+          </p>
+          <h1 className="font-display font-semibold text-white text-[38px] leading-[1.08] md:text-[56px] xl:text-[64px] mt-5 tracking-[-0.025em]" style={{ textShadow: '0 2px 24px rgba(0,0,0,0.35)' }}>
+            From arrival to destination, <span className="text-gold-gradient">handled.</span>
+          </h1>
+          <p className="mt-5 text-base md:text-lg text-white/85 leading-relaxed max-w-xl">
+            Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <ButtonLink href="#book" size="lg" className="sm:min-w-[220px]">
+              Book your ride <Arrow />
+            </ButtonLink>
+            <ButtonLink href={CONTACT.whatsappHref} variant="outline" size="lg" className="backdrop-blur-sm bg-black/20">
+              <WhatsAppIcon size={16} className="text-[#25D366]" /> WhatsApp
+            </ButtonLink>
+          </div>
+          <p className="mt-5 text-sm text-white/70">
+            Instant price · Route on the map · Or call <a href={CONTACT.phoneHref} className="text-white underline-offset-4 hover:underline">{CONTACT.phoneDisplay}</a>
+          </p>
+        </div>
       </Container>
     </section>
   )
@@ -115,7 +116,7 @@ function ServiceCard({ s, large = false }: { s: (typeof SERVICES)[number]; large
       style={{ border: '1px solid var(--border-faint)' }}
     >
       <Image src={s.image} alt={s.imageAlt} fill sizes={large ? '(min-width:768px) 50vw, 100vw' : '(min-width:768px) 25vw, 100vw'} className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-[1.04]" />
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.88) 100%)' }} />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.78) 100%)' }} />
       <div className="absolute inset-x-0 bottom-0 p-5 md:p-7">
         <h3 className={`font-display font-semibold text-white ${large ? 'text-3xl md:text-4xl' : 'text-xl'}`}>{s.name}</h3>
         <p className={`mt-2 text-white/75 leading-relaxed ${large ? 'text-base max-w-md' : 'text-sm'}`}>{s.short}</p>
@@ -345,7 +346,7 @@ export function HowItWorks() {
             <Eyebrow>How it works</Eyebrow>
             <Heading className="text-4xl md:text-5xl">Booked in a few minutes.</Heading>
           </div>
-          <ButtonLink href="#booking-form">Book a ride <Arrow /></ButtonLink>
+          <ButtonLink href="#book">Book a ride <Arrow /></ButtonLink>
         </div>
         <ol className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
           {STEPS.map((s, i) => (
@@ -389,14 +390,14 @@ export function FinalCta() {
   return (
     <section className="relative py-24 md:py-36 overflow-hidden">
       <Image src="/site/night-arrival.webp" alt="" fill sizes="100vw" className="object-cover" />
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(8,8,8,0.92) 0%, rgba(8,8,8,0.6) 60%, rgba(8,8,8,0.35) 100%)' }} />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(8,8,8,0.8) 0%, rgba(8,8,8,0.4) 60%, rgba(8,8,8,0.1) 100%)' }} />
       <Container className="relative">
         <div className="max-w-xl">
           <Eyebrow>Ready when you are</Eyebrow>
           <Heading className="text-4xl md:text-6xl">Your ride is ready when you are.</Heading>
           <p className="mt-5 text-base md:text-lg text-white/75">Book online in a few minutes, or talk to a real person on our team.</p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <ButtonLink href="#booking-form" size="lg">Book a ride <Arrow /></ButtonLink>
+            <ButtonLink href="#book" size="lg">Book a ride <Arrow /></ButtonLink>
             <ButtonLink href={CONTACT.phoneHref} variant="outline" size="lg"><PhoneIcon size={15} /> Call us</ButtonLink>
             <ButtonLink href={CONTACT.whatsappHref} variant="outline" size="lg"><WhatsAppIcon size={15} className="text-[#25D366]" /> WhatsApp</ButtonLink>
           </div>
