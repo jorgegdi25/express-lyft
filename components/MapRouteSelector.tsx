@@ -262,6 +262,9 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
           fullscreenControl: false,
           streetViewControl: false,
           mapTypeControl: false,
+          // Compact (home) map: page scroll passes over it without Google's
+          // "use ctrl + scroll to zoom" overlay.
+          ...(compact ? { scrollwheel: false, zoomControl: true } : {}),
         });
 
         mapRef.current = map;

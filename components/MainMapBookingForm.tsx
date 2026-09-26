@@ -655,17 +655,24 @@ export default function MainMapBookingForm({
               {(error && !isUrgentRequest) && <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>}
               {isUrgentRequest && <p className="text-sm" style={{ color: '#f87171' }}>Same-day rides need at least 2 hours’ notice online — call us and we’ll arrange it.</p>}
 
-              {/* Route preview: only once there is a route */}
+              {/* Route map: always visible (it's the differentiator); the route
+                  draws in and the map grows once both addresses are set. */}
               <div
-                className="relative rounded-2xl overflow-hidden transition-[height,opacity] duration-500 ease-out"
-                style={{ height: hasRoute ? 'var(--route-map-h)' : 0, opacity: hasRoute ? 1 : 0, border: hasRoute ? '1px solid rgba(255,255,255,0.1)' : 'none' }}
-                aria-hidden={!hasRoute}
+                className="relative rounded-2xl overflow-hidden transition-[height] duration-500 ease-out"
+                style={{ height: hasRoute ? 'var(--route-map-h)' : 'var(--route-map-h-idle)', border: '1px solid rgba(255,255,255,0.1)' }}
               >
                 {map}
-                {hasRoute && (
+                {hasRoute ? (
                   <div className="absolute left-3 top-3 px-3 py-1.5 rounded-full text-[12px] font-semibold text-white flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(233,213,166,0.35)' }}>
                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--gold-light)' }} />
                     {distanceMiles.toFixed(1)} mi · about {Math.round(durationMinutes)} min
+                  </div>
+                ) : (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.55))' }}>
+                    <p className="px-4 py-2 rounded-full text-[13px] font-medium text-white flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(233,213,166,0.3)' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                      Enter your route to see it here
+                    </p>
                   </div>
                 )}
               </div>

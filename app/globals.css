@@ -62,6 +62,7 @@
   --text-muted: #8F8F8F;
   --text-subtle: #B5B5B5;
   --route-map-h: 240px;
+  --route-map-h-idle: 170px;
   /* Former light "sand" sections now use the brand dark grey (#191919). */
   --sand: #191919;
   --sand-deep: #141414;
@@ -72,7 +73,7 @@
   background: var(--bg);
 }
 @media (min-width: 1024px) {
-  .site-v2 { --route-map-h: 300px; }
+  .site-v2 { --route-map-h: 320px; --route-map-h-idle: 220px; }
 }
 /* The shared booking form still carries inline Playfair headings — inside
    the corporate site everything speaks Montserrat. */
