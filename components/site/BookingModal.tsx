@@ -9,16 +9,28 @@ import MainMapBookingForm from '@/components/MainMapBookingForm'
 // actually wants to book — and stays mounted after closing, so whatever
 // the guest typed is still there if they reopen it.
 export const BOOK_HASH = '#book'
+// Other components open the lightbox (optionally with a pickup) with:
+// window.dispatchEvent(new CustomEvent(OPEN_BOOKING_EVENT, { detail: { pickup } }))
+export const OPEN_BOOKING_EVENT = 'expresslyft:open-booking'
 
 export default function BookingModal({ prices }: { prices: Record<string, any> }) {
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [wide, setWide] = useState(false)
+  const [preset, setPreset] = useState<{ pickup?: string; nonce: number } | undefined>(undefined)
   const onStepChange = useCallback((step: number) => setWide(step > 1), [])
 
-  const show = useCallback(() => {
+  const show = useCallback((pickup?: string) => {
     setMounted(true)
     setOpen(true)
+    if (pickup) setPreset({ pickup, nonce: Date.now() })
+    // Put the cursor where the guest continues: From, or To when a pickup
+    // was chosen in the hero.
+    window.setTimeout(() => {
+      const sel = pickup ? 'input[placeholder="Where are you going?"]' : 'input[placeholder="Airport, hotel or address"]'
+      const el = document.querySelector<HTMLInputElement>(`[role=dialog] ${sel}`)
+      if (el && !el.value) el.focus()
+    }, 450)
   }, [])
 
   // Intercept every "#book" link on the page.
@@ -32,9 +44,14 @@ export default function BookingModal({ prices }: { prices: Record<string, any> }
         show()
       }
     }
+    const onOpen = (e: Event) => show((e as CustomEvent<{ pickup?: string }>).detail?.pickup)
     document.addEventListener('click', onClick, true)
+    window.addEventListener(OPEN_BOOKING_EVENT, onOpen)
     if (window.location.hash === BOOK_HASH) show()
-    return () => document.removeEventListener('click', onClick, true)
+    return () => {
+      document.removeEventListener('click', onClick, true)
+      window.removeEventListener(OPEN_BOOKING_EVENT, onOpen)
+    }
   }, [show])
 
   // Esc to close, and no page scroll behind the lightbox.
@@ -89,7 +106,7 @@ export default function BookingModal({ prices }: { prices: Record<string, any> }
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M6 6l12 12M18 6L6 18" /></svg>
             </button>
             <div className="min-h-[calc(100svh-56px)] sm:min-h-0 bg-[#0b0b0b] sm:bg-transparent">
-              <MainMapBookingForm prices={prices} variant="hero" hideHeader onStepChange={onStepChange} />
+              <MainMapBookingForm prices={prices} variant="hero" hideHeader onStepChange={onStepChange} preset={preset} />
             </div>
           </div>
         </div>

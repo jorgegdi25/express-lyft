@@ -93,6 +93,7 @@ export default function MainMapBookingForm({
   hideHeader = false,
   variant = 'section',
   onStepChange,
+  preset,
 }: {
   prices: any
   // Values handed over from the corporate site (hero trip starter, popular
@@ -104,6 +105,8 @@ export default function MainMapBookingForm({
   variant?: 'section' | 'hero'
   // Lets the home hero widen the panel once the guest moves past step 1.
   onStepChange?: (step: number) => void
+  // Fill an address from outside the form (home hero quick picks).
+  preset?: { pickup?: string; destination?: string; nonce: number }
 }) {
   const isHero = variant === 'hero'
   const [guestsOpen, setGuestsOpen] = useState(false)
@@ -559,6 +562,7 @@ export default function MainMapBookingForm({
         initialDestination={destination}
         compact
         popularPlaces={POPULAR_PLACES}
+        preset={preset}
         routeColor="#D9BE86"
         labels={{ pickup: 'From', destination: 'To' }}
         pickupPlaceholder="Airport, hotel or address"

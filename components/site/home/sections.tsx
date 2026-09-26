@@ -11,6 +11,7 @@ import FleetShowcase from '../FleetShowcase'
 import ReviewsGrid from '../ReviewsGrid'
 import FaqList from '../FaqList'
 import HeroMedia from './HeroMedia'
+import HeroQuickStart from './HeroQuickStart'
 import RouteMap from '../RouteMap'
 
 /* ── 02 HERO ─────────────────────────────────────────────────────── */
@@ -33,16 +34,13 @@ export function Hero() {
           <p className="mt-5 text-base md:text-lg text-white/85 leading-relaxed max-w-xl">
             Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <ButtonLink href="#book" size="lg" className="sm:min-w-[220px]">
-              Book your ride <Arrow />
-            </ButtonLink>
-            <ButtonLink href={CONTACT.whatsappHref} variant="outline" size="lg" className="backdrop-blur-sm bg-black/20">
-              <WhatsAppIcon size={16} className="text-[#25D366]" /> WhatsApp
-            </ButtonLink>
+          <div className="mt-8">
+            <HeroQuickStart />
           </div>
-          <p className="mt-5 text-sm text-white/70">
-            Instant price · Route on the map · Or call <a href={CONTACT.phoneHref} className="text-white underline-offset-4 hover:underline">{CONTACT.phoneDisplay}</a>
+          <p className="mt-5 text-sm text-white/70 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span>Prefer to talk to someone?</span>
+            <a href={CONTACT.phoneHref} className="inline-flex items-center gap-1.5 text-white hover:text-[var(--gold-light)]"><PhoneIcon size={14} />{CONTACT.phoneDisplay}</a>
+            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-white hover:text-[#25D366]"><WhatsAppIcon size={14} />WhatsApp</a>
           </p>
         </div>
       </Container>
