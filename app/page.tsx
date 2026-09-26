@@ -10,7 +10,6 @@ import Testimonials from '@/components/Testimonials'
 import ReviewsMarquee from '@/components/ReviewsMarquee'
 import { getApprovedReviews, toTestimonials, toMarqueeReviews } from '@/lib/reviews'
 import { Check } from 'lucide-react'
-import HomeV2 from '@/components/site/home/HomeV2'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const fetchCache = 'force-no-store'
@@ -101,12 +100,6 @@ export default async function HomePage({ searchParams }: { searchParams: { succe
   const host = headersList.get('host') || ''
   const xForwardedHost = headersList.get('x-forwarded-host') || ''
   const isPruebas = host.includes('pruebas') || xForwardedHost.includes('pruebas')
-
-  // Express Lyft 2.0 corporate home — only on the test site (and local dev)
-  // until the client approves it. Production keeps the current page below.
-  if (isPruebas || host.startsWith('localhost')) {
-    return <HomeV2 />
-  }
 
   const prices = await getBasePrices()
   const startingPrices = prices // Same for main page without routes

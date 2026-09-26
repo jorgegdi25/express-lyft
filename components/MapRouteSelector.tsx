@@ -29,6 +29,7 @@ interface MapRouteSelectorProps {
   labels?: { pickup: string; destination: string };
   // Shown when an address field is focused while empty.
   popularPlaces?: { label: string; address: string }[];
+  routeColor?: string;
 }
 
 interface Suggestion {
@@ -121,7 +122,7 @@ async function fetchRoute(origin: { lat: number; lng: number }, destination: { l
   return data.routes?.[0] || null;
 }
 
-export default function MapRouteSelector({ onRouteCalculated, initialPickup, initialDestination, preset, renderLayout, mapClassName, compact, pickupPlaceholder, destinationPlaceholder, inputClassName, inputStyle, labels, popularPlaces }: MapRouteSelectorProps) {
+export default function MapRouteSelector({ onRouteCalculated, initialPickup, initialDestination, preset, renderLayout, mapClassName, compact, pickupPlaceholder, destinationPlaceholder, inputClassName, inputStyle, labels, popularPlaces, routeColor = '#B8960C' }: MapRouteSelectorProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const mapRef = useRef<any>(null);
@@ -456,7 +457,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
           routePolylineRef.current = new google.maps.Polyline({
             path,
             map: mapRef.current,
-            strokeColor: '#D9BE86',
+            strokeColor: routeColor,
             strokeWeight: 5,
             strokeOpacity: 0.75,
           });

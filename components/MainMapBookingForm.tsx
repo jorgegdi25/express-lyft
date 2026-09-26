@@ -568,6 +568,7 @@ export default function MainMapBookingForm({
           initialDestination={destination}
           compact
           popularPlaces={POPULAR_PLACES}
+          routeColor="#D9BE86"
           labels={{ pickup: 'From', destination: 'To' }}
           pickupPlaceholder="Airport, hotel or address"
           destinationPlaceholder="Where are you going?"
