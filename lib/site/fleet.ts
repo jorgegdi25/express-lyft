@@ -16,6 +16,10 @@ export interface FleetVehicle {
   description: string
   quoteOnly: boolean
   image: string
+  catalogImage: string
+  catalogImageAlt: string
+  catalogImageLabel?: string
+  catalogGallery?: { src: string; alt: string; label: string }[]
   gallery: string[]
 }
 
@@ -28,10 +32,18 @@ export const FLEET: FleetVehicle[] = [
     passengers: 4,
     luggage: 4,
     bestFor: 'Couples, solo travelers and business trips',
-    description: 'A comfortable private ride for airport runs, hotel transfers and meetings around town.',
+    description: 'A comfortable private sedan or SUV for airport runs, hotel transfers and meetings around town.',
     quoteOnly: false,
-    image: '/gallery/sedan1.webp',
-    gallery: ['/gallery/sedan1.webp', '/gallery/sedan2.webp', '/gallery/sedan3.webp', '/gallery/interna.webp'],
+    image: '/fleet/catalog/toyota-camry.jpg',
+    catalogImage: '/fleet/catalog/toyota-camry.jpg',
+    catalogImageAlt: 'Black Toyota Camry sedan in side profile on a neutral studio background',
+    catalogImageLabel: 'Toyota Camry · Sedan',
+    catalogGallery: [{
+      src: '/fleet/catalog/sedan-suv.jpg',
+      alt: 'Black Chevrolet Tahoe SUV in side profile on a neutral studio background',
+      label: 'Chevrolet Tahoe · SUV',
+    }],
+    gallery: ['/gallery/sedan3.webp', '/gallery/interna.webp'],
   },
   {
     type: 'suburban',
@@ -44,6 +56,8 @@ export const FLEET: FleetVehicle[] = [
     description: 'Full-size SUV with room for six and their bags — the go-to for airport and cruise transfers.',
     quoteOnly: false,
     image: '/gallery/suburban.webp',
+    catalogImage: '/fleet/catalog/suburban.jpg',
+    catalogImageAlt: 'Black Chevrolet Suburban in side profile on a neutral studio background',
     gallery: ['/gallery/suburban.webp', '/gallery/suburban2.webp'],
   },
   {
@@ -57,6 +71,8 @@ export const FLEET: FleetVehicle[] = [
     description: 'Keep the group together in one vehicle, with space for everyone’s luggage.',
     quoteOnly: false,
     image: '/gallery/sprinter1.webp',
+    catalogImage: '/fleet/catalog/sprinter.jpg',
+    catalogImageAlt: 'Black Mercedes-Benz Sprinter passenger van in side profile on a neutral studio background',
     gallery: ['/gallery/sprinter1.webp', '/gallery/sprinter2.webp'],
   },
   {
@@ -70,8 +86,11 @@ export const FLEET: FleetVehicle[] = [
     bestFor: 'Events, conferences and crew movements',
     description: 'Mid-size group transportation for events, hotel shuttles and corporate programs.',
     quoteOnly: true,
-    image: '/gallery/minibus.webp',
-    gallery: ['/gallery/minibus.webp', '/gallery/mini bus.webp'],
+    image: '/fleet/catalog/minibus-v2.jpg',
+    // Illustrates the mid-size bus class; actual model still needs confirmation.
+    catalogImage: '/fleet/catalog/minibus-v2.jpg',
+    catalogImageAlt: 'Illustrative black mid-size shuttle coach in side profile on a neutral studio background',
+    gallery: [],
   },
   {
     type: 'coachbus',
@@ -85,6 +104,8 @@ export const FLEET: FleetVehicle[] = [
     description: 'Full-size motorcoach for large groups moving between airports, hotels and cruise terminals.',
     quoteOnly: true,
     image: '/gallery/coach bus1.webp',
+    catalogImage: '/fleet/catalog/coach-bus.jpg',
+    catalogImageAlt: 'Black touring coach in side profile on a neutral studio background',
     gallery: ['/gallery/coach bus1.webp', '/gallery/coach bus2.webp', '/site/fleet-coaches-real.webp'],
   },
 ]

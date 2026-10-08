@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { CONTACT } from '@/lib/site/contact';
 
 interface RouteData {
   pickup: string;
@@ -89,13 +90,21 @@ const BRAND_MAP_STYLE = [
 ];
 
 let googleMapsLoaderPromise: Promise<any> | null = null;
+let googleMapsAuthFailed = false;
+const MAPS_AUTH_FAILURE = 'expresslyft:maps-auth-failure';
 
 function loadGoogleMaps(): Promise<any> {
   if (typeof window === 'undefined') return Promise.reject(new Error('window unavailable'));
+  if (googleMapsAuthFailed) return Promise.reject(new Error('Maps authorization unavailable'));
   if ((window as any).google?.maps?.places) return Promise.resolve((window as any).google);
   if (googleMapsLoaderPromise) return googleMapsLoaderPromise;
 
   googleMapsLoaderPromise = new Promise((resolve, reject) => {
+    (window as Window & { gm_authFailure?: () => void }).gm_authFailure = () => {
+      googleMapsAuthFailed = true;
+      window.dispatchEvent(new Event(MAPS_AUTH_FAILURE));
+      reject(new Error('Maps authorization unavailable'));
+    };
     const existing = document.getElementById('google-maps-script') as HTMLScriptElement | null;
     if (existing) {
       existing.addEventListener('load', () => resolve((window as any).google));
@@ -158,6 +167,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [routeError, setRouteError] = useState<string | null>(null);
   const [pickupCoords, setPickupCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [dropoffCoords, setDropoffCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [pickupText, setPickupText] = useState(initialPickup || '');
@@ -193,7 +203,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
   };
 
   const fetchSuggestions = async (input: string, sessionTokenRef: React.MutableRefObject<any>): Promise<Suggestion[]> => {
-    if (!input || input.trim().length < 3) return [];
+    if (googleMapsAuthFailed || !input || input.trim().length < 3) return [];
     const google = (window as any).google;
     if (!google?.maps?.places?.AutocompleteSuggestion) return [];
 
@@ -248,6 +258,8 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
   const handlePickupChange = (value: string) => {
     setPickupText(value);
+    setPickupCoords(null);
+    setRouteError(null);
     if (pickupDebounceRef.current) clearTimeout(pickupDebounceRef.current);
     pickupDebounceRef.current = setTimeout(async () => {
       const results = await fetchSuggestions(value, pickupSessionTokenRef);
@@ -257,6 +269,8 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
   const handleDropoffChange = (value: string) => {
     setDropoffText(value);
+    setDropoffCoords(null);
+    setRouteError(null);
     if (dropoffDebounceRef.current) clearTimeout(dropoffDebounceRef.current);
     dropoffDebounceRef.current = setTimeout(async () => {
       const results = await fetchSuggestions(value, dropoffSessionTokenRef);
@@ -267,12 +281,19 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
   // Load SDK and initialize map + geocoder
   useEffect(() => {
     let cancelled = false;
+    const unavailable = () => {
+      if (cancelled) return;
+      setIsLoaded(false);
+      setMapError('Online route pricing is temporarily unavailable.');
+    };
+    window.addEventListener(MAPS_AUTH_FAILURE, unavailable);
 
     loadGoogleMaps()
       .then(async (google) => {
         if (cancelled || !mapContainerRef.current) return;
 
         await google.maps.importLibrary('geometry');
+        if (cancelled || googleMapsAuthFailed) { unavailable(); return; }
 
         const map = new google.maps.Map(mapContainerRef.current, {
           center: MIAMI_CENTER,
@@ -321,11 +342,12 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
       })
       .catch((err) => {
         console.error('Failed to load Google Maps', err);
-        if (!cancelled) setMapError('Could not load the map. Please refresh the page.');
+        unavailable();
       });
 
     return () => {
       cancelled = true;
+      window.removeEventListener(MAPS_AUTH_FAILURE, unavailable);
     };
   }, []);
 
@@ -464,6 +486,14 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
   // Calculate route once both points are set
   useEffect(() => {
+    // Clear the previous quote immediately when an address changes or a
+    // route is being recalculated. A stale distance must never reach checkout.
+    onRouteCalculatedRef.current({
+      pickup: pickupTextRef.current,
+      destination: dropoffTextRef.current,
+      distanceMiles: 0,
+      durationMinutes: 0,
+    });
     if (!isLoaded || !pickupCoords || !dropoffCoords) {
       if (routePolylineRef.current) {
         routePolylineRef.current.setMap(null);
@@ -474,10 +504,14 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
     const google = (window as any).google;
     let cancelled = false;
+    setRouteError(null);
 
     fetchRoute(pickupCoords, dropoffCoords)
       .then((route) => {
-        if (cancelled || !route) return;
+        if (cancelled) return;
+        if (!route || !Number.isFinite(route.distanceMeters) || route.distanceMeters <= 0) {
+          throw new Error('No driving route available');
+        }
 
         const path = google.maps.geometry.encoding.decodePath(route.polyline.encodedPolyline);
 
@@ -510,7 +544,9 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
         });
       })
       .catch((err) => {
+        if (cancelled) return;
         console.error('Error fetching route', err);
+        setRouteError('We could not calculate this route. Check the addresses or contact us for a quote.');
       });
 
     return () => {
@@ -519,7 +555,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
   }, [pickupCoords, dropoffCoords, isLoaded]);
 
   const suggestionDropdownClass =
-    'absolute z-20 mt-1 w-full min-w-[280px] rounded-xl overflow-hidden border shadow-lg max-h-64 overflow-y-auto';
+    'absolute z-20 mt-1 w-full rounded-xl overflow-hidden border shadow-lg max-h-64 overflow-y-auto';
   const suggestionDropdownStyle = {
     background: 'var(--surface-raised)',
     borderColor: 'var(--border-soft)',
@@ -532,6 +568,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
           </label>
           <input
             type="text"
+            aria-label={labels?.pickup || 'Pickup Location'}
             value={pickupText}
             placeholder={pickupPlaceholder || 'Pickup location (e.g., Miami Airport)'}
             className={inputClassName || "w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)] placeholder-[var(--text-faint)]"}
@@ -547,7 +584,8 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
                 <button
                   key={p.label}
                   type="button"
-                  onMouseDown={(e) => { e.preventDefault(); pickPopular(p.address, true); }}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pickPopular(p.address, true)}
                   className="w-full text-left px-3 py-2.5 text-sm hover:bg-[var(--border)] transition-colors"
                   style={{ color: 'var(--text)', borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)' }}
                 >
@@ -562,7 +600,8 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
                 <button
                   key={i}
                   type="button"
-                  onMouseDown={(e) => { e.preventDefault(); selectSuggestion(s, true); }}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => selectSuggestion(s, true)}
                   className="w-full text-left px-3 py-2.5 text-sm hover:bg-[var(--border)] transition-colors"
                   style={{ color: '#ddd', borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)' }}
                 >
@@ -588,6 +627,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
           </label>
           <input
             type="text"
+            aria-label={labels?.destination || 'Destination'}
             value={dropoffText}
             placeholder={destinationPlaceholder || 'Destination (e.g., B Ocean Resort)'}
             className={inputClassName || "w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)] placeholder-[var(--text-faint)]"}
@@ -603,7 +643,8 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
                 <button
                   key={p.label}
                   type="button"
-                  onMouseDown={(e) => { e.preventDefault(); pickPopular(p.address, false); }}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pickPopular(p.address, false)}
                   className="w-full text-left px-3 py-2.5 text-sm hover:bg-[var(--border)] transition-colors"
                   style={{ color: 'var(--text)', borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)' }}
                 >
@@ -618,7 +659,8 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
                 <button
                   key={i}
                   type="button"
-                  onMouseDown={(e) => { e.preventDefault(); selectSuggestion(s, false); }}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => selectSuggestion(s, false)}
                   className="w-full text-left px-3 py-2.5 text-sm hover:bg-[var(--border)] transition-colors"
                   style={{ color: '#ddd', borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)' }}
                 >
@@ -641,12 +683,21 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
     <>
       <div
         ref={mapContainerRef}
+        style={mapError ? { display: 'none' } : undefined}
         className={mapClassName || 'w-full h-[300px] md:h-[400px] rounded-xl overflow-hidden border border-[var(--border-soft)] cursor-pointer'}
         title="Click anywhere on the map to set a location, or drag the markers"
       />
       {mapError && (
-        <p className="text-sm text-red-400">{mapError}</p>
+        <div className="h-full min-h-[150px] flex flex-col justify-center gap-2 p-4 rounded-xl bg-[#171717] text-white" role="status">
+          <p className="text-sm font-semibold">{mapError}</p>
+          <p className="text-xs text-white/70">Our team can help you plan your ride.</p>
+          <div className="flex flex-wrap gap-3 text-xs font-semibold">
+            <a href={CONTACT.phoneHref} className="underline text-[var(--gold-light)]">Call {CONTACT.phoneDisplay}</a>
+            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="underline text-[var(--gold-light)]">WhatsApp</a>
+          </div>
+        </div>
       )}
+      {routeError && <p className="text-sm text-red-400 p-3" role="status">{routeError}</p>}
     </>
   );
 

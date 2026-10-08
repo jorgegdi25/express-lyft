@@ -8,7 +8,7 @@ const PREVIEW_PATHS = ['/home', '/book', '/services', '/fleet', '/partners', '/a
 export default function robots(): MetadataRoute.Robots {
   const host = headers().get('host') || ''
   // The test site must never be indexed.
-  if (host.includes('pruebas') || host.includes('vercel.app') || host.startsWith('localhost')) {
+  if (host.includes('pruebas') || host.includes('vercel.app') || /^(localhost|127\.0\.0\.1|\[::1\])(?::|$)/.test(host)) {
     return { rules: [{ userAgent: '*', disallow: '/' }] }
   }
   return {

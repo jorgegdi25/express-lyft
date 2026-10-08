@@ -11,6 +11,7 @@ export interface Service {
   slug: string
   name: string
   short: string
+  cardDescription: string
   image: string
   imageAlt: string
   metaTitle: string
@@ -29,6 +30,7 @@ export const SERVICES: Service[] = [
     slug: 'airport-transfers',
     name: 'Airport Transfers',
     short: 'MIA and FLL pickups and drop-offs — curbside, or Meet & Greet inside baggage claim.',
+    cardDescription: 'MIA and FLL pickups and drop-offs, with curbside or Meet & Greet options.',
     image: '/gallery/aeropuerto.webp',
     imageAlt: 'Express Lyft chauffeur waiting with a welcome sign at the airport curb',
     metaTitle: 'Airport Transfers in Miami & Fort Lauderdale | Express Lyft',
@@ -53,6 +55,7 @@ export const SERVICES: Service[] = [
     slug: 'hotel-transfers',
     name: 'Hotel Transfers',
     short: 'Hotel to airport, beach, downtown or dinner — booked directly or through your front desk.',
+    cardDescription: 'Private rides between your hotel, the airport and the city.',
     image: '/gallery/suburban.webp',
     imageAlt: 'Chevrolet Suburban with a driver waiting at a Miami hotel entrance',
     metaTitle: 'Hotel Transfers in Miami & South Florida | Express Lyft',
@@ -77,6 +80,7 @@ export const SERVICES: Service[] = [
     slug: 'cruise-port-transfers',
     name: 'Cruise Port Transfers',
     short: 'Hotel or airport to the cruise terminal, with space for everyone’s luggage.',
+    cardDescription: 'Easy transfers to your cruise terminal, with room for your bags.',
     image: '/gallery/coach bus2.webp',
     imageAlt: 'Coach bus ready for a group cruise port transfer',
     metaTitle: 'Cruise Port Transfers to PortMiami | Express Lyft',
@@ -102,6 +106,7 @@ export const SERVICES: Service[] = [
     slug: 'corporate-transportation',
     name: 'Corporate Transportation',
     short: 'Business travel, meetings, roadshows and airline crew support.',
+    cardDescription: 'Professional rides for meetings, business travel and airline crews.',
     image: '/gallery/interna.webp',
     imageAlt: 'Vehicle interior overlooking the Miami skyline at sunset',
     metaTitle: 'Corporate Transportation in Miami | Express Lyft',
@@ -126,6 +131,7 @@ export const SERVICES: Service[] = [
     slug: 'group-transportation',
     name: 'Groups & Events',
     short: 'Sprinters, mini buses and coaches for weddings, tours, conferences and teams.',
+    cardDescription: 'Keep your group together for weddings, tours and events.',
     image: '/gallery/sprinter2.webp',
     imageAlt: 'Mercedes-Benz Sprinter prepared for group transportation',
     metaTitle: 'Group Transportation & Charter Buses in Miami | Express Lyft',

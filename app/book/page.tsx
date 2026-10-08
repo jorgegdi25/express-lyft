@@ -26,7 +26,7 @@ export default async function BookPage({ searchParams }: { searchParams: Record<
     pickup: searchParams.pickup?.slice(0, 200),
     destination: searchParams.dropoff?.slice(0, 200),
     date: /^\d{4}-\d{2}-\d{2}$/.test(searchParams.date || '') ? searchParams.date : undefined,
-    passengers: Number.isFinite(pax) && pax > 0 && pax <= 60 ? pax : undefined,
+    passengers: Number.isInteger(pax) && pax > 0 && pax <= 55 ? pax : undefined,
     vehicle,
   }
 
@@ -42,8 +42,8 @@ export default async function BookPage({ searchParams }: { searchParams: Record<
               Trip details → vehicle → checkout. You see the total before you pay.
             </p>
           </div>
-          <div className="flex gap-3 text-sm">
-            <a href={CONTACT.phoneHref} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white" style={{ border: '1px solid var(--border-soft)' }}>
+          <div className="flex flex-wrap shrink-0 gap-3 text-sm">
+            <a href={CONTACT.phoneHref} className="inline-flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-white" style={{ border: '1px solid var(--border-soft)' }}>
               <PhoneIcon size={14} /> {CONTACT.phoneDisplay}
             </a>
             <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white" style={{ border: '1px solid var(--border-soft)' }}>

@@ -13,21 +13,21 @@ export default function ContactPage() {
   return (
     <PageShell breadcrumb={[{ label: 'Contact' }]} eyebrow="Contact" title="Talk to a real person." intro={`Our team is available ${CONTACT.hours.toLowerCase()}.`}>
       <Section>
-        <div className="grid md:grid-cols-3 gap-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <a href={CONTACT.phoneHref} className="rounded-2xl p-7 hover:border-[var(--gold)] transition-colors" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
             <PhoneIcon size={22} className="text-[var(--gold-light)]" />
             <p className="mt-5 text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Call</p>
-            <p className="mt-1 text-2xl font-semibold text-white">{CONTACT.phoneDisplay}</p>
+            <p className="mt-1 text-xl lg:text-2xl font-semibold text-white">{CONTACT.phoneDisplay}</p>
           </a>
           <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="rounded-2xl p-7 hover:border-[#25D366] transition-colors" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
             <WhatsAppIcon size={22} className="text-[#25D366]" />
             <p className="mt-5 text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>WhatsApp</p>
             <p className="mt-1 text-2xl font-semibold text-white">{CONTACT.whatsappDisplay}</p>
           </a>
-          <a href={`mailto:${CONTACT.email}`} className="rounded-2xl p-7 hover:border-[var(--gold)] transition-colors" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
+          <a href={`mailto:${CONTACT.email}`} className="sm:col-span-2 lg:col-span-1 rounded-2xl p-7 hover:border-[var(--gold)] transition-colors" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="1.7" aria-hidden><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
             <p className="mt-5 text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>Email</p>
-            <p className="mt-1 text-2xl font-semibold text-white">{CONTACT.email}</p>
+            <p className="mt-1 text-xl lg:text-2xl break-words font-semibold text-white">{CONTACT.email}</p>
           </a>
         </div>
 

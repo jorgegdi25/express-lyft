@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import PageShell, { Section } from '@/components/site/PageShell'
 import { Arrow, ButtonLink, Eyebrow, Heading } from '@/components/site/ui'
-import Pending from '@/components/site/Pending'
 
 export const metadata: Metadata = {
   title: 'About Express Lyft | Transportation & Hospitality Solutions',
@@ -36,7 +35,6 @@ export default function AboutPage() {
           <div className="lg:col-span-5">
             <Eyebrow>Our story</Eyebrow>
             <Heading className="text-3xl md:text-4xl">Grown alongside the travel industry.</Heading>
-            <p className="mt-4 text-sm" style={{ color: 'var(--text-muted)' }}>Founding year: <Pending>1984 or 2000? portfolio shows both</Pending></p>
           </div>
           <div className="lg:col-span-7 flex flex-col gap-5 text-[16px] leading-relaxed" style={{ color: 'var(--text-subtle)' }}>
             <p>

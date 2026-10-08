@@ -1,7 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import MainMapBookingForm from '@/components/MainMapBookingForm'
+import { lockBodyScroll, visibleFocusTargets } from '@/lib/site/body-scroll-lock'
+import type { VehicleRateParams } from '@/lib/pricing'
 
 // Booking lightbox for the home page. Any link to "#book" on the page
 // (hero button, header "Book a Ride", mobile bar, closing CTA) opens it.
@@ -13,14 +15,17 @@ export const BOOK_HASH = '#book'
 // window.dispatchEvent(new CustomEvent(OPEN_BOOKING_EVENT, { detail: { pickup } }))
 export const OPEN_BOOKING_EVENT = 'expresslyft:open-booking'
 
-export default function BookingModal({ prices }: { prices: Record<string, any> }) {
+export default function BookingModal({ prices }: { prices: Record<string, VehicleRateParams> }) {
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [wide, setWide] = useState(false)
   const [preset, setPreset] = useState<{ pickup?: string; nonce: number } | undefined>(undefined)
   const onStepChange = useCallback((step: number) => setWide(step > 1), [])
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLElement | null>(null)
 
   const show = useCallback((pickup?: string) => {
+    triggerRef.current = document.activeElement as HTMLElement | null
     setMounted(true)
     setOpen(true)
     if (pickup) setPreset({ pickup, nonce: Date.now() })
@@ -57,13 +62,28 @@ export default function BookingModal({ prices }: { prices: Record<string, any> }
   // Esc to close, and no page scroll behind the lightbox.
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+      if (e.key !== 'Tab') return
+      const targets = visibleFocusTargets(dialogRef.current)
+      const first = targets[0]
+      const last = targets[targets.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus() }
+    }
+    const keepFocus = (e: FocusEvent) => {
+      if (!dialogRef.current?.contains(e.target as Node)) visibleFocusTargets(dialogRef.current)[0]?.focus()
+    }
     document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    document.addEventListener('focusin', keepFocus)
+    const unlock = lockBodyScroll()
+    visibleFocusTargets(dialogRef.current)[0]?.focus()
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
+      document.removeEventListener('focusin', keepFocus)
+      unlock()
+      if (triggerRef.current?.isConnected) triggerRef.current.focus()
+      else document.querySelector<HTMLButtonElement>('button[aria-label="Open menu"]')?.focus()
     }
   }, [open])
 
@@ -71,7 +91,8 @@ export default function BookingModal({ prices }: { prices: Record<string, any> }
 
   return (
     <div
-      className={`fixed inset-0 z-[70] transition-opacity duration-300 ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      ref={dialogRef}
+      className={`fixed inset-0 z-[70] transition-opacity duration-300 ${open ? 'opacity-100' : 'opacity-0 invisible pointer-events-none'}`}
       role="dialog"
       aria-modal="true"
       aria-label="Book your ride"

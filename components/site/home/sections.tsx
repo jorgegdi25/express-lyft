@@ -81,7 +81,7 @@ export function ServicesSection() {
   return (
     <section className="py-20 md:py-28" style={{ background: 'var(--bg)' }}>
       <Container>
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 md:mb-14">
+        <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-10 md:mb-14">
           <div className="max-w-2xl">
             <Eyebrow>Services</Eyebrow>
             <Heading className="text-4xl md:text-5xl">Transportation for every part of the trip.</Heading>
@@ -91,12 +91,12 @@ export function ServicesSection() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-4 md:grid-rows-2 gap-4 md:gap-5">
-          <Reveal className="md:col-span-2 md:row-span-2">
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 xl:grid-rows-2 gap-4 md:gap-5">
+          <Reveal className="min-w-0 md:col-span-2 xl:row-span-2">
             <ServiceCard s={lead} large />
           </Reveal>
           {rest.map((s, i) => (
-            <Reveal key={s.slug} delay={80 * (i + 1)} className="md:col-span-1">
+            <Reveal key={s.slug} delay={80 * (i + 1)} className="min-w-0">
               <ServiceCard s={s} />
             </Reveal>
           ))}
@@ -110,15 +110,17 @@ function ServiceCard({ s, large = false }: { s: (typeof SERVICES)[number]; large
   return (
     <Link
       href={`/${s.slug}`}
-      className={`group relative block h-full rounded-2xl overflow-hidden ${large ? 'min-h-[360px] md:min-h-[560px]' : 'min-h-[260px]'}`}
-      style={{ border: '1px solid var(--border-faint)' }}
+      className={`group relative flex h-full flex-col rounded-2xl overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--gold-light)] xl:block ${large ? 'xl:min-h-[660px]' : 'xl:min-h-[320px]'}`}
+      style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}
     >
-      <Image src={s.image} alt={s.imageAlt} fill sizes={large ? '(min-width:768px) 50vw, 100vw' : '(min-width:768px) 25vw, 100vw'} className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-[1.04]" />
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.78) 100%)' }} />
-      <div className="absolute inset-x-0 bottom-0 p-5 md:p-7">
-        <h3 className={`font-display font-semibold text-white ${large ? 'text-3xl md:text-4xl' : 'text-xl'}`}>{s.name}</h3>
-        <p className={`mt-2 text-white/75 leading-relaxed ${large ? 'text-base max-w-md' : 'text-sm'}`}>{s.short}</p>
-        <span className="mt-4 inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--gold-light)' }}>
+      <div className={`relative shrink-0 aspect-[16/10] xl:absolute xl:inset-0 xl:aspect-auto ${large ? 'md:aspect-[2/1]' : ''}`}>
+        <Image src={s.image} alt={s.imageAlt} fill sizes={large ? '(min-width:1280px) 600px, (min-width:768px) calc(100vw - 64px), calc(100vw - 32px)' : '(min-width:1280px) 290px, (min-width:768px) calc((100vw - 84px) / 2), calc(100vw - 32px)'} className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
+      </div>
+      <div className="hidden xl:block absolute inset-0" style={{ background: 'linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0.92) 100%)' }} />
+      <div className="relative flex flex-1 flex-col p-5 md:p-6 xl:absolute xl:inset-x-0 xl:bottom-0">
+        <h3 className={`font-display font-semibold text-white leading-tight ${large ? 'text-3xl xl:text-4xl' : 'text-xl'}`}>{s.name}</h3>
+        <p className={`mt-3 text-white/85 leading-relaxed ${large ? 'text-base max-w-md' : 'text-sm'}`}>{s.cardDescription}</p>
+        <span className="mt-auto pt-5 inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--gold-light)' }}>
           Learn more <Arrow className="transition-transform group-hover:translate-x-1" />
         </span>
       </div>

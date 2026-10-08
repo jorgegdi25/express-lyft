@@ -120,7 +120,9 @@ export default function MainMapBookingForm({
 
   // Calculate local date safely on the client
   useEffect(() => {
-    setMinDateStr(new Date().toISOString().split('T')[0])
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date())
+    const get = (type: string) => parts.find((part) => part.type === type)?.value
+    setMinDateStr(`${get('year')}-${get('month')}-${get('day')}`)
   }, [])
 
   // Fetch fresh data from the public API every time the component mounts
@@ -273,6 +275,10 @@ export default function MainMapBookingForm({
 
   const handleNextStep1 = () => {
     setError(null)
+    if (!Number.isFinite(distanceMiles) || distanceMiles <= 0 || !Number.isFinite(durationMinutes)) {
+      setError('Please select valid addresses and wait for the route to calculate, or contact us for a quote.')
+      return
+    }
     if (!pickup || !destination) {
       setError('Please select both pickup and destination locations.')
       return
@@ -306,6 +312,11 @@ export default function MainMapBookingForm({
 
   const handleNextStep2 = () => {
     setError(null)
+    const capacity = FLEET.find((f) => f.type === vehicleType)!
+    if (passengers > capacity.passengers) {
+      setError(`This vehicle fits up to ${capacity.passengers} guests. Please choose a larger vehicle or contact us for multiple vehicles.`)
+      return
+    }
     const maxLuggage = vehicleType === 'sedan_suv' ? 4 : vehicleType === 'suburban' ? 6 : vehicleType === 'sprinter' ? 14 : vehicleType === 'minibus' ? 30 : 60;
     if (luggageCount > maxLuggage) {
       setError(`The selected vehicle allows a maximum of ${maxLuggage} bags. Please reduce your luggage or choose a larger vehicle.`)
@@ -433,6 +444,11 @@ export default function MainMapBookingForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    if (!Number.isFinite(distanceMiles) || distanceMiles <= 0 || !Number.isFinite(durationMinutes)) {
+      setError('Please check your route before continuing, or contact us for a quote.')
+      setStep(1)
+      return
+    }
 
     if (!pickup || !destination) {
       setError('Please select both pickup and destination locations.')
@@ -686,7 +702,7 @@ export default function MainMapBookingForm({
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
               </button>
             )}
-            <p className="text-center text-[11px]" style={{ color: 'var(--text-muted)' }}>Instant price · Secure online payment</p>
+            <p className="text-center text-[11px]" style={{ color: 'var(--text-muted)' }}>{hasRoute ? 'Instant price' : 'Choose your route to see prices'} · Secure online payment</p>
           </div>
         )}
       />
@@ -738,7 +754,7 @@ export default function MainMapBookingForm({
                   }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={f.image} alt="" className="w-24 h-16 sm:w-32 sm:h-20 rounded-xl object-cover shrink-0" loading="lazy" />
+                  <img src={f.catalogImage} alt="" className="w-20 h-14 sm:w-32 sm:h-20 rounded-xl object-contain bg-[#ededeb] shrink-0" loading="lazy" />
                   <div className="flex-1 min-w-0">
                     <p className="text-[15px] font-semibold text-white">{f.name}</p>
                     <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>

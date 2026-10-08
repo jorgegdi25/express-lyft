@@ -102,23 +102,24 @@ export default async function ServicePage({ slug }: { slug: string }) {
           </div>
           <Link href="/fleet" className="inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--ink-dark)' }}>Full fleet <Arrow /></Link>
         </div>
-        <ul className="flex gap-4 overflow-x-auto no-scrollbar snap-x -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-5">
+        <ul className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {vehicles.map((v) => (
-            <li key={v.type} className="snap-start shrink-0 w-[72%] sm:w-[45%] md:w-auto rounded-2xl overflow-hidden flex flex-col" style={{ background: 'var(--surface-raised)', border: '1px solid var(--sand-line)' }}>
-              <div className="relative aspect-[4/3]"><Image src={v.image} alt={v.name} fill sizes="(min-width:1024px) 20vw, 70vw" className="object-cover" /></div>
+            <li key={v.type} className="min-w-0 rounded-2xl overflow-hidden flex flex-col" style={{ background: 'var(--sand)', border: '1px solid var(--sand-line)' }}>
+              <div className="relative aspect-[3/2] bg-[#ededeb]"><Image src={v.catalogImage} alt={v.catalogImageAlt} fill sizes="(min-width:1280px) 240px, (min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw" className="object-contain" /></div>
               <div className="p-5 flex flex-col flex-1">
                 <h3 className="font-display text-xl font-semibold" style={{ color: 'var(--ink-dark)' }}>{v.name}</h3>
                 <p className="mt-1 text-sm" style={{ color: 'var(--ink-dark-muted)' }}>Up to {v.passengers} passengers · {v.luggage} bags</p>
                 <p className="mt-4 text-sm font-semibold" style={{ color: 'var(--ink-dark)' }}>
                   {v.quoteOnly || !prices[v.type] ? 'Custom quote' : `From $${prices[v.type]}`}
                 </p>
-                <Link href={`/book?vehicle=${v.type}&service=${s.slug}`} className="mt-4 inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--gold-light)' }}>
+                <Link href={`/book?vehicle=${v.type}&service=${s.slug}`} className="mt-auto pt-4 inline-flex items-center gap-2 text-[14px] font-semibold hover:underline" style={{ color: 'var(--ink-dark)' }}>
                   {v.quoteOnly ? 'Request a quote' : 'Book this vehicle'} <Arrow />
                 </Link>
               </div>
             </li>
           ))}
         </ul>
+        <p className="mt-4 text-xs" style={{ color: 'var(--ink-dark-muted)' }}>Vehicle images are illustrative. Final vehicle assignment depends on availability.</p>
       </Section>
 
       <Section>

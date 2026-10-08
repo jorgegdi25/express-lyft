@@ -2,7 +2,6 @@ import Image from 'next/image'
 import type { Metadata } from 'next'
 import PageShell, { Section } from '@/components/site/PageShell'
 import { Arrow, ButtonLink, Eyebrow, Heading, WhatsAppIcon } from '@/components/site/ui'
-import Pending from '@/components/site/Pending'
 import { CONTACT, whatsappLink } from '@/lib/site/contact'
 import { getPartnerHotels } from '@/lib/site/data'
 
@@ -95,7 +94,7 @@ export default async function PartnersPage() {
               Express Lyft helps hotels improve the guest experience, reduce transportation coordination and generate additional revenue — without investing in vehicles, drivers, insurance or daily operations.
             </p>
             <p className="mt-4 text-sm" style={{ color: 'var(--ink-dark-muted)' }}>
-              Rebate amount per booking: <Pending>confirm public rebate terms ($3 / $5 in portfolio)</Pending>
+              Rebate eligibility and amounts are agreed with each hotel before the program starts.
             </p>
           </div>
           <ul className="lg:col-span-7 grid sm:grid-cols-2 gap-px rounded-2xl overflow-hidden" style={{ background: 'var(--sand-line)', border: '1px solid var(--sand-line)' }}>
@@ -113,7 +112,7 @@ export default async function PartnersPage() {
       <Section tone="deep">
         <div className="grid lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-6 relative aspect-[4/3] rounded-2xl overflow-hidden">
-            <Image src="/site/fleet-coaches-real.webp" alt="Express Lyft coach buses" fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover" />
+            <Image src="/site/partners-hotel.jpg" alt="Chauffeur loading luggage into a black Chevrolet Suburban at a Miami hotel entrance, with a Sprinter van waiting behind" fill sizes="(min-width:1280px) 600px, (min-width:1024px) 50vw, calc(100vw - 32px)" className="object-cover" />
           </div>
           <div className="lg:col-span-6">
             <Eyebrow>How it works for hotels</Eyebrow>
@@ -140,7 +139,6 @@ export default async function PartnersPage() {
           <ul className="mt-4 flex flex-wrap gap-x-10 gap-y-4">
             {hotels.map((h) => <li key={h.slug} className="font-display text-2xl text-white">{h.name}</li>)}
           </ul>
-          <p className="mt-4 text-xs" style={{ color: 'var(--text-muted)' }}><Pending>confirm which partner names/logos may be shown publicly</Pending></p>
         </Section>
       )}
 

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import PageShell, { Section } from '@/components/site/PageShell'
 import { ButtonLink, Eyebrow, Heading } from '@/components/site/ui'
-import Pending from '@/components/site/Pending'
 import { CONTACT, OFFICES, whatsappLink } from '@/lib/site/contact'
 
 export const metadata: Metadata = {
@@ -29,7 +28,7 @@ export default function OrlandoPage() {
             <Heading className="text-3xl">{orlando.street}</Heading>
             <p className="mt-2 text-[15px]" style={{ color: 'var(--text-subtle)' }}>{orlando.locality}, {orlando.region} {orlando.postalCode}</p>
             <p className="mt-6 text-sm" style={{ color: 'var(--text-muted)' }}>
-              Airports and services at launch: <Pending>confirm MCO / SFB and start date</Pending>
+              Contact our team to confirm service availability for your travel dates.
             </p>
           </div>
           <div className="lg:col-span-6 flex flex-col sm:flex-row lg:justify-end items-start gap-3">

@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Logo from './Logo'
 import Link from 'next/link'
 import { CONTACT, SITE_HOME } from '@/lib/site/contact'
 import { SERVICES } from '@/lib/site/services'
 import { Arrow, PhoneIcon, WhatsAppIcon } from './ui'
+import { lockBodyScroll, visibleFocusTargets } from '@/lib/site/body-scroll-lock'
 
 const NAV = [
   { label: 'Fleet', href: '/fleet' },
@@ -20,55 +21,85 @@ const LOCATIONS = [
 ]
 
 export default function SiteHeader({ overlay = false, bookHref = '/book' }: { overlay?: boolean; bookHref?: string }) {
-  const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const [menu, setMenu] = useState<'services' | 'locations' | null>(null)
+  const headerRef = useRef<HTMLElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    if (!menu) return
+    const closeOutside = (e: Event) => {
+      if (!headerRef.current?.contains(e.target as Node)) setMenu(null)
+    }
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('focusin', closeOutside)
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('focusin', closeOutside)
+    }
+  }, [menu])
 
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
+    if (!open) return
+    const unlock = lockBodyScroll()
+    mobileMenuRef.current?.querySelector<HTMLElement>('a')?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setOpen(false); menuButtonRef.current?.focus() }
+      if (e.key !== 'Tab') return
+      const targets = visibleFocusTargets(headerRef.current, mobileMenuRef.current)
+      const first = targets[0]
+      const last = targets[targets.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus() }
+    }
+    const onResize = () => { if (window.innerWidth >= 1024) setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    window.addEventListener('resize', onResize)
+    return () => {
+      unlock()
+      document.removeEventListener('keydown', onKey)
+      window.removeEventListener('resize', onResize)
+    }
   }, [open])
-
-  const solid = !overlay || scrolled || open
 
   return (
     <>
       <header
-        className={`${overlay ? 'fixed' : 'sticky'} top-0 inset-x-0 z-50 transition-colors duration-300`}
+        ref={headerRef}
+        className={`${overlay ? 'fixed' : 'sticky'} top-0 inset-x-0 z-50`}
         style={{
-          background: solid ? 'rgba(14,14,14,0.9)' : 'linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0))',
-          backdropFilter: solid ? 'blur(12px)' : undefined,
-          WebkitBackdropFilter: solid ? 'blur(12px)' : undefined,
-          borderBottom: solid ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
+          background: '#0E0E0E',
+          borderBottom: '1px solid rgba(196,164,107,0.26)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
         }}
-        onMouseLeave={() => setMenu(null)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            headerRef.current?.querySelector<HTMLButtonElement>(`button[aria-controls="site-${menu}"]`)?.focus()
+            setMenu(null)
+          }
+        }}
       >
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-[68px] md:h-[76px] flex items-center justify-between gap-6">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-[68px] md:h-[76px] flex items-center justify-between gap-3 lg:gap-5">
           <Link href={SITE_HOME} className="shrink-0" aria-label="Express Lyft home" onClick={() => setOpen(false)}>
             <Logo />
           </Link>
 
           {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-1 text-[13px] font-semibold" aria-label="Main">
-            <div className="relative" onMouseEnter={() => setMenu('services')}>
+            <div className="relative">
               <button
                 type="button"
-                className="px-3 py-2 rounded-lg text-white/85 hover:text-white flex items-center gap-1"
+                className="px-3 py-2 rounded-lg text-white hover:text-[var(--gold-light)] hover:bg-white/5 transition-colors flex items-center gap-1"
                 aria-expanded={menu === 'services'}
+                aria-controls="site-services"
                 onClick={() => setMenu(menu === 'services' ? null : 'services')}
               >
                 Services
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
               </button>
               {menu === 'services' && (
-                <div className="absolute left-0 top-full pt-2 w-[380px]">
+                <div id="site-services" className="absolute left-0 top-full pt-2 w-[380px]">
                   <div className="rounded-2xl p-2 shadow-2xl" style={{ background: '#141414', border: '1px solid var(--border)' }}>
                     {SERVICES.map((s) => (
                       <Link key={s.slug} href={`/${s.slug}`} className="block rounded-xl px-4 py-3 hover:bg-white/5" onClick={() => setMenu(null)}>
@@ -83,18 +114,19 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
                 </div>
               )}
             </div>
-            <div className="relative" onMouseEnter={() => setMenu('locations')}>
+            <div className="relative">
               <button
                 type="button"
-                className="px-3 py-2 rounded-lg text-white/85 hover:text-white flex items-center gap-1"
+                className="px-3 py-2 rounded-lg text-white hover:text-[var(--gold-light)] hover:bg-white/5 transition-colors flex items-center gap-1"
                 aria-expanded={menu === 'locations'}
+                aria-controls="site-locations"
                 onClick={() => setMenu(menu === 'locations' ? null : 'locations')}
               >
                 Locations
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
               </button>
               {menu === 'locations' && (
-                <div className="absolute left-0 top-full pt-2 w-[260px]">
+                <div id="site-locations" className="absolute left-0 top-full pt-2 w-[260px]">
                   <div className="rounded-2xl p-2 shadow-2xl" style={{ background: '#141414', border: '1px solid var(--border)' }}>
                     {LOCATIONS.map((l) => (
                       <Link key={l.href} href={l.href} className="flex items-center justify-between rounded-xl px-4 py-3 hover:bg-white/5 text-sm text-white" onClick={() => setMenu(null)}>
@@ -107,14 +139,14 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
               )}
             </div>
             {NAV.map((n) => (
-              <Link key={n.href} href={n.href} className="px-3 py-2 rounded-lg text-white/85 hover:text-white" onMouseEnter={() => setMenu(null)}>
+              <Link key={n.href} href={n.href} className="px-3 py-2 rounded-lg text-white hover:text-[var(--gold-light)] hover:bg-white/5 transition-colors" onMouseEnter={() => setMenu(null)}>
                 {n.label}
               </Link>
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 md:gap-3">
-            <a href={CONTACT.phoneHref} className="hidden md:flex items-center gap-2 text-sm font-semibold text-white/90 hover:text-[var(--gold-light)]">
+          <div className="flex shrink-0 items-center gap-2 md:gap-3">
+            <a href={CONTACT.phoneHref} aria-label="Call Express Lyft" className="hidden md:flex items-center gap-2 text-sm font-semibold text-white/90 hover:text-[var(--gold-light)]">
               <PhoneIcon size={15} />
               <span className="hidden xl:inline">{CONTACT.phoneDisplay}</span>
             </a>
@@ -134,15 +166,17 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
             >
               Book a Ride
             </Link>
-            <a href={CONTACT.phoneHref} aria-label="Call Express Lyft" className="md:hidden w-10 h-10 rounded-xl flex items-center justify-center text-white" style={{ border: '1px solid rgba(255,255,255,0.14)' }}>
+            <a href={CONTACT.phoneHref} aria-label="Call Express Lyft" className="md:hidden w-11 h-11 rounded-xl flex items-center justify-center text-white" style={{ border: '1px solid rgba(255,255,255,0.14)' }}>
               <PhoneIcon size={16} />
             </a>
             <button
+              ref={menuButtonRef}
               type="button"
               aria-label={open ? 'Close menu' : 'Open menu'}
               aria-expanded={open}
+              aria-controls="site-mobile-menu"
               onClick={() => setOpen(!open)}
-              className="lg:hidden w-10 h-10 rounded-xl flex items-center justify-center text-white"
+              className="lg:hidden w-11 h-11 rounded-xl flex items-center justify-center text-white"
               style={{ border: '1px solid rgba(255,255,255,0.14)' }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
@@ -155,7 +189,7 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
 
       {/* Mobile full-screen menu */}
       {open && (
-        <div className="lg:hidden fixed inset-0 z-40 pt-[68px] overflow-y-auto" style={{ background: '#0c0c0c' }}>
+        <div ref={mobileMenuRef} id="site-mobile-menu" role="navigation" aria-label="Mobile" className="lg:hidden fixed inset-0 z-40 pt-[68px] md:pt-[76px] pb-24 overflow-y-auto" style={{ background: '#0c0c0c' }}>
           <div className="px-5 py-6 flex flex-col gap-8">
             <Link
               href={bookHref}

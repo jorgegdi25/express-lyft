@@ -17,6 +17,8 @@ export default function FaqList({ items, categories = false }: { items: FaqItem[
           {cats.map((c) => (
             <button
               key={c}
+              type="button"
+              aria-pressed={cat === c}
               onClick={() => setCat(c)}
               className="shrink-0 px-4 py-2 rounded-full text-[13px] font-semibold transition-colors"
               style={{
