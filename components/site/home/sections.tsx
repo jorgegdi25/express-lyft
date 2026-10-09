@@ -15,32 +15,32 @@ import HeroQuickStart from './HeroQuickStart'
 import RouteMap from '../RouteMap'
 
 /* ── 02 HERO ─────────────────────────────────────────────────────── */
-// Copy and booking stay on a light surface; the video has its own frame.
+// Full-bleed video with the copy and quick start over a cinematic scrim.
 export function Hero() {
   return (
-    <section className="relative overflow-hidden py-10 md:py-16 lg:py-20" style={{ background: 'var(--sand)' }}>
-      <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          <div className="min-w-0 lg:col-span-7 max-w-2xl">
-            <p className="text-[11px] font-medium uppercase tracking-[0.32em]" style={{ color: 'var(--gold-light)' }}>
-              Private transportation · Miami & South Florida
-            </p>
-            <h1 className="font-display font-semibold text-[38px] leading-[1.08] md:text-[56px] xl:text-[64px] mt-5 tracking-[-0.025em]">
-              From arrival to destination, <span style={{ color: 'var(--gold-deep)' }}>handled.</span>
-            </h1>
-            <p className="mt-5 text-base md:text-lg leading-relaxed max-w-xl" style={{ color: 'var(--text-subtle)' }}>
-              Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
-            </p>
-            <div className="mt-8"><HeroQuickStart /></div>
-            <p className="mt-5 text-sm text-[var(--text-muted)] flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span>Prefer to talk to someone?</span>
-              <a href={CONTACT.phoneHref} className="inline-flex items-center gap-1.5 text-[var(--text)] hover:text-[var(--gold-light)]"><PhoneIcon size={14} />{CONTACT.phoneDisplay}</a>
-              <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[var(--text)] hover:text-[var(--gold-light)]"><WhatsAppIcon size={14} />WhatsApp</a>
-            </p>
-          </div>
-          <div className="min-w-0 lg:col-span-5 relative aspect-[16/10] lg:aspect-[4/5] rounded-3xl overflow-hidden" style={{ background: 'var(--sand-deep)' }}>
-            <HeroMedia video="/hero-video-final3.mp4" poster="/gallery/aeropuerto.webp" alt="Express Lyft driver waiting at the Miami airport curb" />
-          </div>
+    <section className="site-dark relative overflow-hidden min-h-[88svh] md:min-h-[calc(100svh-77px)] flex items-end pt-24 pb-12 md:pb-16 bg-black">
+      <HeroMedia video="/hero-video-1280.mp4" mobileVideo="/hero-video-960.mp4" poster="/gallery/aeropuerto.webp" alt="Express Lyft chauffeur waiting at the Miami airport curb" />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(5,5,5,0.82) 0%, rgba(5,5,5,0.55) 38%, rgba(5,5,5,0.12) 70%, rgba(5,5,5,0) 100%)' }} />
+      <div className="absolute inset-x-0 bottom-0 h-3/5" style={{ background: 'linear-gradient(0deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.4) 45%, transparent 100%)' }} />
+      <div className="absolute inset-x-0 top-0 h-32" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.5), transparent)' }} />
+      <Container className="relative w-full">
+        <div className="max-w-2xl">
+          <p className="inline-flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.32em]" style={{ color: '#E9D5A6' }}>
+            <span className="h-px w-8" style={{ background: 'var(--brand-gold-gradient)' }} aria-hidden />
+            Private transportation · Miami & South Florida
+          </p>
+          <h1 className="font-display font-semibold text-white text-[40px] leading-[1.04] md:text-[60px] xl:text-[72px] mt-5 tracking-[-0.03em]" style={{ textShadow: '0 2px 30px rgba(0,0,0,0.4)' }}>
+            From arrival to destination, <span className="text-gold-gradient">handled.</span>
+          </h1>
+          <p className="mt-5 text-base md:text-lg text-white/85 leading-relaxed max-w-xl">
+            Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
+          </p>
+          <div className="mt-8"><HeroQuickStart /></div>
+          <p className="mt-6 text-sm text-white/70 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span>Prefer to talk to someone?</span>
+            <a href={CONTACT.phoneHref} className="inline-flex items-center gap-1.5 text-white hover:text-[#E9D5A6]"><PhoneIcon size={14} />{CONTACT.phoneDisplay}</a>
+            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-white hover:text-[#25D366]"><WhatsAppIcon size={14} />WhatsApp</a>
+          </p>
         </div>
       </Container>
     </section>
