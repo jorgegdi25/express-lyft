@@ -9,7 +9,7 @@ export function Container({ children, className = '' }: { children: ReactNode; c
   return <div className={`max-w-7xl mx-auto px-4 md:px-8 ${className}`}>{children}</div>
 }
 
-export function Eyebrow({ children, tone = 'dark' }: { children: ReactNode; tone?: 'dark' | 'light' }) {
+export function Eyebrow({ children }: { children: ReactNode; tone?: 'dark' | 'light' }) {
   return (
     <p
       className="text-[11px] font-medium uppercase tracking-[0.32em] mb-4"
@@ -44,7 +44,7 @@ export function Heading({
 type ButtonVariant = 'primary' | 'outline' | 'ghost' | 'dark'
 
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-2 focus-visible:ring-offset-black'
+  'inline-flex items-center justify-center gap-2 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]'
 
 const BUTTON_SIZES = {
   md: 'px-5 h-11',
@@ -54,9 +54,9 @@ const BUTTON_SIZES = {
 function variantStyle(variant: ButtonVariant): React.CSSProperties {
   switch (variant) {
     case 'primary':
-      return { background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }
+      return { background: 'var(--brand-gold-gradient)', color: 'var(--button-ink)' }
     case 'outline':
-      return { border: '1px solid rgba(255,255,255,0.28)', color: 'var(--text)' }
+      return { border: '1px solid var(--border-soft)', color: 'var(--text)' }
     case 'dark':
       return { background: '#fff', color: '#000' }
     default:

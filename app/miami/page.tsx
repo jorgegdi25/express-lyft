@@ -55,7 +55,7 @@ export default function MiamiPage() {
         <ul className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {AREAS.map((a) => (
             <li key={a.t} className="rounded-2xl p-6" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
-              <h3 className="text-lg font-semibold text-white">{a.t}</h3>
+              <h3 className="text-lg font-semibold text-[var(--text)]">{a.t}</h3>
               <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>{a.d}</p>
             </li>
           ))}
@@ -71,7 +71,7 @@ export default function MiamiPage() {
             <ul className="mt-8" style={{ borderTop: '1px solid var(--border)' }}>
               {POPULAR_ROUTES.map((r) => (
                 <li key={r.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                  <Link href={`/book?pickup=${encodeURIComponent(r.pickup)}&dropoff=${encodeURIComponent(r.dropoff)}`} className="flex items-center justify-between py-4 text-white hover:text-[var(--gold-light)]">
+                  <Link href={`/book?pickup=${encodeURIComponent(r.pickup)}&dropoff=${encodeURIComponent(r.dropoff)}`} className="flex items-center justify-between py-4 text-[var(--text)] hover:text-[var(--gold-light)]">
                     <span>{r.from} → {r.to}</span><Arrow />
                   </Link>
                 </li>
@@ -85,11 +85,11 @@ export default function MiamiPage() {
         <Eyebrow>Services in Miami</Eyebrow>
         <ul className="mt-4 flex flex-wrap gap-3">
           {SERVICES.map((s) => (
-            <li key={s.slug}><Link href={`/${s.slug}`} className="inline-block px-4 py-2.5 rounded-full text-sm text-white hover:border-[var(--gold)]" style={{ border: '1px solid var(--border-soft)' }}>{s.name}</Link></li>
+            <li key={s.slug}><Link href={`/${s.slug}`} className="inline-block px-4 py-2.5 rounded-full text-sm text-[var(--text)] hover:border-[var(--gold)]" style={{ border: '1px solid var(--border-soft)' }}>{s.name}</Link></li>
           ))}
         </ul>
         <p className="mt-10 text-sm" style={{ color: 'var(--text-muted)' }}>
-          Miami office: {miami.street}, {miami.locality}, {miami.region} {miami.postalCode} · <a href={CONTACT.phoneHref} className="text-white">{CONTACT.phoneDisplay}</a>
+          Miami office: {miami.street}, {miami.locality}, {miami.region} {miami.postalCode} · <a href={CONTACT.phoneHref} className="text-[var(--text)]">{CONTACT.phoneDisplay}</a>
         </p>
       </Section>
     </PageShell>

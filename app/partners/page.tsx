@@ -71,11 +71,11 @@ export default async function PartnersPage() {
         <div className="grid md:grid-cols-2 gap-5">
           {AUDIENCES.map((a) => (
             <article key={a.id} id={a.id} className="rounded-2xl p-7 md:p-9 scroll-mt-28" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
-              <h2 className="font-display text-3xl font-semibold text-white">{a.t}</h2>
+              <h2 className="font-display text-3xl font-semibold text-[var(--text)]">{a.t}</h2>
               <p className="mt-3 text-[15px] leading-relaxed" style={{ color: 'var(--text-subtle)' }}>{a.d}</p>
               <ul className="mt-6 flex flex-col gap-2.5">
                 {a.points.map((p) => (
-                  <li key={p} className="flex items-center gap-3 text-sm text-white">
+                  <li key={p} className="flex items-center gap-3 text-sm text-[var(--text)]">
                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--gold-light)' }} aria-hidden />{p}
                   </li>
                 ))}
@@ -125,7 +125,7 @@ export default async function PartnersPage() {
               ].map(([t, d], i) => (
                 <li key={t} className="flex gap-5">
                   <span className="font-display text-3xl font-semibold w-8 shrink-0" style={{ color: 'var(--gold)' }}>{i + 1}</span>
-                  <div><h3 className="text-lg font-semibold text-white">{t}</h3><p className="mt-1 text-[15px]" style={{ color: 'var(--text-subtle)' }}>{d}</p></div>
+                  <div><h3 className="text-lg font-semibold text-[var(--text)]">{t}</h3><p className="mt-1 text-[15px]" style={{ color: 'var(--text-subtle)' }}>{d}</p></div>
                 </li>
               ))}
             </ol>
@@ -137,13 +137,13 @@ export default async function PartnersPage() {
         <Section>
           <Eyebrow>Hotel partners</Eyebrow>
           <ul className="mt-4 flex flex-wrap gap-x-10 gap-y-4">
-            {hotels.map((h) => <li key={h.slug} className="font-display text-2xl text-white">{h.name}</li>)}
+            {hotels.map((h) => <li key={h.slug} className="font-display text-2xl text-[var(--text)]">{h.name}</li>)}
           </ul>
         </Section>
       )}
 
       <Section tone="deep">
-        <div className="rounded-3xl p-8 md:p-14 flex flex-col lg:flex-row lg:items-center justify-between gap-8" style={{ background: 'linear-gradient(135deg, #1a1608 0%, #121212 60%)', border: '1px solid rgba(184,150,12,0.3)' }}>
+        <div className="rounded-3xl p-8 md:p-14 flex flex-col lg:flex-row lg:items-center justify-between gap-8" style={{ background: 'var(--sand-deep)', border: '1px solid rgba(184,150,12,0.3)' }}>
           <div>
             <Heading className="text-3xl md:text-4xl">Schedule a partnership meeting.</Heading>
             <p className="mt-3 text-[15px]" style={{ color: 'var(--text-subtle)' }}>Dennis Rivera, Founder / Managing Director · {CONTACT.phoneDisplay} · {CONTACT.email}</p>

@@ -40,37 +40,78 @@
 }
 
 /* ── Corporate site (Express Lyft 2.0) ─────────────────────────── */
-/* Brand tokens from the Express Lyft brand guidelines: black #000000,
-   dark grey #191919, white and the metallic gold gradient (bronze →
-   champagne). Scoped to the corporate site so the CRM/admin keep theirs. */
+/* Warm white and sand give the photos room to breathe. Black and champagne
+   remain in the navigation and closing brand block. CRM/admin keep theirs. */
 .site-v2 {
+  --gold: #8A6A36;
+  --gold-light: #80602D;
+  --gold-accent: #80602D;
+  --gold-deep: #8A6A36;
+  --brand-gold-gradient: linear-gradient(120deg, #9C7A43 0%, #D2B57C 28%, #F6E8C6 50%, #DCC08A 72%, #A9884F 100%);
+  --bg-deep: #F5F1EA;
+  --bg: #FFFFFF;
+  --bg-alt: #F8F6F2;
+  --bg-alt-2: #F2EEE7;
+  --surface: #F1EDE6;
+  --surface-raised: #FFFFFF;
+  --surface-alt: #EDE7DD;
+  --border: #DDD5C8;
+  --border-soft: #C9BEAD;
+  --border-faint: #E8E2D8;
+  --text: #211D17;
+  --text-muted: #665F55;
+  --text-subtle: #544D43;
+  --text-faint: #746C60;
+  --text-dim: #665F55;
+  --button-ink: #17140F;
+  --error-text: #B42318;
+  --booking-panel: #FFFFFF;
+  --booking-border: #DDD5C8;
+  --booking-shadow: 0 18px 60px -24px rgba(54,43,24,0.18);
+  --route-map-h: 240px;
+  --route-map-h-idle: 170px;
+  --sand: #F5F1EA;
+  --sand-deep: #EDE6DA;
+  --sand-line: #DDD5C8;
+  --ink-dark: #211D17;
+  --ink-dark-muted: #665F55;
+  font-family: var(--font-brand), 'Montserrat', Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  color-scheme: light;
+}
+.site-v2 .site-dark {
   --gold: #C4A46B;
   --gold-light: #E9D5A6;
   --gold-accent: #E9D5A6;
-  --gold-deep: #8A6A36;
-  --brand-gold-gradient: linear-gradient(120deg, #9C7A43 0%, #D2B57C 28%, #F6E8C6 50%, #DCC08A 72%, #A9884F 100%);
-  --bg-deep: #000000;
-  --bg: #0B0B0B;
-  --bg-alt: #111111;
-  --bg-alt-2: #0E0E0E;
-  --surface: #191919;
-  --surface-raised: #141414;
-  --surface-alt: #1D1D1D;
-  --border: #262626;
-  --border-soft: #2E2E2E;
-  --border-faint: #1F1F1F;
-  --text-muted: #8F8F8F;
-  --text-subtle: #B5B5B5;
-  --route-map-h: 240px;
-  --route-map-h-idle: 170px;
-  /* Former light "sand" sections now use the brand dark grey (#191919). */
-  --sand: #191919;
-  --sand-deep: #141414;
-  --sand-line: #2A2A2A;
-  --ink-dark: #FFFFFF;
-  --ink-dark-muted: #9A9A9A;
-  font-family: var(--font-brand), 'Montserrat', Arial, Helvetica, sans-serif;
-  background: var(--bg);
+  --bg-deep: #0E0E0E;
+  --bg: #141414;
+  --bg-alt: #191919;
+  --bg-alt-2: #171717;
+  --surface: #222222;
+  --surface-raised: #191919;
+  --surface-alt: #262626;
+  --border: #333333;
+  --border-soft: #444444;
+  --border-faint: #2E2E2E;
+  --text: #FFFFFF;
+  --text-muted: #B5B0A7;
+  --text-subtle: #C9C4BA;
+  --text-faint: #AAA398;
+  color: var(--text);
+  color-scheme: dark;
+}
+.site-v2 input[type="date"]::-webkit-calendar-picker-indicator,
+.site-v2 input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+.site-v2 select option {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+.site-v2 .site-dark input[type="date"]::-webkit-calendar-picker-indicator,
+.site-v2 .site-dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
 }
 @media (min-width: 1024px) {
   .site-v2 { --route-map-h: 320px; --route-map-h-idle: 220px; }

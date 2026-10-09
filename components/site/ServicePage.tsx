@@ -63,7 +63,7 @@ export default async function ServicePage({ slug }: { slug: string }) {
           <ul className="lg:col-span-8 grid md:grid-cols-3 gap-4">
             {s.useCases.map((u) => (
               <li key={u.title} className="rounded-2xl p-6" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
-                <h3 className="text-lg font-semibold text-white">{u.title}</h3>
+                <h3 className="text-lg font-semibold text-[var(--text)]">{u.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{u.text}</p>
               </li>
             ))}
@@ -84,7 +84,7 @@ export default async function ServicePage({ slug }: { slug: string }) {
                 <li key={h.title} className="flex gap-5">
                   <span className="font-display text-3xl font-semibold shrink-0 w-10" style={{ color: 'var(--gold)' }}>{i + 1}</span>
                   <div>
-                    <h3 className="text-lg font-semibold text-white">{h.title}</h3>
+                    <h3 className="text-lg font-semibold text-[var(--text)]">{h.title}</h3>
                     <p className="mt-1.5 text-[15px] leading-relaxed" style={{ color: 'var(--text-subtle)' }}>{h.text}</p>
                   </div>
                 </li>
@@ -127,11 +127,11 @@ export default async function ServicePage({ slug }: { slug: string }) {
           <div className="lg:col-span-4">
             <Eyebrow>Where we go</Eyebrow>
             <Heading className="text-3xl md:text-4xl">Serving South Florida.</Heading>
-            <p className="mt-4 text-sm" style={{ color: 'var(--text-muted)' }}>Not seeing your location? Enter any address in the booking form or <a href={CONTACT.phoneHref} className="underline hover:text-white">call us</a>.</p>
+            <p className="mt-4 text-sm" style={{ color: 'var(--text-muted)' }}>Not seeing your location? Enter any address in the booking form or <a href={CONTACT.phoneHref} className="underline hover:text-[var(--text)]">call us</a>.</p>
           </div>
           <ul className="lg:col-span-8 flex flex-wrap gap-3 content-start">
             {s.places.map((p) => (
-              <li key={p} className="px-4 py-2.5 rounded-full text-sm text-white" style={{ border: '1px solid var(--border-soft)' }}>{p}</li>
+              <li key={p} className="px-4 py-2.5 rounded-full text-sm text-[var(--text)]" style={{ border: '1px solid var(--border-soft)' }}>{p}</li>
             ))}
           </ul>
         </div>
@@ -164,8 +164,8 @@ export default async function ServicePage({ slug }: { slug: string }) {
           </div>
         </div>
         <div className="mt-12 pt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm" style={{ borderTop: '1px solid var(--surface)', color: 'var(--text-muted)' }}>
-          <span className="text-white/60">Other services:</span>
-          {others.map((o) => <Link key={o.slug} href={`/${o.slug}`} className="hover:text-white">{o.name}</Link>)}
+          <span className="text-[var(--text-muted)]">Other services:</span>
+          {others.map((o) => <Link key={o.slug} href={`/${o.slug}`} className="hover:text-[var(--text)]">{o.name}</Link>)}
         </div>
       </Section>
     </PageShell>

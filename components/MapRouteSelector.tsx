@@ -563,7 +563,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
   const pickupInput = (
         <div className="relative">
-          <label className="text-sm font-semibold mb-2 block" style={{ color: '#BBBBBB' }}>
+          <label className="text-sm font-semibold mb-2 block" style={{ color: 'var(--text-subtle)' }}>
             {labels?.pickup || 'Pickup Location'}
           </label>
           <input
@@ -603,7 +603,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => selectSuggestion(s, true)}
                   className="w-full text-left px-3 py-2.5 text-sm hover:bg-[var(--border)] transition-colors"
-                  style={{ color: '#ddd', borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)' }}
+                  style={{ color: 'var(--text-subtle)', borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)' }}
                 >
                   <div style={{ color: 'var(--text)' }}>{s.mainText}</div>
                   {s.secondaryText && (
@@ -622,7 +622,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
   const dropoffInput = (
         <div className="relative">
-          <label className="text-sm font-semibold mb-2 block" style={{ color: '#BBBBBB' }}>
+          <label className="text-sm font-semibold mb-2 block" style={{ color: 'var(--text-subtle)' }}>
             {labels?.destination || 'Destination'}
           </label>
           <input
@@ -662,7 +662,7 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => selectSuggestion(s, false)}
                   className="w-full text-left px-3 py-2.5 text-sm hover:bg-[var(--border)] transition-colors"
-                  style={{ color: '#ddd', borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)' }}
+                  style={{ color: 'var(--text-subtle)', borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)' }}
                 >
                   <div style={{ color: 'var(--text)' }}>{s.mainText}</div>
                   {s.secondaryText && (
@@ -688,9 +688,9 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
         title="Click anywhere on the map to set a location, or drag the markers"
       />
       {mapError && (
-        <div className="h-full min-h-[150px] flex flex-col justify-center gap-2 p-4 rounded-xl bg-[#171717] text-white" role="status">
+        <div className="h-full min-h-[150px] flex flex-col justify-center gap-2 p-4 rounded-xl bg-[var(--bg-alt)] text-[var(--text)]" role="status">
           <p className="text-sm font-semibold">{mapError}</p>
-          <p className="text-xs text-white/70">Our team can help you plan your ride.</p>
+          <p className="text-xs text-[var(--text-muted)]">Our team can help you plan your ride.</p>
           <div className="flex flex-wrap gap-3 text-xs font-semibold">
             <a href={CONTACT.phoneHref} className="underline text-[var(--gold-light)]">Call {CONTACT.phoneDisplay}</a>
             <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="underline text-[var(--gold-light)]">WhatsApp</a>

@@ -166,7 +166,7 @@ export default function FleetShowcase({ prices, tone = 'light' }: { prices: Star
             <Link
               href={`/book?vehicle=${v.type}&pax=${Math.min(v.passengers, v.type === 'sedan_suv' ? 2 : v.passengers)}`}
               className="inline-flex items-center gap-2 px-6 py-4 rounded-xl text-[14px] font-semibold hover:brightness-110 transition"
-              style={{ background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }}
+              style={{ background: 'var(--brand-gold-gradient)', color: 'var(--button-ink)' }}
             >
               {v.quoteOnly ? 'Request a quote' : 'Book this vehicle'} <Arrow />
             </Link>

@@ -43,10 +43,10 @@ export default async function BookPage({ searchParams }: { searchParams: Record<
             </p>
           </div>
           <div className="flex flex-wrap shrink-0 gap-3 text-sm">
-            <a href={CONTACT.phoneHref} className="inline-flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-white" style={{ border: '1px solid var(--border-soft)' }}>
+            <a href={CONTACT.phoneHref} className="inline-flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-[var(--text)]" style={{ border: '1px solid var(--border-soft)' }}>
               <PhoneIcon size={14} /> {CONTACT.phoneDisplay}
             </a>
-            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white" style={{ border: '1px solid var(--border-soft)' }}>
+            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[var(--text)]" style={{ border: '1px solid var(--border-soft)' }}>
               <WhatsAppIcon size={14} className="text-[#25D366]" /> WhatsApp
             </a>
           </div>
@@ -60,9 +60,9 @@ export default async function BookPage({ searchParams }: { searchParams: Record<
       <section className="pb-16">
         <Container>
           <ul className="grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto text-sm" style={{ color: 'var(--text-muted)' }}>
-            <li className="rounded-xl p-4" style={{ border: '1px solid var(--border-faint)' }}><span className="block text-white font-semibold mb-1">Secure payment</span>Card payments processed securely. Receipt by email.</li>
-            <li className="rounded-xl p-4" style={{ border: '1px solid var(--border-faint)' }}><span className="block text-white font-semibold mb-1">30-min airport grace</span>Complimentary waiting on airport pickups.</li>
-            <li className="rounded-xl p-4" style={{ border: '1px solid var(--border-faint)' }}><span className="block text-white font-semibold mb-1">Groups</span>Mini Bus and Coach Bus bookings are confirmed with a quote.</li>
+            <li className="rounded-xl p-4" style={{ border: '1px solid var(--border-faint)' }}><span className="block text-[var(--text)] font-semibold mb-1">Secure payment</span>Card payments processed securely. Receipt by email.</li>
+            <li className="rounded-xl p-4" style={{ border: '1px solid var(--border-faint)' }}><span className="block text-[var(--text)] font-semibold mb-1">30-min airport grace</span>Complimentary waiting on airport pickups.</li>
+            <li className="rounded-xl p-4" style={{ border: '1px solid var(--border-faint)' }}><span className="block text-[var(--text)] font-semibold mb-1">Groups</span>Mini Bus and Coach Bus bookings are confirmed with a quote.</li>
           </ul>
         </Container>
       </section>

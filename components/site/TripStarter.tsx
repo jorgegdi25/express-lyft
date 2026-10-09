@@ -48,9 +48,9 @@ export default function TripStarter({
   }
 
   const isBar = variant === 'bar'
-  const field = 'w-full h-[52px] rounded-xl px-4 text-[16px] outline-none transition-colors focus:border-[var(--gold)] placeholder:text-white/40'
-  const fieldStyle = { background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.16)', color: '#fff' }
-  const label = 'block text-[10px] font-bold uppercase tracking-[0.16em] mb-1.5 text-white/60'
+  const field = 'w-full h-[52px] rounded-xl px-4 text-[16px] outline-none transition-colors focus:border-[var(--gold)] placeholder:text-[var(--text-faint)]'
+  const fieldStyle = { background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: 'var(--text)' }
+  const label = 'block text-[10px] font-bold uppercase tracking-[0.16em] mb-1.5 text-[var(--text-muted)]'
   const wide = isBar ? 'col-span-2 lg:col-span-1' : 'col-span-2'
 
   return (
@@ -58,11 +58,11 @@ export default function TripStarter({
       onSubmit={submit}
       className={`rounded-2xl p-4 md:p-5 ${isBar ? 'lg:p-3 lg:pl-5' : ''}`}
       style={{
-        background: 'rgba(16,16,16,0.72)',
-        border: '1px solid rgba(255,255,255,0.12)',
+        background: 'var(--surface-raised)',
+        border: '1px solid var(--border)',
         backdropFilter: 'blur(14px)',
         WebkitBackdropFilter: 'blur(14px)',
-        boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)',
+        boxShadow: '0 18px 60px -24px rgba(54,43,24,0.18)',
       }}
       aria-label="Start your booking"
     >
@@ -77,7 +77,7 @@ export default function TripStarter({
         </div>
         <div>
           <label htmlFor="ts-date" className={label}>Date</label>
-          <input id="ts-date" type="date" min={minDate} value={date} onChange={(e) => setDate(e.target.value)} className={`${field} [color-scheme:dark]`} style={fieldStyle} />
+          <input id="ts-date" type="date" min={minDate} value={date} onChange={(e) => setDate(e.target.value)} className={`${field} [color-scheme:light]`} style={fieldStyle} />
         </div>
         <div>
           <label htmlFor="ts-pax" className={label}>Passengers</label>
@@ -90,19 +90,19 @@ export default function TripStarter({
         <button
           type="submit"
           className={`${wide} h-[52px] px-6 rounded-xl text-[14px] font-semibold hover:brightness-110 transition whitespace-nowrap`}
-          style={{ background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }}
+          style={{ background: 'var(--brand-gold-gradient)', color: 'var(--button-ink)' }}
         >
           See vehicles & prices
         </button>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-white/55">
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
         <span>Popular:</span>
         {QUICK_PLACES.map((p) => (
           <button
             key={p.label}
             type="button"
             onClick={() => (pickup ? setDestination(p.value) : setPickup(p.value))}
-            className="px-2.5 py-1 rounded-full border border-white/15 hover:border-[var(--gold-light)] hover:text-white transition-colors"
+            className="px-2.5 py-1 rounded-full border border-[var(--border-soft)] hover:border-[var(--gold-light)] hover:text-[var(--text)] transition-colors"
           >
             {p.label}
           </button>

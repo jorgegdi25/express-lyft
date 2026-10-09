@@ -23,10 +23,10 @@ export default async function FleetPage() {
       title="The right vehicle for every trip."
       intro="Five vehicle classes, from a private ride for two to a 55-passenger coach. Every class shows its passenger and luggage capacity, so you know it fits."
       heroAside={
-        <div className="relative w-full aspect-[3/2] overflow-hidden rounded-2xl" style={{ background: '#0B0B0B', border: '1px solid var(--border)' }}>
+        <div className="relative w-full aspect-[3/2] overflow-hidden rounded-2xl" style={{ background: '#E9E6E0', border: '1px solid var(--border)' }}>
           <Image
-            src="/site/fleet-studio-hero.jpg"
-            alt="Illustrative studio lineup of a black Toyota Camry, Chevrolet Suburban and Mercedes-Benz Sprinter"
+            src="/fleet/catalog/suburban.jpg"
+            alt="Illustrative side profile of a black Chevrolet Suburban on a neutral studio background"
             fill
             priority
             sizes="(min-width:1280px) 490px, (min-width:1024px) 40vw, calc(100vw - 32px)"
@@ -56,7 +56,7 @@ export default async function FleetPage() {
                 <Link
                   href={`/book?vehicle=${v.type}`}
                   className="mt-8 self-start inline-flex min-h-12 items-center justify-center gap-2 px-5 py-3 rounded-xl text-[14px] font-semibold hover:brightness-110 transition"
-                  style={{ background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }}
+                  style={{ background: 'var(--brand-gold-gradient)', color: 'var(--button-ink)' }}
                 >
                   {v.quoteOnly ? 'Request a quote' : 'Book this vehicle'} <Arrow />
                 </Link>

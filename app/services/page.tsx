@@ -23,12 +23,12 @@ export default function ServicesPage() {
         <ul className="grid md:grid-cols-2 gap-5">
           {SERVICES.map((s) => (
             <li key={s.slug}>
-              <Link href={`/${s.slug}`} className="group grid grid-cols-5 rounded-2xl overflow-hidden h-full" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
-                <div className="relative col-span-2 min-h-[180px]">
-                  <Image src={s.image} alt={s.imageAlt} fill sizes="(min-width:768px) 20vw, 40vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
+              <Link href={`/${s.slug}`} className="group flex flex-col rounded-2xl overflow-hidden h-full" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
+                <div className="relative aspect-[16/10] shrink-0">
+                  <Image src={s.image} alt={s.imageAlt} fill sizes="(min-width:1280px) 600px, (min-width:768px) 50vw, calc(100vw - 32px)" className="object-cover transition-transform duration-700 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
                 </div>
-                <div className="col-span-3 p-5 md:p-7 flex flex-col">
-                  <h2 className="font-display text-2xl font-semibold text-white">{s.name}</h2>
+                <div className="p-5 md:p-7 flex flex-col flex-1">
+                  <h2 className="font-display text-2xl font-semibold text-[var(--text)]">{s.name}</h2>
                   <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{s.short}</p>
                   <span className="mt-auto pt-4 inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--gold-light)' }}>
                     Learn more <Arrow />

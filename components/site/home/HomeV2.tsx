@@ -24,7 +24,7 @@ export default async function HomeV2() {
 
   return (
     <main className={SITE_CLASS} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <SiteHeader overlay bookHref="#book" />
+      <SiteHeader bookHref="#book" />
       <Hero />
       <TrustStrip />
       <ServicesSection />

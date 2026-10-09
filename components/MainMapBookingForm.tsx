@@ -47,7 +47,7 @@ function getVehicleType(passengers: number): VehicleType {
 
 /* ─── Shared style tokens ─────────────────────────────────────────── */
 const LABEL_CLASS = 'text-sm font-semibold mb-2 block'
-const LABEL_COLOR = { color: '#BBBBBB' }
+const LABEL_COLOR = { color: 'var(--text-subtle)' }
 
 const INPUT_CLASS = 'w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)]'
 const INPUT_STYLE = { background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: 'var(--text)' }
@@ -66,14 +66,14 @@ function Stepper({ label, value, onChange, min, max }: { label: string; value: n
     <div>
       <label className="block text-[10px] font-bold uppercase tracking-[0.16em] mb-1.5" style={{ color: 'var(--text-muted)' }}>{label}</label>
       <div className="flex items-center justify-between h-[50px] rounded-xl px-1.5" style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-soft)' }}>
-        <button type="button" onClick={() => onChange(Math.max(min, value - 1))} className="w-9 h-9 rounded-lg text-xl text-white hover:bg-white/5" aria-label={`Decrease ${label}`}>−</button>
+        <button type="button" onClick={() => onChange(Math.max(min, value - 1))} className="w-9 h-9 rounded-lg text-xl text-[var(--text)] hover:bg-[var(--surface)]" aria-label={`Decrease ${label}`}>−</button>
         <input
           type="number" min={min} max={max} value={value}
           onChange={(e) => onChange(Math.max(min, Math.min(max, parseInt(e.target.value) || min)))}
-          className="w-10 text-center text-lg font-semibold bg-transparent outline-none text-white"
+          className="w-10 text-center text-lg font-semibold bg-transparent outline-none text-[var(--text)]"
           aria-label={label}
         />
-        <button type="button" onClick={() => onChange(Math.min(max, value + 1))} className="w-9 h-9 rounded-lg text-xl text-white hover:bg-white/5" aria-label={`Increase ${label}`}>+</button>
+        <button type="button" onClick={() => onChange(Math.min(max, value + 1))} className="w-9 h-9 rounded-lg text-xl text-[var(--text)] hover:bg-[var(--surface)]" aria-label={`Increase ${label}`}>+</button>
       </div>
     </div>
   )
@@ -564,7 +564,7 @@ export default function MainMapBookingForm({
   const FIELD_LABEL = 'block text-[10px] font-semibold uppercase tracking-[0.18em] mb-1'
   const isAirportPickup = /airport|\bmia\b|\bfll\b/i.test(pickup)
   const CELL = 'relative px-4 py-3 lg:py-2.5 flex flex-col justify-center min-h-[64px]'
-  const CELL_INPUT = 'w-full bg-transparent outline-none text-[15px] font-medium text-white placeholder:text-white/35 p-0 border-0'
+  const CELL_INPUT = 'w-full bg-transparent outline-none text-[15px] font-medium text-[var(--text)] placeholder:text-[var(--text-muted)] p-0 border-0'
   const hasRoute = distanceMiles > 0
 
   const ROW = 'relative pl-11 pr-4 py-2.5 min-h-[58px] flex flex-col justify-center'
@@ -595,15 +595,15 @@ export default function MainMapBookingForm({
         renderLayout={({ pickupInput, dropoffInput, map }) => (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[15px] font-semibold text-white">Book your ride</p>
-              <div className="flex rounded-full p-1" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <p className="text-[15px] font-semibold text-[var(--text)]">Book your ride</p>
+              <div className="flex rounded-full p-1" style={{ background: 'var(--surface)' }}>
                 {(['one-way', 'round-trip'] as TripType[]).map((type) => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => setTripType(type)}
                     className="px-3.5 py-1 rounded-full text-[12px] font-medium transition-colors"
-                    style={{ background: tripType === type ? 'var(--text)' : 'transparent', color: tripType === type ? '#000' : 'var(--text-subtle)' }}
+                    style={{ background: tripType === type ? 'var(--text)' : 'transparent', color: tripType === type ? 'var(--bg)' : 'var(--text-subtle)' }}
                   >
                     {type === 'one-way' ? 'One way' : 'Round trip'}
                   </button>
@@ -612,7 +612,7 @@ export default function MainMapBookingForm({
             </div>
 
             {/* Your trip — compact route map */}
-            <div className="relative rounded-2xl overflow-hidden transition-[height] duration-500" style={{ height: hasRoute ? 190 : 150, border: '1px solid rgba(255,255,255,0.08)', background: '#111' }}>
+            <div className="relative rounded-2xl overflow-hidden transition-[height] duration-500" style={{ height: hasRoute ? 190 : 150, border: '1px solid var(--border)', background: '#111' }}>
               {map}
               <div className="pointer-events-none absolute inset-x-0 top-0 h-10" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.55), transparent)' }} />
               {hasRoute ? (
@@ -623,32 +623,32 @@ export default function MainMapBookingForm({
               ) : null}
             </div>
 
-            <div className="rounded-2xl divide-y divide-white/10" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="rounded-2xl divide-y divide-[var(--border-faint)]" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
               <div className="relative">
                 <span className="pointer-events-none absolute left-[21px] top-[31px] bottom-[31px] w-px border-l border-dashed" style={{ borderColor: 'rgba(233,213,166,0.45)' }} aria-hidden />
                 <div className={`${ROW} ${labelOverride}`}>
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2" style={{ borderColor: 'var(--gold-light)' }} aria-hidden />
                   {pickupInput}
                 </div>
-                <div className={`${ROW} ${labelOverride} border-t border-white/10`}>
+                <div className={`${ROW} ${labelOverride} border-t border-[var(--border-faint)]`}>
                   <svg className="absolute left-[14px] top-1/2 -translate-y-1/2" width="16" height="16" viewBox="0 0 24 24" fill="var(--gold-light)" aria-hidden><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" /></svg>
                   {dropoffInput}
                 </div>
               </div>
 
-              <div className="grid grid-cols-[1.15fr_0.85fr_1fr] divide-x divide-white/10">
+              <div className="grid grid-cols-2 sm:grid-cols-[1.15fr_0.85fr_1fr] sm:divide-x divide-[var(--border-faint)]">
                 <div className="px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center">
                   <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Date</label>
                   <CalendarDatePicker value={date} onChange={setDate} min={minDateStr} className={`${CELL_INPUT} !text-[14px] text-left flex items-center justify-between gap-1`} style={{}} />
                 </div>
-                <div className="px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center">
+                <div className="px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center border-l border-[var(--border-faint)]">
                   <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Time</label>
                   <select value={time} onChange={(e) => setTime(e.target.value)} className={`${CELL_INPUT} !text-[14px] appearance-none cursor-pointer`} aria-label="Pickup time">
                     <option value="">Select</option>
                     {availableTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
-                <div className="relative px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center">
+                <div className="relative col-span-2 sm:col-span-1 px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center border-t sm:border-t-0 border-[var(--border-faint)]">
                   <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Guests</label>
                   <button type="button" onClick={() => setGuestsOpen(!guestsOpen)} className={`${CELL_INPUT} !text-[14px] text-left whitespace-nowrap`} aria-expanded={guestsOpen} aria-label="Passengers and bags">
                     {passengers} · {luggageCount} {luggageCount === 1 ? 'bag' : 'bags'}
@@ -656,10 +656,10 @@ export default function MainMapBookingForm({
                   {guestsOpen && (
                     <>
                       <div className="fixed inset-0 z-30" onClick={() => setGuestsOpen(false)} />
-                      <div className="absolute z-40 top-full right-0 mt-2 w-64 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl" style={{ background: '#161616', border: '1px solid var(--border)' }}>
+                      <div className="absolute z-40 top-full right-0 mt-2 w-64 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
                         <Stepper label="Passengers" value={passengers} onChange={setPassengers} min={1} max={55} />
                         <Stepper label="Bags" value={luggageCount} onChange={setLuggageCount} min={0} max={60} />
-                        <button type="button" onClick={() => setGuestsOpen(false)} className="mt-1 h-10 rounded-xl text-[13px] font-semibold" style={{ background: 'var(--text)', color: '#000' }}>Done</button>
+                        <button type="button" onClick={() => setGuestsOpen(false)} className="mt-1 h-10 rounded-xl text-[13px] font-semibold" style={{ background: 'var(--text)', color: 'var(--bg)' }}>Done</button>
                       </div>
                     </>
                   )}
@@ -667,7 +667,7 @@ export default function MainMapBookingForm({
               </div>
 
               {tripType === 'round-trip' && (
-                <div className="grid grid-cols-2 divide-x divide-white/10">
+                <div className="grid grid-cols-2 divide-x divide-[var(--border-faint)]">
                   <div className="px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center">
                     <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Return date</label>
                     <CalendarDatePicker value={returnDate} onChange={setReturnDate} min={date || minDateStr} className={`${CELL_INPUT} !text-[14px] text-left flex items-center justify-between gap-1`} style={{}} />
@@ -683,10 +683,10 @@ export default function MainMapBookingForm({
               )}
             </div>
 
-            {(error && !isUrgentRequest) && <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>}
+            {(error && !isUrgentRequest) && <p className="text-sm" style={{ color: 'var(--error-text, #f87171)' }}>{error}</p>}
             {isUrgentRequest ? (
               <>
-                <p className="text-sm" style={{ color: '#f87171' }}>Same-day rides need at least 2 hours’ notice online — call us and we’ll arrange it.</p>
+                <p className="text-sm" style={{ color: 'var(--error-text, #f87171)' }}>Same-day rides need at least 2 hours’ notice online — call us and we’ll arrange it.</p>
                 <a href="tel:+18889737896" className="h-[52px] rounded-xl text-[15px] font-semibold flex items-center justify-center" style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}>
                   Call +1 (888) 973-7896
                 </a>
@@ -718,9 +718,9 @@ export default function MainMapBookingForm({
   const heroStep2 = (
     <div className="flex flex-col gap-4">
       {/* Trip summary */}
-      <div className="rounded-2xl px-4 py-3 md:px-5 flex flex-col md:flex-row md:items-center justify-between gap-2" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <div className="rounded-2xl px-4 py-3 md:px-5 flex flex-col md:flex-row md:items-center justify-between gap-2" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
         <div className="min-w-0">
-          <p className="text-[14px] font-semibold text-white truncate">
+          <p className="text-[14px] font-semibold text-[var(--text)] truncate">
             {pickup} <span style={{ color: 'var(--gold-light)' }}>→</span> {destination}
           </p>
           <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
@@ -748,15 +748,15 @@ export default function MainMapBookingForm({
                   onClick={() => setSelectedVehicleOverride(f.type)}
                   className="w-full text-left rounded-2xl p-2.5 pr-4 flex items-center gap-4 transition-colors disabled:cursor-not-allowed"
                   style={{
-                    background: selected ? 'rgba(233,213,166,0.07)' : '#0b0b0b',
-                    border: selected ? '1.5px solid var(--gold)' : '1px solid rgba(255,255,255,0.1)',
+                    background: selected ? 'rgba(184,150,12,0.08)' : 'var(--surface-raised)',
+                    border: selected ? '1.5px solid var(--gold)' : '1px solid var(--border)',
                     opacity: tooSmall ? 0.4 : 1,
                   }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={f.catalogImage} alt="" className="w-20 h-14 sm:w-32 sm:h-20 rounded-xl object-contain bg-[#ededeb] shrink-0" loading="lazy" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[15px] font-semibold text-white">{f.name}</p>
+                    <p className="text-[15px] font-semibold text-[var(--text)]">{f.name}</p>
                     <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
                       Up to {f.passengers} · {f.luggage} bags
                     </p>
@@ -766,15 +766,15 @@ export default function MainMapBookingForm({
                   </div>
                   <div className="text-right shrink-0">
                     {quote ? (
-                      <p className="text-[14px] font-semibold text-white">Quote</p>
+                      <p className="text-[14px] font-semibold text-[var(--text)]">Quote</p>
                     ) : (
                       <>
-                        <p className="text-[18px] font-semibold text-white">${withTax(surchargedPrices[f.type])}</p>
+                        <p className="text-[18px] font-semibold text-[var(--text)]">${withTax(surchargedPrices[f.type])}</p>
                         <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{tripType === 'round-trip' ? 'each way' : 'total'}</p>
                       </>
                     )}
                   </div>
-                  <span className="hidden sm:flex w-5 h-5 rounded-full items-center justify-center shrink-0" style={{ border: selected ? '6px solid var(--gold-light)' : '1.5px solid rgba(255,255,255,0.3)' }} aria-hidden />
+                  <span className="hidden sm:flex w-5 h-5 rounded-full items-center justify-center shrink-0" style={{ border: selected ? '6px solid var(--gold-light)' : '1.5px solid var(--border-soft)' }} aria-hidden />
                 </button>
               </li>
             )
@@ -782,22 +782,22 @@ export default function MainMapBookingForm({
         </ul>
 
         {/* Summary + continue (desktop) */}
-        <div className="hidden lg:flex lg:sticky lg:top-24 rounded-2xl p-5 flex-col gap-4" style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="hidden lg:flex lg:sticky lg:top-24 rounded-2xl p-5 flex-col gap-4" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.18em]" style={{ color: 'var(--gold-light)' }}>Your vehicle</p>
-            <p className="mt-1 text-lg font-semibold text-white">{selectedFleet.name}</p>
+            <p className="mt-1 text-lg font-semibold text-[var(--text)]">{selectedFleet.name}</p>
             <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>or similar · up to {selectedFleet.passengers} guests</p>
           </div>
-          <div className="pt-4 flex items-end justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="pt-4 flex items-end justify-between" style={{ borderTop: '1px solid var(--border)' }}>
             <div>
               <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{isQuote(vehicleType) ? 'Group rate' : tripType === 'round-trip' ? 'Round trip total' : 'Total'}</p>
               <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{isQuote(vehicleType) ? 'We confirm and send a quote' : 'Taxes & fees included'}</p>
             </div>
-            <p className="text-2xl font-semibold text-white">
+            <p className="text-2xl font-semibold text-[var(--text)]">
               {isQuote(vehicleType) ? 'Quote' : `$${withTax(tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice)}`}
             </p>
           </div>
-          {error && <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>}
+          {error && <p className="text-sm" style={{ color: 'var(--error-text, #f87171)' }}>{error}</p>}
           <button
             type="button"
             onClick={handleNextStep2}
@@ -814,10 +814,10 @@ export default function MainMapBookingForm({
       </div>
 
       {/* Phones: total + continue always in reach */}
-      <div className="lg:hidden sticky bottom-0 -mx-3 sm:-mx-4 px-3 sm:px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex items-center gap-3" style={{ background: 'linear-gradient(180deg, rgba(11,11,11,0), #0b0b0b 30%)' }}>
+      <div className="lg:hidden sticky bottom-0 -mx-3 sm:-mx-4 px-3 sm:px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex items-center gap-3" style={{ background: 'var(--surface-raised)' }}>
         <div className="flex-1 min-w-0">
           <p className="text-[12px] truncate" style={{ color: 'var(--text-muted)' }}>{selectedFleet.name}</p>
-          <p className="text-lg font-semibold text-white">{isQuote(vehicleType) ? 'Quote' : `$${withTax(tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice)}`}</p>
+          <p className="text-lg font-semibold text-[var(--text)]">{isQuote(vehicleType) ? 'Quote' : `$${withTax(tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice)}`}</p>
         </div>
         <button
           type="button"
@@ -829,7 +829,7 @@ export default function MainMapBookingForm({
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
         </button>
       </div>
-      {error && <p className="lg:hidden text-sm" style={{ color: '#f87171' }}>{error}</p>}
+      {error && <p className="lg:hidden text-sm" style={{ color: 'var(--error-text, #f87171)' }}>{error}</p>}
     </div>
   )
 
@@ -838,7 +838,7 @@ export default function MainMapBookingForm({
     <div className="flex flex-col gap-4">
       {isAirportPickup && (
         <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: 'var(--bg-deep)', border: '1px solid var(--border-soft)' }}>
-          <p className="text-sm font-semibold text-white">Your flight</p>
+          <p className="text-sm font-semibold text-[var(--text)]">Your flight</p>
           <p className="text-xs -mt-2" style={{ color: 'var(--text-muted)' }}>We plan the pickup around your arrival — 30 minutes of free waiting included.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input type="text" placeholder="Airline *" value={airline} onChange={(e) => setAirline(e.target.value)} className={INPUT_CLASS} style={INPUT_STYLE} aria-label="Airline" />
@@ -847,7 +847,7 @@ export default function MainMapBookingForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {([['curbside', 'Curbside pickup', 'Outside arrivals'], ['meet_greet', 'Meet & Greet · +$25', 'Inside with a sign']] as const).map(([val, t, d]) => (
               <button key={val} type="button" onClick={() => setMeetingType(val)} className="rounded-lg px-3 py-2.5 text-left" style={{ background: meetingType === val ? 'rgba(233,213,166,0.08)' : 'transparent', border: meetingType === val ? '1px solid var(--gold)' : '1px solid var(--border-soft)' }}>
-                <span className="block text-[13px] font-semibold text-white">{t}</span>
+                <span className="block text-[13px] font-semibold text-[var(--text)]">{t}</span>
                 <span className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>{d}</span>
               </button>
             ))}
@@ -884,7 +884,7 @@ export default function MainMapBookingForm({
 
         <div
           className={isHero ? 'rounded-3xl p-3 sm:p-4 md:p-5' : 'max-w-3xl mx-auto'}
-          style={isHero ? { background: 'rgba(12,12,12,0.86)', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 40px 100px -30px rgba(0,0,0,0.9)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' } : undefined}
+          style={isHero ? { background: 'var(--booking-panel, rgba(12,12,12,0.86))', border: '1px solid var(--booking-border, rgba(255,255,255,0.12))', boxShadow: 'var(--booking-shadow, 0 40px 100px -30px rgba(0,0,0,0.9))', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' } : undefined}
         >
           {/* ── Booking Form ──────────────────────────────────── */}
 
@@ -906,10 +906,10 @@ export default function MainMapBookingForm({
                 <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text)', fontFamily: "'Playfair Display', Georgia, serif" }}>
                   Reservation Received!
                 </h3>
-                <p className="text-sm mb-4 font-bold" style={{ color: '#ffbaba' }}>
+                <p className="text-sm mb-4 font-bold" style={{ color: 'var(--error-text, #ffbaba)' }}>
                   Please check your spam/junk messages to ensure you receive your confirmation email.
                 </p>
-                <p className="text-base mb-2" style={{ color: '#DDDDDD' }}>
+                <p className="text-base mb-2" style={{ color: 'var(--text-subtle)' }}>
                   Your request has been successfully processed.
                 </p>
                 <p className="text-base" style={{ color: 'var(--text-subtle)' }}>
@@ -919,7 +919,7 @@ export default function MainMapBookingForm({
                   type="button"
                   onClick={handleResetForm}
                   className="mt-8 px-8 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95"
-                  style={{ background: '#222222', color: 'var(--text)', border: '1px solid var(--border-soft)' }}
+                  style={{ background: 'var(--surface-alt)', color: 'var(--text)', border: '1px solid var(--border-soft)' }}
                 >
                   Make Another Reservation
                 </button>
@@ -953,10 +953,10 @@ export default function MainMapBookingForm({
                           className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all duration-300 ${s < step ? 'cursor-pointer' : 'cursor-default'}`}
                           style={{
                             background: isActive 
-                              ? 'linear-gradient(135deg, var(--gold), var(--gold-light))' 
+                              ? 'var(--brand-gold-gradient, linear-gradient(135deg, var(--gold), var(--gold-light)))'
                               : (isCompleted ? 'rgba(184,150,12,0.2)' : 'var(--surface-alt)'),
                             border: `1px solid ${isActive || isCompleted ? 'var(--gold)' : 'var(--border-soft)'}`,
-                            color: isActive ? 'var(--bg-deep)' : (isCompleted ? 'var(--gold-light)' : 'var(--text-muted)'),
+                            color: isActive ? 'var(--button-ink, #0a0a0a)' : (isCompleted ? 'var(--gold-light)' : 'var(--text-muted)'),
                           }}
                         >
                           {isCompleted ? <Check size={14} strokeWidth={3} /> : visualStepNum}
@@ -1008,9 +1008,9 @@ export default function MainMapBookingForm({
                         style={{
                           background:
                             tripType === type
-                              ? 'linear-gradient(135deg, var(--gold), var(--gold-light))'
+                              ? 'var(--brand-gold-gradient, linear-gradient(135deg, var(--gold), var(--gold-light)))'
                               : 'transparent',
-                          color: tripType === type ? 'var(--bg)' : 'var(--text-muted)',
+                          color: tripType === type ? 'var(--button-ink, #0a0a0a)' : 'var(--text-muted)',
                         }}
                       >
                         {type === 'one-way' ? 'One Way' : 'Round Trip'}
@@ -1168,7 +1168,7 @@ export default function MainMapBookingForm({
                                 border: meetingType === 'curbside' ? '2px solid var(--gold)' : '1px solid var(--border-soft)',
                               }}
                             >
-                              <span className="text-sm font-bold text-white">Curbside Pickup</span>
+                              <span className="text-sm font-bold text-[var(--text)]">Curbside Pickup</span>
                               <span className="text-xs text-[var(--text-muted)]">Meet driver outside at arrivals</span>
                             </button>
                             <button
@@ -1180,7 +1180,7 @@ export default function MainMapBookingForm({
                                 border: meetingType === 'meet_greet' ? '2px solid var(--gold)' : '1px solid var(--border-soft)',
                               }}
                             >
-                              <span className="text-sm font-bold text-white">VIP Meet & Greet (+$25)</span>
+                              <span className="text-sm font-bold text-[var(--text)]">VIP Meet & Greet (+$25)</span>
                               <span className="text-xs text-[var(--text-muted)]">Driver meets you inside with a sign</span>
                             </button>
                           </div>
@@ -1330,13 +1330,13 @@ export default function MainMapBookingForm({
 
                   {error && !isUrgentRequest && (
                     <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
-                      <p className="text-sm font-medium" style={{ color: '#f87171' }}>{error}</p>
+                      <p className="text-sm font-medium" style={{ color: 'var(--error-text, #f87171)' }}>{error}</p>
                     </div>
                   )}
 
                   {isUrgentRequest && (
                     <div className="rounded-xl px-4 py-3 mb-2" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
-                      <p className="text-sm font-medium" style={{ color: '#f87171' }}>
+                      <p className="text-sm font-medium" style={{ color: 'var(--error-text, #f87171)' }}>
                         For same-day bookings, the pickup time must be at least 2 hours in advance. Please call us to request an urgent ride.
                       </p>
                     </div>
@@ -1347,7 +1347,7 @@ export default function MainMapBookingForm({
                       <a
                         href="tel:+18889737896"
                         className="w-full py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-2"
-                        style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+                        style={{ background: 'var(--brand-gold-gradient, linear-gradient(135deg, var(--gold), var(--gold-light)))', color: 'var(--button-ink, #0a0a0a)' }}
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
@@ -1371,7 +1371,7 @@ export default function MainMapBookingForm({
                       type="button"
                       onClick={handleNextStep1}
                       className="w-full py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
-                      style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+                      style={{ background: 'var(--brand-gold-gradient, linear-gradient(135deg, var(--gold), var(--gold-light)))', color: 'var(--button-ink, #0a0a0a)' }}
                     >
                       {false ? 'Enter Contact Info →' : 'Choose Your Vehicle →'}
                     </button>
@@ -1393,7 +1393,7 @@ export default function MainMapBookingForm({
 
                   {error && (
                     <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
-                      <p className="text-sm font-medium" style={{ color: '#f87171' }}>{error}</p>
+                      <p className="text-sm font-medium" style={{ color: 'var(--error-text, #f87171)' }}>{error}</p>
                     </div>
                   )}
 
@@ -1410,7 +1410,7 @@ export default function MainMapBookingForm({
                       type="button"
                       onClick={handleNextStep2}
                       className="flex-1 py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-[0.98]"
-                      style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-light))', color: 'var(--bg-deep)' }}
+                      style={{ background: 'var(--brand-gold-gradient, linear-gradient(135deg, var(--gold), var(--gold-light)))', color: 'var(--button-ink, #0a0a0a)' }}
                     >
                       Enter Contact Info →
                     </button>
@@ -1436,33 +1436,33 @@ export default function MainMapBookingForm({
                   <div className="p-5 rounded-xl flex flex-col gap-3" style={{ background: 'rgba(184, 150, 12, 0.05)', border: '1px solid rgba(184, 150, 12, 0.2)' }}>
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-[var(--gold)] text-xs font-bold uppercase tracking-wider">Trip Summary</span>
-                      <span className="text-white font-bold text-sm bg-[var(--gold)] text-[var(--bg-deep)] px-2 py-0.5 rounded uppercase">{vehicleType === 'sedan_suv' ? 'Sedan & SUV' : vehicleType === 'suburban' ? 'Suburban' : vehicleType === 'sprinter' ? 'Sprinter' : vehicleType === 'minibus' ? 'Minibus' : 'Coach Bus'}</span>
+                      <span className="font-bold text-sm bg-[var(--gold)] text-[var(--bg)] px-2 py-0.5 rounded uppercase">{vehicleType === 'sedan_suv' ? 'Sedan & SUV' : vehicleType === 'suburban' ? 'Suburban' : vehicleType === 'sprinter' ? 'Sprinter' : vehicleType === 'minibus' ? 'Minibus' : 'Coach Bus'}</span>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-[var(--text-muted)] text-xs mb-1">Pickup</p>
-                        <p className="text-white font-medium truncate" title={pickup}>{pickup}</p>
+                        <p className="text-[var(--text)] font-medium truncate" title={pickup}>{pickup}</p>
                       </div>
                       <div>
                         <p className="text-[var(--text-muted)] text-xs mb-1">Drop-off</p>
-                        <p className="text-white font-medium truncate" title={destination}>{destination}</p>
+                        <p className="text-[var(--text)] font-medium truncate" title={destination}>{destination}</p>
                       </div>
                       <div>
                         <p className="text-[var(--text-muted)] text-xs mb-1">
                           {tripType === 'round-trip' ? 'Pick up Date' : 'Date & Time'}
                         </p>
-                        <p className="text-white font-medium">{date} at {time}</p>
+                        <p className="text-[var(--text)] font-medium">{date} at {time}</p>
                       </div>
                       {tripType === 'round-trip' && returnDate && returnTime && (
                         <div>
                           <p className="text-[var(--gold)] text-xs mb-1 uppercase tracking-widest font-bold">Drop off Date</p>
-                          <p className="text-white font-medium">{returnDate} at {returnTime}</p>
+                          <p className="text-[var(--text)] font-medium">{returnDate} at {returnTime}</p>
                         </div>
                       )}
                       <div>
                         <p className="text-[var(--text-muted)] text-xs mb-1">Passengers</p>
-                        <p className="text-white font-medium">{passengers} {passengers === 1 ? 'Person' : 'People'}</p>
+                        <p className="text-[var(--text)] font-medium">{passengers} {passengers === 1 ? 'Person' : 'People'}</p>
                       </div>
                     </div>
                   </div>
@@ -1552,7 +1552,7 @@ export default function MainMapBookingForm({
                               <div
                                 className="w-5 h-5 rounded-full flex items-center justify-center"
                                 style={{
-                                  border: paymentMode === 'full' ? '2px solid var(--gold)' : '2px solid #555',
+                                  border: paymentMode === 'full' ? '2px solid var(--gold)' : '2px solid var(--border-soft)',
                                 }}
                               >
                                 {paymentMode === 'full' && (
@@ -1582,7 +1582,7 @@ export default function MainMapBookingForm({
                               <div
                                 className="w-5 h-5 rounded-full flex items-center justify-center"
                                 style={{
-                                  border: paymentMode === 'deposit' ? '2px solid var(--gold)' : '2px solid #555',
+                                  border: paymentMode === 'deposit' ? '2px solid var(--gold)' : '2px solid var(--border-soft)',
                                 }}
                               >
                                 {paymentMode === 'deposit' && (
@@ -1610,7 +1610,7 @@ export default function MainMapBookingForm({
                             <svg className="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="2">
                               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                             </svg>
-                            <p className="text-xs leading-relaxed" style={{ color: '#BBBBBB' }}>
+                            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-subtle)' }}>
                               Remaining <strong style={{ color: 'var(--gold-accent)' }}>${remainingWithTax}</strong> is due before your trip — payable via secure payment link.
                             </p>
                           </div>
@@ -1629,13 +1629,13 @@ export default function MainMapBookingForm({
                       }}
                     >
                       <h4 className="text-lg font-bold mb-2" style={{ color: 'var(--gold-light)' }}>Custom Pricing Required</h4>
-                      <p className="text-sm leading-relaxed max-w-md mx-auto" style={{ color: '#BBBBBB' }}>
+                      <p className="text-sm leading-relaxed max-w-md mx-auto" style={{ color: 'var(--text-subtle)' }}>
                         Due to the custom nature of large group reservations, pricing and availability must be confirmed manually. Please submit your request below or call us directly.
                       </p>
                       <a
                         href="tel:+18889737896"
                         className="mt-4 px-6 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-all hover:bg-[var(--border-soft)]"
-                        style={{ background: 'var(--bg)', border: '1px solid #555', color: 'var(--text)' }}
+                        style={{ background: 'var(--bg)', border: '1px solid var(--border-soft)', color: 'var(--text)' }}
                       >
                         Call Us: +1 (888) 973-7896
                       </a>
@@ -1661,7 +1661,7 @@ export default function MainMapBookingForm({
 
                   {error && (
                     <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
-                      <p className="text-sm font-medium" style={{ color: '#f87171' }}>{error}</p>
+                      <p className="text-sm font-medium" style={{ color: 'var(--error-text, #f87171)' }}>{error}</p>
                     </div>
                   )}
 
@@ -1679,8 +1679,8 @@ export default function MainMapBookingForm({
                       disabled={loading}
                       className="flex-1 py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-3 disabled:cursor-not-allowed shadow-xl shadow-[#B8960C20]"
                       style={{
-                        background: loading ? '#8a7209' : 'linear-gradient(135deg, var(--gold), var(--gold-light))',
-                        color: 'var(--bg-deep)',
+                        background: loading ? '#8a7209' : 'var(--brand-gold-gradient, linear-gradient(135deg, var(--gold), var(--gold-light)))',
+                        color: 'var(--button-ink, #0a0a0a)',
                         opacity: loading ? 0.85 : 1,
                       }}
                     >

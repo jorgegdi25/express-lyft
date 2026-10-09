@@ -35,7 +35,7 @@ export default function FaqList({ items, categories = false }: { items: FaqItem[
       <div className="flex flex-col divide-y" style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', borderColor: 'var(--border)' }}>
         {shown.map((f) => (
           <details key={f.id} className="group [&_summary::-webkit-details-marker]:hidden" style={{ borderColor: 'var(--border)' }}>
-            <summary className="flex items-center justify-between gap-6 py-5 cursor-pointer list-none text-base md:text-lg font-semibold text-white hover:text-[var(--gold-light)]">
+            <summary className="flex items-center justify-between gap-6 py-5 cursor-pointer list-none text-base md:text-lg font-semibold text-[var(--text)] hover:text-[var(--gold-light)]">
               <span>{f.q}</span>
               <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-transform group-open:rotate-45" style={{ border: '1px solid var(--border-soft)', color: 'var(--gold-light)' }} aria-hidden>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>

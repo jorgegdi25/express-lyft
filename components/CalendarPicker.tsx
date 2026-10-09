@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import { formatDateUS, getMonthGridDays } from '@/lib/dateUtils'
 
 const CalendarIcon = () => (
@@ -15,11 +15,11 @@ const CalendarIcon = () => (
 function MonthNav({ viewMonth, onPrev, onNext }: { viewMonth: Date; onPrev: () => void; onNext: () => void }) {
   return (
     <div className="flex items-center justify-between mb-2">
-      <button type="button" onClick={onPrev} className="w-7 h-7 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors">&larr;</button>
-      <span className="text-xs font-bold text-white" style={{ fontFamily: 'Georgia, serif' }}>
+      <button type="button" onClick={onPrev} className="w-7 h-7 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-[var(--text)] hover:border-[var(--gold)] transition-colors">&larr;</button>
+      <span className="text-xs font-bold text-[var(--text)]" style={{ fontFamily: 'Georgia, serif' }}>
         {viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
       </span>
-      <button type="button" onClick={onNext} className="w-7 h-7 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-white hover:border-[var(--gold)] transition-colors">&rarr;</button>
+      <button type="button" onClick={onNext} className="w-7 h-7 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-subtle)] hover:text-[var(--text)] hover:border-[var(--gold)] transition-colors">&rarr;</button>
     </div>
   )
 }
@@ -59,10 +59,18 @@ export function CalendarDatePicker({
   className?: string
   style?: CSSProperties
 }) {
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const [isOpen, setIsOpen] = useState(false)
+  const [popupLeft, setPopupLeft] = useState(0)
   const [viewMonth, setViewMonth] = useState(() => monthOf(value || min))
 
   function open() {
+    const rect = triggerRef.current?.getBoundingClientRect()
+    if (rect) {
+      const width = Math.min(288, window.innerWidth - 24)
+      const left = Math.min(Math.max(12, rect.left), window.innerWidth - width - 12)
+      setPopupLeft(left - rect.left)
+    }
     setViewMonth(monthOf(value || min))
     setIsOpen(true)
   }
@@ -76,10 +84,11 @@ export function CalendarDatePicker({
   return (
     <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => (isOpen ? setIsOpen(false) : open())}
         className={className || 'w-full rounded-xl px-4 py-3.5 text-base outline-none transition-colors focus:border-[var(--gold)] text-left flex items-center justify-between gap-2'}
-        style={style || { background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: value ? 'var(--text)' : '#777777' }}
+        style={style || { background: 'var(--bg-alt)', border: '1px solid var(--border-soft)', color: value ? 'var(--text)' : 'var(--text-muted)' }}
       >
         <span>{value ? formatDateUS(value) : placeholder}</span>
         <CalendarIcon />
@@ -88,8 +97,8 @@ export function CalendarDatePicker({
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div
-            className="absolute z-50 mt-2 left-0 w-72 max-w-[90vw] rounded-xl p-3 shadow-2xl"
-            style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)' }}
+            className="absolute z-50 mt-2 w-72 max-w-[calc(100vw-24px)] rounded-xl p-3 shadow-2xl"
+            style={{ left: popupLeft, background: 'var(--surface-raised)', border: '1px solid var(--border)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <MonthNav
@@ -113,7 +122,7 @@ export function CalendarDatePicker({
                     style={{
                       opacity: isDisabled ? 0.25 : inMonth ? 1 : 0.3,
                       background: isSelected ? 'var(--gold)' : 'transparent',
-                      color: isSelected ? 'var(--bg-deep)' : '#ccc',
+                      color: isSelected ? 'var(--bg)' : 'var(--text-subtle)',
                       fontWeight: isSelected || isToday ? 700 : 400,
                       boxShadow: isToday && !isSelected ? 'inset 0 0 0 1px var(--gold-light)' : 'none',
                     }}
@@ -167,7 +176,7 @@ export function CalendarRangeFilter({ from, to, onChange }: { from: string; to: 
       <button
         type="button"
         onClick={() => (isOpen ? setIsOpen(false) : open())}
-        className="rounded-xl px-4 py-2.5 text-sm text-white outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors flex items-center gap-2 whitespace-nowrap"
+        className="rounded-xl px-4 py-2.5 text-sm text-[var(--text)] outline-none bg-[var(--bg)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors flex items-center gap-2 whitespace-nowrap"
       >
         <CalendarIcon />
         {label}

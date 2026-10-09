@@ -42,35 +42,38 @@ export default function PageShell({
 
   return (
     <main className={SITE_CLASS} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <SiteHeader overlay={Boolean(image)} />
+      <SiteHeader />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
-      <section className={`relative overflow-hidden ${image ? 'pt-32 md:pt-40 pb-14 md:pb-20 min-h-[62svh] flex items-end' : 'pt-12 md:pt-16 pb-12'}`} style={{ background: 'var(--bg-deep)' }}>
-        {image && (
-          <>
-            <Image src={image} alt={imageAlt} fill priority sizes="100vw" className="object-cover" />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(8,8,8,0.75) 0%, rgba(8,8,8,0.35) 55%, rgba(8,8,8,0.05) 100%)' }} />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(0deg, rgba(10,10,10,0.8) 0%, rgba(10,10,10,0) 45%)' }} />
-          </>
-        )}
+      <section className="relative overflow-hidden py-10 md:py-16" style={{ background: 'var(--bg-deep)' }}>
         <Container className="relative w-full">
-          <nav aria-label="Breadcrumb" className="mb-6 text-xs text-white/55">
+          <nav aria-label="Breadcrumb" className="mb-6 text-xs text-[var(--text-muted)]">
             <ol className="flex flex-wrap items-center gap-2">
               {crumbs.map((c, i) => (
                 <li key={c.label} className="flex items-center gap-2">
-                  {c.href && i < crumbs.length - 1 ? <Link href={c.href} className="hover:text-white">{c.label}</Link> : <span className="text-white/80">{c.label}</span>}
+                  {c.href && i < crumbs.length - 1 ? <Link href={c.href} className="hover:text-[var(--text)]">{c.label}</Link> : <span className="text-[var(--text)]">{c.label}</span>}
                   {i < crumbs.length - 1 && <span aria-hidden>/</span>}
                 </li>
               ))}
             </ol>
           </nav>
-          <div className="grid lg:grid-cols-12 gap-8 items-end">
-            <div className="lg:col-span-7">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            <div className="min-w-0 lg:col-span-7">
               <p className="text-[11px] font-medium uppercase tracking-[0.32em] mb-4" style={{ color: 'var(--gold-light)' }}>{eyebrow}</p>
-              <h1 className="font-display font-semibold text-white text-4xl md:text-6xl leading-[1.05] tracking-[-0.01em]">{title}</h1>
-              {intro && <p className="mt-5 text-base md:text-lg text-white/75 max-w-xl leading-relaxed">{intro}</p>}
+              <h1 className="font-display font-semibold text-[var(--text)] text-4xl md:text-6xl leading-[1.05] tracking-[-0.01em]">{title}</h1>
+              {intro && <p className="mt-5 text-base md:text-lg text-[var(--text-muted)] max-w-xl leading-relaxed">{intro}</p>}
+              {image && heroAside && (
+                <div className="relative mt-7 aspect-[16/10] overflow-hidden rounded-2xl">
+                  <Image src={image} alt={imageAlt} fill priority sizes="(min-width:1280px) 660px, (min-width:1024px) 58vw, calc(100vw - 32px)" className="object-cover" />
+                </div>
+              )}
             </div>
-            {heroAside && <div className="lg:col-span-5">{heroAside}</div>}
+            {heroAside && <div className="min-w-0 lg:col-span-5">{heroAside}</div>}
+            {image && !heroAside && (
+              <div className="lg:col-span-5 relative aspect-[4/3] overflow-hidden rounded-2xl">
+                <Image src={image} alt={imageAlt} fill priority sizes="(min-width:1280px) 490px, (min-width:1024px) 40vw, calc(100vw - 32px)" className="object-cover" />
+              </div>
+            )}
           </div>
         </Container>
       </section>

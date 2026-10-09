@@ -15,33 +15,32 @@ import HeroQuickStart from './HeroQuickStart'
 import RouteMap from '../RouteMap'
 
 /* ── 02 HERO ─────────────────────────────────────────────────────── */
-// Full-bleed video with the intro and one clear action. "Book your ride"
-// opens the booking lightbox (components/site/BookingModal.tsx).
+// Copy and booking stay on a light surface; the video has its own frame.
 export function Hero() {
   return (
-    <section className="relative overflow-hidden min-h-[92svh] md:min-h-[100svh] flex items-end pt-28 pb-16 md:pb-24">
-      <HeroMedia video="/hero-video-final3.mp4" poster="/gallery/aeropuerto.webp" alt="Express Lyft driver waiting at the Miami airport curb" />
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(6,6,6,0.72) 0%, rgba(6,6,6,0.35) 50%, rgba(6,6,6,0.05) 100%)' }} />
-      <div className="absolute inset-x-0 bottom-0 h-2/5" style={{ background: 'linear-gradient(0deg, rgba(0,0,0,0.85), transparent)' }} />
-      <Container className="relative w-full">
-        <div className="max-w-2xl">
-          <p className="text-[11px] font-medium uppercase tracking-[0.32em]" style={{ color: 'var(--gold-light)' }}>
-            Private transportation · Miami & South Florida
-          </p>
-          <h1 className="font-display font-semibold text-white text-[38px] leading-[1.08] md:text-[56px] xl:text-[64px] mt-5 tracking-[-0.025em]" style={{ textShadow: '0 2px 24px rgba(0,0,0,0.35)' }}>
-            From arrival to destination, <span className="text-gold-gradient">handled.</span>
-          </h1>
-          <p className="mt-5 text-base md:text-lg text-white/85 leading-relaxed max-w-xl">
-            Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
-          </p>
-          <div className="mt-8">
-            <HeroQuickStart />
+    <section className="relative overflow-hidden py-10 md:py-16 lg:py-20" style={{ background: 'var(--sand)' }}>
+      <Container>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="min-w-0 lg:col-span-7 max-w-2xl">
+            <p className="text-[11px] font-medium uppercase tracking-[0.32em]" style={{ color: 'var(--gold-light)' }}>
+              Private transportation · Miami & South Florida
+            </p>
+            <h1 className="font-display font-semibold text-[38px] leading-[1.08] md:text-[56px] xl:text-[64px] mt-5 tracking-[-0.025em]">
+              From arrival to destination, <span style={{ color: 'var(--gold-deep)' }}>handled.</span>
+            </h1>
+            <p className="mt-5 text-base md:text-lg leading-relaxed max-w-xl" style={{ color: 'var(--text-subtle)' }}>
+              Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.
+            </p>
+            <div className="mt-8"><HeroQuickStart /></div>
+            <p className="mt-5 text-sm text-[var(--text-muted)] flex flex-wrap items-center gap-x-4 gap-y-2">
+              <span>Prefer to talk to someone?</span>
+              <a href={CONTACT.phoneHref} className="inline-flex items-center gap-1.5 text-[var(--text)] hover:text-[var(--gold-light)]"><PhoneIcon size={14} />{CONTACT.phoneDisplay}</a>
+              <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[var(--text)] hover:text-[var(--gold-light)]"><WhatsAppIcon size={14} />WhatsApp</a>
+            </p>
           </div>
-          <p className="mt-5 text-sm text-white/70 flex flex-wrap items-center gap-x-4 gap-y-1">
-            <span>Prefer to talk to someone?</span>
-            <a href={CONTACT.phoneHref} className="inline-flex items-center gap-1.5 text-white hover:text-[var(--gold-light)]"><PhoneIcon size={14} />{CONTACT.phoneDisplay}</a>
-            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-white hover:text-[#25D366]"><WhatsAppIcon size={14} />WhatsApp</a>
-          </p>
+          <div className="min-w-0 lg:col-span-5 relative aspect-[16/10] lg:aspect-[4/5] rounded-3xl overflow-hidden" style={{ background: 'var(--sand-deep)' }}>
+            <HeroMedia video="/hero-video-final3.mp4" poster="/gallery/aeropuerto.webp" alt="Express Lyft driver waiting at the Miami airport curb" />
+          </div>
         </div>
       </Container>
     </section>
@@ -64,7 +63,7 @@ export function TrustStrip() {
       <Container>
         <ul className="flex md:grid md:grid-cols-5 gap-6 md:gap-4 overflow-x-auto no-scrollbar py-6 -mx-4 px-4 md:mx-0 md:px-0">
           {TRUST.map((x) => (
-            <li key={x.t} className="shrink-0 flex items-center gap-3 text-[13px] font-medium text-white/85">
+            <li key={x.t} className="shrink-0 flex items-center gap-3 text-[13px] font-medium text-[var(--text-subtle)]">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{x.icon}</svg>
               {x.t}
             </li>
@@ -91,12 +90,12 @@ export function ServicesSection() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 xl:grid-cols-4 xl:grid-rows-2 gap-4 md:gap-5">
-          <Reveal className="min-w-0 md:col-span-2 xl:row-span-2">
-            <ServiceCard s={lead} large />
+        <div className="grid md:grid-cols-2 xl:grid-cols-6 gap-4 md:gap-5">
+          <Reveal className="min-w-0 xl:col-span-2">
+            <ServiceCard s={lead} />
           </Reveal>
           {rest.map((s, i) => (
-            <Reveal key={s.slug} delay={80 * (i + 1)} className="min-w-0">
+            <Reveal key={s.slug} delay={80 * (i + 1)} className={`min-w-0 ${i > 1 ? 'xl:col-span-3' : 'xl:col-span-2'}`}>
               <ServiceCard s={s} />
             </Reveal>
           ))}
@@ -106,20 +105,19 @@ export function ServicesSection() {
   )
 }
 
-function ServiceCard({ s, large = false }: { s: (typeof SERVICES)[number]; large?: boolean }) {
+function ServiceCard({ s }: { s: (typeof SERVICES)[number] }) {
   return (
     <Link
       href={`/${s.slug}`}
-      className={`group relative flex h-full flex-col rounded-2xl overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--gold-light)] xl:block ${large ? 'xl:min-h-[660px]' : 'xl:min-h-[320px]'}`}
+      className="group relative flex h-full flex-col rounded-2xl overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--gold-light)] hover:shadow-lg transition-shadow"
       style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}
     >
-      <div className={`relative shrink-0 aspect-[16/10] xl:absolute xl:inset-0 xl:aspect-auto ${large ? 'md:aspect-[2/1]' : ''}`}>
-        <Image src={s.image} alt={s.imageAlt} fill sizes={large ? '(min-width:1280px) 600px, (min-width:768px) calc(100vw - 64px), calc(100vw - 32px)' : '(min-width:1280px) 290px, (min-width:768px) calc((100vw - 84px) / 2), calc(100vw - 32px)'} className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
+      <div className="relative shrink-0 aspect-[16/10]">
+        <Image src={s.image} alt={s.imageAlt} fill sizes="(min-width:1280px) 600px, (min-width:768px) 50vw, calc(100vw - 32px)" className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
       </div>
-      <div className="hidden xl:block absolute inset-0" style={{ background: 'linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0.92) 100%)' }} />
-      <div className="relative flex flex-1 flex-col p-5 md:p-6 xl:absolute xl:inset-x-0 xl:bottom-0">
-        <h3 className={`font-display font-semibold text-white leading-tight ${large ? 'text-3xl xl:text-4xl' : 'text-xl'}`}>{s.name}</h3>
-        <p className={`mt-3 text-white/85 leading-relaxed ${large ? 'text-base max-w-md' : 'text-sm'}`}>{s.cardDescription}</p>
+      <div className="relative flex flex-1 flex-col p-5 md:p-6">
+        <h3 className="font-display font-semibold leading-tight text-2xl">{s.name}</h3>
+        <p className="mt-3 leading-relaxed text-sm" style={{ color: 'var(--text-subtle)' }}>{s.cardDescription}</p>
         <span className="mt-auto pt-5 inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--gold-light)' }}>
           Learn more <Arrow className="transition-transform group-hover:translate-x-1" />
         </span>
@@ -143,7 +141,7 @@ export function JourneySection() {
   return (
     <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: 'var(--bg-deep)' }}>
       <Container>
-        <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
           <div className="lg:col-span-5 lg:sticky lg:top-28">
             <Eyebrow>The Express Lyft experience</Eyebrow>
             <Heading className="text-4xl md:text-5xl">What happens after you book.</Heading>
@@ -167,7 +165,7 @@ export function JourneySection() {
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--text-faint)' }}>{j.k}</p>
-                <h3 className="font-display text-2xl md:text-3xl font-semibold text-white mt-1">{j.t}</h3>
+                <h3 className="font-display text-2xl md:text-3xl font-semibold text-[var(--text)] mt-1">{j.t}</h3>
                 <p className="mt-2 text-[15px] leading-relaxed max-w-lg" style={{ color: 'var(--text-subtle)' }}>{j.d}</p>
               </Reveal>
             ))}
@@ -214,7 +212,7 @@ export function LocalSection() {
   return (
     <section className="py-20 md:py-28" style={{ background: 'var(--bg)' }}>
       <Container>
-        <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
           <div className="lg:col-span-6 order-2 lg:order-1">
             <Reveal>
               <RouteMap />
@@ -233,7 +231,7 @@ export function LocalSection() {
                     href={`/book?pickup=${encodeURIComponent(r.pickup)}&dropoff=${encodeURIComponent(r.dropoff)}`}
                     className="group flex items-center justify-between gap-4 py-4 min-h-[56px]"
                   >
-                    <span className="flex items-center gap-3 text-white text-[15px] md:text-base font-medium">
+                    <span className="flex items-center gap-3 text-[var(--text)] text-[15px] md:text-base font-medium">
                       <span>{r.from}</span>
                       <span className="w-8 h-px" style={{ background: 'var(--gold)' }} aria-hidden />
                       <span>{r.to}</span>
@@ -275,7 +273,7 @@ export function PartnersSection() {
   return (
     <section className="py-20 md:py-28" style={{ background: 'var(--sand)' }}>
       <Container>
-        <div className="grid lg:grid-cols-12 gap-10 items-end mb-10 md:mb-14">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end mb-10 md:mb-14">
           <div className="lg:col-span-7">
             <Eyebrow tone="light">For hotels, businesses & groups</Eyebrow>
             <Heading tone="light" className="text-4xl md:text-5xl">A transportation partner for hospitality and travel.</Heading>
@@ -285,7 +283,7 @@ export function PartnersSection() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-12 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           <div className="lg:col-span-5 relative min-h-[320px] rounded-2xl overflow-hidden">
             <Image src="/site/hotel-arrival.webp" alt="Guests arriving at a hotel entrance with an Express Lyft coach" fill sizes="(min-width:1024px) 40vw, 100vw" className="object-cover" />
           </div>
@@ -352,7 +350,7 @@ export function HowItWorks() {
           {STEPS.map((s, i) => (
             <Reveal as="li" key={s.t} delay={i * 80}>
               <span className="font-display text-5xl md:text-6xl font-semibold" style={{ color: 'var(--gold)' }}>{i + 1}</span>
-              <h3 className="mt-3 text-lg font-semibold text-white">{s.t}</h3>
+              <h3 className="mt-3 text-lg font-semibold text-[var(--text)]">{s.t}</h3>
               <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{s.d}</p>
             </Reveal>
           ))}
@@ -368,7 +366,7 @@ export function FaqSection() {
   return (
     <section className="py-20 md:py-28" style={{ background: 'var(--bg)' }}>
       <Container>
-        <div className="grid lg:grid-cols-12 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           <div className="lg:col-span-4">
             <Eyebrow>Questions & answers</Eyebrow>
             <Heading className="text-4xl md:text-5xl">Good to know before you ride.</Heading>
@@ -388,14 +386,14 @@ export function FaqSection() {
 /* ── 12 FINAL CTA ────────────────────────────────────────────────── */
 export function FinalCta() {
   return (
-    <section className="relative py-24 md:py-36 overflow-hidden">
+    <section className="site-dark relative py-24 md:py-36 overflow-hidden">
       <Image src="/site/night-arrival.webp" alt="" fill sizes="100vw" className="object-cover" />
       <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(8,8,8,0.8) 0%, rgba(8,8,8,0.4) 60%, rgba(8,8,8,0.1) 100%)' }} />
       <Container className="relative">
         <div className="max-w-xl">
           <Eyebrow>Ready when you are</Eyebrow>
           <Heading className="text-4xl md:text-6xl">Your ride is ready when you are.</Heading>
-          <p className="mt-5 text-base md:text-lg text-white/75">Book online in a few minutes, or talk to a real person on our team.</p>
+          <p className="mt-5 text-base md:text-lg text-[var(--text-muted)]">Book online in a few minutes, or talk to a real person on our team.</p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
             <ButtonLink href="#book" size="lg">Book a ride <Arrow /></ButtonLink>
             <ButtonLink href={CONTACT.phoneHref} variant="outline" size="lg"><PhoneIcon size={15} /> Call us</ButtonLink>

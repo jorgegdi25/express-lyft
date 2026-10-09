@@ -86,10 +86,10 @@ export const FLEET: FleetVehicle[] = [
     bestFor: 'Events, conferences and crew movements',
     description: 'Mid-size group transportation for events, hotel shuttles and corporate programs.',
     quoteOnly: true,
-    image: '/fleet/catalog/minibus-v2.jpg',
+    image: '/fleet/catalog/minibus-v3.jpg',
     // Illustrates the mid-size bus class; actual model still needs confirmation.
-    catalogImage: '/fleet/catalog/minibus-v2.jpg',
-    catalogImageAlt: 'Illustrative black mid-size shuttle coach in side profile on a neutral studio background',
+    catalogImage: '/fleet/catalog/minibus-v3.jpg',
+    catalogImageAlt: 'Illustrative black executive mini bus with a short hood in side profile on a neutral studio background',
     gallery: [],
   },
   {

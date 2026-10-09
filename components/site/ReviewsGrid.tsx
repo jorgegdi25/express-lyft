@@ -27,7 +27,7 @@ export default function ReviewsGrid({ reviews }: { reviews: Testimonial[] }) {
                 <svg key={s} width="14" height="14" viewBox="0 0 24 24" fill="var(--gold-light)" aria-hidden><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg>
               ))}
             </div>
-            <blockquote className="mt-4 text-[17px] leading-relaxed font-display" style={{ color: '#E6E6E6' }}>
+            <blockquote className="mt-4 text-[17px] leading-relaxed font-display" style={{ color: 'var(--text-subtle)' }}>
               “{r.text}”
             </blockquote>
             <div className="mt-auto pt-6 flex items-center gap-3 text-sm">
@@ -39,7 +39,7 @@ export default function ReviewsGrid({ reviews }: { reviews: Testimonial[] }) {
                 {r.avatarText}
               </span>
               <div>
-                <p className="font-semibold text-white capitalize">{r.name.toLowerCase()}</p>
+                <p className="font-semibold text-[var(--text)] capitalize">{r.name.toLowerCase()}</p>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{r.role}{r.date ? ` · ${r.date}` : ''}</p>
               </div>
             </div>
@@ -50,8 +50,8 @@ export default function ReviewsGrid({ reviews }: { reviews: Testimonial[] }) {
         <div className="mt-8 flex justify-center">
           <button
             onClick={() => setCount((c) => c + 6)}
-            className="px-6 py-3 rounded-xl text-[14px] font-semibold text-white hover:border-[var(--gold-light)] hover:text-[var(--gold-light)] transition"
-            style={{ border: '1px solid rgba(255,255,255,0.2)' }}
+            className="px-6 py-3 rounded-xl text-[14px] font-semibold text-[var(--text)] hover:border-[var(--gold-light)] hover:text-[var(--gold-light)] transition"
+            style={{ border: '1px solid var(--border-soft)' }}
           >
             More reviews ({sorted.length - count})
           </button>

@@ -24,7 +24,7 @@ export default function FaqPage() {
         <div className="max-w-3xl">
           <FaqList items={FAQ} categories />
           <div className="mt-12 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
-            <p className="text-white text-lg font-semibold">Still have a question?</p>
+            <p className="text-[var(--text)] text-lg font-semibold">Still have a question?</p>
             <div className="flex gap-3">
               <ButtonLink href={CONTACT.whatsappHref} variant="outline">WhatsApp</ButtonLink>
               <ButtonLink href={CONTACT.phoneHref}>Call us</ButtonLink>

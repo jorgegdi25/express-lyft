@@ -109,10 +109,10 @@ export default function BookingModal({ prices }: { prices: Record<string, Vehicl
             className={`relative w-full transition-[max-width,transform] duration-300 ${wide ? 'sm:max-w-5xl' : 'sm:max-w-[460px]'} ${open ? 'translate-y-0' : 'translate-y-4'}`}
           >
             {/* Mobile: slim top bar with close */}
-            <div className="sm:hidden sticky top-0 z-10 flex items-center justify-between px-4 h-14" style={{ background: '#0b0b0b', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="sm:hidden sticky top-0 z-10 flex items-center justify-between px-4 h-14" style={{ background: 'var(--surface-raised)', borderBottom: '1px solid var(--border)' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/brand/icon-gold-192.webp" alt="Express Lyft" width={32} height={32} className="h-8 w-8" />
-              <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="w-10 h-10 rounded-full flex items-center justify-center text-white" style={{ border: '1px solid rgba(255,255,255,0.15)' }}>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--text)]" style={{ border: '1px solid var(--border)' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M6 6l12 12M18 6L6 18" /></svg>
               </button>
             </div>
@@ -126,7 +126,7 @@ export default function BookingModal({ prices }: { prices: Record<string, Vehicl
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M6 6l12 12M18 6L6 18" /></svg>
             </button>
-            <div className="min-h-[calc(100svh-56px)] sm:min-h-0 bg-[#0b0b0b] sm:bg-transparent">
+            <div className="min-h-[calc(100svh-56px)] sm:min-h-0 bg-[var(--bg)] sm:bg-transparent">
               <MainMapBookingForm prices={prices} variant="hero" hideHeader onStepChange={onStepChange} preset={preset} />
             </div>
           </div>

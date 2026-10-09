@@ -67,7 +67,7 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
     <>
       <header
         ref={headerRef}
-        className={`${overlay ? 'fixed' : 'sticky'} top-0 inset-x-0 z-50`}
+        className="site-dark fixed top-0 inset-x-0 z-50"
         style={{
           background: '#0E0E0E',
           borderBottom: '1px solid rgba(196,164,107,0.26)',
@@ -162,7 +162,7 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
             <Link
               href={bookHref}
               className="hidden sm:inline-flex items-center gap-2 px-4 md:px-5 py-2.5 rounded-xl text-[14px] font-semibold hover:brightness-110 transition"
-              style={{ background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }}
+              style={{ background: 'var(--brand-gold-gradient)', color: 'var(--button-ink)' }}
             >
               Book a Ride
             </Link>
@@ -186,16 +186,17 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
           </div>
         </div>
       </header>
+      {!overlay && <div className="h-[69px] md:h-[77px]" aria-hidden />}
 
       {/* Mobile full-screen menu */}
       {open && (
-        <div ref={mobileMenuRef} id="site-mobile-menu" role="navigation" aria-label="Mobile" className="lg:hidden fixed inset-0 z-40 pt-[68px] md:pt-[76px] pb-24 overflow-y-auto" style={{ background: '#0c0c0c' }}>
+        <div ref={mobileMenuRef} id="site-mobile-menu" role="navigation" aria-label="Mobile" className="site-dark lg:hidden fixed inset-0 z-40 pt-[68px] md:pt-[76px] pb-24 overflow-y-auto" style={{ background: '#0c0c0c' }}>
           <div className="px-5 py-6 flex flex-col gap-8">
             <Link
               href={bookHref}
               onClick={() => setOpen(false)}
               className="w-full text-center py-4 rounded-xl text-[15px] font-semibold"
-              style={{ background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }}
+              style={{ background: 'var(--brand-gold-gradient)', color: 'var(--button-ink)' }}
             >
               Book a Ride
             </Link>
@@ -246,7 +247,7 @@ export function MobileActionBar({ hideBook = false, bookHref = '/book' }: { hide
 
   return (
     <div
-      className={`md:hidden fixed bottom-0 inset-x-0 z-40 px-3 pt-2 pb-[calc(8px+env(safe-area-inset-bottom))] flex gap-2 transition-transform duration-300 ${formVisible ? 'translate-y-full' : ''}`}
+      className={`site-dark md:hidden fixed bottom-0 inset-x-0 z-40 px-3 pt-2 pb-[calc(8px+env(safe-area-inset-bottom))] flex gap-2 transition-transform duration-300 ${formVisible ? 'translate-y-full' : ''}`}
       style={{ background: 'linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0.92) 30%)' }}
       aria-hidden={formVisible}
     >
@@ -254,7 +255,7 @@ export function MobileActionBar({ hideBook = false, bookHref = '/book' }: { hide
         <Link
           href={bookHref}
           className="flex-1 h-12 rounded-xl flex items-center justify-center text-[14px] font-semibold"
-          style={{ background: 'var(--brand-gold-gradient)', color: 'var(--bg-deep)' }}
+          style={{ background: 'var(--brand-gold-gradient)', color: 'var(--button-ink)' }}
         >
           Book a Ride
         </Link>

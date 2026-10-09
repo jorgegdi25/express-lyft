@@ -77,7 +77,7 @@ export default function AboutPage() {
                 <div className="w-14 h-14 rounded-full flex items-center justify-center font-display text-xl font-semibold" style={{ background: 'rgba(184,150,12,0.12)', color: 'var(--gold-light)', border: '1px solid rgba(184,150,12,0.35)' }}>
                   {p.n.split(' ').map((w) => w[0]).join('')}
                 </div>
-                <p className="mt-4 text-lg font-semibold text-white">{p.n}</p>
+                <p className="mt-4 text-lg font-semibold text-[var(--text)]">{p.n}</p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{p.r}</p>
               </li>
             ))}
@@ -88,7 +88,7 @@ export default function AboutPage() {
             <Eyebrow>Industry expertise</Eyebrow>
           </div>
           <ul className="lg:col-span-7 flex flex-wrap gap-3">
-            {EXPERTISE.map((e) => <li key={e} className="px-4 py-2.5 rounded-full text-sm text-white" style={{ border: '1px solid var(--border-soft)' }}>{e}</li>)}
+            {EXPERTISE.map((e) => <li key={e} className="px-4 py-2.5 rounded-full text-sm text-[var(--text)]" style={{ border: '1px solid var(--border-soft)' }}>{e}</li>)}
           </ul>
         </div>
       </Section>

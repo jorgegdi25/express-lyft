@@ -5,7 +5,7 @@ import { SERVICES } from '@/lib/site/services'
 
 export default function SiteFooter() {
   return (
-    <footer className="pt-16 pb-28 md:pb-10" style={{ background: 'var(--bg-deep)', borderTop: '1px solid var(--surface-alt)' }}>
+    <footer className="site-dark pt-16 pb-28 md:pb-10" style={{ background: 'var(--bg-deep)', borderTop: '1px solid var(--surface-alt)' }}>
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="grid grid-cols-2 md:grid-cols-12 gap-10">
           <div className="col-span-2 md:col-span-4 flex flex-col gap-4">
