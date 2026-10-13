@@ -106,7 +106,7 @@ export default function BookingModal({ prices }: { prices: Record<string, Vehicl
       <div className="absolute inset-0 overflow-y-auto overscroll-contain" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}>
         <div className="min-h-full flex items-start sm:items-center justify-center sm:px-6 sm:pb-8 sm:pt-20 md:px-10" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}>
           <div
-            className={`relative w-full transition-[max-width,transform] duration-300 ${wide ? 'sm:max-w-5xl' : 'sm:max-w-[460px]'} ${open ? 'translate-y-0' : 'translate-y-4'}`}
+            className={`relative w-full transition-[max-width,transform] duration-300 ${wide ? 'sm:max-w-5xl' : 'sm:max-w-[460px] lg:max-w-[960px]'} ${open ? 'translate-y-0' : 'translate-y-4'}`}
           >
             {/* Mobile: slim top bar with close */}
             <div className="sm:hidden sticky top-0 z-10 flex items-center justify-between px-4 h-14" style={{ background: 'var(--surface-raised)', borderBottom: '1px solid var(--border)' }}>

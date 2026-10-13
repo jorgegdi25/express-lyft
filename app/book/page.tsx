@@ -53,7 +53,7 @@ export default async function BookPage({ searchParams }: { searchParams: Record<
         </Container>
       </section>
 
-      <div className="pt-8 pb-6">
+      <div className="pt-8 pb-6 px-4 sm:px-6 max-w-6xl mx-auto">
         <MainMapBookingForm prices={prices} initial={initial} hideHeader variant="hero" />
       </div>
 

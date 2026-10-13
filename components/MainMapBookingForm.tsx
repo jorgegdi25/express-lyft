@@ -593,8 +593,10 @@ export default function MainMapBookingForm({
           setDurationMinutes(route.durationMinutes)
         }}
         renderLayout={({ pickupInput, dropoffInput, map }) => (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
+          // Phones: header, map, fields, button stacked. Desktop: fields on
+          // the left, a large route map filling the right column.
+          <div className="grid gap-3 lg:grid-cols-[400px_minmax(0,1fr)] lg:grid-rows-[auto_auto_1fr] lg:gap-x-5 lg:grid-flow-dense">
+            <div className="flex items-center justify-between gap-3 lg:col-start-1">
               <p className="text-[15px] font-semibold text-[var(--text)]">Book your ride</p>
               <div className="flex rounded-full p-1" style={{ background: 'var(--surface)' }}>
                 {(['one-way', 'round-trip'] as TripType[]).map((type) => (
@@ -611,8 +613,8 @@ export default function MainMapBookingForm({
               </div>
             </div>
 
-            {/* Your trip — compact route map */}
-            <div className="relative rounded-2xl overflow-hidden transition-[height] duration-500" style={{ height: hasRoute ? 190 : 150, border: '1px solid var(--border)', background: '#111' }}>
+            {/* Your trip — route map */}
+            <div className="relative rounded-2xl overflow-hidden transition-[height] duration-500 lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:!h-auto lg:min-h-[480px]" style={{ height: hasRoute ? 280 : 220, border: '1px solid var(--border)', background: '#111' }}>
               {map}
               <div className="pointer-events-none absolute inset-x-0 top-0 h-10" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.55), transparent)' }} />
               {hasRoute ? (
@@ -624,7 +626,7 @@ export default function MainMapBookingForm({
               ) : null}
             </div>
 
-            <div className="rounded-2xl divide-y divide-[var(--border-faint)]" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+            <div className="rounded-2xl divide-y divide-[var(--border-faint)] lg:col-start-1" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
               <div className="relative">
                 <span className="pointer-events-none absolute left-[21px] top-[31px] bottom-[31px] w-px border-l border-dashed" style={{ borderColor: 'rgba(233,213,166,0.45)' }} aria-hidden />
                 <div className={`${ROW} ${labelOverride}`}>
@@ -684,6 +686,7 @@ export default function MainMapBookingForm({
               )}
             </div>
 
+            <div className="flex flex-col gap-3 lg:col-start-1">
             {(error && !isUrgentRequest) && <p className="text-sm" style={{ color: 'var(--error-text, #f87171)' }}>{error}</p>}
             {isUrgentRequest ? (
               <>
@@ -704,6 +707,7 @@ export default function MainMapBookingForm({
               </button>
             )}
             <p className="text-center text-[11px]" style={{ color: 'var(--text-muted)' }}>{hasRoute ? 'Instant price' : 'Choose your route to see prices'} · Secure online payment</p>
+            </div>
           </div>
         )}
       />
