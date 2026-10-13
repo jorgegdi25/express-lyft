@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/calendar'
-import { calculateDistanceAmount, applyTimeSurcharge, SurchargeConfig } from '@/lib/pricing'
+import { calculateDistanceAmount, applyTimeSurcharge, normalizeMileTiers, MAIN_SITE_SLUG, SurchargeConfig, VehicleRateParams } from '@/lib/pricing'
 import { flTaxRateIds, FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { createAndSendInvoice } from '@/lib/quickbooks'
 import { checkDiscountCode, redeemDiscountCode } from '@/lib/discountCodes'
@@ -125,7 +125,7 @@ async function findExactRoutePrice(hotelSlug: string, pickup: string, destinatio
 
 async function calculateDistancePrice(hotelSlug: string, vehicleType: string, distanceMiles: number, durationMinutes: number) {
   // Default fallback values
-  const params = { base: 25, per_mile: 3.5, per_minute: 0.5, min_price: 90, max_price: Infinity, multiplier: 1 }
+  const params: VehicleRateParams = { base: 25, per_mile: 3.5, per_minute: 0.5, min_price: 90, max_price: Infinity, multiplier: 1 }
 
   // Fetch global prices from pricing table for the specific vehicle
   const { data: pricingData } = await supabaseAdmin.from('pricing').select('*').eq('vehicle_type', vehicleType).maybeSingle()
@@ -136,6 +136,9 @@ async function calculateDistancePrice(hotelSlug: string, vehicleType: string, di
     params.min_price = pricingData.min_price ?? params.min_price
     params.max_price = pricingData.max_price ?? params.max_price
     params.multiplier = pricingData.multiplier ?? params.multiplier
+    // Mileage tiers are the corporate site's pricing; hotel pages keep the
+    // formula and their own per-mile overrides.
+    if (hotelSlug === MAIN_SITE_SLUG) params.mile_tiers = normalizeMileTiers(pricingData.mile_tiers)
   }
 
   if (distanceMiles > 0) {

@@ -30,6 +30,23 @@ export interface SurchargeConfig {
   surcharge_end_hour: number // 0-23, exclusive
 }
 
+// Hotel slug the corporate site's booking form books under.
+export const MAIN_SITE_SLUG = 'main-site'
+
+// Mileage-tier pricing for the corporate site, edited in the CRM: a trip up
+// to `up_to` miles costs `price`; past the last tier each extra mile adds
+// `extra_per_mile`. Guests only ever see the resulting price.
+export interface MileTier {
+  up_to: number
+  price: number
+}
+
+export interface MileTierConfig {
+  enabled: boolean
+  tiers: MileTier[]
+  extra_per_mile: number
+}
+
 export interface VehicleRateParams {
   base: number
   per_mile: number
@@ -37,6 +54,39 @@ export interface VehicleRateParams {
   min_price?: number
   max_price?: number
   multiplier?: number
+  mile_tiers?: MileTierConfig | null
+}
+
+// Drops empty/invalid rows and sorts by distance so the CRM can save tiers in
+// any order. Returns null when there is nothing usable to price with.
+export function normalizeMileTiers(config: unknown): MileTierConfig | null {
+  if (!config || typeof config !== 'object') return null
+  const c = config as Partial<MileTierConfig>
+  const tiers = (Array.isArray(c.tiers) ? c.tiers : [])
+    .map((t) => ({ up_to: Number(t?.up_to), price: Number(t?.price) }))
+    .filter((t) => Number.isFinite(t.up_to) && t.up_to > 0 && Number.isFinite(t.price) && t.price >= 0)
+    .sort((a, b) => a.up_to - b.up_to)
+  const extra = Number(c.extra_per_mile)
+  return { enabled: Boolean(c.enabled) && tiers.length > 0, tiers, extra_per_mile: Number.isFinite(extra) && extra > 0 ? extra : 0 }
+}
+
+// Price for a distance under the tier table, or null when tiers are off.
+// Miles are rounded to 0.1 first so the client and the server agree on
+// which side of a tier boundary a trip falls.
+export function calculateTierAmount(config: MileTierConfig | null | undefined, distanceMiles: number): number | null {
+  const c = normalizeMileTiers(config)
+  if (!c || !c.enabled) return null
+  const miles = Math.round(Math.max(0, distanceMiles) * 10) / 10
+  const tier = c.tiers.find((t) => miles <= t.up_to)
+  if (tier) return Math.ceil(tier.price)
+  const last = c.tiers[c.tiers.length - 1]
+  return Math.ceil(last.price + Math.ceil(miles - last.up_to) * c.extra_per_mile)
+}
+
+// Lowest price a guest can see for a vehicle ("from $X" on the site).
+export function startingPrice(params: Pick<VehicleRateParams, 'base' | 'mile_tiers'>): number {
+  const c = normalizeMileTiers(params.mile_tiers)
+  return c?.enabled ? Math.ceil(c.tiers[0].price) : params.base
 }
 
 // Parses "6:00 PM" / "11:30 AM" into a 0-23 local hour. Times are always
@@ -79,7 +129,8 @@ export function applyTimeSurcharge(
   return baseAmount + config.surcharge_amount
 }
 
-// The base + per-mile + per-minute formula, with multiplier and min/max
+// Mileage tiers win when the vehicle has them switched on; otherwise the
+// base + per-mile + per-minute formula, with multiplier and min/max
 // clamp applied consistently — previously the server ignored `multiplier`
 // and never applied `max_price`, while the client applied both.
 export function calculateDistanceAmount(
@@ -87,6 +138,8 @@ export function calculateDistanceAmount(
   distanceMiles: number,
   durationMinutes: number
 ): number {
+  const tierAmount = distanceMiles > 0 ? calculateTierAmount(params.mile_tiers, distanceMiles) : null
+  if (tierAmount !== null) return tierAmount
   if (distanceMiles <= 0) return Math.ceil(params.base || 0)
 
   const perMinute = params.per_minute || 0

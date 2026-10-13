@@ -5,7 +5,7 @@ import VehicleDisplay from './VehicleDisplay'
 import { Check } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import ErrorBoundary from './ErrorBoundary'
-import { applyTimeSurcharge, calculateDistanceAmount, SurchargeConfig, TIME_SLOTS } from '@/lib/pricing'
+import { applyTimeSurcharge, calculateDistanceAmount, SurchargeConfig, TIME_SLOTS, type VehicleRateParams } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { CalendarDatePicker } from '@/components/CalendarPicker'
 import { FLEET } from '@/lib/site/fleet'
@@ -383,7 +383,7 @@ export default function MainMapBookingForm({
   const vehicleType = selectedVehicleOverride || minVehicleType
 
   const getRoutePrices = () => {
-    const calculateTypePrice = (priceData: { base: number, per_mile: number, per_minute?: number, min_price?: number, max_price?: number, multiplier?: number } | undefined) => {
+    const calculateTypePrice = (priceData: VehicleRateParams | undefined) => {
       if (!priceData) return 0;
       return calculateDistanceAmount(priceData, distanceMiles, durationMinutes);
     };
@@ -618,7 +618,8 @@ export default function MainMapBookingForm({
               {hasRoute ? (
                 <div className="absolute left-3 top-3 px-3 py-1.5 rounded-full text-[12px] font-semibold text-white flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(233,213,166,0.35)' }}>
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--gold-light)' }} />
-                  {distanceMiles.toFixed(1)} mi · about {Math.round(durationMinutes)} min
+                  {/* Miles stay internal: prices are set by mileage tiers. */}
+                  About {Math.round(durationMinutes)} min
                 </div>
               ) : null}
             </div>
@@ -724,7 +725,7 @@ export default function MainMapBookingForm({
             {pickup} <span style={{ color: 'var(--gold-light)' }}>→</span> {destination}
           </p>
           <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {date} · {time}{tripType === 'round-trip' ? ` · return ${returnDate} ${returnTime}` : ''} · {passengers} {passengers === 1 ? 'guest' : 'guests'} · {luggageCount} {luggageCount === 1 ? 'bag' : 'bags'}{distanceMiles > 0 ? ` · ${distanceMiles.toFixed(1)} mi` : ''}
+            {date} · {time}{tripType === 'round-trip' ? ` · return ${returnDate} ${returnTime}` : ''} · {passengers} {passengers === 1 ? 'guest' : 'guests'} · {luggageCount} {luggageCount === 1 ? 'bag' : 'bags'}{durationMinutes > 0 ? ` · about ${Math.round(durationMinutes)} min` : ''}
           </p>
         </div>
         <button type="button" onClick={handlePrevStep} className="self-start md:self-auto shrink-0 text-[13px] font-semibold underline underline-offset-4" style={{ color: 'var(--gold-light)' }}>

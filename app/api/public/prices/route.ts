@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { MAIN_SITE_SLUG, normalizeMileTiers, type MileTierConfig } from '@/lib/pricing'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -13,13 +14,13 @@ export async function GET(req: NextRequest) {
   }
 
   const [pricingRes, routePricingRes, hotelRes, surchargeRes] = await Promise.all([
-    supabaseAdmin.from('pricing').select('vehicle_type, price_usd, price_per_mile, price_per_minute, min_price, max_price, multiplier'),
+    supabaseAdmin.from('pricing').select('*'),
     supabaseAdmin.from('route_pricing').select('*').eq('hotel_slug', hotel_slug),
     supabaseAdmin.from('hotels').select('*').eq('slug', hotel_slug).maybeSingle(),
     supabaseAdmin.from('pricing_settings').select('*').eq('id', 1).maybeSingle(),
   ])
 
-  const pricingParams: Record<string, { base: number, per_mile: number, per_minute: number, min_price: number, max_price: number, multiplier: number }> = {
+  const pricingParams: Record<string, { base: number, per_mile: number, per_minute: number, min_price: number, max_price: number, multiplier: number, mile_tiers?: MileTierConfig | null }> = {
     sedan_suv: { base: 120, per_mile: 3.50, per_minute: 0.30, min_price: 15, max_price: 120, multiplier: 1.0 },
     suburban: { base: 150, per_mile: 5.00, per_minute: 0.40, min_price: 25, max_price: 150, multiplier: 1.0 },
     sprinter: { base: 260, per_mile: 6.00, per_minute: 0.50, min_price: 50, max_price: 260, multiplier: 1.0 },
@@ -37,6 +38,8 @@ export async function GET(req: NextRequest) {
           min_price: row.min_price || pricingParams[row.vehicle_type].min_price,
           max_price: row.max_price || pricingParams[row.vehicle_type].max_price,
           multiplier: row.multiplier || pricingParams[row.vehicle_type].multiplier,
+          // Only the corporate site prices by mileage tiers.
+          mile_tiers: hotel_slug === MAIN_SITE_SLUG ? normalizeMileTiers(row.mile_tiers) : null,
         }
       }
     }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
+import { normalizeMileTiers } from '@/lib/pricing'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +28,22 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { vehicle_type, price_usd, price_per_mile, price_per_minute, min_price, max_price, multiplier } = await req.json()
+  const { vehicle_type, price_usd, price_per_mile, price_per_minute, min_price, max_price, multiplier, mile_tiers } = await req.json()
+
+  // The mileage-tier editor saves only the tiers, without the formula fields.
+  if (vehicle_type && mile_tiers !== undefined && price_usd === undefined) {
+    const { error } = await supabaseAdmin
+      .from('pricing')
+      .update({ mile_tiers: normalizeMileTiers(mile_tiers), updated_at: new Date().toISOString() })
+      .eq('vehicle_type', vehicle_type)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    try {
+      revalidatePath('/', 'layout')
+    } catch (e) {
+      console.error('Error revalidating path:', e)
+    }
+    return NextResponse.json({ success: true })
+  }
 
   if (!vehicle_type || price_usd === undefined) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })

@@ -7,6 +7,7 @@ import { applyTimeSurcharge, TIME_SLOTS } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { formatDateUS, getMonthGridDays, timeStringToMinutes } from '@/lib/dateUtils'
 import { VEHICLE_LABELS } from '@/lib/vehicles'
+import MileTierEditor from '@/components/admin/MileTierEditor'
 import { CalendarDatePicker, CalendarRangeFilter } from '@/components/CalendarPicker'
 import { useToast } from '@/components/ui/Toast'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
@@ -1355,6 +1356,7 @@ export default function AdminPage() {
     min_price: number;
     max_price: number;
     multiplier: number;
+    mile_tiers?: unknown;
   }
 
   const [basePrices, setBasePrices] = useState<BasePrice[]>([])
@@ -3787,6 +3789,14 @@ export default function AdminPage() {
                 </table>
               </div>
             </section>
+
+            <MileTierEditor
+              password={password}
+              vehicles={basePrices}
+              labels={VEHICLE_LABELS}
+              onSaved={() => fetchBasePrices(password).then(setBasePrices)}
+              notify={(message, type) => toast(message, type)}
+            />
 
             <section className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <div className="overflow-x-auto">

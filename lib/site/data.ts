@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import type { FleetType } from './fleet'
+import { normalizeMileTiers, startingPrice, type MileTierConfig } from '@/lib/pricing'
 
 // Server-only helpers for the corporate site. Starting prices come from the
 // same `pricing` table the booking engine and the CRM use — the site never
@@ -8,10 +9,10 @@ import type { FleetType } from './fleet'
 export type StartingPrices = Partial<Record<FleetType, number>>
 
 export async function getStartingPrices(): Promise<StartingPrices> {
-  const { data } = await supabaseAdmin.from('pricing').select('vehicle_type, price_usd')
+  const { data } = await supabaseAdmin.from('pricing').select('*')
   const out: StartingPrices = {}
   for (const row of data || []) {
-    if (typeof row.price_usd === 'number') out[row.vehicle_type as FleetType] = row.price_usd
+    if (typeof row.price_usd === 'number') out[row.vehicle_type as FleetType] = startingPrice({ base: row.price_usd, mile_tiers: row.mile_tiers })
   }
   return out
 }
@@ -21,8 +22,8 @@ export async function getStartingPrices(): Promise<StartingPrices> {
 export async function getPricingParams() {
   const { data } = await supabaseAdmin
     .from('pricing')
-    .select('vehicle_type, price_usd, price_per_mile, price_per_minute, min_price, max_price, multiplier')
-  const out: Record<string, { base: number; per_mile: number; per_minute?: number; min_price?: number; max_price?: number; multiplier?: number }> = {}
+    .select('*')
+  const out: Record<string, { base: number; per_mile: number; per_minute?: number; min_price?: number; max_price?: number; multiplier?: number; mile_tiers?: MileTierConfig | null }> = {}
   for (const r of data || []) {
     out[r.vehicle_type] = {
       base: r.price_usd,
@@ -31,6 +32,7 @@ export async function getPricingParams() {
       min_price: r.min_price || 0,
       max_price: r.max_price || undefined,
       multiplier: r.multiplier || 1,
+      mile_tiers: normalizeMileTiers(r.mile_tiers),
     }
   }
   return out
