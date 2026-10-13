@@ -5,6 +5,7 @@ import { resend, sendReminderSentNotification } from '@/lib/resend'
 import { PaymentReminderEmail } from '@/emails/PaymentReminderEmail'
 import { flTaxRateIds } from '@/lib/tax'
 import { leadPickupToUTC } from '@/lib/tripTime'
+import { bookingPagePath } from '@/lib/pricing'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
     try {
       const origin = process.env.NEXT_PUBLIC_BASE_URL || 'https://booking.explyft.com'
       const successUrl = `${origin}/hotel/${lead.hotel_slug}/success?lead_id=${lead.id}&session_id={CHECKOUT_SESSION_ID}`
-      const cancelUrl = `${origin}/hotel/${lead.hotel_slug}`
+      const cancelUrl = `${origin}${bookingPagePath(lead.hotel_slug)}`
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],

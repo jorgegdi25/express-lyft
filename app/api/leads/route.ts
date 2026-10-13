@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { stripe } from '@/lib/stripe'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/calendar'
-import { calculateDistanceAmount, applyTimeSurcharge, normalizeMileTiers, MAIN_SITE_SLUG, SurchargeConfig, VehicleRateParams } from '@/lib/pricing'
+import { calculateDistanceAmount, applyTimeSurcharge, normalizeMileTiers, MAIN_SITE_SLUG, bookingPagePath, SurchargeConfig, VehicleRateParams } from '@/lib/pricing'
 import { flTaxRateIds, FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { createAndSendInvoice } from '@/lib/quickbooks'
 import { checkDiscountCode, redeemDiscountCode } from '@/lib/discountCodes'
@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
 
       const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
       const successUrl = `${origin}/hotel/${lead.hotel_slug}/success?lead_id=${lead.id}&session_id={CHECKOUT_SESSION_ID}`
-      const cancelUrl = `${origin}/hotel/${lead.hotel_slug}`
+      const cancelUrl = `${origin}${bookingPagePath(lead.hotel_slug)}`
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -266,7 +266,7 @@ export async function POST(req: NextRequest) {
 
       const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
       const successUrl = `${origin}/hotel/${lead.hotel_slug}/success?lead_id=${lead.id}&session_id={CHECKOUT_SESSION_ID}`
-      const cancelUrl = `${origin}/hotel/${lead.hotel_slug}`
+      const cancelUrl = `${origin}${bookingPagePath(lead.hotel_slug)}`
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -594,7 +594,7 @@ export async function POST(req: NextRequest) {
       : isPromo ? `${origin}/promo/${hotelSlug}/success?lead_id=${data.id}&session_id={CHECKOUT_SESSION_ID}` : `${origin}/hotel/${hotelSlug}/success?lead_id=${data.id}&session_id={CHECKOUT_SESSION_ID}`
     const cancelUrl = isPublicJetski
       ? `${origin}/jetski#book`
-      : isPromo ? `${origin}/promo/${hotelSlug}` : `${origin}/hotel/${hotelSlug}`
+      : isPromo ? `${origin}/promo/${hotelSlug}` : `${origin}${bookingPagePath(hotelSlug)}`
 
     if (isPromo || paymentMode === 'quote') {
       // Return success without URL so the frontend shows the inline success modal instead of redirecting

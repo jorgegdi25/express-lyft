@@ -33,6 +33,12 @@ export interface SurchargeConfig {
 // Hotel slug the corporate site's booking form books under.
 export const MAIN_SITE_SLUG = 'main-site'
 
+// Where a guest goes back to after cancelling checkout: their hotel's page,
+// or the corporate site's home for website bookings (main-site has no page).
+export function bookingPagePath(hotelSlug: string): string {
+  return hotelSlug === MAIN_SITE_SLUG ? '/' : `/hotel/${hotelSlug}`
+}
+
 // Mileage-tier pricing for the corporate site, edited in the CRM: a trip up
 // to `up_to` miles costs `price`; past the last tier each extra mile adds
 // `extra_per_mile`. Guests only ever see the resulting price.
