@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { permanentRedirect } from 'next/navigation'
 import HomeV2 from '@/components/site/home/HomeV2'
 import { SITE_V2_LIVE } from '@/lib/site/contact'
 
@@ -12,5 +13,7 @@ export const metadata: Metadata = {
 }
 
 export default function HomePreviewPage() {
+  // After launch the site lives at /; old preview links land there.
+  if (SITE_V2_LIVE) permanentRedirect('/')
   return <HomeV2 />
 }

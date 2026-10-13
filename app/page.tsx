@@ -10,6 +10,8 @@ import Testimonials from '@/components/Testimonials'
 import ReviewsMarquee from '@/components/ReviewsMarquee'
 import { getApprovedReviews, toTestimonials, toMarqueeReviews } from '@/lib/reviews'
 import { Check } from 'lucide-react'
+import HomeV2 from '@/components/site/home/HomeV2'
+import { SITE_V2_LIVE } from '@/lib/site/contact'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const fetchCache = 'force-no-store'
@@ -96,6 +98,10 @@ const STATS = [
 ]
 
 export default async function HomePage({ searchParams }: { searchParams: { success?: string; tab?: string } }) {
+  // Express Lyft 2.0 is the home page on every host once launched. The
+  // previous page below stays as the rollback (SITE_V2_LIVE = false).
+  if (SITE_V2_LIVE) return <HomeV2 />
+
   const headersList = headers()
   const host = headersList.get('host') || ''
   const xForwardedHost = headersList.get('x-forwarded-host') || ''

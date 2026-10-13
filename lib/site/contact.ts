@@ -13,7 +13,7 @@ export const BRAND = {
 // /home in production, explyft.com/ keeps the current page, and the new
 // pages are kept out of search engines. At launch: SITE_V2_LIVE = true and
 // SITE_HOME = '/', then point app/page.tsx at HomeV2 for every host.
-export const SITE_V2_LIVE = false
+export const SITE_V2_LIVE = true
 export const SITE_HOME = SITE_V2_LIVE ? '/' : '/home'
 
 export const CONTACT = {
