@@ -285,7 +285,7 @@ export function PartnersSection() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           <div className="lg:col-span-5 relative min-h-[320px] rounded-2xl overflow-hidden">
-            <Image src="/site/hotel-arrival-suburban.webp" alt="Chauffeur opening the door of a black Chevrolet Suburban for hotel guests" fill sizes="(min-width:1024px) 40vw, 100vw" className="object-cover object-[40%_50%]" />
+            <Image src="/site/hotel-arrival-suburban.webp" alt="Chauffeur opening the door of a black Chevrolet Suburban for hotel guests" fill sizes="(min-width:1024px) 40vw, 100vw" className="object-cover object-[28%_50%]" />
           </div>
           <div className="lg:col-span-7 grid sm:grid-cols-3 lg:grid-cols-1 gap-px rounded-2xl overflow-hidden" style={{ background: 'var(--sand-line)', border: '1px solid var(--sand-line)' }}>
             {B2B.map((b) => (
