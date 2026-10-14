@@ -9,6 +9,7 @@ import { checkDiscountCode, redeemDiscountCode } from '@/lib/discountCodes'
 import { jetskiPackagePrice, jetskiMachineCount, JETSKI_TRANSPORT_PRICES, JETSKI_MAX_MACHINES_PER_SLOT, JetskiTransportOption, JETSKI_MIN_NOTICE_MINUTES, nyNowPlusMinutes, jetskiSlotSortKey } from '@/lib/jetskiPricing'
 import { resend, sendOwnerNotification } from '@/lib/resend'
 import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
+import { isQuoteOnly } from '@/lib/vehicles'
 
 // A manually-paid reservation (Payment Source: External Platform/Cash at
 // creation, or a status dropdown flipped to Paid afterward) never touches
@@ -326,7 +327,7 @@ export async function POST(req: NextRequest) {
       amountUsd,
       tripType,
       status,
-      paymentMode,
+      paymentMode: requestedPaymentMode,
       isPromo,
       airline,
       flightNumber,
@@ -362,6 +363,10 @@ export async function POST(req: NextRequest) {
     // is always recomputed from the real catalog below (§ "Determine target
     // price"), never trusted from the client, same as transport pricing.
     const isPublicJetski = !isAdmin && serviceType === 'jet_ski'
+
+    // Sprinter, Mini Bus and Coach Bus are quote-only on every public form:
+    // never charge a computed price for them, whatever the client sends.
+    const paymentMode = !isAdmin && !isPublicJetski && isQuoteOnly(vehicleType) ? 'quote' : requestedPaymentMode
 
     // The CRM's "Add Reservation" modal already disables submit without a
     // date/time, but enforce it here too — a reservation with no date/time

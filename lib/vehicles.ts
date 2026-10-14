@@ -7,3 +7,11 @@ export const VEHICLE_LABELS: Record<string, string> = {
   minibus: '31 Passenger Mini Bus',
   coachbus: '55 Passenger Bus',
 }
+
+// Vehicles the public forms never price: the guest submits a request and the
+// team calls back with a quote. The server enforces this too.
+export const QUOTE_ONLY_VEHICLES = ['sprinter', 'minibus', 'coachbus']
+
+export function isQuoteOnly(vehicleType: string | null | undefined): boolean {
+  return !!vehicleType && QUOTE_ONLY_VEHICLES.includes(vehicleType)
+}

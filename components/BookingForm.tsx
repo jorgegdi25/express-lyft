@@ -10,6 +10,7 @@ import { Check } from 'lucide-react'
 import { applyTimeSurcharge, SurchargeConfig, TIME_SLOTS } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { CalendarDatePicker } from '@/components/CalendarPicker'
+import { isQuoteOnly } from '@/lib/vehicles'
 
 interface RoutePrice {
   id: string
@@ -497,8 +498,8 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
     // Must open synchronously on the click, before the await below — browsers
     // block window.open() called after an async gap.
-    const isQuoteOnly = vehicleType === 'coachbus' || vehicleType === 'minibus'
-    const willChargeViaQuickBooks = paymentProvider === 'quickbooks' && !isPromo && !isQuoteOnly
+    const quoteOnly = isQuoteOnly(vehicleType)
+    const willChargeViaQuickBooks = paymentProvider === 'quickbooks' && !isPromo && !quoteOnly
     const qbWindow = willChargeViaQuickBooks ? window.open('', '_blank') : null
 
     try {
@@ -530,7 +531,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           carSeatsRequested,
           luggageCount,
           notes,
-          paymentMode: vehicleType === 'coachbus' || vehicleType === 'minibus' ? 'quote' : paymentMode,
+          paymentMode: isQuoteOnly(vehicleType) ? 'quote' : paymentMode,
           isPromo,
         }),
       })
@@ -1349,7 +1350,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   </div>
 
                   {/* Estimated Total */}
-                  {!isPromo && vehicleType !== 'coachbus' && vehicleType !== 'minibus' && (
+                  {!isPromo && !isQuoteOnly(vehicleType) && (
                     <>
                       {/* Discount Code */}
                       {paymentMode !== 'deposit' && (
@@ -1507,7 +1508,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     </>
                   )}
 
-                  {(vehicleType === 'coachbus' || vehicleType === 'minibus') && (
+                  {isQuoteOnly(vehicleType) && (
                     <div
                       className="rounded-xl px-5 py-6 flex flex-col items-center justify-center text-center mb-4 mt-2"
                       style={{
@@ -1578,7 +1579,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       )}
                       {loading
                         ? 'Processing…'
-                        : (vehicleType === 'coachbus' || vehicleType === 'minibus')
+                        : isQuoteOnly(vehicleType)
                           ? 'Submit Request →'
                           : isPromo 
                             ? 'Confirm Reservation →'
@@ -1590,7 +1591,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   </div>
                   
                   {/* Secure Payment Badge */}
-                  {!isPromo && vehicleType !== 'coachbus' && vehicleType !== 'minibus' && (
+                  {!isPromo && !isQuoteOnly(vehicleType) && (
                     <div className="flex flex-col items-center justify-center gap-1.5 mt-3 select-none">
                       <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>

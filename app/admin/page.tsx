@@ -6,7 +6,7 @@ import QRCode from 'qrcode'
 import { applyTimeSurcharge, TIME_SLOTS } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { formatDateUS, getMonthGridDays, timeStringToMinutes } from '@/lib/dateUtils'
-import { VEHICLE_LABELS } from '@/lib/vehicles'
+import { VEHICLE_LABELS, isQuoteOnly } from '@/lib/vehicles'
 import MileTierEditor from '@/components/admin/MileTierEditor'
 import { CalendarDatePicker, CalendarRangeFilter } from '@/components/CalendarPicker'
 import { useToast } from '@/components/ui/Toast'
@@ -5117,9 +5117,9 @@ export default function AdminPage() {
                   <div className="flex items-center justify-between gap-3 pt-3.5 border-t border-[#222]">
                     <div>
                       <span className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest font-bold block">
-                        {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? 'Custom Quote' : activeTab === 'hotel_bookings' ? 'Hotel Billable' : l.status === 'paid' && !!l.tax_collected ? 'Total Paid' : 'Est. Total'}
+                        {l.status === 'quote_requested' || (isQuoteOnly(l.vehicle_type) && !l.amount_usd) ? 'Custom Quote' : activeTab === 'hotel_bookings' ? 'Hotel Billable' : l.status === 'paid' && !!l.tax_collected ? 'Total Paid' : 'Est. Total'}
                       </span>
-                      {l.vehicle_type === 'coachbus' || l.vehicle_type === 'minibus' ? (
+                      {l.status === 'quote_requested' || (isQuoteOnly(l.vehicle_type) && !l.amount_usd) ? (
                         <p className="text-base font-bold" style={{ color: 'var(--gold-accent)' }}>Pending</p>
                       ) : (
                         <>

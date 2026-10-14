@@ -340,8 +340,9 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                         <p className="text-xs uppercase tracking-widest text-[#888888] mb-4">Mercedes Sprinter</p>
                       </div>
                       <div className="my-6">
-                        <span className="text-xs uppercase tracking-wider text-[#888888]">Starting at</span>
-                        <p className="text-5xl font-bold mt-1" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>${startingPrices.sprinter}</p>
+                        {/* Quote-only: the team prices every Sprinter trip. */}
+                        <span className="text-xs uppercase tracking-wider text-[#888888]">Rate</span>
+                        <p className="text-3xl font-bold mt-1 leading-tight" style={{ color: '#EF9F27', fontFamily: "'Playfair Display', Georgia, serif" }}>Custom<br/>Quote</p>
                       </div>
                       <a
                         href="#booking-form"
@@ -349,7 +350,7 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
                         className="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110 active:scale-95 text-center"
                         style={{ background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }}
                       >
-                        Book Now
+                        Request a Quote
                       </a>
                     </div>
 

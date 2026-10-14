@@ -11,6 +11,7 @@ import { CalendarDatePicker } from '@/components/CalendarPicker'
 import { FLEET } from '@/lib/site/fleet'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
+import { isQuoteOnly } from '@/lib/vehicles'
 
 const MapRouteSelector = dynamic(() => import('./MapRouteSelector'), { ssr: false })
 
@@ -511,7 +512,7 @@ export default function MainMapBookingForm({
           carSeatsRequested,
           luggageCount,
           notes,
-          paymentMode: vehicleType === 'coachbus' || vehicleType === 'minibus' ? 'quote' : paymentMode,
+          paymentMode: isQuoteOnly(vehicleType) ? 'quote' : paymentMode,
           distanceMiles,
           durationMinutes,
         }),
@@ -718,7 +719,7 @@ export default function MainMapBookingForm({
   // bags compare at a glance. Same prices (tax included, as charged) and
   // the same luggage check as the classic vehicle step.
   const withTax = (n: number) => Math.round(n * (1 + FL_TAX_RATE_PERCENT / 100))
-  const isQuote = (t: VehicleType) => t === 'minibus' || t === 'coachbus'
+  const isQuote = (t: VehicleType) => isQuoteOnly(t)
   const selectedFleet = FLEET.find((f) => f.type === vehicleType)!
   const heroStep2 = (
     <div className="flex flex-col gap-4">
@@ -1511,7 +1512,7 @@ export default function MainMapBookingForm({
                   </div>
 
                   {/* Estimated Total */}
-                  {true && vehicleType !== 'coachbus' && vehicleType !== 'minibus' && (
+                  {true && !isQuoteOnly(vehicleType) && (
                     <>
                       <div
                         className="rounded-xl px-5 py-4 flex items-center justify-between"
@@ -1625,7 +1626,7 @@ export default function MainMapBookingForm({
                     </>
                   )}
 
-                  {(vehicleType === 'coachbus' || vehicleType === 'minibus') && (
+                  {isQuoteOnly(vehicleType) && (
                     <div
                       className="rounded-xl px-5 py-6 flex flex-col items-center justify-center text-center mb-4 mt-2"
                       style={{
@@ -1696,7 +1697,7 @@ export default function MainMapBookingForm({
                       )}
                       {loading
                         ? 'Processing…'
-                        : (vehicleType === 'coachbus' || vehicleType === 'minibus')
+                        : isQuoteOnly(vehicleType)
                           ? 'Submit Request →'
                           : false 
                             ? 'Confirm Reservation →'
@@ -1708,7 +1709,7 @@ export default function MainMapBookingForm({
                   </div>
                   
                   {/* Secure Payment Badge */}
-                  {true && vehicleType !== 'coachbus' && vehicleType !== 'minibus' && (
+                  {true && !isQuoteOnly(vehicleType) && (
                     <div className="flex flex-col items-center justify-center gap-1.5 mt-3 select-none">
                       <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>

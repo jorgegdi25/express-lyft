@@ -1,6 +1,7 @@
 'use client'
 import Image from 'next/image'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
+import { isQuoteOnly } from '@/lib/vehicles'
 
 interface VehicleDisplayProps {
   passengers: number
@@ -105,7 +106,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
             >
               <span>{v.shortLabel}</span>
               <span style={{ fontSize: '0.7rem', color: isSelected ? 'var(--gold-accent)' : (isDisabled ? 'var(--border-soft)' : 'var(--text-faint)') }}>
-                {v.type === 'coachbus' || v.type === 'minibus' ? 'Quote' : `$${Math.round(prices[v.type] * (1 + FL_TAX_RATE_PERCENT / 100))}`}
+                {isQuoteOnly(v.type) ? 'Quote' : `$${Math.round(prices[v.type] * (1 + FL_TAX_RATE_PERCENT / 100))}`}
               </span>
             </button>
           )
@@ -113,7 +114,7 @@ export default function VehicleDisplay({ passengers, prices, selectedVehicleType
       </div>
 
       {/* Price row */}
-      {vehicle.type !== 'coachbus' && vehicle.type !== 'minibus' ? (
+      {!isQuoteOnly(vehicle.type) ? (
         <div
           className="mt-auto rounded-xl px-5 py-4 flex items-center justify-between"
           style={{
