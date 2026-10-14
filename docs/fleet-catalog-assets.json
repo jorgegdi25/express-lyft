@@ -65,9 +65,16 @@
       "original": "/Users/jorgegonzalezmejia/.codex/generated_images/01a10e7a-64e7-7ed2-90e8-fee4ab9356d8/exec-d9c78ec9-8490-4f62-8934-be4fa83b874a.png",
       "reference": null,
       "prompt": "Use case: product-mockup.\nAsset type: illustrative automotive catalog photograph for Express Lyft, a premium chauffeur and group transportation website.\nPrimary request: a professional, elegant black EXECUTIVE MINI BUS in a full side profile, on a bright neutral studio background. Represent a mid-size group shuttle class with a compact American executive minicoach silhouette, approximately 8.5–9 metres long, with a short sculpted conventional hood and a distinct driver cabin integrated into a wider passenger coach body. Two axles, six large rectangular smoked-glass passenger windows, closed front passenger entrance, subtle luggage compartment seams, polished silver wheel hubs. Make it clearly a minibús ejecutivo, with rounded refined bodywork and balanced realistic proportions.\nScene/backdrop: seamless warm pearl-grey studio backdrop and floor, approximately #E9E6E0.\nStyle/medium: high-end automotive product photography, photorealistic with believable physical geometry, clean black paint with clearly readable soft reflections and contours.\nComposition/framing: landscape 1536x1024, exact full side profile, front pointing LEFT, camera perpendicular at mid-body height, complete vehicle centred horizontally occupying about 85% of image width, wheels baseline at 72% of image height, generous margins around vehicle.\nLighting/mood: bright broad studio lighting, soft contact shadow, crisp yet natural, upscale and welcoming.\nConstraints: one vehicle only, closed doors, wheels straight, lights off. No particular manufacturer or company branding. This is a representative class illustration, not an assertion about an actual photographed company vehicle.\nAvoid: long full-size touring coach, flat-front bus silhouette, school-bus styling, city transit bus, tiny passenger van, oversized mirror arms, unnaturally stretched body, airport or parking lot, people, buildings, props, text, badges, readable license plates, logos, watermarks."
+    },
+    {
+      "key": "toyota-rav4",
+      "updated": "2026-10-14",
+      "output": "public/fleet/catalog/toyota-rav4.jpg",
+      "source": "Photo supplied by the client; padded top/bottom with the studio backdrop to the 3:2 catalog format.",
+      "reference": null
     }
   ],
-  "sedanNote": "Toyota Camry is the primary Sedan & SUV catalog image. Chevrolet Tahoe remains a selectable catalog photograph in the Home gallery. Prior minivan photographs remain as original files but are not displayed for this class.",
+  "sedanNote": "Toyota RAV4 is the primary Sedan & SUV catalog image (client photo, 14 Oct 2026). Toyota Camry and Chevrolet Tahoe remain selectable in the gallery.",
   "camryNote": "Added at the user request. No local Camry photo was available; generated representative sedan imagery. Actual year and trim have not been supplied.",
   "heroNote": "The /fleet introduction uses a dark studio illustration of Camry, Suburban and Sprinter, with separate text and image columns on desktop and stacked content on mobile. Original yard photograph remains available as an original gallery asset."
 }
