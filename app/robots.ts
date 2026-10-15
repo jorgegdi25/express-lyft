@@ -16,7 +16,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
       disallow: [
-        '/admin', '/api/', '/guia', '/map-demo', '/review/', '/promo/',
+        '/admin', '/api/', '/anterior', '/guia', '/map-demo', '/review/', '/promo/',
         // Express Lyft 2.0 preview pages stay out of search until launch.
         ...(SITE_V2_LIVE ? [] : PREVIEW_PATHS),
       ],
