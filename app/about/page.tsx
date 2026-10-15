@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import PageShell, { Section } from '@/components/site/PageShell'
 import { Arrow, ButtonLink, Eyebrow, Heading } from '@/components/site/ui'
 
@@ -19,6 +20,12 @@ const APPROACH = [
 ]
 
 const EXPERTISE = ['Airlines', 'Cruise lines', 'Hotels', 'Corporate travel', 'Travel agencies']
+
+// Portrait photos go in public/site/team/; until one is set the card shows initials.
+const LEADERSHIP: { n: string; r: string; photo?: string }[] = [
+  { n: 'Karen Hernandez', r: 'Owner', photo: '/site/team/karen-hernandez.jpg' },
+  { n: 'Dennis Rivera', r: 'Founder / Managing Director', photo: '/site/team/dennis-rivera.jpg' },
+]
 
 export default function AboutPage() {
   return (
@@ -69,14 +76,17 @@ export default function AboutPage() {
             <Heading className="text-3xl md:text-4xl">The people behind the ride.</Heading>
           </div>
           <ul className="lg:col-span-7 grid sm:grid-cols-2 gap-5">
-            {[
-              { n: 'Karen Hernandez', r: 'Owner' },
-              { n: 'Dennis Rivera', r: 'Founder / Managing Director' },
-            ].map((p) => (
+            {LEADERSHIP.map((p) => (
               <li key={p.n} className="rounded-2xl p-6" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-faint)' }}>
-                <div className="w-14 h-14 rounded-full flex items-center justify-center font-display text-xl font-semibold" style={{ background: 'rgba(184,150,12,0.12)', color: 'var(--gold-light)', border: '1px solid rgba(184,150,12,0.35)' }}>
-                  {p.n.split(' ').map((w) => w[0]).join('')}
-                </div>
+                {p.photo ? (
+                  <div className="relative aspect-[4/5] -mx-2 -mt-2 rounded-xl overflow-hidden" style={{ background: 'var(--surface)' }}>
+                    <Image src={p.photo} alt={`${p.n}, ${p.r} of Express Lyft`} fill sizes="(min-width:1024px) 25vw, (min-width:640px) 45vw, 90vw" className="object-cover object-top" />
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center font-display text-xl font-semibold" style={{ background: 'rgba(184,150,12,0.12)', color: 'var(--gold-light)', border: '1px solid rgba(184,150,12,0.35)' }}>
+                    {p.n.split(' ').map((w) => w[0]).join('')}
+                  </div>
+                )}
                 <p className="mt-4 text-lg font-semibold text-[var(--text)]">{p.n}</p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{p.r}</p>
               </li>

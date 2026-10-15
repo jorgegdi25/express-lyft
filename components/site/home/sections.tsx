@@ -30,7 +30,7 @@ export function Hero() {
             Private transportation · Miami & South Florida
           </p>
           <h1 className="font-display font-semibold text-white text-[40px] leading-[1.04] md:text-[60px] xl:text-[72px] mt-5 tracking-[-0.03em]" style={{ textShadow: '0 2px 30px rgba(0,0,0,0.4)' }}>
-            From arrival to destination, <span className="text-gold-gradient">handled.</span>
+            Elevating the way you <span className="text-gold-gradient">travel.</span>
           </h1>
           <p className="mt-5 text-base md:text-lg text-white/85 leading-relaxed max-w-xl">
             Airport, hotel and cruise port transfers, corporate travel and group transportation — with professional drivers, clear prices and easy online booking.

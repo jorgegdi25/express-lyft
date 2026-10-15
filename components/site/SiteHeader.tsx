@@ -8,10 +8,12 @@ import { SERVICES } from '@/lib/site/services'
 import { Arrow, PhoneIcon, WhatsAppIcon } from './ui'
 import { lockBodyScroll, visibleFocusTargets } from '@/lib/site/body-scroll-lock'
 
+// Menu order set by the client: About, Services, Locations, Fleet,
+// Partners, FAQ. Services and Locations are the dropdowns in between.
+const ABOUT = { label: 'About', href: '/about' }
 const NAV = [
   { label: 'Fleet', href: '/fleet' },
   { label: 'Partners', href: '/partners' },
-  { label: 'About', href: '/about' },
   { label: 'FAQ', href: '/faq' },
 ]
 
@@ -87,6 +89,9 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
 
           {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-1 text-[13px] font-semibold" aria-label="Main">
+            <Link href={ABOUT.href} className="px-3 py-2 rounded-lg text-white hover:text-[var(--gold-light)] hover:bg-white/5 transition-colors" onMouseEnter={() => setMenu(null)}>
+              {ABOUT.label}
+            </Link>
             <div className="relative">
               <button
                 type="button"
@@ -200,6 +205,9 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
             >
               Book a Ride
             </Link>
+            <Link href={ABOUT.href} onClick={() => setOpen(false)} className="block py-3 text-lg font-display text-white border-b border-white/5">
+              {ABOUT.label}
+            </Link>
             <div>
               <p className="text-[11px] uppercase tracking-[3px] mb-3" style={{ color: 'var(--gold)' }}>Services</p>
               <ul className="flex flex-col">
@@ -213,7 +221,7 @@ export default function SiteHeader({ overlay = false, bookHref = '/book' }: { ov
               </ul>
             </div>
             <ul className="flex flex-col">
-              {[...NAV, ...LOCATIONS.map((l) => ({ label: l.label, href: l.href }))].map((n) => (
+              {[...LOCATIONS.map((l) => ({ label: l.label, href: l.href })), ...NAV].map((n) => (
                 <li key={n.href}>
                   <Link href={n.href} onClick={() => setOpen(false)} className="block py-3 text-lg font-display text-white border-b border-white/5">
                     {n.label}
