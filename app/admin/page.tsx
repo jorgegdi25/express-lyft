@@ -2492,6 +2492,7 @@ export default function AdminPage() {
     baseLeads = leads.filter((l) => l.status === 'hotel_b2b')
   }
 
+  const tripSortToday = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
   const filteredLeads = baseLeads
     .filter((l) => {
       const term = leadsSearch.toLowerCase()
@@ -2528,6 +2529,20 @@ export default function AdminPage() {
       }
       if (leadsSortBy === 'amount_low') {
         return (a.amount_usd || 0) - (b.amount_usd || 0)
+      }
+      if (leadsSortBy === 'trip_soonest') {
+        // Upcoming trips first, soonest at the top (date, then pickup time);
+        // trips already past go after, most recent first; no date goes last.
+        const rank = (l: Lead) => (!l.date ? 2 : l.date >= tripSortToday ? 0 : 1)
+        const ra = rank(a)
+        const rb = rank(b)
+        if (ra !== rb) return ra - rb
+        if (ra === 2) return 0
+        if (a.date !== b.date) return ra === 0 ? a.date!.localeCompare(b.date!) : b.date!.localeCompare(a.date!)
+        const ta = timeStringToMinutes(a.time)
+        const tb = timeStringToMinutes(b.time)
+        if (ta === tb) return 0
+        return ta < tb ? -1 : 1
       }
       return 0
     })
@@ -4368,6 +4383,7 @@ export default function AdminPage() {
                     options={[
                       { value: 'newest', label: 'Newest First' },
                       { value: 'oldest', label: 'Oldest First' },
+                      { value: 'trip_soonest', label: 'Trip Date: Soonest' },
                       { value: 'amount_high', label: 'Amount: High to Low' },
                       { value: 'amount_low', label: 'Amount: Low to High' },
                     ]}
