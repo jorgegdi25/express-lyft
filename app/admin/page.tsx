@@ -5980,8 +5980,15 @@ export default function AdminPage() {
             if (isWeb) commissionsByDay[key].web += 1
             else commissionsByDay[key].other += 1
           }
+          // Web bookings count once paid. A manual booking counts as soon as
+          // an agent enters it — it's on the platform even if nobody flips it
+          // from 'Manual (New)' to Paid — unless it was cancelled or abandoned.
+          const countsForCommission = (l: Lead) =>
+            l.booking_source === 'manual'
+              ? l.status !== 'lost' && l.status !== 'pending_payment'
+              : l.status === 'paid' || l.status === 'deposit_paid'
           cLeads.forEach(l => {
-            if (l.status === 'paid' || l.status === 'deposit_paid') {
+            if (countsForCommission(l)) {
               bump((l.created_at || '').slice(0, 10), l.booking_source !== 'manual')
             }
           })
@@ -6001,17 +6008,32 @@ export default function AdminPage() {
           // count + revenue per agent so whatever commission formula gets
           // applied to it by hand.
           const monthDateSet = new Set(monthDays.map(d => d.dateStr))
-          const agentSummary: Record<string, { count: number; revenue: number }> = {}
+          // Every manual entry counts for the agent; split by how it got paid —
+          // through the platform (QuickBooks / Stripe), outside it (cash /
+          // external platform), or not marked paid yet.
+          type ManualBucket = 'platform' | 'external' | 'pending'
+          const manualBucketOf = (l: Lead): ManualBucket => {
+            if (l.status !== 'paid' && l.status !== 'deposit_paid') return 'pending'
+            return l.payment_source === 'cash' || l.payment_source === 'external' ? 'external' : 'platform'
+          }
+          const emptySplit = () => ({ count: 0, revenue: 0 })
+          const agentSummary: Record<string, { count: number; revenue: number } & Record<ManualBucket, { count: number; revenue: number }>> = {}
+          const manualTotals: Record<ManualBucket, number> = { platform: 0, external: 0, pending: 0 }
           cLeads.forEach(l => {
             if (
               l.booking_source === 'manual' &&
-              (l.status === 'paid' || l.status === 'deposit_paid') &&
+              countsForCommission(l) &&
               monthDateSet.has((l.created_at || '').slice(0, 10))
             ) {
               const agent = l.created_by || 'Unassigned'
-              if (!agentSummary[agent]) agentSummary[agent] = { count: 0, revenue: 0 }
+              if (!agentSummary[agent]) agentSummary[agent] = { count: 0, revenue: 0, platform: emptySplit(), external: emptySplit(), pending: emptySplit() }
+              const bucket = manualBucketOf(l)
+              const amount = l.amount_usd || 0
               agentSummary[agent].count += 1
-              agentSummary[agent].revenue += l.amount_usd || 0
+              agentSummary[agent].revenue += amount
+              agentSummary[agent][bucket].count += 1
+              agentSummary[agent][bucket].revenue += amount
+              manualTotals[bucket] += 1
             }
           })
           const agentSummaryRows = Object.entries(agentSummary).sort((a, b) => b[1].revenue - a[1].revenue)
@@ -6022,7 +6044,7 @@ export default function AdminPage() {
               <div>
                 <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Georgia, serif' }}>Commissions</h1>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  ${COMMISSION_PER_BOOKING} per paid booking, by the date it came in.
+                  ${COMMISSION_PER_BOOKING} per booking (paid web + every manual entry), by the date it came in.
                   {commissionLoading && <span className="ml-2" style={{ color: 'var(--text-faint)' }}>· loading month…</span>}
                 </p>
               </div>
@@ -6050,8 +6072,11 @@ export default function AdminPage() {
             <div className="rounded-xl p-6 flex items-center justify-between" style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.3)' }}>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4ade80' }}>This Month</p>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{monthCount} paid booking{monthCount === 1 ? '' : 's'}</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>{monthWeb} web · {monthOther} manual</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{monthCount} booking{monthCount === 1 ? '' : 's'}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>
+                  {monthWeb} web · {monthOther} manual
+                  {monthOther > 0 && <> ({manualTotals.platform} paid on platform · {manualTotals.external} paid externally · {manualTotals.pending} pending)</>}
+                </p>
               </div>
               <span className="text-4xl font-bold" style={{ color: '#4ade80', fontFamily: "'Playfair Display', Georgia, serif" }}>
                 ${(monthCount * COMMISSION_PER_BOOKING).toFixed(2)}
@@ -6061,18 +6086,27 @@ export default function AdminPage() {
             <div className="rounded-xl p-6" style={{ background: 'rgba(184,150,12,0.06)', border: '1px solid var(--border)' }}>
               <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--gold-light)' }}>Manual Bookings by Agent</p>
               {agentSummaryRows.length === 0 ? (
-                <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No manually-entered paid bookings this month.</p>
+                <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No manually-entered bookings this month.</p>
               ) : (
                 <div className="flex flex-col gap-2.5">
                   {agentSummaryRows.map(([agent, s]) => (
-                    <div key={agent} className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-white flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: agentColorOf(salesAgents, agent).dot }} />
-                        {agent}
-                      </span>
-                      <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                        {s.count} booking{s.count === 1 ? '' : 's'} · <span className="font-bold" style={{ color: '#4ade80' }}>${s.revenue.toFixed(2)}</span> revenue
-                      </span>
+                    <div key={agent} className="flex flex-col gap-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-white flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: agentColorOf(salesAgents, agent).dot }} />
+                          {agent}
+                        </span>
+                        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                          {s.count} booking{s.count === 1 ? '' : 's'} · <span className="font-bold" style={{ color: '#4ade80' }}>${s.revenue.toFixed(2)}</span> revenue
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap justify-end gap-x-4 gap-y-0.5 text-xs" style={{ color: 'var(--text-faint)' }}>
+                        {([['platform', 'Paid on platform'], ['external', 'Paid externally'], ['pending', 'Pending payment']] as const).map(([key, label]) => (
+                          s[key].count > 0 && (
+                            <span key={key}>{label}: {s[key].count} · ${s[key].revenue.toFixed(2)}</span>
+                          )
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
