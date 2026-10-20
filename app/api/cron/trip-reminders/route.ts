@@ -45,7 +45,12 @@ export async function GET(req: NextRequest) {
   }
 
   const now = Date.now()
+  // A blank customer_email ('') passes the "not null" filter above; without a
+  // real address nothing can be sent, so don't mark it reminded or tell the
+  // owner it went out (that's how "sent" showed up for guests who got nothing).
+  const hasEmail = (e: string | null | undefined) => !!e && /\S+@\S+\.\S+/.test(e.trim())
   const dueLeads = (candidates || []).filter(lead => {
+    if (!hasEmail(lead.customer_email)) return false
     const pickupUTC = leadPickupToUTC(lead.date, lead.time)
     if (!pickupUTC) return false
     const hoursUntil = (pickupUTC.getTime() - now) / (1000 * 60 * 60)
@@ -56,11 +61,12 @@ export async function GET(req: NextRequest) {
 
   for (const lead of dueLeads) {
     try {
+      if (!resend) throw new Error('Resend is not configured (RESEND_API_KEY missing)')
       let emailId: string | null = null
-      if (resend && lead.customer_email) {
+      {
         const { data, error: sendError } = await resend.emails.send({
           from: 'Express Lyft <book@explyft.com>',
-          to: [lead.customer_email],
+          to: [lead.customer_email.trim()],
           subject: `Your Express Lyft Pickup Is ${pickupDayLabel(lead.date, new Date(now))} — Instructions Inside`,
           react: PickupReminderEmail({
             customerName: lead.customer_name || 'Valued Guest',
