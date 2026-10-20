@@ -22,11 +22,15 @@ export function formatDateUS(dateStr: string | undefined | null) {
 // rather than crashing the sort or landing at the top.
 export function timeStringToMinutes(time: string | undefined | null): number {
   if (!time) return Infinity
-  const match = time.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+  // Same formats as leadPickupToUTC: "10:00 AM", "05pm", "400 AM", "17:00".
+  const match = time.trim().match(/^(\d{1,2})(?::?(\d{2}))?\s*([AaPp])?\.?\s*[Mm]?\.?$/)
   if (!match) return Infinity
-  let hours = parseInt(match[1], 10) % 12
-  if (/pm/i.test(match[3])) hours += 12
-  return hours * 60 + parseInt(match[2], 10)
+  const minutes = match[2] ? parseInt(match[2], 10) : 0
+  const meridiem = match[3]?.toUpperCase()
+  if (!meridiem && !match[2]) return Infinity
+  let hours = parseInt(match[1], 10)
+  if (meridiem) hours = (hours % 12) + (meridiem === 'P' ? 12 : 0)
+  return hours * 60 + minutes
 }
 
 // Builds a 6-week, Sunday-start grid for the given month so the calendar

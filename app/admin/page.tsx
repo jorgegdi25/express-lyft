@@ -34,6 +34,7 @@ interface Booking {
   status: string
   date: string
   return_date?: string | null
+  return_time?: string | null
   created_at: string
   pickup: string
   destination: string
@@ -2504,6 +2505,30 @@ export default function AdminPage() {
       (b.destination || '').toLowerCase().includes(term)
     )
   })
+  // Chronological by trip: upcoming first (soonest date + pickup time on
+  // top), then past trips most-recent first. With a date filter, a round
+  // trip sorts by whichever leg falls inside the range.
+  {
+    const today = new Date().toLocaleDateString('en-CA')
+    const legOf = (b: Booking): { date: string; time?: string | null } => {
+      const inRange = (d?: string | null) => !!d && (!bookingsDateFrom || d >= bookingsDateFrom) && (!bookingsDateTo || d <= bookingsDateTo)
+      if ((bookingsDateFrom || bookingsDateTo) && !inRange(b.date) && b.trip_type === 'round-trip' && inRange(b.return_date)) {
+        return { date: b.return_date as string, time: b.return_time }
+      }
+      return { date: b.date || '', time: b.time }
+    }
+    filteredBookings.sort((a, b) => {
+      const la = legOf(a)
+      const lb = legOf(b)
+      const ra = !la.date ? 2 : la.date >= today ? 0 : 1
+      const rb = !lb.date ? 2 : lb.date >= today ? 0 : 1
+      if (ra !== rb) return ra - rb
+      if (la.date !== lb.date) return ra === 1 ? lb.date.localeCompare(la.date) : la.date.localeCompare(lb.date)
+      const ta = timeStringToMinutes(la.time)
+      const tb = timeStringToMinutes(lb.time)
+      return ta === tb ? 0 : ta < tb ? -1 : 1
+    })
+  }
   const bookingsStartIndex = (bookingsPage - 1) * bookingsPerPage
   const paginatedBookings = filteredBookings.slice(bookingsStartIndex, bookingsStartIndex + bookingsPerPage)
   const bookingsTotalPages = Math.ceil(filteredBookings.length / bookingsPerPage)

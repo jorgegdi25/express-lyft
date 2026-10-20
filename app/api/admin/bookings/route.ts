@@ -20,7 +20,9 @@ export async function GET(req: NextRequest) {
     .select('*')
     .in('status', ['paid', 'deposit_paid', 'hotel_b2b'])
     .order('created_at', { ascending: false })
-    .limit(100)
+    // Every confirmed trip (a few hundred rows) — capping at the 100 most
+    // recently *created* hid upcoming trips that were booked weeks ahead.
+    .limit(5000)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
