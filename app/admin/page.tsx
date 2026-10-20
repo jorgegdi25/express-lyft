@@ -3,9 +3,9 @@
 import Image from 'next/image'
 import { useState, useEffect, useMemo } from 'react'
 import QRCode from 'qrcode'
-import { applyTimeSurcharge, TIME_SLOTS } from '@/lib/pricing'
+import { applyTimeSurcharge } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
-import { formatDateUS, getMonthGridDays, timeStringToMinutes } from '@/lib/dateUtils'
+import { formatDateUS, getMonthGridDays, timeStringToMinutes, normalizeTimeString, ADMIN_TIME_SLOTS } from '@/lib/dateUtils'
 import { VEHICLE_LABELS, isQuoteOnly } from '@/lib/vehicles'
 import MileTierEditor from '@/components/admin/MileTierEditor'
 import { CalendarDatePicker, CalendarRangeFilter } from '@/components/CalendarPicker'
@@ -4629,7 +4629,7 @@ export default function AdminPage() {
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Time *</label>
                       <select value={newLead.time} onChange={(e) => setNewLead({ ...newLead, time: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
                         <option value="">— Select Time —</option>
-                        {TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
+                        {ADMIN_TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
                       </select>
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -4662,7 +4662,7 @@ export default function AdminPage() {
                           <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Time *</label>
                           <select value={newLead.returnTime} onChange={(e) => setNewLead({ ...newLead, returnTime: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors">
                             <option value="">— Select Time —</option>
-                            {TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
+                            {ADMIN_TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
                           </select>
                         </div>
                       </>
@@ -4946,7 +4946,13 @@ export default function AdminPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Time</label>
-                      <input type="text" placeholder="e.g. 10:00 AM" value={editingLead.time || ''} onChange={(e) => setEditingLead({...editingLead, time: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                      <select value={normalizeTimeString(editingLead.time)} onChange={(e) => setEditingLead({...editingLead, time: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors">
+                        <option value="">— Select Time —</option>
+                        {editingLead.time && !ADMIN_TIME_SLOTS.includes(normalizeTimeString(editingLead.time)) && (
+                          <option value={normalizeTimeString(editingLead.time)}>{editingLead.time} (as entered)</option>
+                        )}
+                        {ADMIN_TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
+                      </select>
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-[var(--text-subtle)]">Pickup</label>
@@ -4968,7 +4974,13 @@ export default function AdminPage() {
                         </div>
                         <div className="flex flex-col gap-2">
                           <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Time</label>
-                          <input type="text" placeholder="e.g. 2:00 PM" value={editingLead.return_time || ''} onChange={(e) => setEditingLead({...editingLead, return_time: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                          <select value={normalizeTimeString(editingLead.return_time)} onChange={(e) => setEditingLead({...editingLead, return_time: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors">
+                            <option value="">— Select Time —</option>
+                            {editingLead.return_time && !ADMIN_TIME_SLOTS.includes(normalizeTimeString(editingLead.return_time)) && (
+                              <option value={normalizeTimeString(editingLead.return_time)}>{editingLead.return_time} (as entered)</option>
+                            )}
+                            {ADMIN_TIME_SLOTS.map((t) => (<option key={t} value={t}>{t}</option>))}
+                          </select>
                         </div>
                         <div className="flex flex-col gap-2">
                           <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Destination</label>
@@ -5088,9 +5100,11 @@ export default function AdminPage() {
                           amount_usd: editingLead.amount_usd ?? 0,
                           trip_type: editingLead.trip_type,
                           date: editingLead.date,
-                          time: editingLead.time,
+                          // Saving rewrites any old hand-typed time ("05pm") into
+                          // the canonical "h:mm AM/PM" the selector uses.
+                          time: editingLead.time ? normalizeTimeString(editingLead.time) : editingLead.time,
                           return_date: editingLead.return_date,
-                          return_time: editingLead.return_time,
+                          return_time: editingLead.return_time ? normalizeTimeString(editingLead.return_time) : editingLead.return_time,
                           return_destination: editingLead.return_destination || null,
                           airline: editingLead.airline,
                           flight_number: editingLead.flight_number,

@@ -49,3 +49,22 @@ export function getMonthGridDays(monthDate: Date) {
   }
   return days
 }
+
+// Minutes since midnight → "h:mm AM/PM", the canonical format every trip
+// time is stored in.
+export function minutesToTimeString(total: number): string {
+  const h = Math.floor(total / 60) % 24
+  const m = total % 60
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`
+}
+
+// Rewrites a hand-typed time ("05pm", "400 AM", "17:00") into "h:mm AM/PM";
+// anything it can't read comes back unchanged so nothing is silently lost.
+export function normalizeTimeString(time: string | null | undefined): string {
+  const mins = timeStringToMinutes(time)
+  return Number.isFinite(mins) ? minutesToTimeString(mins) : (time || '')
+}
+
+// Every 15 minutes, round the clock — the admin CRM books 4 AM cruise and
+// airport runs the public forms' 5 AM–11:30 PM list doesn't offer.
+export const ADMIN_TIME_SLOTS: string[] = Array.from({ length: 96 }, (_, i) => minutesToTimeString(i * 15))
