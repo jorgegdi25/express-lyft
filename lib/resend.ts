@@ -163,7 +163,7 @@ export async function sendTripReminderSentNotification(lead: any) {
           <tr><td style="padding:6px 16px 6px 0;color:#888;">Pickup</td><td style="padding:6px 0;font-weight:600;color:#111;">${lead.date} ${lead.time}</td></tr>
           <tr><td style="padding:6px 16px 6px 0;color:#888;">Route</td><td style="padding:6px 0;font-weight:600;color:#111;">${lead.pickup || ''} → ${lead.destination || ''}</td></tr>
         </table>
-        <p style="color:#888;margin-top:16px;">The guest was emailed their pickup instructions ahead of tomorrow's trip.</p>
+        <p style="color:#888;margin-top:16px;">The guest was emailed their pickup instructions ahead of their trip.</p>
       </div>`;
 
     await resend.emails.send({

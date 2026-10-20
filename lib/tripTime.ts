@@ -16,16 +16,21 @@ export function getNYOffsetHours(dateStr: string): number {
   return match ? parseInt(match[1], 10) : -5
 }
 
-// Combines a lead's separate date ("YYYY-MM-DD") and time ("h:mm AM/PM")
-// fields — both stored as America/New_York wall-clock — into a real UTC Date.
+// Combines a lead's separate date ("YYYY-MM-DD") and time fields — both
+// stored as America/New_York wall-clock — into a real UTC Date. The time is
+// usually "h:mm AM/PM", but manual entries also come in as "05pm", "5:30pm"
+// "400 AM", or 24h "17:00"; anything unparseable returns null (and gets skipped).
 export function leadPickupToUTC(dateStr: string, timeStr: string): Date | null {
   if (!dateStr || !timeStr) return null
-  const [time, ampm] = timeStr.split(' ')
-  if (!time || !ampm) return null
-  let [hours, minutes] = time.split(':').map(Number)
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null
-  if (ampm === 'PM' && hours < 12) hours += 12
-  if (ampm === 'AM' && hours === 12) hours = 0
+  const match = timeStr.trim().match(/^(\d{1,2})(?::?(\d{2}))?\s*([AaPp])?\.?\s*[Mm]?\.?$/)
+  if (!match) return null
+  let hours = parseInt(match[1], 10)
+  const minutes = match[2] ? parseInt(match[2], 10) : 0
+  const meridiem = match[3]?.toUpperCase()
+  if (!meridiem && !match[2]) return null // a bare "5" is ambiguous
+  if (hours > 23 || minutes > 59 || (meridiem && (hours < 1 || hours > 12))) return null
+  if (meridiem === 'P' && hours < 12) hours += 12
+  if (meridiem === 'A' && hours === 12) hours = 0
 
   const [year, month, day] = dateStr.split('-').map(Number)
   const offset = getNYOffsetHours(dateStr)

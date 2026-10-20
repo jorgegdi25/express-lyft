@@ -31,6 +31,7 @@ interface PickupReminderEmailProps {
   tripType?: string | null;
   returnDate?: string | null;
   returnTime?: string | null;
+  dayLabel?: string;
 }
 
 // Picks which of the three pickup-instructions blocks applies, based on
@@ -85,6 +86,7 @@ export const PickupReminderEmail = ({
   tripType,
   returnDate,
   returnTime,
+  dayLabel,
 }: PickupReminderEmailProps) => {
   const instructions = PICKUP_INSTRUCTIONS[detectPickupType(pickup)];
 
@@ -95,7 +97,7 @@ export const PickupReminderEmail = ({
   return (
     <Html>
       <Head />
-      <Preview>Your Express Lyft pickup is tomorrow — instructions inside</Preview>
+      <Preview>{`Your Express Lyft pickup is ${(dayLabel || 'Tomorrow') === 'Coming Up' ? 'coming up' : (dayLabel || 'Tomorrow').toLowerCase()} — instructions inside`}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>

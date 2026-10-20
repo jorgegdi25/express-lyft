@@ -527,6 +527,10 @@ export default function AdminPage() {
   })
 
   const [calendarMonth, setCalendarMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
+  // Dispatch loads its own trip-date window: the global `leads` list only
+  // holds the 200 most recently *created* rows, so a trip booked weeks ago
+  // for next week would silently drop off the board.
+  const [dispatchLeads, setDispatchLeads] = useState<Lead[] | null>(null)
   const [commissionMonth, setCommissionMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
   const COMMISSION_PER_BOOKING = 2
   // The main CRM only loads the last ~200 leads, so an older month (e.g. July)
@@ -1556,6 +1560,24 @@ export default function AdminPage() {
     return () => clearInterval(interval)
   }, [authed, password])
 
+  // Load every trip with a leg from the visible calendar grid (or today,
+  // whichever is earlier) onwards, with no upper bound — Upcoming must show
+  // bookings months out too. Re-runs on each 30s refresh tick.
+  useEffect(() => {
+    if (!authed || activeTab !== 'dispatch') return
+    const grid = getMonthGridDays(calendarMonth)
+    const today = new Date().toLocaleDateString('en-CA')
+    const gridFrom = grid[0].dateStr
+    const tripFrom = gridFrom < today ? gridFrom : today
+    const tripTo = '2099-12-31'
+    let cancelled = false
+    fetch(`/api/leads?trip_from=${tripFrom}&trip_to=${tripTo}&t=${Date.now()}`, { headers: { authorization: `Bearer ${password}` }, cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled && Array.isArray(d)) setDispatchLeads(d) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [authed, password, activeTab, calendarMonth, lastRefreshedAt])
+
   // Load a full month of leads + Stay bookings whenever the Commissions tab is
   // open, so months older than the last ~200 leads still total correctly.
   useEffect(() => {
@@ -1899,6 +1921,7 @@ export default function AdminPage() {
   async function updateLead(id: string, updates: Partial<Lead>) {
     // Optimistic UI update
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)))
+    setDispatchLeads((prev) => prev && prev.map((l) => (l.id === id ? { ...l, ...updates } : l)))
     try {
       // Map camelCase to snake_case if necessary for the API
       const payload = { 
@@ -1939,6 +1962,7 @@ export default function AdminPage() {
       })
       if (!res.ok) throw new Error('Failed to delete lead')
       setLeads((prev) => prev.filter((l) => l.id !== id))
+      setDispatchLeads((prev) => prev && prev.filter((l) => l.id !== id))
       return true
     } catch (e: any) {
       toast(e.message, 'error')
@@ -2491,6 +2515,31 @@ export default function AdminPage() {
   } else if (activeTab === 'hotel_bookings') {
     baseLeads = leads.filter((l) => l.status === 'hotel_b2b')
   }
+
+  // Dispatch board: every live reservation (incl. manual 'Manual (New)' and
+  // invoiced ones), one entry per leg so a round trip's return shows on its
+  // own day, sorted by date then pickup time. Prefers the fresher copy from
+  // the global list (optimistic edits land there first).
+  const DISPATCH_STATUSES = ['paid', 'deposit_paid', 'hotel_b2b', 'new', 'invoice_sent']
+  const DISPATCH_STATUS_COLOR: Record<string, string> = { paid: '#4ade80', deposit_paid: '#FBBF24', hotel_b2b: '#2dd4bf', new: '#c4b5fd', invoice_sent: '#60a5fa' }
+  type DispatchLeg = { lead: Lead; date: string; time: string | null | undefined; isReturn: boolean }
+  const dispatchLegs: DispatchLeg[] = (() => {
+    const byId = new Map<string, Lead>()
+    ;(dispatchLeads ?? []).forEach(l => byId.set(l.id, l))
+    leads.forEach(l => byId.set(l.id, l))
+    const legs: DispatchLeg[] = []
+    byId.forEach(l => {
+      if (!DISPATCH_STATUSES.includes(l.status || '')) return
+      if (l.date) legs.push({ lead: l, date: l.date, time: l.time, isReturn: false })
+      if (l.trip_type === 'round-trip' && l.return_date) legs.push({ lead: l, date: l.return_date, time: l.return_time, isReturn: true })
+    })
+    return legs.sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date)
+      const ta = timeStringToMinutes(a.time)
+      const tb = timeStringToMinutes(b.time)
+      return ta === tb ? 0 : ta < tb ? -1 : 1
+    })
+  })()
 
   const tripSortToday = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
   const filteredLeads = baseLeads
@@ -6195,6 +6244,15 @@ export default function AdminPage() {
               </div>
             </div>
 
+            <div className="flex flex-wrap gap-x-5 gap-y-1 -mb-5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              {(['paid', 'deposit_paid', 'new', 'invoice_sent', 'hotel_b2b'] as const).map(st => (
+                <span key={st} className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full" style={{ background: DISPATCH_STATUS_COLOR[st] }} />
+                  {st === 'hotel_b2b' ? 'Hotel B2B' : LEAD_STATUS_OPTIONS.find(x => x.value === st)?.label}
+                </span>
+              ))}
+            </div>
+
             {/* Month grid — mirrors what should be on Google Calendar, straight from the leads table */}
             <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
               <div className="grid grid-cols-7">
@@ -6205,14 +6263,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-7">
                 {getMonthGridDays(calendarMonth).map(({ date, dateStr, inMonth }) => {
                   const isToday = dateStr === new Date().toLocaleDateString('en-CA')
-                  const dayLeads = leads.filter(l =>
-                    (l.date === dateStr || (l.trip_type === 'round-trip' && l.return_date === dateStr)) &&
-                    (l.status === 'paid' || l.status === 'deposit_paid' || l.status === 'hotel_b2b')
-                  ).sort((a, b) =>
-                    timeStringToMinutes(a.date === dateStr ? a.time : a.return_time) -
-                    timeStringToMinutes(b.date === dateStr ? b.time : b.return_time)
-                  )
-                  const STATUS_DOT: Record<string, string> = { paid: '#4ade80', deposit_paid: '#FBBF24', hotel_b2b: '#2dd4bf' }
+                  const dayLegs = dispatchLegs.filter(g => g.date === dateStr)
                   return (
                     <div
                       key={dateStr}
@@ -6226,8 +6277,8 @@ export default function AdminPage() {
                         {date.getDate()}
                       </span>
                       <div className="flex flex-col gap-0.5">
-                        {dayLeads.slice(0, 3).map(l => {
-                          const isReturnLeg = l.date !== dateStr
+                        {dayLegs.slice(0, 3).map(({ lead: l, isReturn: isReturnLeg }) => {
+                          const dot = DISPATCH_STATUS_COLOR[l.status || '']
                           return (
                             <button
                               key={l.id + (isReturnLeg ? '-return' : '')}
@@ -6239,17 +6290,17 @@ export default function AdminPage() {
                                 (l.luggage_count ?? 0) > 0 ? `${l.luggage_count} bag(s)` : null,
                               ].filter(Boolean).join(' • ')}
                               className="text-left text-[10px] px-1.5 py-0.5 rounded truncate hover:brightness-125 transition-all"
-                              style={{ background: `${STATUS_DOT[l.status || '']}20`, color: STATUS_DOT[l.status || ''] || 'var(--text-dim)', borderLeft: `2px solid ${STATUS_DOT[l.status || '']}` }}
+                              style={{ background: `${dot}20`, color: dot || 'var(--text-dim)', borderLeft: `2px solid ${dot}`, opacity: l.trip_completed ? 0.5 : 1 }}
                             >
                               {isReturnLeg ? '↩ ' : ''}{(isReturnLeg ? l.return_time : l.time) || 'TBD'} {l.customer_name}
                             </button>
                           )
                         })}
-                        {dayLeads.length > 3 && (
+                        {dayLegs.length > 3 && (
                           <button
                             onClick={() => setViewingDay(dateStr)}
                             className="text-left text-[9px] text-[var(--text-faint)] px-1.5 hover:text-[var(--gold-light)] transition-colors"
-                          >+{dayLeads.length - 3} more</button>
+                          >+{dayLegs.length - 3} more</button>
                         )}
                       </div>
                     </div>
@@ -6265,28 +6316,26 @@ export default function AdminPage() {
                 tomorrowDate.setDate(tomorrowDate.getDate() + 1)
                 const tomorrowStr = tomorrowDate.toLocaleDateString('en-CA')
                 
-                let groupLeads = leads.filter(l => l.status === 'deposit_paid' || l.status === 'paid' || l.status === 'new')
-                if (dayGroup === 'Today') {
-                  groupLeads = groupLeads.filter(l => l.date === todayStr)
-                } else if (dayGroup === 'Tomorrow') {
-                  groupLeads = groupLeads.filter(l => l.date === tomorrowStr)
-                } else {
-                  groupLeads = groupLeads.filter(l => l.date !== todayStr && l.date !== tomorrowStr)
-                }
-                
-                // Sort by time — a plain string compare puts "9:00 PM" before
-                // "10:00 AM" (lexicographic '9' > '1'), so parse to minutes first.
-                groupLeads.sort((a, b) => timeStringToMinutes(a.time) - timeStringToMinutes(b.time))
+                // dispatchLegs is already in date + pickup-time order; Upcoming
+                // is strictly after tomorrow (past days live on the calendar).
+                const groupLegs = dispatchLegs.filter(g =>
+                  dayGroup === 'Today' ? g.date === todayStr
+                  : dayGroup === 'Tomorrow' ? g.date === tomorrowStr
+                  : g.date > tomorrowStr
+                )
 
-                if (groupLeads.length === 0) return null
+                if (groupLegs.length === 0) return null
 
-                const pendingLeads = groupLeads.filter(l => !l.trip_completed)
-                const completedLeads = groupLeads.filter(l => l.trip_completed)
+                const pendingLeads = groupLegs.filter(g => !g.lead.trip_completed)
+                const completedLeads = groupLegs.filter(g => g.lead.trip_completed)
 
-                const renderTripRow = (lead: Lead) => {
+                const renderTripRow = ({ lead, date: legDate, time: legTime, isReturn }: DispatchLeg) => {
                   const driver = drivers.find(d => d.id === lead.assigned_driver_id)
+                  const legFrom = isReturn ? lead.destination : lead.pickup
+                  const legTo = isReturn ? (lead.return_destination || lead.pickup) : lead.destination
+                  const statusLabel = LEAD_STATUS_OPTIONS.find(o => o.value === lead.status)?.label || (lead.status === 'hotel_b2b' ? 'Hotel B2B' : lead.status)
                   return (
-                    <div key={lead.id} className="p-4 rounded-lg flex items-center justify-between gap-3" style={{ background: 'var(--surface)', opacity: lead.trip_completed ? 0.55 : 1 }}>
+                    <div key={lead.id + (isReturn ? '-return' : '')} className="p-4 rounded-lg flex items-center justify-between gap-3" style={{ background: 'var(--surface)', opacity: lead.trip_completed ? 0.55 : 1 }}>
                       <div className="flex items-center gap-4 min-w-0">
                         <button
                           type="button"
@@ -6298,13 +6347,16 @@ export default function AdminPage() {
                           {lead.trip_completed && <Check size={14} strokeWidth={3} color="var(--bg-deep)" />}
                         </button>
                         <div className="w-16 h-16 bg-[var(--bg-deep)] rounded flex flex-col items-center justify-center border border-[var(--border-soft)] shrink-0">
-                          <span className="text-xs text-[var(--text-muted)] uppercase">{formatDateUS(lead.date || '')}</span>
-                          <span className="text-sm font-bold text-white">{lead.time}</span>
+                          <span className="text-xs text-[var(--text-muted)] uppercase">{formatDateUS(legDate)}</span>
+                          <span className="text-sm font-bold text-white">{legTime || 'TBD'}</span>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-white font-bold truncate" style={lead.trip_completed ? { textDecoration: 'line-through' } : undefined}>{lead.pickup} <span className="text-[var(--text-faint)] font-normal mx-1">→</span> {lead.destination}</p>
-                          <p className="text-xs text-[var(--text-muted)] mt-1">{lead.customer_name} • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}</p>
-                        </div>
+                        <button type="button" onClick={() => setViewingLead(lead)} className="min-w-0 text-left">
+                          <p className="text-white font-bold truncate" style={lead.trip_completed ? { textDecoration: 'line-through' } : undefined}>{isReturn ? '↩ ' : ''}{legFrom} <span className="text-[var(--text-faint)] font-normal mx-1">→</span> {legTo}</p>
+                          <p className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-2 flex-wrap">
+                            <span>{lead.customer_name} • {VEHICLE_LABELS[lead.vehicle_type] || lead.vehicle_type}{lead.booking_source === 'manual' && lead.created_by ? ` • ${lead.created_by}` : ''}</span>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider" style={{ color: DISPATCH_STATUS_COLOR[lead.status || ''], background: `${DISPATCH_STATUS_COLOR[lead.status || '']}1f` }}>{statusLabel}</span>
+                          </p>
+                        </button>
                       </div>
                       <div className="text-right shrink-0">
                         {driver ? (
@@ -6325,7 +6377,7 @@ export default function AdminPage() {
                 return (
                   <section key={dayGroup} className="rounded-xl p-6" style={{ background: 'var(--bg)', border: '1px solid var(--surface)' }}>
                     <h3 className="text-sm font-bold uppercase tracking-wider mb-5 text-[var(--text-muted)]">
-                      {dayGroup}{completedLeads.length > 0 && <span className="normal-case font-normal text-[var(--text-faint)]"> — {completedLeads.length}/{groupLeads.length} done</span>}
+                      {dayGroup} <span className="normal-case font-normal text-[var(--text-faint)]">— {groupLegs.length} trip{groupLegs.length === 1 ? '' : 's'}{completedLeads.length > 0 && `, ${completedLeads.length} done`}</span>
                     </h3>
                     <div className="flex flex-col gap-3">
                       {pendingLeads.map(renderTripRow)}
@@ -6340,7 +6392,7 @@ export default function AdminPage() {
                 )
               })}
               
-              {leads.filter(l => l.status === 'deposit_paid' || l.status === 'paid' || l.status === 'new').length === 0 && (
+              {!dispatchLegs.some(g => g.date >= new Date().toLocaleDateString('en-CA')) && (
                  <div className="p-10 text-center rounded-2xl" style={{ border: '1px dashed var(--border-soft)' }}>
                  <p className="text-[var(--text-muted)]">No active trips to dispatch.</p>
                </div>
@@ -6466,14 +6518,8 @@ export default function AdminPage() {
 
       {/* DAY RESERVATIONS MODAL — opened from the "+N more" link on a crowded calendar day */}
             {viewingDay && (() => {
-              const dayLeads = leads.filter(l =>
-                (l.date === viewingDay || (l.trip_type === 'round-trip' && l.return_date === viewingDay)) &&
-                (l.status === 'paid' || l.status === 'deposit_paid' || l.status === 'hotel_b2b')
-              ).sort((a, b) =>
-                timeStringToMinutes(a.date === viewingDay ? a.time : a.return_time) -
-                timeStringToMinutes(b.date === viewingDay ? b.time : b.return_time)
-              )
-              const STATUS_DOT: Record<string, string> = { paid: '#4ade80', deposit_paid: '#FBBF24', hotel_b2b: '#2dd4bf' }
+              const dayLegs = dispatchLegs.filter(g => g.date === viewingDay)
+              const STATUS_DOT = DISPATCH_STATUS_COLOR
               return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setViewingDay(null)}>
                   <div className="bg-[var(--bg)] border border-[var(--border-soft)] rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -6485,8 +6531,7 @@ export default function AdminPage() {
                       <button onClick={() => setViewingDay(null)} className="text-sm text-[var(--text-subtle)] hover:text-red-400 px-3 py-1 rounded-lg border border-[var(--border-soft)] hover:border-red-400 transition-all">x Close</button>
                     </div>
                     <div className="flex flex-col gap-2 p-4 overflow-y-auto">
-                      {dayLeads.map(l => {
-                        const isReturnLeg = l.date !== viewingDay
+                      {dayLegs.map(({ lead: l, isReturn: isReturnLeg }) => {
                         return (
                           <button
                             key={l.id + (isReturnLeg ? '-return' : '')}

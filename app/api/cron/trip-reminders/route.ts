@@ -7,11 +7,24 @@ import { VEHICLE_LABELS } from '@/lib/vehicles'
 
 export const dynamic = 'force-dynamic'
 
-// Wide enough that an hourly cron always catches a lead at least once
-// before it ages out of the window, narrow enough that "24 hours before"
-// stays true to what the guest is told.
-const REMINDER_WINDOW_MIN_HOURS = 23
+// Any live trip whose pickup is 25h away or less and hasn't been reminded
+// yet gets the email on the next hourly run. This used to be a 23–25h slot,
+// which silently skipped every trip booked (or paid / switched from
+// 'Manual (New)') less than 23h ahead — the guest never heard from us.
 const REMINDER_WINDOW_MAX_HOURS = 25
+// Reservations that are actually going ahead: paid web bookings plus manual
+// ones an agent entered (they stay 'new' / 'invoice_sent' until marked paid).
+const REMINDER_STATUSES = ['paid', 'deposit_paid', 'hotel_b2b', 'new', 'invoice_sent']
+
+// "Today" / "Tomorrow" / weekday, judged in Florida time.
+function pickupDayLabel(dateStr: string, now: Date): string {
+  const nyDay = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+  const today = nyDay(now)
+  const tomorrow = nyDay(new Date(now.getTime() + 24 * 60 * 60 * 1000))
+  if (dateStr === today) return 'Today'
+  if (dateStr === tomorrow) return 'Tomorrow'
+  return 'Coming Up'
+}
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -22,7 +35,7 @@ export async function GET(req: NextRequest) {
   const { data: candidates, error } = await supabaseAdmin
     .from('leads')
     .select('*')
-    .in('status', ['paid', 'deposit_paid', 'hotel_b2b'])
+    .in('status', REMINDER_STATUSES)
     .is('trip_reminder_sent_at', null)
     .not('customer_email', 'is', null)
 
@@ -36,7 +49,7 @@ export async function GET(req: NextRequest) {
     const pickupUTC = leadPickupToUTC(lead.date, lead.time)
     if (!pickupUTC) return false
     const hoursUntil = (pickupUTC.getTime() - now) / (1000 * 60 * 60)
-    return hoursUntil >= REMINDER_WINDOW_MIN_HOURS && hoursUntil <= REMINDER_WINDOW_MAX_HOURS
+    return hoursUntil > 0 && hoursUntil <= REMINDER_WINDOW_MAX_HOURS
   })
 
   const results: Array<{ id: string; status: string }> = []
@@ -48,7 +61,7 @@ export async function GET(req: NextRequest) {
         const { data, error: sendError } = await resend.emails.send({
           from: 'Express Lyft <book@explyft.com>',
           to: [lead.customer_email],
-          subject: 'Your Express Lyft Pickup Is Tomorrow — Instructions Inside',
+          subject: `Your Express Lyft Pickup Is ${pickupDayLabel(lead.date, new Date(now))} — Instructions Inside`,
           react: PickupReminderEmail({
             customerName: lead.customer_name || 'Valued Guest',
             pickup: lead.pickup || 'N/A',
@@ -65,6 +78,7 @@ export async function GET(req: NextRequest) {
             tripType: lead.trip_type,
             returnDate: lead.return_date,
             returnTime: lead.return_time,
+            dayLabel: pickupDayLabel(lead.date, new Date(now)),
           }),
         })
         if (sendError) throw new Error(sendError.message)

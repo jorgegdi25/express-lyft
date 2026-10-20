@@ -834,15 +834,25 @@ export async function GET(req: NextRequest) {
     // With ?from=&to= (ISO dates), return everything created in that window
     // instead — the Commissions / calendar views need a full month even when
     // it's older than the last 200 rows, otherwise past months read as $0.
+    // With ?trip_from=&trip_to= (YYYY-MM-DD), return every lead with a leg
+    // (outbound or return) inside that trip-date window — Dispatch needs every
+    // upcoming trip, no matter how long ago it was booked.
     const from = req.nextUrl.searchParams.get('from')
     const to = req.nextUrl.searchParams.get('to')
+    const tripFrom = req.nextUrl.searchParams.get('trip_from')
+    const tripTo = req.nextUrl.searchParams.get('trip_to')
+    const isoDay = /^\d{4}-\d{2}-\d{2}$/
 
     let query = supabaseAdmin
       .from('leads')
       .select('*')
       .order('created_at', { ascending: false })
 
-    if (from && to) {
+    if (tripFrom && tripTo && isoDay.test(tripFrom) && isoDay.test(tripTo)) {
+      query = query
+        .or(`and(date.gte.${tripFrom},date.lte.${tripTo}),and(return_date.gte.${tripFrom},return_date.lte.${tripTo})`)
+        .limit(5000)
+    } else if (from && to) {
       query = query.gte('created_at', from).lt('created_at', to).limit(5000)
     } else {
       query = query.limit(200)
