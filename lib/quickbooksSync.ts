@@ -99,6 +99,8 @@ async function fulfillPaidLead(leadData: any, amountPaid: number, taxAmount: num
           tripType: leadData.trip_type,
           returnDate: leadData.return_date,
           returnTime: leadData.return_time,
+          returnPickup: leadData.return_pickup,
+          returnDestination: leadData.return_destination,
         }),
       })
     } catch (emailErr) {

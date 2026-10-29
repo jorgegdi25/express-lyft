@@ -31,6 +31,9 @@ interface MapRouteSelectorProps {
   // Shown when an address field is focused while empty.
   popularPlaces?: { label: string; address: string }[];
   routeColor?: string;
+  // Address inputs + distance only, no map (the round-trip return leg —
+  // the outbound selector already shows the map).
+  noMap?: boolean;
 }
 
 interface Suggestion {
@@ -150,7 +153,7 @@ async function fetchRoute(origin: { lat: number; lng: number }, destination: { l
   return data.routes?.[0] || null;
 }
 
-export default function MapRouteSelector({ onRouteCalculated, initialPickup, initialDestination, preset, renderLayout, mapClassName, compact, pickupPlaceholder, destinationPlaceholder, inputClassName, inputStyle, labels, popularPlaces, routeColor = '#B8960C' }: MapRouteSelectorProps) {
+export default function MapRouteSelector({ onRouteCalculated, initialPickup, initialDestination, preset, renderLayout, mapClassName, compact, pickupPlaceholder, destinationPlaceholder, inputClassName, inputStyle, labels, popularPlaces, routeColor = '#B8960C', noMap }: MapRouteSelectorProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const mapRef = useRef<any>(null);
@@ -290,10 +293,16 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
     loadGoogleMaps()
       .then(async (google) => {
-        if (cancelled || !mapContainerRef.current) return;
+        if (cancelled || (!noMap && !mapContainerRef.current)) return;
 
         await google.maps.importLibrary('geometry');
         if (cancelled || googleMapsAuthFailed) { unavailable(); return; }
+
+        if (noMap) {
+          geocoderRef.current = new google.maps.Geocoder();
+          setIsLoaded(true);
+          return;
+        }
 
         const map = new google.maps.Map(mapContainerRef.current, {
           center: MIAMI_CENTER,
@@ -515,7 +524,9 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
 
         const path = google.maps.geometry.encoding.decodePath(route.polyline.encodedPolyline);
 
-        if (routePolylineRef.current) {
+        if (!mapRef.current) {
+          // noMap: nothing to draw.
+        } else if (routePolylineRef.current) {
           routePolylineRef.current.setPath(path);
         } else {
           routePolylineRef.current = new google.maps.Polyline({
@@ -527,10 +538,12 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
           });
         }
 
-        const bounds = new google.maps.LatLngBounds();
-        path.forEach((p: any) => bounds.extend(p));
-        lastBoundsRef.current = bounds;
-        mapRef.current.fitBounds(bounds, 50);
+        if (mapRef.current) {
+          const bounds = new google.maps.LatLngBounds();
+          path.forEach((p: any) => bounds.extend(p));
+          lastBoundsRef.current = bounds;
+          mapRef.current.fitBounds(bounds, 50);
+        }
 
         const distanceMiles = route.distanceMeters * 0.000621371;
         const durationSeconds = parseFloat(String(route.duration).replace('s', ''));
@@ -679,7 +692,12 @@ export default function MapRouteSelector({ onRouteCalculated, initialPickup, ini
         </div>
   );
 
-  const map = (
+  const map = noMap ? (
+    <>
+      {mapError && <p className="text-sm text-red-400 p-3" role="status">{mapError}</p>}
+      {routeError && <p className="text-sm text-red-400 p-3" role="status">{routeError}</p>}
+    </>
+  ) : (
     <>
       <div
         ref={mapContainerRef}

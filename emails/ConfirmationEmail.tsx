@@ -38,6 +38,9 @@ interface ConfirmationEmailProps {
   tripType?: string | null;
   returnDate?: string | null;
   returnTime?: string | null;
+  // Return leg's own route — defaults to the outbound reversed when empty.
+  returnPickup?: string | null;
+  returnDestination?: string | null;
 }
 
 export const ConfirmationEmail = ({
@@ -65,6 +68,8 @@ export const ConfirmationEmail = ({
   tripType,
   returnDate,
   returnTime,
+  returnPickup,
+  returnDestination,
 }: ConfirmationEmailProps) => (
   <Html>
     <Head />
@@ -109,6 +114,11 @@ export const ConfirmationEmail = ({
           {tripType === 'round-trip' && returnDate && returnTime && (
             <Text style={detailItem}>
               <strong>Scheduled (Drop off):</strong> {returnDate} at {returnTime}
+            </Text>
+          )}
+          {tripType === 'round-trip' && (!serviceType || serviceType === 'transport') && (
+            <Text style={detailItem}>
+              <strong>Return Trip:</strong> {returnPickup || destination} → {returnDestination || pickup}
             </Text>
           )}
           {airline && flightNumber && (

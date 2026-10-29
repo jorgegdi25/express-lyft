@@ -198,6 +198,8 @@ export async function POST(req: NextRequest) {
             tripType: updatedLead.trip_type,
             returnDate: updatedLead.return_date,
             returnTime: updatedLead.return_time,
+            returnPickup: updatedLead.return_pickup,
+            returnDestination: updatedLead.return_destination,
           }),
         })
         console.log(`[confirm-payment] Email sent for lead ${lead_id}`)

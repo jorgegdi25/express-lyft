@@ -112,6 +112,12 @@ export default function SuccessPage({ params }: { params: { slug: string } }) {
                 <p className="text-[#888888] text-xs mb-1">Route</p>
                 <p className="text-white font-medium">{lead.pickup} → {lead.destination}</p>
               </div>
+              {lead.trip_type === 'round-trip' && (
+                <div className="col-span-2">
+                  <p className="text-[#888888] text-xs mb-1">Return Route</p>
+                  <p className="text-white font-medium">{lead.return_pickup || lead.destination} → {lead.return_destination || lead.pickup}</p>
+                </div>
+              )}
               <div>
                 <p className="text-[#888888] text-xs mb-1">Pick up Date</p>
                 <p className="text-white font-medium">{lead.date} at {lead.time}</p>

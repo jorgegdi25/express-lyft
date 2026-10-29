@@ -31,6 +31,9 @@ interface PickupReminderEmailProps {
   tripType?: string | null;
   returnDate?: string | null;
   returnTime?: string | null;
+  // Return leg's own route — defaults to the outbound reversed when empty.
+  returnPickup?: string | null;
+  returnDestination?: string | null;
   dayLabel?: string;
 }
 
@@ -86,6 +89,8 @@ export const PickupReminderEmail = ({
   tripType,
   returnDate,
   returnTime,
+  returnPickup,
+  returnDestination,
   dayLabel,
 }: PickupReminderEmailProps) => {
   const instructions = PICKUP_INSTRUCTIONS[detectPickupType(pickup)];
@@ -122,7 +127,7 @@ export const PickupReminderEmail = ({
             </Text>
             {tripType === 'round-trip' && returnDate && returnTime && (
               <Text style={detailItem}>
-                <strong>Return:</strong> {returnDate} at {returnTime}
+                <strong>Return:</strong> {returnDate} at {returnTime} — {returnPickup || destination} to {returnDestination || pickup}
               </Text>
             )}
             <Text style={detailItem}>{vehicleLabel}</Text>

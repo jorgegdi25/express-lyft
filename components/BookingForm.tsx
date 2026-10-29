@@ -11,6 +11,8 @@ import { applyTimeSurcharge, SurchargeConfig, TIME_SLOTS } from '@/lib/pricing'
 import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { CalendarDatePicker } from '@/components/CalendarPicker'
 import { isQuoteOnly } from '@/lib/vehicles'
+import { findPauseFor, PAUSED_SLOT_MESSAGE } from '@/lib/bookingPauses'
+import { useBookingPauses } from '@/lib/useBookingPauses'
 
 interface RoutePrice {
   id: string
@@ -126,6 +128,9 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   // entirely (e.g. cruise port → airport, not port → hotel). Empty means
   // "same as the outbound pickup", the old assumed behavior.
   const [returnDestination, setReturnDestination] = useState<string>('')
+  // Return leg's own pickup — empty means "where the outbound dropped off".
+  // Guests often fly/sail back from a different airport or port.
+  const [returnPickup, setReturnPickup] = useState<string>('')
   const [passengers, setPassengers] = useState<number>(2)
   const [customerName, setCustomerName] = useState<string>('')
   const [customerEmail, setCustomerEmail] = useState<string>('')
@@ -224,6 +229,13 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
   const availableTimeSlotsList = useMemo(() => getAvailableTimeSlots(date), [date])
   const availableReturnTimeSlotsList = useMemo(() => getAvailableTimeSlots(returnDate), [returnDate])
+
+  // Staff-created booking pauses (CRM → Availability): paused pickup times
+  // are greyed out, and a selection that lands in one (e.g. the date changed
+  // after picking a time) swaps "Next" for call/WhatsApp, like same-day rides.
+  const bookingPauses = useBookingPauses('transport')
+  const isPausedSlot = (d: string, t: string) => !!findPauseFor(bookingPauses, 'transport', d, t)
+  const isPausedSelection = isPausedSlot(date, time) || (tripType === 'round-trip' && isPausedSlot(returnDate, returnTime))
 
   const isUrgentRequest = useMemo(() => {
     if (!date || !time) return false;
@@ -399,7 +411,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
   // do) cost different amounts. Each leg's own pickup time gets its own
   // time-of-day surcharge.
   const returnBasePrice = tripType === 'round-trip'
-    ? Math.ceil(applyTimeSurcharge(getPricesForRoute(d, returnDestination.trim() || p)[vehicleType], returnTime, surcharge))
+    ? Math.ceil(applyTimeSurcharge(getPricesForRoute(returnPickup.trim() || d, returnDestination.trim() || p)[vehicleType], returnTime, surcharge))
     : 0
   const total = (tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice) + meetGreetFee
   // Discount codes never apply to deposits — the deposit is always 20% of
@@ -451,7 +463,9 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
 
   const availableDestinations = LOCATIONS.filter((l) => l !== pickup)
   const availablePickups = LOCATIONS.filter((l) => l !== destination)
-  const availableReturnDestinations = LOCATIONS.filter((l) => l !== destination && l !== pickup)
+  const effectiveReturnPickup = returnPickup || destination
+  const availableReturnPickups = LOCATIONS.filter((l) => l !== destination)
+  const availableReturnDestinations = LOCATIONS.filter((l) => l !== effectiveReturnPickup && l !== pickup)
 
   // Auto-correct invalid states if the user selects the same location for both
   useEffect(() => {
@@ -523,6 +537,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
           tripType,
           returnDate: tripType === 'round-trip' ? returnDate : undefined,
           returnTime: tripType === 'round-trip' ? returnTime : undefined,
+          returnPickup: tripType === 'round-trip' ? (returnPickup.trim() || destination) : undefined,
           returnDestination: tripType === 'round-trip' ? (returnDestination.trim() || pickup) : undefined,
           airline,
           flightNumber,
@@ -895,8 +910,8 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                       >
                         <option value="">Select time</option>
                         {availableTimeSlotsList.map((t) => (
-                          <option key={t} value={t}>
-                            {t}
+                          <option key={t} value={t} disabled={isPausedSlot(date, t)}>
+                            {t}{isPausedSlot(date, t) ? ' — unavailable' : ''}
                           </option>
                         ))}
                       </select>
@@ -906,7 +921,25 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                   {/* Round Trip fields */}
                   {tripType === 'round-trip' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <div className="sm:col-span-2">
+                      <div>
+                        <label className={LABEL_CLASS} style={LABEL_COLOR}>
+                          Return Pickup
+                        </label>
+                        <select
+                          value={returnPickup || destination}
+                          onChange={(e) => setReturnPickup(e.target.value)}
+                          className={`${INPUT_CLASS} min-h-[50px] text-base`}
+                          style={INPUT_STYLE}
+                        >
+                          {destination ? <option value={destination}>{destination} (same as drop-off)</option> : <option value="">Same as drop-off</option>}
+                          {availableReturnPickups.map((loc) => (
+                            <option key={loc} value={loc}>
+                              {loc}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
                         <label className={LABEL_CLASS} style={LABEL_COLOR}>
                           Return Destination
                         </label>
@@ -916,7 +949,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                           className={`${INPUT_CLASS} min-h-[50px] text-base`}
                           style={INPUT_STYLE}
                         >
-                          {pickup && <option value={pickup}>{pickup} (same as pickup)</option>}
+                          {pickup ? <option value={pickup}>{pickup} (same as pickup)</option> : <option value="">Same as pickup</option>}
                           {availableReturnDestinations.map((loc) => (
                             <option key={loc} value={loc}>
                               {loc}
@@ -924,7 +957,7 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                           ))}
                         </select>
                         <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                          Where the return trip drops you off — doesn't have to be where you started.
+                          Coming back from a different port or airport? Change it here.
                         </p>
                       </div>
                       <div>
@@ -952,8 +985,8 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         >
                           <option value="">Select time</option>
                           {availableReturnTimeSlotsList.map((t) => (
-                            <option key={t} value={t}>
-                              {t}
+                            <option key={t} value={t} disabled={isPausedSlot(returnDate, t)}>
+                              {t}{isPausedSlot(returnDate, t) ? ' — unavailable' : ''}
                             </option>
                           ))}
                         </select>
@@ -1169,21 +1202,21 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                     Sedan: Max 4 bags. Suburban: Max 6 bags. Sprinter: Max 14. Minibus: Max 30. Coach: Max 60. Complimentary car seats available.
                   </p>
 
-                  {error && !isUrgentRequest && (
+                  {error && !isUrgentRequest && !isPausedSelection && (
                     <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
                       <p className="text-sm font-medium" style={{ color: '#f87171' }}>{error}</p>
                     </div>
                   )}
 
-                  {isUrgentRequest && (
+                  {(isUrgentRequest || isPausedSelection) && (
                     <div className="rounded-xl px-4 py-3 mb-2" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
                       <p className="text-sm font-medium" style={{ color: '#f87171' }}>
-                        For same-day bookings, the pickup time must be at least 2 hours in advance. Please call us to request an urgent ride.
+                        {isPausedSelection ? PAUSED_SLOT_MESSAGE : 'For same-day bookings, the pickup time must be at least 2 hours in advance. Please call us to request an urgent ride.'}
                       </p>
                     </div>
                   )}
 
-                  {isUrgentRequest ? (
+                  {(isUrgentRequest || isPausedSelection) ? (
                     <div className="flex flex-col gap-3 mt-2">
                       <a
                         href="tel:+18889737896"
@@ -1297,6 +1330,12 @@ export default function BookingForm({ hotelSlug, prices: serverPrices, routePric
                         <div>
                           <p className="text-[var(--gold)] text-xs mb-1 uppercase tracking-widest font-bold">Drop off Date</p>
                           <p className="text-white font-medium">{returnDate} at {returnTime}</p>
+                        </div>
+                      )}
+                      {tripType === 'round-trip' && (
+                        <div>
+                          <p className="text-[var(--gold)] text-xs mb-1 uppercase tracking-widest font-bold">Return Pickup</p>
+                          <p className="text-white font-medium truncate" title={returnPickup || destination}>{returnPickup || destination}</p>
                         </div>
                       )}
                       {tripType === 'round-trip' && (

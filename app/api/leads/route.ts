@@ -10,6 +10,7 @@ import { jetskiPackagePrice, jetskiMachineCount, JETSKI_TRANSPORT_PRICES, JETSKI
 import { resend, sendOwnerNotification } from '@/lib/resend'
 import { ConfirmationEmail } from '@/emails/ConfirmationEmail'
 import { isQuoteOnly } from '@/lib/vehicles'
+import { findPauseFor, normalizePauseTimestamp, PAUSED_SLOT_MESSAGE, BookingPause } from '@/lib/bookingPauses'
 
 // A manually-paid reservation (Payment Source: External Platform/Cash at
 // creation, or a status dropdown flipped to Paid afterward) never touches
@@ -48,6 +49,8 @@ async function sendManualPaidConfirmation(lead: any, amountPaid: number) {
           tripType: lead.trip_type,
           returnDate: lead.return_date,
           returnTime: lead.return_time,
+          returnPickup: lead.return_pickup,
+          returnDestination: lead.return_destination,
         }),
       })
     }
@@ -76,6 +79,23 @@ async function jetskiSlotHasRoom(date: string, time: string, machinesRequested: 
     0
   )
   return machinesBooked + machinesRequested <= JETSKI_MAX_MACHINES_PER_SLOT
+}
+
+// Staff-created pause covering this pickup time, if any (see
+// lib/bookingPauses.ts). Only checked for public bookings — the CRM's
+// manual entries are never blocked. A DB error fails open so a hiccup
+// never takes the booking forms down.
+async function findBookingPause(service: 'transport' | 'jet_ski', date: string, time: string): Promise<BookingPause | null> {
+  if (!date || !time) return null
+  const { data, error } = await supabaseAdmin
+    .from('booking_pauses')
+    .select('id, service_type, start_at, end_at')
+    .in('service_type', [service, 'all'])
+    .lte('start_at', `${date}T23:59:59`)
+    .gt('end_at', `${date}T00:00:00`)
+  if (error || !data) return null
+  const pauses = data.map(p => ({ ...p, start_at: normalizePauseTimestamp(p.start_at), end_at: normalizePauseTimestamp(p.end_at) }))
+  return findPauseFor(pauses as BookingPause[], service, date, time)
 }
 
 export const dynamic = 'force-dynamic'
@@ -170,7 +190,15 @@ async function calculateLegPrice(
   return Math.ceil(applyTimeSurcharge(basePrice, legTime, surcharge))
 }
 
-async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number, durationMinutes: number, time: string, returnTime?: string, returnDestination?: string) {
+// "A to B", plus the return leg's real route for round trips — used in the
+// Stripe/QuickBooks line item so the invoice shows both legs as booked.
+function tripRouteLabel(lead: { pickup?: string | null; destination?: string | null; trip_type?: string | null; return_pickup?: string | null; return_destination?: string | null }) {
+  const outbound = `${lead.pickup} to ${lead.destination}`
+  if (lead.trip_type !== 'round-trip') return outbound
+  return `${outbound} + return ${lead.return_pickup || lead.destination} to ${lead.return_destination || lead.pickup}`
+}
+
+async function calculatePrice(hotelSlug: string, pickup: string, destination: string, vehicleType: string, tripType: string, distanceMiles: number, durationMinutes: number, time: string, returnTime?: string, returnDestination?: string, returnPickup?: string, returnDistanceMiles?: number, returnDurationMinutes?: number) {
   const pickupTrim = pickup.trim()
   const destinationTrim = destination.trim()
   const surcharge = await getSurchargeConfig()
@@ -185,12 +213,17 @@ async function calculatePrice(hotelSlug: string, pickup: string, destination: st
   // doubling the outbound price — hotel->airport and airport->hotel can (and often
   // do) cost different amounts. Each leg's own pickup time decides its own
   // time-of-day surcharge (e.g. daytime outbound, night-time return). The
-  // return leg doesn't have to go back to the original pickup — a guest who
-  // came from the hotel often returns to the airport instead, not the hotel
-  // (see returnDestination) — so it defaults to the outbound pickup only
-  // when the caller doesn't specify one.
+  // return leg is its own route: it can start somewhere other than the
+  // outbound drop-off (guest sails into Port A, flies out of FLL) and end
+  // somewhere other than the outbound pickup — each side defaults to the
+  // outbound reversed only when the caller doesn't specify it. Its distance
+  // (mileage tiers on the main site) is its own too, falling back to the
+  // outbound distance for forms that don't measure the return leg.
+  const returnPickupTrim = (returnPickup || destinationTrim).trim()
   const returnDestinationTrim = (returnDestination || pickupTrim).trim()
-  const returnPrice = await calculateLegPrice(hotelSlug, destinationTrim, returnDestinationTrim, vehicleType, distanceMiles, durationMinutes, returnTime || time, surcharge)
+  const returnMiles = returnDistanceMiles && returnDistanceMiles > 0 ? returnDistanceMiles : distanceMiles
+  const returnMinutes = returnDistanceMiles && returnDistanceMiles > 0 ? (returnDurationMinutes || 0) : durationMinutes
+  const returnPrice = await calculateLegPrice(hotelSlug, returnPickupTrim, returnDestinationTrim, vehicleType, returnMiles, returnMinutes, returnTime || time, surcharge)
   return outboundPrice + returnPrice
 }
 
@@ -227,7 +260,7 @@ export async function POST(req: NextRequest) {
             price_data: {
               currency: 'usd',
               product_data: {
-                name: `Express Lyft Remaining Balance: ${lead.pickup} to ${lead.destination}`,
+                name: `Express Lyft Remaining Balance: ${tripRouteLabel(lead)}`,
                 description: `${lead.date} at ${lead.time} | ${lead.vehicle_type} | ${lead.passengers} passengers`,
               },
               unit_amount: Math.round(lead.amount_remaining * 100),
@@ -284,7 +317,7 @@ export async function POST(req: NextRequest) {
                     description: `${lead.date} at ${lead.time} | ${lead.passengers} passengers`,
                   }
                 : {
-                    name: `Express Lyft Reservation: ${lead.pickup} to ${lead.destination}`,
+                    name: `Express Lyft Reservation: ${tripRouteLabel(lead)}`,
                     description: `${lead.date} at ${lead.time} | ${lead.vehicle_type} | ${lead.passengers} passengers`,
                   },
               unit_amount: Math.round(lead.amount_usd * 100),
@@ -323,6 +356,9 @@ export async function POST(req: NextRequest) {
       returnDate,
       returnTime,
       returnDestination,
+      returnPickup,
+      returnDistanceMiles,
+      returnDurationMinutes,
       estimatedTotal,
       amountUsd,
       tripType,
@@ -395,6 +431,17 @@ export async function POST(req: NextRequest) {
     if (isPublicJetski && jetskiSlotSortKey(date, time) < nyNowPlusMinutes(JETSKI_MIN_NOTICE_MINUTES)) {
       return NextResponse.json({ error: `Online bookings need at least ${JETSKI_MIN_NOTICE_MINUTES / 60} hours' notice — please call or WhatsApp us for a sooner slot.` }, { status: 400 })
     }
+    if (!isAdmin) {
+      const pauseService = isPublicJetski ? 'jet_ski' : 'transport'
+      const pausedOutbound = await findBookingPause(pauseService, date, time)
+      const pausedReturn = !pausedOutbound && !isPublicJetski && tripType === 'round-trip'
+        ? await findBookingPause(pauseService, returnDate, returnTime)
+        : null
+      if (pausedOutbound || pausedReturn) {
+        const which = pausedReturn ? `return time (${returnDate} ${returnTime})` : `pickup time (${date} ${time})`
+        return NextResponse.json({ error: `${PAUSED_SLOT_MESSAGE} The ${which} is unavailable online.`, paused: true }, { status: 409 })
+      }
+    }
 
     // Determine target price
     const inputTotal = estimatedTotal !== undefined ? estimatedTotal : amountUsd
@@ -446,7 +493,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'That time slot is fully booked online — please call or WhatsApp us to check availability.' }, { status: 409 })
       }
     } else if (!isAdmin) {
-      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0, durationMinutes || 0, time || '', returnTime, returnDestination)
+      const calculatedBaseAmount = await calculatePrice(hotelSlug, pickup || '', destination || '', vehicleType || '', tripType || '', distanceMiles || 0, durationMinutes || 0, time || '', returnTime, returnDestination, returnPickup, returnDistanceMiles, returnDurationMinutes)
       let expectedFee = 0;
       if (meetingType === 'meet_greet') {
         expectedFee = 25;
@@ -514,6 +561,7 @@ export async function POST(req: NextRequest) {
       time,
       return_date: returnDate,
       return_time: returnTime,
+      return_pickup: tripType === 'round-trip' ? (returnPickup || destination || null) : null,
       return_destination: tripType === 'round-trip' ? (returnDestination || pickup || null) : null,
       amount_usd: finalAmount,
       trip_type: tripType,
@@ -610,8 +658,8 @@ export async function POST(req: NextRequest) {
     const productName = isPublicJetski
       ? `Express Lyft Jet Ski Rental: ${watercraftPackage}`
       : isDeposit
-        ? `Express Lyft Deposit (20%): ${pickup} to ${destination}`
-        : `Express Lyft Reservation: ${pickup} to ${destination}`
+        ? `Express Lyft Deposit (20%): ${tripRouteLabel(data)}`
+        : `Express Lyft Reservation: ${tripRouteLabel(data)}`
     const productDesc = isPublicJetski
       ? `${jetskiServiceDetail} — ${date} at ${time}`
       : isDeposit
@@ -709,6 +757,7 @@ export async function PUT(req: NextRequest) {
       passengers, date, time, 
       returnDate, returnTime, return_date, return_time,
       returnDestination, return_destination,
+      returnPickup, return_pickup,
       amountUsd, tripType, assigned_driver_id,
       airline, flightNumber, flight_number,
       meetingType, meeting_type, meetGreetFee, meet_greet_fee,
@@ -747,7 +796,8 @@ export async function PUT(req: NextRequest) {
     if (time !== undefined) updates.time = time
     if (returnDate !== undefined || return_date !== undefined) updates.return_date = returnDate || return_date
     if (returnTime !== undefined || return_time !== undefined) updates.return_time = returnTime || return_time
-    if (returnDestination !== undefined || return_destination !== undefined) updates.return_destination = returnDestination || return_destination
+    if (returnDestination !== undefined || return_destination !== undefined) updates.return_destination = returnDestination || return_destination || null
+    if (returnPickup !== undefined || return_pickup !== undefined) updates.return_pickup = returnPickup || return_pickup || null
     if (amountUsd !== undefined) updates.amount_usd = amountUsd
     if (tripType !== undefined) updates.trip_type = tripType
     if (assigned_driver_id !== undefined) updates.assigned_driver_id = assigned_driver_id

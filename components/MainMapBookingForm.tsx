@@ -12,6 +12,8 @@ import { FLEET } from '@/lib/site/fleet'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 import { isQuoteOnly } from '@/lib/vehicles'
+import { findPauseFor, PAUSED_SLOT_MESSAGE } from '@/lib/bookingPauses'
+import { useBookingPauses } from '@/lib/useBookingPauses'
 
 const MapRouteSelector = dynamic(() => import('./MapRouteSelector'), { ssr: false })
 
@@ -182,6 +184,14 @@ export default function MainMapBookingForm({
   const [time, setTime] = useState<string>('')
   const [returnDate, setReturnDate] = useState<string>('')
   const [returnTime, setReturnTime] = useState<string>('')
+  // Round trip: the return leg is its own route (guests often fly or sail
+  // back from a different airport/port), with its own distance and price.
+  // Prefilled with the outbound reversed until the guest changes it.
+  const [returnPickup, setReturnPickup] = useState<string>('')
+  const [returnDestination, setReturnDestination] = useState<string>('')
+  const [returnDistanceMiles, setReturnDistanceMiles] = useState(0)
+  const [returnDurationMinutes, setReturnDurationMinutes] = useState(0)
+  const [returnPreset, setReturnPreset] = useState<{ pickup: string; destination: string; nonce: number } | undefined>(undefined)
   const [passengers, setPassengers] = useState<number>(initial?.passengers || 2)
   const [customerName, setCustomerName] = useState<string>('')
   const [customerEmail, setCustomerEmail] = useState<string>('')
@@ -241,6 +251,13 @@ export default function MainMapBookingForm({
   const availableTimeSlotsList = useMemo(() => getAvailableTimeSlots(date), [date])
   const availableReturnTimeSlotsList = useMemo(() => getAvailableTimeSlots(returnDate), [returnDate])
 
+  // Staff-created booking pauses (CRM → Availability): paused pickup times
+  // are greyed out, and a selection that lands in one (e.g. the date changed
+  // after picking a time) swaps "Next" for call/WhatsApp, like same-day rides.
+  const bookingPauses = useBookingPauses('transport')
+  const isPausedSlot = (d: string, t: string) => !!findPauseFor(bookingPauses, 'transport', d, t)
+  const isPausedSelection = isPausedSlot(date, time) || (tripType === 'round-trip' && isPausedSlot(returnDate, returnTime))
+
   const isUrgentRequest = useMemo(() => {
     if (!date || !time) return false;
     
@@ -290,6 +307,10 @@ export default function MainMapBookingForm({
     }
     if (tripType === 'round-trip' && (!returnDate || !returnTime)) {
       setError('Please select a return date and time.')
+      return
+    }
+    if (tripType === 'round-trip' && (!returnPickup || !returnDestination || !(returnDistanceMiles > 0))) {
+      setError('Please set the return pickup and drop-off and wait for the route to calculate.')
       return
     }
 
@@ -383,10 +404,10 @@ export default function MainMapBookingForm({
   const minVehicleType = getVehicleType(passengers)
   const vehicleType = selectedVehicleOverride || minVehicleType
 
-  const getRoutePrices = () => {
+  const getRoutePrices = (miles: number, minutes: number) => {
     const calculateTypePrice = (priceData: VehicleRateParams | undefined) => {
       if (!priceData) return 0;
-      return calculateDistanceAmount(priceData, distanceMiles, durationMinutes);
+      return calculateDistanceAmount(priceData, miles, minutes);
     };
 
     return {
@@ -398,7 +419,7 @@ export default function MainMapBookingForm({
     };
   }
 
-  const currentPrices = getRoutePrices()
+  const currentPrices = getRoutePrices(distanceMiles, durationMinutes)
   // Vehicle-selection step must show the same per-vehicle price the
   // checkout total will actually charge — currentPrices alone is missing
   // the time-of-day surcharge, which made the total jump between steps for
@@ -413,11 +434,12 @@ export default function MainMapBookingForm({
   const basePrice = Math.ceil(applyTimeSurcharge(currentPrices[vehicleType], time, surcharge))
   const meetGreetFee = meetingType === 'meet_greet' ? 25 : 0
   // Round trip: price each direction independently and add them up, instead of
-  // doubling the outbound price — mirrors the fix already applied to the hotel
-  // booking form. Distance is symmetric either direction, but each leg's own
-  // pickup time gets its own time-of-day surcharge.
-  const returnBasePrice = tripType === 'round-trip'
-    ? Math.ceil(applyTimeSurcharge(currentPrices[vehicleType], returnTime, surcharge))
+  // doubling the outbound price. The return leg has its own route (it may
+  // start at a different port/airport), so its own distance sets its mileage
+  // tier, and its own pickup time gets its own time-of-day surcharge.
+  const returnPrices = getRoutePrices(returnDistanceMiles, returnDurationMinutes)
+  const returnBasePrice = tripType === 'round-trip' && returnDistanceMiles > 0
+    ? Math.ceil(applyTimeSurcharge(returnPrices[vehicleType], returnTime, surcharge))
     : 0
   const total = (tripType === 'round-trip' ? basePrice + returnBasePrice : basePrice) + meetGreetFee
   const depositAmount = Math.ceil(total * 0.20)
@@ -463,6 +485,11 @@ export default function MainMapBookingForm({
       setError('Please select a return date and time.')
       return
     }
+    if (tripType === 'round-trip' && (!returnPickup || !returnDestination || !(returnDistanceMiles > 0))) {
+      setError('Please set the return pickup and drop-off and wait for the route to calculate.')
+      setStep(1)
+      return
+    }
     if (!customerName.trim() || !customerEmail.trim() || !customerPhone) {
       setError('Please provide your full contact information, including phone and country.')
       return
@@ -505,6 +532,10 @@ export default function MainMapBookingForm({
           tripType,
           returnDate: tripType === 'round-trip' ? returnDate : undefined,
           returnTime: tripType === 'round-trip' ? returnTime : undefined,
+          returnPickup: tripType === 'round-trip' ? returnPickup : undefined,
+          returnDestination: tripType === 'round-trip' ? returnDestination : undefined,
+          returnDistanceMiles: tripType === 'round-trip' ? returnDistanceMiles : undefined,
+          returnDurationMinutes: tripType === 'round-trip' ? returnDurationMinutes : undefined,
           airline,
           flightNumber,
           meetingType,
@@ -545,6 +576,10 @@ export default function MainMapBookingForm({
     setTime('')
     setReturnDate('')
     setReturnTime('')
+    setReturnPickup('')
+    setReturnDestination('')
+    setReturnDistanceMiles(0)
+    setReturnDurationMinutes(0)
     setPassengers(2)
     setCustomerName('')
     setCustomerEmail('')
@@ -561,6 +596,45 @@ export default function MainMapBookingForm({
     setStep(1)
     setIsSuccess(false)
   }
+
+  // Keep the return leg = outbound reversed until the guest edits it: once
+  // the outbound route resolves, refill the return fields only if they're
+  // empty or still hold the previous auto-filled reversal.
+  const lastAutoReturnRef = React.useRef<{ pickup: string; destination: string } | null>(null)
+  useEffect(() => {
+    if (!(distanceMiles > 0) || !pickup || !destination) return
+    const last = lastAutoReturnRef.current
+    const untouched = (!returnPickup && !returnDestination) ||
+      (!!last && returnPickup === last.pickup && returnDestination === last.destination)
+    if (!untouched) return
+    if (last && last.pickup === destination && last.destination === pickup) return
+    lastAutoReturnRef.current = { pickup: destination, destination: pickup }
+    setReturnPreset({ pickup: destination, destination: pickup, nonce: Date.now() })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickup, destination, distanceMiles])
+
+  const renderReturnRouteSelector = (renderLayout?: (parts: { pickupInput: React.ReactNode; dropoffInput: React.ReactNode; map: React.ReactNode }) => React.ReactNode, inputClassName?: string) => (
+    <ErrorBoundary>
+      <MapRouteSelector
+        noMap
+        compact
+        preset={returnPreset}
+        popularPlaces={POPULAR_PLACES}
+        labels={{ pickup: 'Return pickup', destination: 'Return drop-off' }}
+        pickupPlaceholder="Airport, port or address"
+        destinationPlaceholder="Where to after?"
+        inputClassName={inputClassName}
+        inputStyle={inputClassName ? {} : undefined}
+        renderLayout={renderLayout}
+        onRouteCalculated={(route) => {
+          setReturnPickup(route.pickup)
+          setReturnDestination(route.destination)
+          setReturnDistanceMiles(route.distanceMiles)
+          setReturnDurationMinutes(route.durationMinutes)
+        }}
+      />
+    </ErrorBoundary>
+  )
 
   const FIELD_LABEL = 'block text-[10px] font-semibold uppercase tracking-[0.18em] mb-1'
   const isAirportPickup = /airport|\bmia\b|\bfll\b/i.test(pickup)
@@ -649,7 +723,7 @@ export default function MainMapBookingForm({
                   <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Time</label>
                   <select value={time} onChange={(e) => setTime(e.target.value)} className={`${CELL_INPUT} !text-[14px] appearance-none cursor-pointer`} aria-label="Pickup time">
                     <option value="">Select</option>
-                    {availableTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
+                    {availableTimeSlotsList.map((t) => <option key={t} value={t} disabled={isPausedSlot(date, t)}>{t}{isPausedSlot(date, t) ? ' — unavailable' : ''}</option>)}
                   </select>
                 </div>
                 <div className="relative col-span-2 sm:col-span-1 px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center border-t sm:border-t-0 border-[var(--border-faint)]">
@@ -670,6 +744,20 @@ export default function MainMapBookingForm({
                 </div>
               </div>
 
+              {tripType === 'round-trip' && renderReturnRouteSelector(({ pickupInput, dropoffInput, map }) => (
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-[21px] top-[31px] bottom-[31px] w-px border-l border-dashed" style={{ borderColor: 'rgba(233,213,166,0.45)' }} aria-hidden />
+                  <div className={`${ROW} ${labelOverride}`}>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2" style={{ borderColor: 'var(--gold-light)' }} aria-hidden />
+                    {pickupInput}
+                  </div>
+                  <div className={`${ROW} ${labelOverride} border-t border-[var(--border-faint)]`}>
+                    <svg className="absolute left-[14px] top-1/2 -translate-y-1/2" width="16" height="16" viewBox="0 0 24 24" fill="var(--gold-light)" aria-hidden><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" /></svg>
+                    {dropoffInput}
+                  </div>
+                  {map}
+                </div>
+              ), CELL_INPUT)}
               {tripType === 'round-trip' && (
                 <div className="grid grid-cols-2 divide-x divide-[var(--border-faint)]">
                   <div className="px-3.5 py-2.5 min-h-[58px] flex flex-col justify-center">
@@ -680,7 +768,7 @@ export default function MainMapBookingForm({
                     <label className={ROW_LABEL} style={{ color: 'var(--gold-light)' }}>Return time</label>
                     <select value={returnTime} onChange={(e) => setReturnTime(e.target.value)} className={`${CELL_INPUT} !text-[14px] appearance-none cursor-pointer`} aria-label="Return time">
                       <option value="">Select</option>
-                      {availableReturnTimeSlotsList.map((t) => <option key={t} value={t}>{t}</option>)}
+                      {availableReturnTimeSlotsList.map((t) => <option key={t} value={t} disabled={isPausedSlot(returnDate, t)}>{t}{isPausedSlot(returnDate, t) ? ' — unavailable' : ''}</option>)}
                     </select>
                   </div>
                 </div>
@@ -688,13 +776,18 @@ export default function MainMapBookingForm({
             </div>
 
             <div className="flex flex-col gap-3 lg:col-start-1">
-            {(error && !isUrgentRequest) && <p className="text-sm" style={{ color: 'var(--error-text, #f87171)' }}>{error}</p>}
-            {isUrgentRequest ? (
+            {(error && !isUrgentRequest && !isPausedSelection) && <p className="text-sm" style={{ color: 'var(--error-text, #f87171)' }}>{error}</p>}
+            {(isUrgentRequest || isPausedSelection) ? (
               <>
-                <p className="text-sm" style={{ color: 'var(--error-text, #f87171)' }}>Same-day rides need at least 2 hours’ notice online — call us and we’ll arrange it.</p>
+                <p className="text-sm" style={{ color: 'var(--error-text, #f87171)' }}>{isPausedSelection ? PAUSED_SLOT_MESSAGE : 'Same-day rides need at least 2 hours’ notice online — call us and we’ll arrange it.'}</p>
                 <a href="tel:+18889737896" className="h-[52px] rounded-xl text-[15px] font-semibold flex items-center justify-center" style={{ background: 'var(--brand-gold-gradient)', color: '#0b0b0b' }}>
                   Call +1 (888) 973-7896
                 </a>
+                {isPausedSelection && (
+                  <a href="https://wa.me/19546236207" target="_blank" rel="noopener noreferrer" className="text-center text-[13px] font-semibold text-[#25D366] hover:underline">
+                    Or message us on WhatsApp
+                  </a>
+                )}
               </>
             ) : (
               <button
@@ -730,7 +823,7 @@ export default function MainMapBookingForm({
             {pickup} <span style={{ color: 'var(--gold-light)' }}>→</span> {destination}
           </p>
           <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {date} · {time}{tripType === 'round-trip' ? ` · return ${returnDate} ${returnTime}` : ''} · {passengers} {passengers === 1 ? 'guest' : 'guests'} · {luggageCount} {luggageCount === 1 ? 'bag' : 'bags'}{durationMinutes > 0 ? ` · about ${Math.round(durationMinutes)} min` : ''}
+            {date} · {time}{tripType === 'round-trip' ? ` · return ${returnDate} ${returnTime}: ${returnPickup} → ${returnDestination}` : ''} · {passengers} {passengers === 1 ? 'guest' : 'guests'} · {luggageCount} {luggageCount === 1 ? 'bag' : 'bags'}{durationMinutes > 0 ? ` · about ${Math.round(durationMinutes)} min` : ''}
           </p>
         </div>
         <button type="button" onClick={handlePrevStep} className="self-start md:self-auto shrink-0 text-[13px] font-semibold underline underline-offset-4" style={{ color: 'var(--gold-light)' }}>
@@ -775,8 +868,8 @@ export default function MainMapBookingForm({
                       <p className="text-[14px] font-semibold text-[var(--text)]">Quote</p>
                     ) : (
                       <>
-                        <p className="text-[18px] font-semibold text-[var(--text)]">${withTax(surchargedPrices[f.type])}</p>
-                        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{tripType === 'round-trip' ? 'each way' : 'total'}</p>
+                        <p className="text-[18px] font-semibold text-[var(--text)]">${withTax(surchargedPrices[f.type] + (tripType === 'round-trip' ? Math.ceil(applyTimeSurcharge(returnPrices[f.type], returnTime, surcharge)) : 0))}</p>
+                        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{tripType === 'round-trip' ? 'round trip' : 'total'}</p>
                       </>
                     )}
                   </div>
@@ -1081,8 +1174,8 @@ export default function MainMapBookingForm({
                       >
                         <option value="">Select time</option>
                         {availableTimeSlotsList.map((t) => (
-                          <option key={t} value={t}>
-                            {t}
+                          <option key={t} value={t} disabled={isPausedSlot(date, t)}>
+                            {t}{isPausedSlot(date, t) ? ' — unavailable' : ''}
                           </option>
                         ))}
                       </select>
@@ -1090,6 +1183,14 @@ export default function MainMapBookingForm({
                   </div>
 
                   {/* Round Trip fields */}
+                  {tripType === 'round-trip' && (
+                    <div>
+                      {renderReturnRouteSelector()}
+                      <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                        Coming back from a different port or airport? Change the return trip here.
+                      </p>
+                    </div>
+                  )}
                   {tripType === 'round-trip' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div>
@@ -1117,8 +1218,8 @@ export default function MainMapBookingForm({
                         >
                           <option value="">Select time</option>
                           {availableReturnTimeSlotsList.map((t) => (
-                            <option key={t} value={t}>
-                              {t}
+                            <option key={t} value={t} disabled={isPausedSlot(returnDate, t)}>
+                              {t}{isPausedSlot(returnDate, t) ? ' — unavailable' : ''}
                             </option>
                           ))}
                         </select>
@@ -1334,21 +1435,21 @@ export default function MainMapBookingForm({
                     Sedan: Max 4 bags. Suburban: Max 6 bags. Sprinter: Max 14. Minibus: Max 30. Coach: Max 60. Complimentary car seats available.
                   </p>
 
-                  {error && !isUrgentRequest && (
+                  {error && !isUrgentRequest && !isPausedSelection && (
                     <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
                       <p className="text-sm font-medium" style={{ color: 'var(--error-text, #f87171)' }}>{error}</p>
                     </div>
                   )}
 
-                  {isUrgentRequest && (
+                  {(isUrgentRequest || isPausedSelection) && (
                     <div className="rounded-xl px-4 py-3 mb-2" style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
                       <p className="text-sm font-medium" style={{ color: 'var(--error-text, #f87171)' }}>
-                        For same-day bookings, the pickup time must be at least 2 hours in advance. Please call us to request an urgent ride.
+                        {isPausedSelection ? PAUSED_SLOT_MESSAGE : 'For same-day bookings, the pickup time must be at least 2 hours in advance. Please call us to request an urgent ride.'}
                       </p>
                     </div>
                   )}
 
-                  {isUrgentRequest ? (
+                  {(isUrgentRequest || isPausedSelection) ? (
                     <div className="flex flex-col gap-3 mt-2">
                       <a
                         href="tel:+18889737896"
@@ -1464,6 +1565,12 @@ export default function MainMapBookingForm({
                         <div>
                           <p className="text-[var(--gold)] text-xs mb-1 uppercase tracking-widest font-bold">Drop off Date</p>
                           <p className="text-[var(--text)] font-medium">{returnDate} at {returnTime}</p>
+                        </div>
+                      )}
+                      {tripType === 'round-trip' && (
+                        <div className="md:col-span-2">
+                          <p className="text-[var(--gold)] text-xs mb-1 uppercase tracking-widest font-bold">Return Trip</p>
+                          <p className="text-[var(--text)] font-medium truncate" title={`${returnPickup} → ${returnDestination}`}>{returnPickup} → {returnDestination}</p>
                         </div>
                       )}
                       <div>

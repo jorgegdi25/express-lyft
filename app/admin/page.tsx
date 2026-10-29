@@ -8,6 +8,7 @@ import { FL_TAX_RATE_PERCENT } from '@/lib/tax'
 import { formatDateUS, getMonthGridDays, timeStringToMinutes, normalizeTimeString, ADMIN_TIME_SLOTS } from '@/lib/dateUtils'
 import { VEHICLE_LABELS, isQuoteOnly } from '@/lib/vehicles'
 import MileTierEditor from '@/components/admin/MileTierEditor'
+import BookingPausesPanel from '@/components/admin/BookingPausesPanel'
 import { CalendarDatePicker, CalendarRangeFilter } from '@/components/CalendarPicker'
 import { useToast } from '@/components/ui/Toast'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
@@ -117,6 +118,7 @@ interface Lead {
   time?: string
   return_date?: string
   return_time?: string
+  return_pickup?: string | null
   return_destination?: string | null
   trip_completed?: boolean
   amount_usd?: number
@@ -178,7 +180,7 @@ interface Review {
 }
 
 
-type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'commissions' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites' | 'reviews' | 'stay' | 'discounts'
+type TabKey = 'dashboard' | 'bookings' | 'drivers' | 'dispatch' | 'availability' | 'leads' | 'quotes' | 'hotel_bookings' | 'clients' | 'revenue' | 'commissions' | 'reports' | 'routes' | 'qr' | 'settings' | 'support' | 'websites' | 'reviews' | 'stay' | 'discounts'
 
 type SidebarItem = { key: TabKey; label: string; icon: React.ReactNode; getBadge?: () => number }
 
@@ -315,6 +317,15 @@ function IconDrivers() {
       <polyline points="14 2 14 8 20 8" />
       <circle cx="12" cy="13" r="2" />
       <path d="M8 21v-2a4 4 0 0 1 8 0v2" />
+    </svg>
+  )
+}
+function IconPause() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <line x1="10" y1="9" x2="10" y2="15" />
+      <line x1="14" y1="9" x2="14" y2="15" />
     </svg>
   )
 }
@@ -591,6 +602,9 @@ export default function AdminPage() {
     // dropped at the port doesn't necessarily come back to the hotel, often
     // it's the airport instead, so this lets staff pick a different one.
     returnDestination: '',
+    // Same idea for where the return leg starts — empty = the outbound
+    // destination. Guests often come back through a different port/airport.
+    returnPickup: '',
     amountUsd: 0,
     tripType: 'one-way' as 'one-way' | 'round-trip',
     airline: '',
@@ -745,16 +759,16 @@ export default function AdminPage() {
   }, [routePrices, newLead.hotelSlug])
 
   // Every distinct location known for this hotel — used to let staff pick a
-  // return destination other than the outbound pickup (e.g. Port → Airport
-  // instead of Port → Hotel).
-  const returnDestinationOptions = useMemo(() => {
+  // return leg other than the outbound reversed (e.g. Port B → Hotel after
+  // Hotel → Port A, or Port → Airport instead of Port → Hotel).
+  const returnLocationOptions = useMemo(() => {
     const hotelRoutes = routePrices.filter((r) => !newLead.hotelSlug || r.hotel_slug === newLead.hotelSlug)
     const locations = new Set<string>()
     for (const r of hotelRoutes) { locations.add(r.pickup); locations.add(r.destination) }
-    locations.delete(newLead.destination)
-    locations.delete(newLead.pickup)
     return Array.from(locations)
-  }, [routePrices, newLead.hotelSlug, newLead.destination, newLead.pickup])
+  }, [routePrices, newLead.hotelSlug])
+  const returnPickupOptions = returnLocationOptions.filter((l) => l !== newLead.destination)
+  const returnDestinationOptions = returnLocationOptions.filter((l) => l !== newLead.pickup && l !== (newLead.returnPickup || newLead.destination))
 
   interface PricingSettings {
     surcharge_type: 'fixed' | 'percentage';
@@ -797,14 +811,15 @@ export default function AdminPage() {
     const outbound = Math.ceil(applyTimeSurcharge(outboundBase, newLead.time, pricingSettings))
     let total = outbound
     if (newLead.tripType === 'round-trip') {
+      const returnPickup = newLead.returnPickup || newLead.destination
       const returnDestination = newLead.returnDestination || newLead.pickup
-      const returnBase = lookupRoutePrice(newLead.destination, returnDestination, newLead.vehicleType, newLead.hotelSlug) ?? outboundBase
+      const returnBase = lookupRoutePrice(returnPickup, returnDestination, newLead.vehicleType, newLead.hotelSlug) ?? outboundBase
       const returnLeg = Math.ceil(applyTimeSurcharge(returnBase, newLead.returnTime || newLead.time, pricingSettings))
       total = outbound + returnLeg
     }
     setNewLead((prev) => (prev.routeMode === 'preset' ? { ...prev, amountUsd: total } : prev))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newLead.routeMode, newLead.pickup, newLead.destination, newLead.vehicleType, newLead.tripType, newLead.hotelSlug, newLead.time, newLead.returnTime, newLead.returnDestination, routePrices, pricingSettings])
+  }, [newLead.routeMode, newLead.pickup, newLead.destination, newLead.vehicleType, newLead.tripType, newLead.hotelSlug, newLead.time, newLead.returnTime, newLead.returnDestination, newLead.returnPickup, routePrices, pricingSettings])
 
   // Revenue computations
   const revenueStats = useMemo(() => {
@@ -1885,6 +1900,7 @@ export default function AdminPage() {
         ...newLead,
         pickup: newLead.serviceType === 'transport' ? newLead.pickup.trim() : '',
         destination: newLead.serviceType === 'transport' ? newLead.destination.trim() : '',
+        returnPickup: newLead.tripType === 'round-trip' ? (newLead.returnPickup || newLead.destination).trim() : '',
         returnDestination: newLead.tripType === 'round-trip' ? (newLead.returnDestination || newLead.pickup).trim() : '',
         serviceDetail,
         status: resolvedStatus,
@@ -2394,6 +2410,7 @@ export default function AdminPage() {
       items: [
         { key: 'bookings', label: 'Reservations', icon: <IconBookings /> },
         { key: 'dispatch', label: 'Dispatch', icon: <IconDispatch /> },
+        { key: 'availability', label: 'Availability / Pauses', icon: <IconPause /> },
         { key: 'drivers', label: 'Drivers', icon: <IconDrivers /> },
       ] as SidebarItem[]
     },
@@ -4638,17 +4655,43 @@ export default function AdminPage() {
                     </div>
                     {newLead.tripType === 'round-trip' && (
                       <>
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Destination</label>
-                          <select
-                            value={newLead.returnDestination || newLead.pickup}
-                            onChange={(e) => setNewLead({ ...newLead, returnDestination: e.target.value })}
-                            className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors"
-                          >
-                            {newLead.pickup && <option value={newLead.pickup}>{newLead.pickup} (same as pickup)</option>}
-                            {returnDestinationOptions.map((loc) => (<option key={loc} value={loc}>{loc}</option>))}
-                          </select>
-                        </div>
+                        {newLead.routeMode === 'preset' ? (
+                          <>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Pickup</label>
+                              <select
+                                value={newLead.returnPickup || newLead.destination}
+                                onChange={(e) => setNewLead({ ...newLead, returnPickup: e.target.value })}
+                                className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors"
+                              >
+                                {newLead.destination && <option value={newLead.destination}>{newLead.destination} (same as drop-off)</option>}
+                                {returnPickupOptions.map((loc) => (<option key={loc} value={loc}>{loc}</option>))}
+                              </select>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Destination</label>
+                              <select
+                                value={newLead.returnDestination || newLead.pickup}
+                                onChange={(e) => setNewLead({ ...newLead, returnDestination: e.target.value })}
+                                className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors"
+                              >
+                                {newLead.pickup && <option value={newLead.pickup}>{newLead.pickup} (same as pickup)</option>}
+                                {returnDestinationOptions.map((loc) => (<option key={loc} value={loc}>{loc}</option>))}
+                              </select>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Pickup</label>
+                              <input type="text" placeholder={newLead.destination || 'Same as drop-off'} value={newLead.returnPickup} onChange={(e) => setNewLead({ ...newLead, returnPickup: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Destination</label>
+                              <input type="text" placeholder={newLead.pickup || 'Same as pickup'} value={newLead.returnDestination} onChange={(e) => setNewLead({ ...newLead, returnDestination: e.target.value })} className="w-full text-sm rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] px-4 py-3 text-white outline-none focus:border-[var(--gold)] transition-colors" />
+                            </div>
+                          </>
+                        )}
                         <div className="flex flex-col gap-1.5">
                           <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Date *</label>
                           <CalendarDatePicker
@@ -4983,6 +5026,11 @@ export default function AdminPage() {
                           </select>
                         </div>
                         <div className="flex flex-col gap-2">
+                          <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Pickup</label>
+                          <input type="text" placeholder={editingLead.destination || 'Same as drop-off'} value={editingLead.return_pickup || ''} onChange={(e) => setEditingLead({...editingLead, return_pickup: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
+                          <p className="text-xs text-[var(--text-faint)]">Blank = same as drop-off ({editingLead.destination || '—'}).</p>
+                        </div>
+                        <div className="flex flex-col gap-2">
                           <label className="text-sm font-semibold text-[var(--text-subtle)]">Return Destination</label>
                           <input type="text" placeholder={editingLead.pickup || 'Same as pickup'} value={editingLead.return_destination || ''} onChange={(e) => setEditingLead({...editingLead, return_destination: e.target.value})} className="rounded-xl px-5 py-4 text-base text-white outline-none bg-[var(--bg-deep)] border border-[var(--border)] focus:border-[var(--gold)] transition-colors" />
                           <p className="text-xs text-[var(--text-faint)]">Blank = same as pickup ({editingLead.pickup || '—'}).</p>
@@ -5105,6 +5153,7 @@ export default function AdminPage() {
                           time: editingLead.time ? normalizeTimeString(editingLead.time) : editingLead.time,
                           return_date: editingLead.return_date,
                           return_time: editingLead.return_time ? normalizeTimeString(editingLead.return_time) : editingLead.return_time,
+                          return_pickup: editingLead.return_pickup || null,
                           return_destination: editingLead.return_destination || null,
                           airline: editingLead.airline,
                           flight_number: editingLead.flight_number,
@@ -5188,8 +5237,8 @@ export default function AdminPage() {
                     {l.trip_type === 'round-trip' && l.return_date && (
                       <span style={{ color: 'var(--gold)' }}>Return {formatDateUS(l.return_date)} · {l.return_time || '—'}</span>
                     )}
-                    {l.trip_type === 'round-trip' && l.return_destination && (
-                      <span style={{ color: 'var(--gold)' }}>Drops off: {l.return_destination}</span>
+                    {l.trip_type === 'round-trip' && (l.return_pickup || l.return_destination) && (
+                      <span style={{ color: 'var(--gold)' }}>Return: {l.return_pickup || l.destination} → {l.return_destination || l.pickup}</span>
                     )}
                     {(!l.service_type || l.service_type === 'transport') && (
                       <span>{l.passengers || 1} PAX · <span className="font-bold" style={{ color: 'var(--gold-light)' }}>{VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}</span></span>
@@ -6323,7 +6372,7 @@ export default function AdminPage() {
                               key={l.id + (isReturnLeg ? '-return' : '')}
                               onClick={() => setViewingLead(l)}
                               title={[
-                                `${l.customer_name} • ${isReturnLeg ? `${l.destination} → ${l.return_destination || l.pickup}` : `${l.pickup} → ${l.destination}`}`,
+                                `${l.customer_name} • ${isReturnLeg ? `${l.return_pickup || l.destination} → ${l.return_destination || l.pickup}` : `${l.pickup} → ${l.destination}`}`,
                                 (l.airline || l.flight_number) ? `Flight: ${[l.airline, l.flight_number].filter(Boolean).join(' ')}` : null,
                                 (l.car_seats_requested ?? 0) > 0 ? `${l.car_seats_requested} car seat(s)` : null,
                                 (l.luggage_count ?? 0) > 0 ? `${l.luggage_count} bag(s)` : null,
@@ -6370,7 +6419,7 @@ export default function AdminPage() {
 
                 const renderTripRow = ({ lead, date: legDate, time: legTime, isReturn }: DispatchLeg) => {
                   const driver = drivers.find(d => d.id === lead.assigned_driver_id)
-                  const legFrom = isReturn ? lead.destination : lead.pickup
+                  const legFrom = isReturn ? (lead.return_pickup || lead.destination) : lead.pickup
                   const legTo = isReturn ? (lead.return_destination || lead.pickup) : lead.destination
                   const statusLabel = LEAD_STATUS_OPTIONS.find(o => o.value === lead.status)?.label || (lead.status === 'hotel_b2b' ? 'Hotel B2B' : lead.status)
                   return (
@@ -6506,6 +6555,10 @@ export default function AdminPage() {
           </div>
         )}
 
+        {activeTab === 'availability' && (
+          <BookingPausesPanel password={password} notify={toast} confirm={confirmDialog} />
+        )}
+
         {/* ------- QR CODES TAB ------- */}
         {activeTab === 'qr' && (
           <div className="flex flex-col gap-8">
@@ -6581,7 +6634,7 @@ export default function AdminPage() {
                             <p className="text-sm font-bold text-white truncate" style={l.trip_completed ? { textDecoration: 'line-through' } : undefined}>
                               {l.trip_completed ? '✓ ' : isReturnLeg ? '↩ ' : ''}{(isReturnLeg ? l.return_time : l.time) || 'TBD'} — {l.customer_name}
                             </p>
-                            <p className="text-xs text-[var(--text-muted)] truncate">{isReturnLeg ? `${l.destination} → ${l.return_destination || l.pickup}` : `${l.pickup} → ${l.destination}`}</p>
+                            <p className="text-xs text-[var(--text-muted)] truncate">{isReturnLeg ? `${l.return_pickup || l.destination} → ${l.return_destination || l.pickup}` : `${l.pickup} → ${l.destination}`}</p>
                             {(l.airline || l.flight_number || (l.car_seats_requested ?? 0) > 0 || (l.luggage_count ?? 0) > 0) && (
                               <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-[var(--gold)]">
                                 {(l.airline || l.flight_number) && (
@@ -6675,6 +6728,12 @@ export default function AdminPage() {
                           <div>
                             <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Drop off Date & Time</p>
                             <p className="text-sm text-white font-medium">{formatDateUS(viewingLead.return_date)} at {viewingLead.return_time}</p>
+                          </div>
+                        )}
+                        {viewingLead.trip_type === 'round-trip' && (
+                          <div>
+                            <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-bold mb-1">Return Pickup</p>
+                            <p className="text-sm text-white font-medium">{viewingLead.return_pickup || viewingLead.destination}</p>
                           </div>
                         )}
                         {viewingLead.trip_type === 'round-trip' && (

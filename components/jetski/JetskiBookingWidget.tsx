@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 import { jetskiSlotSortKey, nyNowPlusMinutes, JETSKI_MIN_NOTICE_MINUTES } from '@/lib/jetskiPricing'
+import { findPauseFor } from '@/lib/bookingPauses'
+import { useBookingPauses } from '@/lib/useBookingPauses'
 
 // From the client's real price sheet. Boats/yacht charters are on the same
 // sheet but out of scope here unless the client asks to expand beyond jet
@@ -67,16 +69,21 @@ export default function JetskiBookingWidget({ timeSlots, meetingAddress }: { tim
   const availableTimeSlots = timeSlots.filter(
     slot => jetskiSlotSortKey(date, slot) >= nyNowPlusMinutes(JETSKI_MIN_NOTICE_MINUTES)
   )
+  // Staff-created pauses (CRM → Availability) grey out those slots; the
+  // server rejects them too, this is just so guests don't hit that error.
+  const bookingPauses = useBookingPauses('jet_ski')
+  const isPausedSlot = (slot: string) => !!findPauseFor(bookingPauses, 'jet_ski', date, slot)
+  const bookableTimeSlots = availableTimeSlots.filter(slot => !isPausedSlot(slot))
   const [timeSlot, setTimeSlot] = useState(() => availableTimeSlots[0])
   useEffect(() => {
-    if (!timeSlot || !availableTimeSlots.includes(timeSlot)) {
-      setTimeSlot(availableTimeSlots[0])
+    if (!timeSlot || !bookableTimeSlots.includes(timeSlot)) {
+      setTimeSlot(bookableTimeSlots[0])
     }
-    // Only re-sync when the date (and therefore the eligible slot list)
-    // changes — not on every render, or picking a slot near the cutoff
-    // could get silently reset out from under the user.
+    // Only re-sync when the date (and therefore the eligible slot list) or
+    // the pauses change — not on every render, or picking a slot near the
+    // cutoff could get silently reset out from under the user.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date])
+  }, [date, bookingPauses])
 
   const [jetskiType, setJetskiType] = useState<JetskiType>('single')
   const availableDurations = DURATIONS.filter(d => RENTAL_PRICING[jetskiType][d.value] !== undefined)
@@ -104,7 +111,7 @@ export default function JetskiBookingWidget({ timeSlots, meetingAddress }: { tim
   const total = rentalCost + transportCost
 
   const courseRequired = bornAfterCutoff === 'yes'
-  const canSubmit = Boolean(timeSlot && name.trim() && email.trim() && phone && bornAfterCutoff && (!courseRequired || courseAck))
+  const canSubmit = Boolean(timeSlot && !isPausedSlot(timeSlot) && name.trim() && email.trim() && phone && bornAfterCutoff && (!courseRequired || courseAck))
 
   const jetskiTypeLabel = JETSKI_TYPES.find(t => t.value === jetskiType)!.label
   const durationLabel = DURATIONS.find(d => d.value === duration)!.label
@@ -179,25 +186,39 @@ export default function JetskiBookingWidget({ timeSlots, meetingAddress }: { tim
           <label className={LABEL_CLASS} style={LABEL_COLOR}>Time Slot</label>
           {availableTimeSlots.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {availableTimeSlots.map(slot => (
-                <button
-                  key={slot}
-                  type="button"
-                  onClick={() => setTimeSlot(slot)}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-                  style={
-                    timeSlot === slot
-                      ? { background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }
-                      : { background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc' }
-                  }
-                >
-                  {slot}
-                </button>
-              ))}
+              {availableTimeSlots.map(slot => {
+                const paused = isPausedSlot(slot)
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    disabled={paused}
+                    title={paused ? 'Unavailable online — call or WhatsApp us' : undefined}
+                    onClick={() => setTimeSlot(slot)}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:cursor-not-allowed"
+                    style={
+                      paused
+                        ? { background: '#141414', border: '1px dashed #2a2a2a', color: '#555', textDecoration: 'line-through' }
+                        : timeSlot === slot
+                          ? { background: 'linear-gradient(135deg, #B8960C, #D4AF37)', color: '#0a0a0a' }
+                          : { background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc' }
+                    }
+                  >
+                    {slot}
+                  </button>
+                )
+              })}
             </div>
           ) : (
             <p className="text-sm" style={{ color: '#D4AF37' }}>
               No slots left today with {JETSKI_MIN_NOTICE_MINUTES / 60} hours&apos; notice — pick another date, or call/WhatsApp us for a sooner slot.
+            </p>
+          )}
+          {bookableTimeSlots.length < availableTimeSlots.length && (
+            <p className="text-xs mt-2" style={{ color: '#D4AF37' }}>
+              Crossed-out times are unavailable online.{' '}
+              <a href="tel:+19546236207" className="underline">Call</a> or{' '}
+              <a href="https://wa.me/19546236207" target="_blank" rel="noopener noreferrer" className="underline">WhatsApp</a> us and we&apos;ll do our best to fit you in.
             </p>
           )}
           {availableTimeSlots.length > 0 && availableTimeSlots.length < timeSlots.length && (

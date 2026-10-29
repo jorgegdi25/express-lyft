@@ -215,6 +215,8 @@ export async function POST(req: NextRequest) {
               tripType: leadData.trip_type,
               returnDate: leadData.return_date,
               returnTime: leadData.return_time,
+              returnPickup: leadData.return_pickup,
+              returnDestination: leadData.return_destination,
             }),
           })
           console.log(`Confirmation email sent for lead ${leadId} (${isDeposit ? 'deposit' : 'full'})`)

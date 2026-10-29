@@ -84,6 +84,8 @@ export async function GET(req: NextRequest) {
             tripType: lead.trip_type,
             returnDate: lead.return_date,
             returnTime: lead.return_time,
+            returnPickup: lead.return_pickup,
+            returnDestination: lead.return_destination,
             dayLabel: pickupDayLabel(lead.date, new Date(now)),
           }),
         })
