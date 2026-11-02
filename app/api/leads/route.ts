@@ -880,7 +880,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Default: the 200 most recent leads (keeps the main CRM payload small).
+    // Default: every lead, newest first (capped at 5000).
     // With ?from=&to= (ISO dates), return everything created in that window
     // instead — the Commissions / calendar views need a full month even when
     // it's older than the last 200 rows, otherwise past months read as $0.
@@ -905,7 +905,9 @@ export async function GET(req: NextRequest) {
     } else if (from && to) {
       query = query.gte('created_at', from).lt('created_at', to).limit(5000)
     } else {
-      query = query.limit(200)
+      // Every lead: the Sales Pipeline is where drivers get assigned, so a
+      // guest who booked months ahead has to be there too.
+      query = query.limit(5000)
     }
 
     const { data, error } = await query

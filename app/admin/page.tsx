@@ -2181,6 +2181,64 @@ export default function AdminPage() {
     window.open(url, '_blank');
   };
 
+  // Everything the driver needs for the job in one WhatsApp message, so
+  // nobody has to call the office for the passenger count, flight, etc.
+  // Empty fields are left out.
+  const buildDriverMessage = (l: Lead, driverName: string) => {
+    const line = (label: string, value: unknown) =>
+      value === undefined || value === null || value === '' || value === 0 ? null : `${label}: ${value}`
+    const isWatercraft = l.service_type && l.service_type !== 'transport'
+    const lines: (string | null)[] = isWatercraft
+      ? [
+          `Hi ${driverName}, you have a new booking assigned:`,
+          '',
+          line('Guest', l.customer_name),
+          line('Guest phone', l.customer_phone),
+          line('Date', formatDateUS(l.date)),
+          line('Time', l.time),
+          line('Service', l.service_detail || l.service_type),
+          line('People', l.passengers),
+          line('Notes', l.notes),
+        ]
+      : [
+          `Hi ${driverName}, you have a new trip assigned:`,
+          '',
+          line('Passenger', l.customer_name),
+          line('Passenger phone', l.customer_phone),
+          line('Trip', l.trip_type === 'round-trip' ? 'Round trip' : 'One way'),
+          '',
+          '*Outbound*',
+          line('Date', formatDateUS(l.date)),
+          line('Time', l.time),
+          line('Pickup', l.pickup),
+          line('Dropoff', l.destination),
+          ...(l.trip_type === 'round-trip' && l.return_date
+            ? [
+                '',
+                '*Return*',
+                line('Date', formatDateUS(l.return_date)),
+                line('Time', l.return_time),
+                line('Pickup', l.return_pickup || l.destination),
+                line('Dropoff', l.return_destination || l.pickup),
+              ]
+            : []),
+          '',
+          line('Vehicle', VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type),
+          line('Passengers', l.passengers),
+          line('Luggage', l.luggage_count),
+          line('Car seats', l.car_seats_requested),
+          line('Pickup type', l.meeting_type === 'meet_greet' ? 'Meet & Greet (inside, with sign)' : l.meeting_type === 'curbside' ? 'Curbside' : null),
+          line('Flight', [l.airline, l.flight_number].filter(Boolean).join(' ')),
+          line('Wait time', l.wait_time_minutes ? `${l.wait_time_minutes} min` : null),
+          line('Notes', l.notes),
+        ]
+    return lines
+      .filter((s): s is string => s !== null)
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  };
+
   const [qrUrl, setQrUrl] = useState('')
 
   async function generateQR() {
@@ -5328,12 +5386,7 @@ export default function AdminPage() {
                             size="sm"
                             onClick={() => {
                               const driver = drivers.find(d => d.id === l.assigned_driver_id);
-                              if (driver) {
-                                const isWatercraft = l.service_type && l.service_type !== 'transport'
-                                openWhatsApp(driver.phone, isWatercraft
-                                  ? `Hi ${driver.name}, you have a new booking assigned:\n\nGuest: ${l.customer_name}\nDate: ${formatDateUS(l.date)}\nTime: ${l.time}\nService: ${l.service_detail || l.service_type}`
-                                  : `Hi ${driver.name}, you have a new trip assigned:\n\nPassenger: ${l.customer_name}\nDate: ${formatDateUS(l.date)}\nTime: ${l.time}\nPickup: ${l.pickup}\nDropoff: ${l.destination}\nVehicle: ${VEHICLE_LABELS[l.vehicle_type] ?? l.vehicle_type}`);
-                              }
+                              if (driver) openWhatsApp(driver.phone, buildDriverMessage(l, driver.name));
                             }}
                           >
                             Notify Driver
