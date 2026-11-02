@@ -32,6 +32,12 @@ function timeLabelTo24h(timeLabel: string): string | null {
   return `${String(hour).padStart(2, '0')}:${m[2]}`
 }
 
+// Standing overnight closure (2 nov 2026): no online pickups from midnight
+// until 6:30 AM, every day — 6:30 AM itself is open. Same [start, end) rule
+// as the staff pauses; the CRM's manual entries still aren't blocked.
+export const NIGHTLY_CLOSED_FROM = '00:00'
+export const NIGHTLY_CLOSED_UNTIL = '06:30'
+
 // The pause that covers this pickup (window is [start, end)), or null.
 export function findPauseFor(
   pauses: BookingPause[],
@@ -42,6 +48,15 @@ export function findPauseFor(
   if (!date || !timeLabel) return null
   const hhmm = timeLabelTo24h(timeLabel)
   if (!hhmm) return null
+  if (hhmm >= NIGHTLY_CLOSED_FROM && hhmm < NIGHTLY_CLOSED_UNTIL) {
+    return {
+      id: 'nightly',
+      service_type: 'all',
+      start_at: `${date} ${NIGHTLY_CLOSED_FROM}`,
+      end_at: `${date} ${NIGHTLY_CLOSED_UNTIL}`,
+      reason: 'Closed overnight',
+    }
+  }
   const key = `${date} ${hhmm}`
   return pauses.find(p =>
     (p.service_type === 'all' || p.service_type === service) &&

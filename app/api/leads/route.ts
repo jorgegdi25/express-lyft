@@ -93,8 +93,8 @@ async function findBookingPause(service: 'transport' | 'jet_ski', date: string, 
     .in('service_type', [service, 'all'])
     .lte('start_at', `${date}T23:59:59`)
     .gt('end_at', `${date}T00:00:00`)
-  if (error || !data) return null
-  const pauses = data.map(p => ({ ...p, start_at: normalizePauseTimestamp(p.start_at), end_at: normalizePauseTimestamp(p.end_at) }))
+  // On a DB error only the nightly closure still applies.
+  const pauses = (error || !data ? [] : data).map(p => ({ ...p, start_at: normalizePauseTimestamp(p.start_at), end_at: normalizePauseTimestamp(p.end_at) }))
   return findPauseFor(pauses as BookingPause[], service, date, time)
 }
 
