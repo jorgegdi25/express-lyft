@@ -40,7 +40,7 @@ export const SERVICES: Service[] = [
     useCases: [
       { title: 'Arriving in Miami', text: 'Land, collect your bags and head straight to your hotel, home or cruise terminal.' },
       { title: 'Catching a flight', text: 'Scheduled pickups from hotels, homes and offices so you reach the terminal on time.' },
-      { title: 'Traveling with family', text: 'Room for luggage and complimentary child seats when requested in advance.' },
+      { title: 'Traveling with family', text: 'Spacious vehicles with room for the whole family and all of your luggage.' },
     ],
     howWeHandle: [
       { title: 'Flight details on every booking', text: 'We ask for your airline and flight number on airport pickups so the ride is planned around your arrival.' },
@@ -49,7 +49,7 @@ export const SERVICES: Service[] = [
     ],
     vehicles: ['sedan_suv', 'suburban', 'sprinter', 'minibus', 'coachbus'],
     places: ['Miami International Airport (MIA)', 'Fort Lauderdale–Hollywood International (FLL)'],
-    faqIds: ['flight-delay', 'meet-driver', 'luggage', 'car-seats'],
+    faqIds: ['flight-delay', 'meet-driver', 'luggage', 'wheelchair'],
   },
   {
     slug: 'hotel-transfers',

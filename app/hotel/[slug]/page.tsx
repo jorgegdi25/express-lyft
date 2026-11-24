@@ -525,13 +525,13 @@ export default async function HotelPage({ params, searchParams }: PageProps) {
 
                     <details name="faq-accordion" className="group rounded-2xl border border-[#252525] bg-[#161616] overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
                       <summary className="flex items-center justify-between p-6 cursor-pointer select-none font-bold text-base md:text-lg text-white hover:text-[#D4AF37] list-none">
-                        <span>Do you provide car seats for children?</span>
+                        <span>Do you offer wheelchair accessible vehicles?</span>
                         <svg className="w-5 h-5 stroke-[#B8960C] transition-transform duration-300 group-open:rotate-180 shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                       </summary>
                       <div className="px-6 pb-6 text-sm md:text-base leading-relaxed text-[#AAAAAA] border-t border-[#1f1f1f] pt-4">
-                        Yes, we provide up to 4 car seats free of charge. You must request them in advance when filling out your booking form to ensure availability.
+                        Special request upon availability. Please add it to your booking notes (or call us) and we will confirm whether an accessible vehicle is available for your date and time.
                       </div>
                     </details>
 

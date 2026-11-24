@@ -4,7 +4,7 @@ import { CONTACT } from './contact'
 // The deposit answer was updated: deposits were removed on 2026-08-08,
 // online bookings are paid in full.
 
-export type FaqCategory = 'Booking' | 'Airport Pickup' | 'Changes & Cancellations' | 'Vehicles & Luggage' | 'Children' | 'Payment'
+export type FaqCategory = 'Booking' | 'Airport Pickup' | 'Changes & Cancellations' | 'Vehicles & Luggage' | 'Accessibility' | 'Payment'
 
 export interface FaqItem {
   id: string
@@ -14,7 +14,7 @@ export interface FaqItem {
   featured?: boolean
 }
 
-export const FAQ_CATEGORIES: FaqCategory[] = ['Booking', 'Airport Pickup', 'Changes & Cancellations', 'Vehicles & Luggage', 'Children', 'Payment']
+export const FAQ_CATEGORIES: FaqCategory[] = ['Booking', 'Airport Pickup', 'Changes & Cancellations', 'Vehicles & Luggage', 'Accessibility', 'Payment']
 
 export const FAQ: FaqItem[] = [
   {
@@ -69,9 +69,9 @@ export const FAQ: FaqItem[] = [
     a: 'Sedans & SUVs fit up to 4 standard bags and the Suburban up to 6. For more luggage, choose a Sprinter, Mini Bus or Coach Bus.',
   },
   {
-    id: 'car-seats', category: 'Children', featured: true,
-    q: 'Do you provide car seats for children?',
-    a: 'Yes, up to 4 car seats free of charge. Please request them in the booking form so we can make sure they are available.',
+    id: 'wheelchair', category: 'Accessibility', featured: true,
+    q: 'Do you offer wheelchair accessible vehicles?',
+    a: 'Special request upon availability. Add it to the notes when you book (or call us) and we will confirm whether an accessible vehicle is available for your date and time.',
   },
   {
     id: 'payment', category: 'Payment',

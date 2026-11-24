@@ -53,7 +53,6 @@ const TRUST = [
   { t: 'Licensed & insured', icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4" /> },
   { t: '30-min free airport wait', icon: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></> },
   { t: 'Meet & Greet available', icon: <><rect x="4" y="5" width="16" height="11" rx="2" /><path d="M8 20h8M12 16v4" /></> },
-  { t: 'Free child seats', icon: <><circle cx="12" cy="6" r="2.5" /><path d="M7 21v-5l-2-4 4-2h6l4 2-2 4v5" /></> },
   { t: CONTACT.hours, icon: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></> },
 ]
 
@@ -61,7 +60,7 @@ export function TrustStrip() {
   return (
     <section aria-label="Why travelers trust Express Lyft" style={{ background: 'var(--bg-deep)', borderBottom: '1px solid var(--surface)' }}>
       <Container>
-        <ul className="flex md:grid md:grid-cols-5 gap-6 md:gap-4 overflow-x-auto no-scrollbar py-6 -mx-4 px-4 md:mx-0 md:px-0">
+        <ul className="flex md:grid md:grid-cols-4 gap-6 md:gap-4 overflow-x-auto no-scrollbar py-6 -mx-4 px-4 md:mx-0 md:px-0">
           {TRUST.map((x) => (
             <li key={x.t} className="shrink-0 flex items-center gap-3 text-[13px] font-medium text-[var(--text-subtle)]">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{x.icon}</svg>

@@ -7,7 +7,7 @@ import { CONTACT } from '@/lib/site/contact'
 
 export const metadata: Metadata = {
   title: 'Frequently Asked Questions | Express Lyft',
-  description: 'Booking, airport pickups, flight delays, Meet & Greet, luggage, child seats, changes and payment — answers about Express Lyft transportation.',
+  description: 'Booking, airport pickups, flight delays, Meet & Greet, luggage, wheelchair requests, changes and payment — answers about Express Lyft transportation.',
   alternates: { canonical: '/faq' },
 }
 

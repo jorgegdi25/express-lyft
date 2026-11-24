@@ -200,7 +200,6 @@ export default function MainMapBookingForm({
   const [airline, setAirline] = useState<string>('')
   const [flightNumber, setFlightNumber] = useState<string>('')
   const [meetingType, setMeetingType] = useState<'curbside' | 'meet_greet'>('curbside')
-  const [carSeatsRequested, setCarSeatsRequested] = useState<number>(0)
   const [luggageCount, setLuggageCount] = useState<number>(0)
   const [notes, setNotes] = useState<string>('')
   const [loading, setLoading] = useState(false)
@@ -540,7 +539,6 @@ export default function MainMapBookingForm({
           flightNumber,
           meetingType,
           meetGreetFee,
-          carSeatsRequested,
           luggageCount,
           notes,
           paymentMode: isQuoteOnly(vehicleType) ? 'quote' : paymentMode,
@@ -588,7 +586,6 @@ export default function MainMapBookingForm({
     setAirline('')
     setFlightNumber('')
     setMeetingType('curbside')
-    setCarSeatsRequested(0)
     setLuggageCount(0)
     setNotes('')
     setPaymentMode('full')
@@ -953,12 +950,12 @@ export default function MainMapBookingForm({
           </div>
         </div>
       )}
-      <div className="grid sm:grid-cols-3 gap-3">
-        <Stepper label="Child seats (free)" value={carSeatsRequested} onChange={setCarSeatsRequested} min={0} max={4} />
-        <div className="sm:col-span-2">
-          <label className={FIELD_LABEL} style={{ color: 'var(--text-muted)' }}>Notes for your driver (optional)</label>
-          <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Wheelchair access, extra stop, etc." className={`${INPUT_CLASS} h-[50px] py-0`} style={INPUT_STYLE} />
-        </div>
+      <div>
+        <label className={FIELD_LABEL} style={{ color: 'var(--text-muted)' }}>Notes for your driver (optional)</label>
+        <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Wheelchair access, extra stop, etc." className={`${INPUT_CLASS} h-[50px] py-0`} style={INPUT_STYLE} />
+        <p className="text-[11px] mt-2" style={{ color: 'var(--gold-light)' }}>
+          <strong>Important:</strong> Wheelchair accessible vehicles are a special request upon availability.
+        </p>
       </div>
     </div>
   )
@@ -1297,7 +1294,7 @@ export default function MainMapBookingForm({
                   )}
 
                   {/* Counters Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* Passengers counter */}
                     <div>
                       <label className={LABEL_CLASS} style={LABEL_COLOR}>
@@ -1377,45 +1374,6 @@ export default function MainMapBookingForm({
                         </button>
                       </div>
                     </div>
-
-                    {/* Car seats counter */}
-                    <div>
-                      <label className={LABEL_CLASS} style={LABEL_COLOR}>
-                        Child Car Seats
-                      </label>
-                      <div
-                        className="flex items-center justify-between rounded-xl px-4 py-2"
-                        style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-soft)' }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setCarSeatsRequested((p) => Math.max(0, p - 1))}
-                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[var(--gold)]"
-                          style={{ border: '1px solid var(--border-soft)', color: 'var(--text)', background: 'var(--surface)' }}
-                        >
-                          −
-                        </button>
-                        <div className="text-center flex-1">
-                          <input 
-                            type="number" 
-                            min="0" 
-                            max="4" 
-                            value={carSeatsRequested} 
-                            onChange={(e) => setCarSeatsRequested(Math.max(0, Math.min(4, parseInt(e.target.value) || 0)))}
-                            className="w-full text-center text-2xl font-bold bg-transparent outline-none" 
-                            style={{ color: 'var(--text)' }} 
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setCarSeatsRequested((p) => Math.min(4, p + 1))}
-                          className="w-10 h-10 rounded-lg text-2xl font-light flex items-center justify-center transition-colors hover:border-[var(--gold)]"
-                          style={{ border: '1px solid var(--border-soft)', color: 'var(--text)', background: 'var(--surface)' }}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
                   </div>
 
                   {/* Notes Field */}
@@ -1432,7 +1390,10 @@ export default function MainMapBookingForm({
                     />
                   </div>
                   <p className="text-[11px] text-[var(--text-muted)] mt-0">
-                    Sedan: Max 4 bags. Suburban: Max 6 bags. Sprinter: Max 14. Minibus: Max 30. Coach: Max 60. Complimentary car seats available.
+                    Sedan: Max 4 bags. Suburban: Max 6 bags. Sprinter: Max 14. Minibus: Max 30. Coach: Max 60.
+                  </p>
+                  <p className="text-[11px] mt-0" style={{ color: 'var(--gold-light)' }}>
+                    <strong>Important:</strong> Wheelchair accessible vehicles are a special request upon availability. Please add it in your notes.
                   </p>
 
                   {error && !isUrgentRequest && !isPausedSelection && (
